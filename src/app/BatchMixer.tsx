@@ -124,17 +124,21 @@ function swipeZoneStripe(even: boolean): string {
 const RECIPE_ZONE_PT = 10;
 const RECIPE_RATIO_BG = "transparent";
 const RECIPE_RATIO_BORDER_COLOR = "rgba(255,255,255,0.14)";
-const RECIPE_META_CARD_H = 84;
+const RECIPE_CONTAINER_PX = "10px 12px";
+const RECIPE_META_CARD_H = 92;
 const RECIPE_CARD_H = 96;
 const RECIPE_META_GAP = 10;
 const RECIPE_CARD_PX = 6;
+const RECIPE_META_LABEL_SIZE = 14;
 const RECIPE_ID_SIZE = 12;
 const RECIPE_SUBLABEL_SIZE = 10;
-const RECIPE_META_VALUE_SIZE = 14;
+const RECIPE_META_VALUE_SIZE = 17;
 const RECIPE_RATIO_SIZE = 18;
 const RECIPE_UNIT_SIZE = 10;
 const RECIPE_COLON_SIZE = 14;
 const RECIPE_LABEL_GAP = 2;
+const RECIPE_ID_SUBLABEL_GAP = 8;
+const RECIPE_META_NAME_GAP = 8;
 const RECIPE_ROW_GAP = 5;
 /** High-contrast readouts on dark recipe cards — not pure white. */
 const RECIPE_VALUE_COLOR = "#c4c4dc";
@@ -188,12 +192,11 @@ function RecipeRatioCard({
         height: RECIPE_CARD_H,
         padding: `7px ${RECIPE_CARD_PX}px 6px`,
         background: RECIPE_RATIO_BG,
-        border: `1.5px solid ${RECIPE_RATIO_BORDER_COLOR}`,
       }}
     >
       <div
         className="flex flex-col items-center max-w-full min-h-0"
-        style={{ gap: RECIPE_LABEL_GAP }}
+        style={{ gap: RECIPE_ID_SUBLABEL_GAP }}
       >
         <span
           className="uppercase truncate max-w-full"
@@ -277,13 +280,12 @@ function RecipeMetaCard({
         height: RECIPE_META_CARD_H,
         padding: `7px ${RECIPE_CARD_PX}px 6px`,
         background: RECIPE_RATIO_BG,
-        border: `1.5px solid ${RECIPE_RATIO_BORDER_COLOR}`,
       }}
     >
       <span
         className="uppercase truncate max-w-full"
         style={{
-          fontSize: RECIPE_ID_SIZE,
+          fontSize: RECIPE_META_LABEL_SIZE,
           letterSpacing: "0.12em",
           fontWeight: 700,
           color: muted ? RECIPE_ID_COLOR_MUTED : RECIPE_ID_COLOR,
@@ -295,7 +297,7 @@ function RecipeMetaCard({
       {valueLine2 ? (
         <div
           className="flex flex-col items-center max-w-full min-h-0"
-          style={{ gap: RECIPE_LABEL_GAP, marginTop: RECIPE_ROW_GAP }}
+          style={{ gap: RECIPE_LABEL_GAP, marginTop: RECIPE_META_NAME_GAP }}
         >
           <span
             className="truncate max-w-full text-center"
@@ -373,7 +375,6 @@ function entityCardShadow(color: string): string {
 
 /** Entity border — 1.5px always (no layout shift). */
 const ENTITY_BORDER_W = "1.5px";
-const ENTITY_BORDER_IDLE = "77";
 const ENTITY_BORDER_ACTIVE = "aa";
 /** Connector line between active card and swipe area. */
 const CONNECTOR_W = 2.5;
@@ -383,7 +384,9 @@ function entityActiveRing(color: string): string {
 }
 
 function entityCardChrome(color: string, lit: boolean): { border: string; boxShadow: string } {
-  const border = `${ENTITY_BORDER_W} solid ${color}${lit ? ENTITY_BORDER_ACTIVE : ENTITY_BORDER_IDLE}`;
+  const border = lit
+    ? `${ENTITY_BORDER_W} solid ${color}${ENTITY_BORDER_ACTIVE}`
+    : `${ENTITY_BORDER_W} solid ${RECIPE_RATIO_BORDER_COLOR}`;
   if (!lit) return { border, boxShadow: "none" };
   return {
     border,
@@ -394,7 +397,7 @@ function entityCardChrome(color: string, lit: boolean): { border: string; boxSha
 
 const CARD_CHROME_TRANSITION = "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease";
 
-type CardConnector = { x: number; y1: number; y2: number; color: string };
+type CardConnector = { x: number; y1: number; y2: number; color: string; active: boolean };
 
 function SwipeChevronStack({
   direction,
@@ -512,7 +515,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
     transition: `${CARD_CHROME_TRANSITION}, ${LOCK_TRANSITION}`,
     ...style,
   };
-  const nameColor = cardLit ? color : `${color}aa`;
+  const nameColor = color;
   const valueColor = cardLit ? "#ffffff" : CARD_VALUE_INACTIVE;
   const barOpacity = cardLit ? 1 : 0.4;
 
@@ -629,7 +632,7 @@ export function BatchMixer({
   const [dragFocus, setDragFocus]   = useState(false);
   const [dragDirection, setDragDirection] = useState<"up" | "down" | null>(null);
   const [isLocked, setIsLocked]     = useState(false);
-  const [connectorLine, setConnectorLine] = useState<CardConnector | null>(null);
+  const [connectorLines, setConnectorLines] = useState<CardConnector[]>([]);
 
   // /* LINE_MEASUREMENT_LEGACY */
   // const [lines, setLines] = useState<Line[]>([]);
@@ -662,10 +665,6 @@ export function BatchMixer({
   const isTotalAct = active === 0;
   const recipeDisplayName = recipe.name?.trim() || recipe.id;
   const recipeDisplaySubline = recipe.nameSubline?.trim();
-  const recommendedTotalKg = useMemo(
-    () => fmt(initialMixValues(recipe, initialBinderSum)[0], true),
-    [recipe, initialBinderSum],
-  );
 
   const mixVolume = useMemo(
     () =>
@@ -767,66 +766,58 @@ export function BatchMixer({
     };
   }, [updateScale]);
 
-  const measureCardConnector = useCallback(() => {
+  const measureCardConnectors = useCallback(() => {
     if (isLocked) {
-      setConnectorLine(null);
+      setConnectorLines([]);
       return;
     }
     const root = containerRef.current;
     const swipeEl = swipeAreaRef.current;
     if (!root || !swipeEl) {
-      setConnectorLine(null);
+      setConnectorLines([]);
       return;
     }
     const s = scaleRef.current;
     const rootR = root.getBoundingClientRect();
     const swipeR = swipeEl.getBoundingClientRect();
+    const lines: CardConnector[] = [];
 
-    if (active === 0) {
-      const totalEl = totalTileRef.current;
-      if (!totalEl) {
-        setConnectorLine(null);
-        return;
-      }
+    for (const pi of [1, 2, 3, 4]) {
+      const cardEl = cardRefs.current[pi];
+      if (!cardEl) continue;
+      const cardR = cardEl.getBoundingClientRect();
+      const x = (cardR.left + cardR.width / 2 - rootR.left) / s;
+      const y1 = (cardR.bottom - rootR.top) / s;
+      const y2 = (swipeR.top - rootR.top) / s;
+      if (y2 <= y1) continue;
+      lines.push({ x, y1, y2, color: PARAMS[pi].color, active: active === pi });
+    }
+
+    const totalEl = totalTileRef.current;
+    if (totalEl) {
       const totalR = totalEl.getBoundingClientRect();
       const x = (totalR.left + totalR.width / 2 - rootR.left) / s;
       const y1 = (swipeR.bottom - rootR.top) / s;
       const y2 = (totalR.top - rootR.top) / s;
-      if (y2 <= y1) {
-        setConnectorLine(null);
-        return;
+      if (y2 > y1) {
+        lines.push({ x, y1, y2, color: PARAMS[0].color, active: active === 0 });
       }
-      setConnectorLine({ x, y1, y2, color: PARAMS[0].color });
-      return;
     }
 
-    const cardEl = cardRefs.current[active];
-    if (!cardEl) {
-      setConnectorLine(null);
-      return;
-    }
-    const cardR = cardEl.getBoundingClientRect();
-    const x = (cardR.left + cardR.width / 2 - rootR.left) / s;
-    const y1 = (cardR.bottom - rootR.top) / s;
-    const y2 = (swipeR.top - rootR.top) / s;
-    if (y2 <= y1) {
-      setConnectorLine(null);
-      return;
-    }
-    setConnectorLine({ x, y1, y2, color: PARAMS[active].color });
+    setConnectorLines(lines);
   }, [active, isLocked]);
 
   useLayoutEffect(() => {
-    measureCardConnector();
-  }, [measureCardConnector, scale, values]);
+    measureCardConnectors();
+  }, [measureCardConnectors, scale, values]);
 
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
-    const ro = new ResizeObserver(() => measureCardConnector());
+    const ro = new ResizeObserver(() => measureCardConnectors());
     ro.observe(root);
     return () => ro.disconnect();
-  }, [measureCardConnector]);
+  }, [measureCardConnectors]);
 
   const clearDragOverlayHide = useCallback(() => {
     if (dragOverlayHideTimer.current !== null) {
@@ -984,22 +975,25 @@ export function BatchMixer({
           }}
         >
 
-      {connectorLine && (
+      {connectorLines.map((line, i) => (
         <div
+          key={i}
           aria-hidden
           className="pointer-events-none"
           style={{
             position: "absolute",
-            left: connectorLine.x - CONNECTOR_W / 2,
-            top: connectorLine.y1,
+            left: line.x - CONNECTOR_W / 2,
+            top: line.y1,
             width: CONNECTOR_W,
-            height: connectorLine.y2 - connectorLine.y1,
-            background: `${connectorLine.color}${ENTITY_BORDER_ACTIVE}`,
-            zIndex: dragFocus && !isLocked ? DRAG_FOCUS_Z : CARD_CONNECTOR_Z,
+            height: line.y2 - line.y1,
+            background: line.active
+              ? `${line.color}${ENTITY_BORDER_ACTIVE}`
+              : RECIPE_RATIO_BORDER_COLOR,
+            zIndex: dragFocus && !isLocked && line.active ? DRAG_FOCUS_Z : CARD_CONNECTOR_Z,
             transition: "top 0.2s ease, left 0.2s ease, height 0.2s ease, background-color 0.2s ease, z-index 0s",
           }}
         />
-      )}
+      ))}
 
       {/* ── App header ─────────────────────────────────────────────────────── */}
       <AppHeader isLocked={isLocked} onBack={handleBack} onToggleLock={toggleLock} />
@@ -1008,7 +1002,14 @@ export function BatchMixer({
       {/* ── Recipe ratio cards (high) + mix cards (just above swipe) ─────────── */}
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="shrink-0 px-4 pointer-events-none" style={{ paddingTop: RECIPE_ZONE_PT }}>
-          <div className="flex" style={{ gap: CARD_ROW_GAP, marginBottom: RECIPE_META_GAP }}>
+          <div
+            className="rounded-xl flex flex-col min-w-0"
+            style={{
+              background: RECIPE_RATIO_BG,
+              padding: RECIPE_CONTAINER_PX,
+              gap: RECIPE_META_GAP,
+            }}
+          >
             <RecipeMetaCard
               label="RECIPE"
               value={recipeDisplayName}
@@ -1016,30 +1017,24 @@ export function BatchMixer({
               muted={isLocked}
               valueFontFamily="'Outfit', sans-serif"
             />
-            <RecipeMetaCard
-              label="REC. TOTAL"
-              value={recommendedTotalKg}
-              unit="kg"
-              muted={isLocked}
-            />
-          </div>
-          <div className="flex items-stretch">
-            {[1, 2, 4, 3].map((pi, i) => {
-              const p = PARAMS[pi];
-              const { value, unit } = getLockedRatioDisplay(recipe, p.id);
-              return (
-                <React.Fragment key={`recipe-${p.id}`}>
-                  {i > 0 && <RecipeRatioGapSeparator />}
-                  <RecipeRatioCard
-                    id={p.id}
-                    sublabel={getIngredientLabel(recipe, p.id)}
-                    value={value}
-                    unit={unit}
-                    muted={isLocked}
-                  />
-                </React.Fragment>
-              );
-            })}
+            <div className="flex items-stretch">
+              {[1, 2, 4, 3].map((pi, i) => {
+                const p = PARAMS[pi];
+                const { value, unit } = getLockedRatioDisplay(recipe, p.id);
+                return (
+                  <React.Fragment key={`recipe-${p.id}`}>
+                    {i > 0 && <RecipeRatioGapSeparator />}
+                    <RecipeRatioCard
+                      id={p.id}
+                      sublabel={getIngredientLabel(recipe, p.id)}
+                      value={value}
+                      unit={unit}
+                      muted={isLocked}
+                    />
+                  </React.Fragment>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -1093,7 +1088,7 @@ export function BatchMixer({
                     value={fmt(values[pi], p.isKg)}
                     unit={p.isKg ? "kg" : "g"}
                     centered
-                    nameColor={cardLit ? p.color : `${p.color}aa`}
+                    nameColor={p.color}
                     valueColor={cardLit ? "#ffffff" : CARD_VALUE_INACTIVE}
                     unitColor={CARD_UNIT_INACTIVE}
                   />
