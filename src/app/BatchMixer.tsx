@@ -121,10 +121,10 @@ function swipeZoneStripe(even: boolean): string {
 }
 
 /** Locked recipe ratio cards (read-only, above mix cards). */
-const RECIPE_ZONE_PT = 10;
+const RECIPE_ZONE_PT = 0;
 const RECIPE_RATIO_BG = "transparent";
 const RECIPE_RATIO_BORDER_COLOR = "rgba(255,255,255,0.14)";
-const RECIPE_CONTAINER_PX = "10px 12px";
+const RECIPE_CONTAINER_PX = "4px 12px";
 const RECIPE_META_CARD_H = 92;
 const RECIPE_CARD_H = 96;
 const RECIPE_META_GAP = 10;
@@ -278,7 +278,7 @@ function RecipeMetaCard({
       className="flex-1 min-w-0 rounded-xl flex flex-col items-center justify-between pointer-events-none"
       style={{
         height: RECIPE_META_CARD_H,
-        padding: `7px ${RECIPE_CARD_PX}px 6px`,
+        padding: `4px ${RECIPE_CARD_PX}px 6px`,
         background: RECIPE_RATIO_BG,
       }}
     >
