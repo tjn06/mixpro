@@ -6,7 +6,7 @@ import {
   DEFAULT_BUCKET_SELECTION,
   type BucketSelection,
 } from "./components/MixBucket";
-import { reconcileBucketSelection, maxMixLitersForBucket, type BucketSize } from "./bucketTypes";
+import { reconcileBucketSelection, maxMixLitersForBucket, isBucketAtMaxFill, type BucketSize } from "./bucketTypes";
 import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues } from "./bucketLimits";
 import { estimateMixVolume, type SandType } from "./mixVolume";
 import { LongPressProgressProvider, LongPressHeaderBar } from "./components/LongPressProgressContext";
@@ -75,6 +75,9 @@ const DRAG_OVERLAY_Z    = 4;
 const CARD_CONNECTOR_Z  = 3;
 const DRAG_FOCUS_Z      = 5;
 const DRAG_OVERLAY_HIDE_MS = 320;
+const DRAG_BLOCKED_MS = 120;
+const CARD_LIMIT_FLASH_TINT_PCT = 50;
+const BUCKET_LIMIT_VIBRATE_MS = [10, 28, 10] as const;
 const LOCK_PANEL_Z      = 6;
 const LOCK_SHIELD_Z     = 5;
 const LOCK_EXPAND_MS    = 360;
@@ -395,7 +398,20 @@ function entityCardChrome(color: string, lit: boolean): { border: string; boxSha
   };
 }
 
-const CARD_CHROME_TRANSITION = "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease";
+const CARD_CHROME_TRANSITION = "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, transform 0.1s ease-out";
+
+function CardLimitFlash({ color }: { color: string }) {
+  return (
+    <div
+      aria-hidden
+      className="absolute inset-0 rounded-xl pointer-events-none"
+      style={{
+        background: surfaceTint(color, CARD_LIMIT_FLASH_TINT_PCT, "transparent"),
+        zIndex: 2,
+      }}
+    />
+  );
+}
 
 type CardConnector = { x: number; y1: number; y2: number; color: string; active: boolean };
 
@@ -495,6 +511,8 @@ const TotalTile = forwardRef<HTMLButtonElement, {
   color: string;
   isActive: boolean;
   expanded?: boolean;
+  limitFlash?: boolean;
+  cardBump?: boolean;
   onClick?: () => void;
   className?: string;
   style?: CSSProperties;
@@ -503,6 +521,8 @@ const TotalTile = forwardRef<HTMLButtonElement, {
   color,
   isActive: cardLit,
   expanded = false,
+  limitFlash = false,
+  cardBump = false,
   onClick,
   className = "",
   style,
@@ -513,6 +533,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
     boxShadow: chrome.boxShadow,
     background: cardLit ? entitySurfaceLit(color) : ENTITY_SURFACE_IDLE,
     transition: `${CARD_CHROME_TRANSITION}, ${LOCK_TRANSITION}`,
+    transform: cardBump ? "scale(1.035)" : undefined,
     ...style,
   };
   const nameColor = color;
@@ -525,9 +546,10 @@ const TotalTile = forwardRef<HTMLButtonElement, {
         type="button"
         ref={ref}
         onClick={onClick}
-        className={`flex flex-col items-center justify-center rounded-xl w-full h-full py-3.5 touch-none ${className}`}
+        className={`flex flex-col items-center justify-center rounded-xl w-full h-full py-3.5 touch-none overflow-hidden relative ${className}`}
         style={tileStyle}
       >
+        {limitFlash && <CardLimitFlash color={color} />}
         <div style={{
           width: 32,
           height: 4,
@@ -576,9 +598,10 @@ const TotalTile = forwardRef<HTMLButtonElement, {
       type="button"
       ref={ref}
       onClick={onClick}
-      className={`flex items-stretch justify-start rounded-xl px-3 py-3 w-full h-full touch-none ${className}`}
+      className={`flex items-stretch justify-start rounded-xl px-3 py-3 w-full h-full touch-none overflow-hidden relative ${className}`}
       style={tileStyle}
     >
+      {limitFlash && <CardLimitFlash color={color} />}
       <div style={{
         width: 3,
         flexShrink: 0,
@@ -631,6 +654,7 @@ export function BatchMixer({
   const [saveFlash, setSaveFlash]   = useState(false);
   const [dragFocus, setDragFocus]   = useState(false);
   const [dragDirection, setDragDirection] = useState<"up" | "down" | null>(null);
+  const [dragBlocked, setDragBlocked] = useState(false);
   const [isLocked, setIsLocked]     = useState(false);
   const [connectorLines, setConnectorLines] = useState<CardConnector[]>([]);
 
@@ -659,6 +683,7 @@ export function BatchMixer({
   const rafPending     = useRef(false);
   const pendingValues  = useRef<number[] | null>(null);
   const dragOverlayHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragBlockedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   valuesRef.current    = values;
 
   const totalParam = PARAMS[0];
@@ -674,6 +699,13 @@ export function BatchMixer({
         sandType,
       }),
     [values, sandType],
+  );
+
+  const atBucketCap = useMemo(
+    () =>
+      bucketSelection !== "none" &&
+      isBucketAtMaxFill(mixVolume.estimatedLiters, bucketSelection),
+    [bucketSelection, mixVolume.estimatedLiters],
   );
 
   useEffect(() => {
@@ -819,6 +851,26 @@ export function BatchMixer({
     return () => ro.disconnect();
   }, [measureCardConnectors]);
 
+  const clearDragBlocked = useCallback(() => {
+    if (dragBlockedTimer.current !== null) {
+      window.clearTimeout(dragBlockedTimer.current);
+      dragBlockedTimer.current = null;
+    }
+    setDragBlocked(false);
+  }, []);
+
+  const triggerDragBlocked = useCallback(() => {
+    setDragBlocked(true);
+    navigator.vibrate?.(BUCKET_LIMIT_VIBRATE_MS);
+    if (dragBlockedTimer.current !== null) {
+      window.clearTimeout(dragBlockedTimer.current);
+    }
+    dragBlockedTimer.current = window.setTimeout(() => {
+      dragBlockedTimer.current = null;
+      setDragBlocked(false);
+    }, DRAG_BLOCKED_MS);
+  }, []);
+
   const clearDragOverlayHide = useCallback(() => {
     if (dragOverlayHideTimer.current !== null) {
       window.clearTimeout(dragOverlayHideTimer.current);
@@ -839,11 +891,15 @@ export function BatchMixer({
     }, DRAG_OVERLAY_HIDE_MS);
   }, [clearDragOverlayHide]);
 
-  useEffect(() => () => clearDragOverlayHide(), [clearDragOverlayHide]);
+  useEffect(() => () => {
+    clearDragOverlayHide();
+    clearDragBlocked();
+  }, [clearDragOverlayHide, clearDragBlocked]);
 
   useEffect(() => {
     if (!isLocked) return;
     clearDragOverlayHide();
+    clearDragBlocked();
     setDragFocus(false);
     if (isDragging.current) {
       isDragging.current = false;
@@ -852,7 +908,7 @@ export function BatchMixer({
       setDragDirection(null);
       flushValues();
     }
-  }, [isLocked, clearDragOverlayHide, flushValues]);
+  }, [isLocked, clearDragOverlayHide, clearDragBlocked, flushValues]);
 
   const toggleLock = useCallback(() => {
     setIsLocked((prev) => !prev);
@@ -871,9 +927,10 @@ export function BatchMixer({
     dragUndoSaved.current = false;
     setActiveZone(null);
     setDragDirection(null);
+    clearDragBlocked();
     scheduleHideDragOverlay();
     flushValues();
-  }, [flushValues, scheduleHideDragOverlay]);
+  }, [flushValues, scheduleHideDragOverlay, clearDragBlocked]);
 
   const onSwipeDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (isLocked) return;
@@ -943,10 +1000,11 @@ export function BatchMixer({
       if (nextLiters >= maxLiters - 1e-6 && snapped > dragBaseVal.current) {
         dragBaseVal.current = next[active];
         dragStartY.current = clientY;
+        triggerDragBlocked();
       }
     }
     commitValues(next);
-  }, [active, commitValues, sandType]);
+  }, [active, commitValues, sandType, triggerDragBlocked]);
 
   const onSwipeEnd = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     endSwipe(e);
@@ -1050,6 +1108,7 @@ export function BatchMixer({
             sandType={sandType}
             muted={isLocked}
             disabled={isLocked}
+            fillBlockedFlash={dragBlocked && atBucketCap}
           />
         </div>
 
@@ -1060,20 +1119,25 @@ export function BatchMixer({
               const isAct   = active === pi;
               const cardLit = isLocked || isAct;
               const chrome  = entityCardChrome(p.color, cardLit);
+              const cardBump = dragBlocked && isAct && !isLocked;
               return (
                 <button
                   key={p.id}
                   ref={(el) => { cardRefs.current[pi] = el; }}
                   onClick={() => setActive(pi)}
-                  className="flex-1 flex flex-col items-center rounded-xl py-3 relative"
+                  className="flex-1 flex flex-col items-center rounded-xl py-3 relative overflow-hidden"
                   style={{
                     background: cardLit ? entitySurfaceLit(p.color) : ENTITY_SURFACE_IDLE,
                     border: chrome.border,
                     boxShadow: chrome.boxShadow,
                     transition: CARD_CHROME_TRANSITION,
+                    transform: cardBump ? "scale(1.035)" : undefined,
                     ...(dragFocus && isAct && !isLocked ? { position: "relative" as const, zIndex: DRAG_FOCUS_Z } : {}),
                   }}
                 >
+                  {dragBlocked && isAct && !isLocked && (
+                    <CardLimitFlash color={p.color} />
+                  )}
                   <div style={{
                     width: 22,
                     height: 3,
@@ -1206,6 +1270,8 @@ export function BatchMixer({
         valueKg={fmt(values[0], totalParam.isKg)}
         isActive={isTotalAct || isLocked}
         expanded={isLocked}
+        limitFlash={dragBlocked && isTotalAct && !isLocked}
+        cardBump={dragBlocked && isTotalAct && !isLocked}
         onClick={isLocked ? undefined : () => setActive(0)}
         className="absolute"
         style={{

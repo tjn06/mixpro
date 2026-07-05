@@ -36,7 +36,6 @@ const TITLE_COLOR_MUTED = "#9898b4";
 const FULL_BUCKET_COLOR = "#f59e0b";
 const FULL_BUCKET_COLOR_MUTED = "#b88848";
 const BUCKET_CARD_BG = "transparent";
-const BUCKET_CARD_BORDER = "rgba(255,255,255,0.14)";
 const DROPDOWN_MENU_BG = "#3a3a4c";
 const DROPDOWN_MENU_BORDER = "rgba(255,255,255,0.1)";
 const DROPDOWN_MENU_TEXT = "#b8b8d0";
@@ -55,66 +54,69 @@ const FIELD_LABEL_STYLE: React.CSSProperties = {
   fontWeight: 600,
   color: LABEL_COLOR,
   lineHeight: 1,
+  minHeight: 8,
 };
 
-function FillReadout({
+const BUCKET_VALUE_STYLE: React.CSSProperties = {
+  fontFamily: "'Outfit', sans-serif",
+  fontSize: 17,
+  fontWeight: 600,
+  letterSpacing: "0.06em",
+  lineHeight: 1,
+};
+
+function FillValue({
   hasBucket,
   displayPercent,
   bucketFull,
   muted,
-  faded,
+  flash = false,
 }: {
   hasBucket: boolean;
   displayPercent: number | undefined;
   bucketFull: boolean;
   muted: boolean;
-  faded: boolean;
+  flash?: boolean;
 }) {
+  const amber = flash || bucketFull;
+  const pctColor = amber ? FULL_BUCKET_COLOR : LABEL_COLOR;
   return (
-    <div
-      className="flex flex-col gap-1 shrink-0 tabular-nums transition-opacity duration-200"
-      style={{ opacity: faded ? NO_BUCKET_LABEL_OPACITY : 1 }}
+    <span
+      className="whitespace-nowrap tabular-nums"
+      style={{
+        ...BUCKET_VALUE_STYLE,
+        color: amber
+          ? muted
+            ? FULL_BUCKET_COLOR_MUTED
+            : FULL_BUCKET_COLOR
+          : muted
+            ? VALUE_COLOR_MUTED
+            : VALUE_COLOR,
+        letterSpacing: bucketFull ? "0.14em" : BUCKET_VALUE_STYLE.letterSpacing,
+        textShadow: flash ? `0 0 10px ${FULL_BUCKET_COLOR}88` : undefined,
+        transition: "color 0.1s ease, text-shadow 0.1s ease",
+      }}
     >
-      <span className="uppercase whitespace-nowrap" style={FIELD_LABEL_STYLE}>
-        {FILL_LABEL}
-      </span>
-      <span
-        className="whitespace-nowrap"
-        style={{
-          fontSize: bucketFull ? 13 : 20,
-          fontWeight: 600,
-          color: bucketFull
-            ? muted
-              ? FULL_BUCKET_COLOR_MUTED
-              : FULL_BUCKET_COLOR
-            : muted
-              ? VALUE_COLOR_MUTED
-              : VALUE_COLOR,
-          letterSpacing: bucketFull ? "0.14em" : undefined,
-          lineHeight: 1.1,
-        }}
-      >
-        {hasBucket && displayPercent != null ? (
-          bucketFull ? (
-            "FULL"
-          ) : (
-            <>
-              {displayPercent}
-              <span style={{ fontSize: 12, fontWeight: 500, color: LABEL_COLOR, marginLeft: 1 }}>%</span>
-            </>
-          )
+      {hasBucket && displayPercent != null ? (
+        bucketFull ? (
+          "FULL"
         ) : (
           <>
-            -
-            <span style={{ fontSize: 12, fontWeight: 500, color: LABEL_COLOR, marginLeft: 2 }}>%</span>
+            {displayPercent}
+            <span style={{ fontWeight: 500, color: pctColor, marginLeft: 1 }}>%</span>
           </>
-        )}
-      </span>
-    </div>
+        )
+      ) : (
+        <>
+          -
+          <span style={{ fontWeight: 500, color: LABEL_COLOR, marginLeft: 2 }}>%</span>
+        </>
+      )}
+    </span>
   );
 }
 
-function BucketSizeControl({
+function BucketSizeValue({
   bucketSelection,
   onBucketChange,
   fillLiters,
@@ -127,37 +129,32 @@ function BucketSizeControl({
   disabled: boolean;
   muted: boolean;
 }) {
+  if (onBucketChange) {
+    return (
+      <BucketSelectDropdown
+        value={bucketSelection}
+        onChange={onBucketChange}
+        estimatedLiters={fillLiters}
+        disabled={disabled}
+        muted={muted}
+      />
+    );
+  }
   return (
-    <div className="flex flex-col gap-1 min-w-0">
-      <span className="uppercase whitespace-nowrap" style={FIELD_LABEL_STYLE}>
-        {BUCKET_SIZE_LABEL}
-      </span>
-      {onBucketChange ? (
-        <BucketSelectDropdown
-          value={bucketSelection}
-          onChange={onBucketChange}
-          estimatedLiters={fillLiters}
-          disabled={disabled}
-          muted={muted}
-        />
-      ) : (
-        <span
-          className="block whitespace-nowrap"
-          style={{
-            fontFamily: "'Outfit', sans-serif",
-            fontSize: 17,
-            fontWeight: 600,
-            color: muted ? TITLE_COLOR_MUTED : TITLE_COLOR,
-            letterSpacing: "0.06em",
-            lineHeight: 1.1,
-          }}
-        >
-          {bucketSelectionLabel(bucketSelection)}
-        </span>
-      )}
-    </div>
+    <span
+      className="block whitespace-nowrap"
+      style={{
+        ...BUCKET_VALUE_STYLE,
+        color: muted ? TITLE_COLOR_MUTED : TITLE_COLOR,
+        lineHeight: 1.1,
+      }}
+    >
+      {bucketSelectionLabel(bucketSelection)}
+    </span>
   );
 }
+
+const BUCKET_ROW_GAP = 4;
 
 /** Geometry from Smart Pack frustum model (1000×1000 SVG space). */
 const BUCKET = {
@@ -444,6 +441,8 @@ export interface MixBucketProps {
   sandBulkDensity?: number;
   muted?: boolean;
   disabled?: boolean;
+  /** Brief amber flash on est. fill when a drag increase hits the bucket cap. */
+  fillBlockedFlash?: boolean;
 }
 
 export function MixBucket({
@@ -455,6 +454,7 @@ export function MixBucket({
   sandBulkDensity = DEFAULT_SAND_BULK_DENSITY,
   muted = false,
   disabled = false,
+  fillBlockedFlash = false,
 }: MixBucketProps) {
   const clipId = useId();
   const hasBucket = bucketSelection !== "none";
@@ -492,27 +492,34 @@ export function MixBucket({
 
   return (
     <div
-      className="w-full min-w-0 rounded-xl select-none"
+      className="w-full min-w-0 select-none"
       style={{
-        border: `1.5px solid ${BUCKET_CARD_BORDER}`,
         background: BUCKET_CARD_BG,
-        padding: "12px 16px",
+        padding: "8px 0",
         opacity: muted ? 0.88 : 1,
         transition: "opacity 0.2s ease",
       }}
       aria-label={ariaLabel}
     >
-      <div className="flex items-center justify-between gap-5 min-w-0">
-        <BucketSizeControl
-          bucketSelection={bucketSelection}
-          onBucketChange={onBucketChange}
-          fillLiters={fillLiters}
-          disabled={disabled}
-          muted={muted}
-        />
+      <div className="flex items-start justify-center gap-2 min-w-0">
+        <div
+          className="flex flex-col shrink-0 min-w-0 items-end"
+          style={{ gap: BUCKET_ROW_GAP }}
+        >
+          <span className="uppercase whitespace-nowrap" style={FIELD_LABEL_STYLE}>
+            {BUCKET_SIZE_LABEL}
+          </span>
+          <BucketSizeValue
+            bucketSelection={bucketSelection}
+            onBucketChange={onBucketChange}
+            fillLiters={fillLiters}
+            disabled={disabled}
+            muted={muted}
+          />
+        </div>
 
         <div
-          className="pointer-events-none shrink-0 transition-opacity duration-200"
+          className="pointer-events-none shrink-0 self-center transition-opacity duration-200"
           style={{ opacity: noBucket ? NO_BUCKET_OPACITY : 1 }}
         >
           <BucketSvg
@@ -524,13 +531,21 @@ export function MixBucket({
           />
         </div>
 
-        <FillReadout
-          hasBucket={hasBucket}
-          displayPercent={displayPercent}
-          bucketFull={bucketFull}
-          muted={muted}
-          faded={noBucket}
-        />
+        <div
+          className="flex flex-col shrink-0 items-start transition-opacity duration-200"
+          style={{ gap: BUCKET_ROW_GAP, opacity: noBucket ? NO_BUCKET_LABEL_OPACITY : 1 }}
+        >
+          <span className="uppercase whitespace-nowrap" style={FIELD_LABEL_STYLE}>
+            {FILL_LABEL}
+          </span>
+          <FillValue
+            hasBucket={hasBucket}
+            displayPercent={displayPercent}
+            bucketFull={bucketFull}
+            muted={muted}
+            flash={fillBlockedFlash}
+          />
+        </div>
       </div>
     </div>
   );
