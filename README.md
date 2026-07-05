@@ -18,14 +18,35 @@ npm install
 npm run dev
 ```
 
-Open the URL shown in the terminal (typically `http://localhost:5173`).
+Open `http://localhost:5173/mixmate/` after starting the dev server.
 
 ## Scripts
 
 | Command        | Description              |
 | -------------- | ------------------------ |
-| `npm run dev`  | Start development server |
+| `npm run dev`  | Start development server at `/mixmate/` |
 | `npm run build`| Production build to `dist/` |
+| `npm run preview` | Preview production build locally |
+
+## GitHub Pages
+
+The app is configured for a project repo named **`mixmate`**:
+
+- Vite `base` is `/mixmate/` (see `vite.config.ts`)
+- Live URL: `https://<username>.github.io/mixmate/`
+
+### One-time GitHub setup
+
+1. Create the repo as `mixmate` on GitHub.
+2. Push this project to the `main` branch.
+3. In the repo: **Settings → Pages → Build and deployment → Source**: choose **GitHub Actions**.
+
+Pushes to `main` run `.github/workflows/deploy.yml`, which builds and deploys `dist/`.
+
+### Local URLs
+
+- Dev: `http://localhost:5173/mixmate/`
+- Preview after build: `npm run build && npm run preview` → `http://localhost:4173/mixmate/`
 
 ## Project structure
 
@@ -40,7 +61,7 @@ src/
   styles/               # Global CSS and fonts
 ```
 
-## GitHub
+## Initial commit
 
 This repo is ready for an initial commit. `node_modules/` and `dist/` are ignored.
 
@@ -48,7 +69,7 @@ This repo is ready for an initial commit. `node_modules/` and `dist/` are ignore
 git add .
 git commit -m "Initial commit: mobile batch mixer UI"
 git branch -M main
-git remote add origin https://github.com/<user>/<repo>.git
+git remote add origin https://github.com/<user>/mixmate.git
 git push -u origin main
 ```
 
