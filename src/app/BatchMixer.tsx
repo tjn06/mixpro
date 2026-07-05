@@ -1,0 +1,1286 @@
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, forwardRef, type CSSProperties } from "react";
+import { LongPressButton } from "./components/LongPressButton";
+import { AppHeader } from "./components/AppHeader";
+import {
+  MixBucket,
+  DEFAULT_BUCKET_SELECTION,
+  type BucketSelection,
+} from "./components/MixBucket";
+import { reconcileBucketSelection, maxMixLitersForBucket, type BucketSize } from "./bucketTypes";
+import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues } from "./bucketLimits";
+import { estimateMixVolume, type SandType } from "./mixVolume";
+import { LongPressProgressProvider, LongPressHeaderBar } from "./components/LongPressProgressContext";
+import { saveBlendingMix } from "./mixStorage";
+import {
+  applyRecipeChange,
+  driverIdFromIndex,
+  getIngredientLabel,
+  getLockedRatioDisplay,
+  initialMixValues,
+} from "./recipe";
+import type { BlendingRecipe } from "./recipeTypes";
+
+// All values stored internally in grams — index order: TOTAL, A, B, TIX, SAND
+const PARAMS = [
+  { id: "TOTAL", color: "#34d399", glow: "#34d39944", isKg: true },
+  { id: "A",     color: "#a855f7", glow: "#a855f744", isKg: true },
+  { id: "B",     color: "#22d3ee", glow: "#22d3ee44", isKg: true },
+  { id: "TIX",   color: "#a3e635", glow: "#a3e63544", isKg: false },
+  { id: "SAND",  color: "#f97316", glow: "#f9731644", isKg: true },
+] as const;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUND BUTTONS + SVG CONNECTION LINES — currently disabled (thumb-reach layout)
+//
+// To re-enable the round-button selector row and animated card→button lines:
+//   1. Uncomment LINE_MEASUREMENT_LEGACY block below (state, refs, measureLines)
+//   2. Uncomment ROUND_BUTTONS_LEGACY JSX block (round selector buttons)
+//   3. Uncomment SVG_LINES_LEGACY JSX block
+//   4. Restore connection dots on cards (see INGREDIENT_CARDS section)
+//   5. Change default active back to `0` if TOTAL should be swipe-editable again
+//
+// Only restore if card-only selection is insufficient in real user testing.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// /* ROUND_BUTTONS_LEGACY */ Button order left → right above swipe zone
+// const BTN_ORDER = [0, 1, 2, 3, 4]; // TOTAL · A · B · TIX · SAND
+
+const ZONES = [
+  { step: 1000, label: "1000 g", weight: 36 },
+  { step: 100,  label: "100 g",  weight: 28 },
+  { step: 10,   label: "10 g",   weight: 20 },
+  { step: 1,    label: "1 g",    weight: 16 },
+] as const;
+
+const ZONE_WEIGHT_TOTAL = ZONES.reduce((sum, z) => sum + z.weight, 0);
+
+function zoneIndexFromX(xInArea: number, width: number): number {
+  const frac = xInArea / width;
+  let acc = 0;
+  for (let i = 0; i < ZONES.length; i++) {
+    acc += ZONES[i].weight / ZONE_WEIGHT_TOTAL;
+    if (frac < acc) return i;
+  }
+  return ZONES.length - 1;
+}
+
+const SWIPE_HEIGHT = 180;
+const SWIPE_STEPS_PER_DRAG = 10;
+const SWIPE_DRAG_MARGIN_PX = 24;
+const SWIPE_MAX_DY_PER_FRAME = 48;
+/** Idle swipe affordances — brighter so vertical drag reads before touch. */
+const SWIPE_ARROW_IDLE  = "#585878";
+const SWIPE_STEP_IDLE   = "#424260";
+const DRAG_OVERLAY_Z    = 4;
+const CARD_CONNECTOR_Z  = 3;
+const DRAG_FOCUS_Z      = 5;
+const DRAG_OVERLAY_HIDE_MS = 320;
+const LOCK_PANEL_Z      = 6;
+const LOCK_SHIELD_Z     = 5;
+const LOCK_EXPAND_MS    = 360;
+const LOCK_EASE         = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+const UNDO_MAX = 20;
+const BOTTOM_TOTAL_WIDTH = "48%";
+const BOTTOM_SUB_ROW_H = 38;
+const BOTTOM_ROW_GAP    = 8;
+const BOTTOM_ACTION_H   = BOTTOM_SUB_ROW_H * 2 + BOTTOM_ROW_GAP;
+const SWIPE_PAD_TOP     = 12;
+const BOTTOM_PAD_TOP    = 12;
+const BOTTOM_PAD_BOTTOM = 28;
+const SWIPE_INSET_X     = 16;
+const LOCK_TRANSITION   = `top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, left ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, width ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, height ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, bottom ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
+const LOCK_FADE_TRANSITION = `opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
+const LOCK_TEXT_TRANSITION = `font-size ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, margin-top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, width ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
+
+/** Inactive ingredient card — readable values, muted chrome. */
+const CARD_VALUE_INACTIVE = "#9a9ab4";
+const CARD_UNIT_INACTIVE  = "#787898";
+
+/** Opaque entity surfaces — kept subtle so white readouts stay crisp. */
+const ENTITY_SURFACE_IDLE = "#0d0d1c";
+const SWIPE_SURFACE_BASE  = "#09091a";
+const ENTITY_TINT_LIT_PCT = 8;
+const SWIPE_ZONE_ACTIVE_PCT = 3.5;
+const SWIPE_STRIPE_A_PCT = 2;
+const SWIPE_STRIPE_B_PCT = 0.8;
+
+function surfaceTint(color: string, pct: number, base: string): string {
+  return `color-mix(in srgb, ${color} ${pct}%, ${base})`;
+}
+
+function entitySurfaceLit(color: string): string {
+  return surfaceTint(color, ENTITY_TINT_LIT_PCT, ENTITY_SURFACE_IDLE);
+}
+
+function swipeZoneActive(color: string): string {
+  return surfaceTint(color, SWIPE_ZONE_ACTIVE_PCT, SWIPE_SURFACE_BASE);
+}
+
+function swipeZoneStripe(even: boolean): string {
+  return surfaceTint("#ffffff", even ? SWIPE_STRIPE_A_PCT : SWIPE_STRIPE_B_PCT, SWIPE_SURFACE_BASE);
+}
+
+/** Locked recipe ratio cards (read-only, above mix cards). */
+const RECIPE_ZONE_PT = 10;
+const RECIPE_RATIO_BG = "transparent";
+const RECIPE_RATIO_BORDER_COLOR = "rgba(255,255,255,0.14)";
+const RECIPE_META_CARD_H = 84;
+const RECIPE_CARD_H = 96;
+const RECIPE_META_GAP = 10;
+const RECIPE_CARD_PX = 6;
+const RECIPE_ID_SIZE = 12;
+const RECIPE_SUBLABEL_SIZE = 10;
+const RECIPE_META_VALUE_SIZE = 14;
+const RECIPE_RATIO_SIZE = 18;
+const RECIPE_UNIT_SIZE = 10;
+const RECIPE_COLON_SIZE = 14;
+const RECIPE_LABEL_GAP = 2;
+const RECIPE_ROW_GAP = 5;
+/** High-contrast readouts on dark recipe cards — not pure white. */
+const RECIPE_VALUE_COLOR = "#c4c4dc";
+const RECIPE_VALUE_COLOR_MUTED = "#9898b4";
+const RECIPE_ID_COLOR = "#8888a8";
+const RECIPE_ID_COLOR_MUTED = "#686878";
+const RECIPE_UNIT_COLOR = "#707088";
+const RECIPE_COLON_COLOR = "#484860";
+/** Matches mix-card row `gap-2` — colon slots use this width explicitly. */
+const CARD_ROW_GAP = 8;
+
+function RecipeRatioGapSeparator() {
+  return (
+    <div
+      aria-hidden
+      className="flex shrink-0 items-center justify-center pointer-events-none self-stretch"
+      style={{ width: CARD_ROW_GAP }}
+    >
+      <span
+        style={{
+          fontSize: RECIPE_COLON_SIZE,
+          color: RECIPE_COLON_COLOR,
+          lineHeight: 1,
+          fontWeight: 600,
+        }}
+      >
+        :
+      </span>
+    </div>
+  );
+}
+
+function RecipeRatioCard({
+  id,
+  sublabel,
+  value,
+  unit,
+  muted,
+}: {
+  id: string;
+  sublabel?: string;
+  value: string;
+  unit: string;
+  muted: boolean;
+}) {
+  return (
+    <div
+      aria-hidden
+      className="flex-1 min-w-0 rounded-xl flex flex-col items-center justify-between pointer-events-none"
+      style={{
+        height: RECIPE_CARD_H,
+        padding: `7px ${RECIPE_CARD_PX}px 6px`,
+        background: RECIPE_RATIO_BG,
+        border: `1.5px solid ${RECIPE_RATIO_BORDER_COLOR}`,
+      }}
+    >
+      <div
+        className="flex flex-col items-center max-w-full min-h-0"
+        style={{ gap: RECIPE_LABEL_GAP }}
+      >
+        <span
+          className="uppercase truncate max-w-full"
+          style={{
+            fontSize: RECIPE_ID_SIZE,
+            letterSpacing: "0.12em",
+            fontWeight: 700,
+            color: muted ? RECIPE_ID_COLOR_MUTED : RECIPE_ID_COLOR,
+            lineHeight: 1.1,
+          }}
+        >
+          {id}
+        </span>
+        {sublabel && (
+          <span
+            className="truncate max-w-full capitalize"
+            style={{
+              fontSize: RECIPE_SUBLABEL_SIZE,
+              letterSpacing: "0.02em",
+              fontWeight: 600,
+              color: muted ? RECIPE_UNIT_COLOR : RECIPE_ID_COLOR,
+              opacity: muted ? 0.75 : 0.9,
+              lineHeight: 1.1,
+            }}
+          >
+            {sublabel}
+          </span>
+        )}
+      </div>
+      <span
+        className="tabular-nums truncate max-w-full"
+        style={{
+          fontSize: RECIPE_RATIO_SIZE,
+          letterSpacing: "-0.02em",
+          fontWeight: 600,
+          color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
+          lineHeight: 1,
+          marginTop: RECIPE_ROW_GAP,
+        }}
+      >
+        {value}
+      </span>
+      <span
+        className="uppercase truncate max-w-full"
+        style={{
+          fontSize: RECIPE_UNIT_SIZE,
+          letterSpacing: unit.length > 1 ? "0.1em" : "0.05em",
+          fontWeight: 600,
+          color: RECIPE_UNIT_COLOR,
+          opacity: muted ? 0.7 : 1,
+          lineHeight: 1.1,
+          marginTop: RECIPE_LABEL_GAP,
+        }}
+      >
+        {unit}
+      </span>
+    </div>
+  );
+}
+
+function RecipeMetaCard({
+  label,
+  value,
+  valueLine2,
+  unit,
+  muted,
+  valueFontFamily,
+}: {
+  label: string;
+  value: string;
+  valueLine2?: string;
+  unit?: string;
+  muted: boolean;
+  valueFontFamily?: string;
+}) {
+  return (
+    <div
+      aria-hidden
+      className="flex-1 min-w-0 rounded-xl flex flex-col items-center justify-between pointer-events-none"
+      style={{
+        height: RECIPE_META_CARD_H,
+        padding: `7px ${RECIPE_CARD_PX}px 6px`,
+        background: RECIPE_RATIO_BG,
+        border: `1.5px solid ${RECIPE_RATIO_BORDER_COLOR}`,
+      }}
+    >
+      <span
+        className="uppercase truncate max-w-full"
+        style={{
+          fontSize: RECIPE_ID_SIZE,
+          letterSpacing: "0.12em",
+          fontWeight: 700,
+          color: muted ? RECIPE_ID_COLOR_MUTED : RECIPE_ID_COLOR,
+          lineHeight: 1.1,
+        }}
+      >
+        {label}
+      </span>
+      {valueLine2 ? (
+        <div
+          className="flex flex-col items-center max-w-full min-h-0"
+          style={{ gap: RECIPE_LABEL_GAP, marginTop: RECIPE_ROW_GAP }}
+        >
+          <span
+            className="truncate max-w-full text-center"
+            style={{
+              fontFamily: valueFontFamily,
+              fontSize: RECIPE_META_VALUE_SIZE,
+              letterSpacing: "0.04em",
+              fontWeight: 600,
+              color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
+              lineHeight: 1.15,
+            }}
+          >
+            {value}
+          </span>
+          <span
+            className="truncate max-w-full text-center"
+            style={{
+              fontFamily: valueFontFamily,
+              fontSize: RECIPE_META_VALUE_SIZE,
+              letterSpacing: "0.04em",
+              fontWeight: 600,
+              color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
+              lineHeight: 1.15,
+            }}
+          >
+            {valueLine2}
+          </span>
+        </div>
+      ) : (
+        <span
+          className="tabular-nums truncate max-w-full"
+          style={{
+            fontFamily: valueFontFamily,
+            fontSize: unit ? RECIPE_RATIO_SIZE : RECIPE_META_VALUE_SIZE,
+            letterSpacing: unit ? "-0.02em" : "0.04em",
+            fontWeight: 600,
+            color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
+            lineHeight: 1,
+            marginTop: RECIPE_ROW_GAP,
+          }}
+        >
+          {value}
+        </span>
+      )}
+      <span
+        className="uppercase truncate max-w-full"
+        style={{
+          fontSize: RECIPE_UNIT_SIZE,
+          letterSpacing: unit && unit.length > 1 ? "0.1em" : "0.05em",
+          fontWeight: 600,
+          color: RECIPE_UNIT_COLOR,
+          opacity: unit ? (muted ? 0.7 : 1) : 0,
+          lineHeight: 1.1,
+          marginTop: RECIPE_LABEL_GAP,
+          visibility: unit ? "visible" : "hidden",
+        }}
+      >
+        {unit ?? " "}
+      </span>
+    </div>
+  );
+}
+
+/** Shared label / value / unit sizes for all param cards. */
+const CARD_NAME_SIZE      = 12;
+const CARD_NAME_WEIGHT    = 700;
+const CARD_VALUE_SIZE     = 16;
+const CARD_UNIT_SIZE      = 12;
+const CARD_UNIT_WEIGHT    = 600;
+
+/** Subtle selected-state glow in the entity's theme color. */
+function entityCardShadow(color: string): string {
+  return `0 0 14px ${color}55, 0 0 6px ${color}40`;
+}
+
+/** Entity border — 1.5px always (no layout shift). */
+const ENTITY_BORDER_W = "1.5px";
+const ENTITY_BORDER_IDLE = "77";
+const ENTITY_BORDER_ACTIVE = "aa";
+/** Connector line between active card and swipe area. */
+const CONNECTOR_W = 2.5;
+
+function entityActiveRing(color: string): string {
+  return `0 0 0 0.5px ${color}${ENTITY_BORDER_ACTIVE}`;
+}
+
+function entityCardChrome(color: string, lit: boolean): { border: string; boxShadow: string } {
+  const border = `${ENTITY_BORDER_W} solid ${color}${lit ? ENTITY_BORDER_ACTIVE : ENTITY_BORDER_IDLE}`;
+  if (!lit) return { border, boxShadow: "none" };
+  return {
+    border,
+    // 0.5px ring + glow reads as ~2px active stroke without changing border-width
+    boxShadow: `${entityActiveRing(color)}, ${entityCardShadow(color)}`,
+  };
+}
+
+const CARD_CHROME_TRANSITION = "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease";
+
+type CardConnector = { x: number; y1: number; y2: number; color: string };
+
+function SwipeChevronStack({
+  direction,
+  active,
+  color,
+}: {
+  direction: "up" | "down";
+  active: boolean;
+  color: string;
+}) {
+  const fill = active ? color : SWIPE_ARROW_IDLE;
+  const path = direction === "up" ? "M4.5 0 L9 6 L0 6 Z" : "M4.5 6 L0 0 L9 0 Z";
+  const opacities =
+    direction === "up"
+      ? active ? [1, 0.72, 0.48] : [0.38, 0.28, 0.2]
+      : active ? [0.48, 0.72, 1] : [0.2, 0.28, 0.38];
+
+  return (
+    <div className="flex flex-col items-center gap-[2px] pointer-events-none">
+      {opacities.map((opacity, i) => (
+        <svg
+          key={i}
+          width="9"
+          height="6"
+          viewBox="0 0 9 6"
+          fill={fill}
+          style={{ opacity, transition: "opacity 0.15s ease, fill 0.15s ease" }}
+          aria-hidden
+        >
+          <path d={path} />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+function CardReadout({
+  name,
+  value,
+  unit,
+  nameColor,
+  valueColor,
+  unitColor,
+  centered = false,
+}: {
+  name: string;
+  value: string;
+  unit: string;
+  nameColor: string;
+  valueColor: string;
+  unitColor: string;
+  centered?: boolean;
+}) {
+  return (
+    <div className={`flex flex-col min-w-0 ${centered ? "items-center" : "items-start"}`}>
+      <span style={{
+        fontSize: CARD_NAME_SIZE,
+        letterSpacing: "0.18em",
+        color: nameColor,
+        fontWeight: CARD_NAME_WEIGHT,
+      }}>
+        {name}
+      </span>
+      <span className="tabular-nums" style={{
+        fontSize: CARD_VALUE_SIZE,
+        fontWeight: 600,
+        color: valueColor,
+        lineHeight: 1,
+        marginTop: 4,
+      }}>
+        {value}
+      </span>
+      <span style={{
+        fontSize: CARD_UNIT_SIZE,
+        color: unitColor,
+        letterSpacing: "0.08em",
+        fontWeight: CARD_UNIT_WEIGHT,
+        marginTop: 2,
+      }}>
+        {unit}
+      </span>
+    </div>
+  );
+}
+
+const DESIGN_W = 390;
+const DESIGN_H = 844;
+
+function fmt(grams: number, isKg: boolean) {
+  return isKg ? (grams / 1000).toFixed(3) : Math.round(grams).toString();
+}
+
+const TotalTile = forwardRef<HTMLButtonElement, {
+  valueKg: string;
+  color: string;
+  isActive: boolean;
+  expanded?: boolean;
+  onClick?: () => void;
+  className?: string;
+  style?: CSSProperties;
+}>(function TotalTile({
+  valueKg,
+  color,
+  isActive: cardLit,
+  expanded = false,
+  onClick,
+  className = "",
+  style,
+}, ref) {
+  const chrome = entityCardChrome(color, cardLit);
+  const tileStyle = {
+    border: chrome.border,
+    boxShadow: chrome.boxShadow,
+    background: cardLit ? entitySurfaceLit(color) : ENTITY_SURFACE_IDLE,
+    transition: `${CARD_CHROME_TRANSITION}, ${LOCK_TRANSITION}`,
+    ...style,
+  };
+  const nameColor = cardLit ? color : `${color}aa`;
+  const valueColor = cardLit ? "#ffffff" : CARD_VALUE_INACTIVE;
+  const barOpacity = cardLit ? 1 : 0.4;
+
+  if (expanded) {
+    return (
+      <button
+        type="button"
+        ref={ref}
+        onClick={onClick}
+        className={`flex flex-col items-center justify-center rounded-xl w-full h-full py-3.5 touch-none ${className}`}
+        style={tileStyle}
+      >
+        <div style={{
+          width: 32,
+          height: 4,
+          borderRadius: 2,
+          background: color,
+          opacity: barOpacity,
+          marginBottom: 12,
+          boxShadow: cardLit ? `0 0 6px ${color}` : "none",
+          transition: LOCK_TEXT_TRANSITION,
+        }} />
+        <span style={{
+          fontSize: CARD_NAME_SIZE + 1,
+          letterSpacing: "0.18em",
+          color: nameColor,
+          fontWeight: CARD_NAME_WEIGHT,
+          transition: LOCK_TEXT_TRANSITION,
+        }}>
+          TOTAL
+        </span>
+        <span className="tabular-nums" style={{
+          fontSize: 32,
+          fontWeight: 600,
+          color: valueColor,
+          lineHeight: 1,
+          marginTop: 8,
+          transition: LOCK_TEXT_TRANSITION,
+        }}>
+          {valueKg}
+        </span>
+        <span style={{
+          fontSize: CARD_UNIT_SIZE + 2,
+          color: CARD_UNIT_INACTIVE,
+          letterSpacing: "0.08em",
+          fontWeight: CARD_UNIT_WEIGHT,
+          marginTop: 4,
+          transition: LOCK_TEXT_TRANSITION,
+        }}>
+          kg
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      ref={ref}
+      onClick={onClick}
+      className={`flex items-stretch justify-start rounded-xl px-3 py-3 w-full h-full touch-none ${className}`}
+      style={tileStyle}
+    >
+      <div style={{
+        width: 3,
+        flexShrink: 0,
+        borderRadius: 2,
+        background: color,
+        opacity: barOpacity,
+        marginRight: 10,
+        boxShadow: cardLit ? `0 0 6px ${color}` : "none",
+        transition: CARD_CHROME_TRANSITION,
+      }} />
+      <div className="flex flex-1 flex-col items-start justify-center min-w-0">
+        <CardReadout
+          name="TOTAL"
+          value={valueKg}
+          unit="kg"
+          nameColor={nameColor}
+          valueColor={valueColor}
+          unitColor={CARD_UNIT_INACTIVE}
+        />
+      </div>
+    </button>
+  );
+});
+
+// /* LINE_MEASUREMENT_LEGACY */
+// interface Line { x1: number; y1: number; x2: number; y2: number }
+
+export interface BatchMixerProps {
+  recipe: BlendingRecipe;
+  /** Binder base (A + B) in grams for the initial mix. Default 1000 g. */
+  initialBinderSum?: number;
+  /** Initial bucket selection — 5, 10, 17 L or none. Default 17 L. */
+  initialBucketSelection?: BucketSelection;
+  /** Sand grain type for volume void correction. Default medium. */
+  sandType?: SandType;
+}
+
+export function BatchMixer({
+  recipe,
+  initialBinderSum = 1000,
+  initialBucketSelection = DEFAULT_BUCKET_SELECTION,
+  sandType = "medium",
+}: BatchMixerProps) {
+  const [values, setValues]         = useState<number[]>(() => initialMixValues(recipe, initialBinderSum));
+  const [bucketSelection, setBucketSelection] = useState<BucketSelection>(initialBucketSelection);
+  const [active, setActive]         = useState(0);
+  const [activeZone, setActiveZone] = useState<number | null>(null);
+  const [scale, setScale]           = useState(1);
+  const [canUndo, setCanUndo]       = useState(false);
+  const [saveFlash, setSaveFlash]   = useState(false);
+  const [dragFocus, setDragFocus]   = useState(false);
+  const [dragDirection, setDragDirection] = useState<"up" | "down" | null>(null);
+  const [isLocked, setIsLocked]     = useState(false);
+  const [connectorLine, setConnectorLine] = useState<CardConnector | null>(null);
+
+  // /* LINE_MEASUREMENT_LEGACY */
+  // const [lines, setLines] = useState<Line[]>([]);
+
+  const shellRef       = useRef<HTMLDivElement>(null);
+  const containerRef   = useRef<HTMLDivElement>(null);
+  const swipeAreaRef   = useRef<HTMLDivElement>(null);
+  const cardRefs       = useRef<(HTMLButtonElement | null)[]>([]);
+  const totalTileRef   = useRef<HTMLButtonElement>(null);
+  const scaleRef       = useRef(1);
+  const recipeRef      = useRef(recipe);
+  recipeRef.current    = recipe;
+  const bucketSelectionRef = useRef(bucketSelection);
+  bucketSelectionRef.current = bucketSelection;
+
+  const isDragging     = useRef(false);
+  const dragStartY     = useRef(0);
+  const dragLastY      = useRef(0);
+  const dragBaseVal    = useRef(0);
+  const dragStepSize   = useRef(1);
+  const dragUndoSaved  = useRef(false);
+  const undoStack      = useRef<number[][]>([]);
+  const valuesRef      = useRef(values);
+  const rafPending     = useRef(false);
+  const pendingValues  = useRef<number[] | null>(null);
+  const dragOverlayHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  valuesRef.current    = values;
+
+  const totalParam = PARAMS[0];
+  const isTotalAct = active === 0;
+  const recipeDisplayName = recipe.name?.trim() || recipe.id;
+  const recipeDisplaySubline = recipe.nameSubline?.trim();
+  const recommendedTotalKg = useMemo(
+    () => fmt(initialMixValues(recipe, initialBinderSum)[0], true),
+    [recipe, initialBinderSum],
+  );
+
+  const mixVolume = useMemo(
+    () =>
+      estimateMixVolume({
+        epoxyGrams: values[1] + values[2] + values[3],
+        sandGrams: values[4],
+        sandType,
+      }),
+    [values, sandType],
+  );
+
+  useEffect(() => {
+    setBucketSelection((prev) =>
+      reconcileBucketSelection(prev, mixVolume.estimatedLiters),
+    );
+  }, [mixVolume.estimatedLiters]);
+
+  useEffect(() => {
+    if (bucketSelection === "none") return;
+    const maxLiters = maxMixLitersForBucket(bucketSelection);
+    if (mixVolume.estimatedLiters <= maxLiters + 1e-6) return;
+    setValues((current) =>
+      clampMixValuesToBucketMax(current, recipeRef.current, bucketSelection, sandType),
+    );
+  }, [mixVolume.estimatedLiters, bucketSelection, sandType]);
+
+  const commitValues = useCallback((next: number[]) => {
+    pendingValues.current = next;
+    if (rafPending.current) return;
+    rafPending.current = true;
+    requestAnimationFrame(() => {
+      rafPending.current = false;
+      if (pendingValues.current) setValues(pendingValues.current);
+    });
+  }, []);
+
+  const flushValues = useCallback(() => {
+    if (pendingValues.current) {
+      setValues(pendingValues.current);
+      pendingValues.current = null;
+    }
+    rafPending.current = false;
+  }, []);
+
+  const pushUndo = useCallback(() => {
+    undoStack.current = [...undoStack.current.slice(-(UNDO_MAX - 1)), [...valuesRef.current]];
+    setCanUndo(true);
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    const stack = undoStack.current;
+    if (stack.length === 0) return;
+    const prev = stack.pop()!;
+    setValues(prev);
+    setCanUndo(stack.length > 0);
+  }, []);
+
+  const handleSave = useCallback(() => {
+    saveBlendingMix(valuesRef.current);
+    setSaveFlash(true);
+    setTimeout(() => setSaveFlash(false), 1500);
+  }, []);
+
+  const scaleMix = useCallback((factor: number) => {
+    pushUndo();
+    const current = valuesRef.current;
+    const total = current[0];
+    let next = applyRecipeChange(recipeRef.current, "TOTAL", Math.round(total * factor));
+    next = enforceBucketLimitOnChange(
+      next,
+      current,
+      recipeRef.current,
+      bucketSelectionRef.current,
+      sandType,
+    );
+    setValues(next);
+  }, [pushUndo, sandType]);
+
+  const updateScale = useCallback(() => {
+    const el = shellRef.current;
+    if (!el) return;
+    const { clientWidth, clientHeight } = el;
+    const s = Math.min(1, clientWidth / DESIGN_W, clientHeight / DESIGN_H);
+    scaleRef.current = s;
+    setScale(s);
+  }, []);
+
+  useEffect(() => {
+    updateScale();
+    const ro = new ResizeObserver(updateScale);
+    if (shellRef.current) ro.observe(shellRef.current);
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", updateScale);
+    vv?.addEventListener("scroll", updateScale);
+    return () => {
+      ro.disconnect();
+      vv?.removeEventListener("resize", updateScale);
+      vv?.removeEventListener("scroll", updateScale);
+    };
+  }, [updateScale]);
+
+  const measureCardConnector = useCallback(() => {
+    if (isLocked) {
+      setConnectorLine(null);
+      return;
+    }
+    const root = containerRef.current;
+    const swipeEl = swipeAreaRef.current;
+    if (!root || !swipeEl) {
+      setConnectorLine(null);
+      return;
+    }
+    const s = scaleRef.current;
+    const rootR = root.getBoundingClientRect();
+    const swipeR = swipeEl.getBoundingClientRect();
+
+    if (active === 0) {
+      const totalEl = totalTileRef.current;
+      if (!totalEl) {
+        setConnectorLine(null);
+        return;
+      }
+      const totalR = totalEl.getBoundingClientRect();
+      const x = (totalR.left + totalR.width / 2 - rootR.left) / s;
+      const y1 = (swipeR.bottom - rootR.top) / s;
+      const y2 = (totalR.top - rootR.top) / s;
+      if (y2 <= y1) {
+        setConnectorLine(null);
+        return;
+      }
+      setConnectorLine({ x, y1, y2, color: PARAMS[0].color });
+      return;
+    }
+
+    const cardEl = cardRefs.current[active];
+    if (!cardEl) {
+      setConnectorLine(null);
+      return;
+    }
+    const cardR = cardEl.getBoundingClientRect();
+    const x = (cardR.left + cardR.width / 2 - rootR.left) / s;
+    const y1 = (cardR.bottom - rootR.top) / s;
+    const y2 = (swipeR.top - rootR.top) / s;
+    if (y2 <= y1) {
+      setConnectorLine(null);
+      return;
+    }
+    setConnectorLine({ x, y1, y2, color: PARAMS[active].color });
+  }, [active, isLocked]);
+
+  useLayoutEffect(() => {
+    measureCardConnector();
+  }, [measureCardConnector, scale, values]);
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const ro = new ResizeObserver(() => measureCardConnector());
+    ro.observe(root);
+    return () => ro.disconnect();
+  }, [measureCardConnector]);
+
+  const clearDragOverlayHide = useCallback(() => {
+    if (dragOverlayHideTimer.current !== null) {
+      window.clearTimeout(dragOverlayHideTimer.current);
+      dragOverlayHideTimer.current = null;
+    }
+  }, []);
+
+  const showDragOverlay = useCallback(() => {
+    clearDragOverlayHide();
+    setDragFocus(true);
+  }, [clearDragOverlayHide]);
+
+  const scheduleHideDragOverlay = useCallback(() => {
+    clearDragOverlayHide();
+    dragOverlayHideTimer.current = window.setTimeout(() => {
+      dragOverlayHideTimer.current = null;
+      setDragFocus(false);
+    }, DRAG_OVERLAY_HIDE_MS);
+  }, [clearDragOverlayHide]);
+
+  useEffect(() => () => clearDragOverlayHide(), [clearDragOverlayHide]);
+
+  useEffect(() => {
+    if (!isLocked) return;
+    clearDragOverlayHide();
+    setDragFocus(false);
+    if (isDragging.current) {
+      isDragging.current = false;
+      dragUndoSaved.current = false;
+      setActiveZone(null);
+      setDragDirection(null);
+      flushValues();
+    }
+  }, [isLocked, clearDragOverlayHide, flushValues]);
+
+  const toggleLock = useCallback(() => {
+    setIsLocked((prev) => !prev);
+  }, []);
+
+  const handleBack = useCallback(() => {
+    window.history.back();
+  }, []);
+
+  const endSwipe = useCallback((e?: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    if (e && swipeAreaRef.current?.hasPointerCapture(e.pointerId)) {
+      swipeAreaRef.current.releasePointerCapture(e.pointerId);
+    }
+    isDragging.current = false;
+    dragUndoSaved.current = false;
+    setActiveZone(null);
+    setDragDirection(null);
+    scheduleHideDragOverlay();
+    flushValues();
+  }, [flushValues, scheduleHideDragOverlay]);
+
+  const onSwipeDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (isLocked) return;
+    if (e.button !== 0) return;
+    const el = swipeAreaRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const zi = zoneIndexFromX(e.clientX - rect.left, rect.width);
+
+    if (!dragUndoSaved.current) {
+      pushUndo();
+      dragUndoSaved.current = true;
+    }
+    isDragging.current = true;
+    showDragOverlay();
+    setActiveZone(zi);
+    setDragDirection(null);
+    dragStartY.current = e.clientY;
+    dragLastY.current  = e.clientY;
+    dragBaseVal.current  = values[active];
+    dragStepSize.current = ZONES[zi].step;
+    el.setPointerCapture(e.pointerId);
+  }, [values, active, pushUndo, showDragOverlay, isLocked]);
+
+  const onSwipeMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    const el = swipeAreaRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    if (
+      e.clientY < rect.top - SWIPE_DRAG_MARGIN_PX ||
+      e.clientY > rect.bottom + SWIPE_DRAG_MARGIN_PX
+    ) {
+      return;
+    }
+
+    let clientY = e.clientY;
+    const frameDy = clientY - dragLastY.current;
+    if (Math.abs(frameDy) > SWIPE_MAX_DY_PER_FRAME) {
+      clientY = dragLastY.current + Math.sign(frameDy) * SWIPE_MAX_DY_PER_FRAME;
+    }
+    dragLastY.current = clientY;
+
+    if (frameDy < 0) setDragDirection("up");
+    else if (frameDy > 0) setDragDirection("down");
+
+    const step      = dragStepSize.current;
+    const dy        = dragStartY.current - clientY;
+    const pxPerStep = (SWIPE_HEIGHT * scaleRef.current) / SWIPE_STEPS_PER_DRAG;
+    const raw       = dragBaseVal.current + (dy / pxPerStep) * step;
+    const snapped   = Math.round(raw / step) * step;
+    const driver    = driverIdFromIndex(active);
+    let next        = applyRecipeChange(recipeRef.current, driver, snapped);
+    const bucket    = bucketSelectionRef.current;
+    next = enforceBucketLimitOnChange(
+      next,
+      valuesRef.current,
+      recipeRef.current,
+      bucket,
+      sandType,
+    );
+    if (bucket !== "none") {
+      const maxLiters = maxMixLitersForBucket(bucket as BucketSize);
+      const nextLiters = mixLitersFromValues(next, sandType);
+      if (nextLiters >= maxLiters - 1e-6 && snapped > dragBaseVal.current) {
+        dragBaseVal.current = next[active];
+        dragStartY.current = clientY;
+      }
+    }
+    commitValues(next);
+  }, [active, commitValues, sandType]);
+
+  const onSwipeEnd = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    endSwipe(e);
+  }, [endSwipe]);
+
+  const activeParam = PARAMS[active];
+  const col  = activeParam.color;
+
+  return (
+    <div ref={shellRef} className="mobile-shell">
+      <div
+        className="mobile-shell__slot"
+        style={{ width: DESIGN_W * scale, height: DESIGN_H * scale }}
+      >
+        <LongPressProgressProvider>
+        <div
+          ref={containerRef}
+          className="relative flex flex-col overflow-hidden select-none"
+          style={{
+            width: DESIGN_W,
+            height: DESIGN_H,
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+            background: "#07070f",
+            fontFamily: "'DM Mono', monospace",
+          }}
+        >
+
+      {connectorLine && (
+        <div
+          aria-hidden
+          className="pointer-events-none"
+          style={{
+            position: "absolute",
+            left: connectorLine.x - CONNECTOR_W / 2,
+            top: connectorLine.y1,
+            width: CONNECTOR_W,
+            height: connectorLine.y2 - connectorLine.y1,
+            background: `${connectorLine.color}${ENTITY_BORDER_ACTIVE}`,
+            zIndex: dragFocus && !isLocked ? DRAG_FOCUS_Z : CARD_CONNECTOR_Z,
+            transition: "top 0.2s ease, left 0.2s ease, height 0.2s ease, background-color 0.2s ease, z-index 0s",
+          }}
+        />
+      )}
+
+      {/* ── App header ─────────────────────────────────────────────────────── */}
+      <AppHeader isLocked={isLocked} onBack={handleBack} onToggleLock={toggleLock} />
+      <LongPressHeaderBar />
+
+      {/* ── Recipe ratio cards (high) + mix cards (just above swipe) ─────────── */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        <div className="shrink-0 px-4 pointer-events-none" style={{ paddingTop: RECIPE_ZONE_PT }}>
+          <div className="flex" style={{ gap: CARD_ROW_GAP, marginBottom: RECIPE_META_GAP }}>
+            <RecipeMetaCard
+              label="RECIPE"
+              value={recipeDisplayName}
+              valueLine2={recipeDisplaySubline}
+              muted={isLocked}
+              valueFontFamily="'Outfit', sans-serif"
+            />
+            <RecipeMetaCard
+              label="REC. TOTAL"
+              value={recommendedTotalKg}
+              unit="kg"
+              muted={isLocked}
+            />
+          </div>
+          <div className="flex items-stretch">
+            {[1, 2, 4, 3].map((pi, i) => {
+              const p = PARAMS[pi];
+              const { value, unit } = getLockedRatioDisplay(recipe, p.id);
+              return (
+                <React.Fragment key={`recipe-${p.id}`}>
+                  {i > 0 && <RecipeRatioGapSeparator />}
+                  <RecipeRatioCard
+                    id={p.id}
+                    sublabel={getIngredientLabel(recipe, p.id)}
+                    value={value}
+                    unit={unit}
+                    muted={isLocked}
+                  />
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+
+        <div
+          className="flex-1 min-h-0 flex items-center justify-center px-4"
+          style={{ pointerEvents: isLocked ? "none" : "auto" }}
+        >
+          <MixBucket
+            epoxyGrams={values[1] + values[2] + values[3]}
+            sandGrams={values[4]}
+            bucketSelection={bucketSelection}
+            onBucketChange={setBucketSelection}
+            sandType={sandType}
+            muted={isLocked}
+            disabled={isLocked}
+          />
+        </div>
+
+        <div className="shrink-0 px-4 pt-2" style={{ pointerEvents: isLocked ? "none" : "auto" }}>
+          <div className="flex" style={{ gap: CARD_ROW_GAP }}>
+            {[1, 2, 4, 3].map((pi) => {
+              const p       = PARAMS[pi];
+              const isAct   = active === pi;
+              const cardLit = isLocked || isAct;
+              const chrome  = entityCardChrome(p.color, cardLit);
+              return (
+                <button
+                  key={p.id}
+                  ref={(el) => { cardRefs.current[pi] = el; }}
+                  onClick={() => setActive(pi)}
+                  className="flex-1 flex flex-col items-center rounded-xl py-3 relative"
+                  style={{
+                    background: cardLit ? entitySurfaceLit(p.color) : ENTITY_SURFACE_IDLE,
+                    border: chrome.border,
+                    boxShadow: chrome.boxShadow,
+                    transition: CARD_CHROME_TRANSITION,
+                    ...(dragFocus && isAct && !isLocked ? { position: "relative" as const, zIndex: DRAG_FOCUS_Z } : {}),
+                  }}
+                >
+                  <div style={{
+                    width: 22,
+                    height: 3,
+                    borderRadius: 2,
+                    background: p.color,
+                    opacity: cardLit ? 1 : 0.4,
+                    marginBottom: 6,
+                    boxShadow: cardLit ? `0 0 6px ${p.color}` : "none",
+                  }} />
+                  <CardReadout
+                    name={p.id}
+                    value={fmt(values[pi], p.isKg)}
+                    unit={p.isKg ? "kg" : "g"}
+                    centered
+                    nameColor={cardLit ? p.color : `${p.color}aa`}
+                    valueColor={cardLit ? "#ffffff" : CARD_VALUE_INACTIVE}
+                    unitColor={CARD_UNIT_INACTIVE}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Control deck: swipe + bottom (floating TOTAL / SAVE animate here) ─ */}
+      <div className="relative shrink-0">
+
+      {/* ── Swipe area ─────────────────────────────────────────────────────── */}
+      <div
+        className="shrink-0 px-4 pt-3"
+        style={{
+          zIndex: dragFocus && !isLocked ? DRAG_FOCUS_Z : 2,
+          position: "relative",
+          opacity: isLocked ? 0 : 1,
+          transition: LOCK_FADE_TRANSITION,
+          pointerEvents: isLocked ? "none" : "auto",
+        }}
+      >
+        <div
+          ref={swipeAreaRef}
+          className="relative flex rounded-xl overflow-hidden touch-none cursor-ns-resize"
+          style={{
+            height: SWIPE_HEIGHT,
+            border: `${ENTITY_BORDER_W} solid ${col}${ENTITY_BORDER_ACTIVE}`,
+            boxShadow: dragFocus && !isLocked
+              ? `${entityActiveRing(col)}, ${entityCardShadow(col)}`
+              : entityActiveRing(col),
+            background: SWIPE_SURFACE_BASE,
+            transition: CARD_CHROME_TRANSITION,
+          }}
+          onPointerDown={onSwipeDown}
+          onPointerMove={onSwipeMove}
+          onPointerUp={onSwipeEnd}
+          onPointerCancel={onSwipeEnd}
+          onLostPointerCapture={onSwipeEnd}
+        >
+          {ZONES.map((zone, zi) => {
+            const isColAct = activeZone === zi;
+            const upActive = isColAct && dragDirection === "up";
+            const downActive = isColAct && dragDirection === "down";
+            return (
+              <div
+                key={zi}
+                className="relative flex flex-col items-center justify-between transition-all duration-150 pointer-events-none"
+                style={{
+                  flex: zone.weight,
+                  zIndex: 1,
+                  background: isColAct ? swipeZoneActive(col) : swipeZoneStripe(zi % 2 === 0),
+                  borderRight: zi < ZONES.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                  padding: "10px 4px",
+                }}
+              >
+                <SwipeChevronStack direction="up" active={upActive} color={col} />
+
+                <span style={{
+                  fontSize: isColAct ? 14 : 13, fontWeight: 500,
+                  color: isColAct ? col : SWIPE_STEP_IDLE,
+                  lineHeight: 1, transition: "all 0.15s",
+                }} className="pointer-events-none">
+                  {zone.label}
+                </span>
+
+                <SwipeChevronStack direction="down" active={downActive} color={col} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Bottom layout spacer + secondary actions ──────────────────────── */}
+      <div className="relative shrink-0 px-4 pt-3 pb-7">
+        <div
+          className="flex gap-2 items-stretch"
+          style={{ pointerEvents: isLocked ? "none" : "auto" }}
+        >
+          <div style={{ flex: `0 0 ${BOTTOM_TOTAL_WIDTH}`, height: BOTTOM_ACTION_H }} aria-hidden />
+          <div className="flex flex-1 flex-col gap-2 min-w-0 justify-center">
+            <div className="flex gap-2" style={{ height: BOTTOM_SUB_ROW_H }}>
+              <div className="flex-1 min-w-0">
+                {!isLocked && (
+                  <LongPressButton
+                    label={saveFlash ? "SAVED" : "SAVE"}
+                    confirmAction="SAVE MIX"
+                    onLongPress={handleSave}
+                    variant="primary"
+                    className="w-full h-full"
+                  />
+                )}
+              </div>
+              <LongPressButton
+                label="UNDO"
+                confirmAction="UNDO"
+                onLongPress={handleUndo}
+                disabled={!canUndo}
+                className="flex-1 h-full"
+              />
+            </div>
+            <div className="flex gap-2" style={{ height: BOTTOM_SUB_ROW_H }}>
+              <LongPressButton label="÷2" confirmAction="HALVE MIX" onLongPress={() => scaleMix(0.5)} className="flex-1 h-full" labelSize={14} compact />
+              <LongPressButton label="×2" confirmAction="DOUBLE MIX" onLongPress={() => scaleMix(2)} className="flex-1 h-full" labelSize={14} compact />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <TotalTile
+        ref={totalTileRef}
+        color={totalParam.color}
+        valueKg={fmt(values[0], totalParam.isKg)}
+        isActive={isTotalAct || isLocked}
+        expanded={isLocked}
+        onClick={isLocked ? undefined : () => setActive(0)}
+        className="absolute"
+        style={{
+          position: "absolute",
+          zIndex: dragFocus && !isLocked && isTotalAct ? DRAG_FOCUS_Z : dragFocus && !isLocked ? 2 : LOCK_PANEL_Z,
+          transition: LOCK_TRANSITION,
+          pointerEvents: isLocked || dragFocus ? "none" : "auto",
+          ...(isLocked ? {
+            top: SWIPE_PAD_TOP,
+            left: SWIPE_INSET_X,
+            width: `calc(100% - ${SWIPE_INSET_X * 2}px)`,
+            height: SWIPE_HEIGHT,
+          } : {
+            top: SWIPE_PAD_TOP + SWIPE_HEIGHT + BOTTOM_PAD_TOP,
+            left: SWIPE_INSET_X,
+            width: `calc((100% - ${SWIPE_INSET_X * 2}px - ${BOTTOM_ROW_GAP}px) * 0.48)`,
+            height: BOTTOM_ACTION_H,
+          }),
+        }}
+      />
+
+      {isLocked && (
+        <div
+          className="absolute"
+          style={{
+            zIndex: LOCK_PANEL_Z,
+            transition: LOCK_TRANSITION,
+            pointerEvents: "auto",
+            top: SWIPE_PAD_TOP + SWIPE_HEIGHT + BOTTOM_PAD_TOP,
+            left: SWIPE_INSET_X,
+            width: `calc(100% - ${SWIPE_INSET_X * 2}px)`,
+            height: BOTTOM_ACTION_H,
+          }}
+        >
+          <LongPressButton
+            label={saveFlash ? "SAVED" : "SAVE"}
+            confirmAction="SAVE MIX"
+            onLongPress={handleSave}
+            variant="primary"
+            className="w-full h-full"
+          />
+        </div>
+      )}
+
+      {isLocked && (
+        <div
+          className="absolute inset-0"
+          style={{ zIndex: LOCK_SHIELD_Z, pointerEvents: "auto" }}
+          aria-hidden
+        />
+      )}
+
+      </div>
+
+      {dragFocus && !isLocked && (
+        <div
+          className="absolute inset-0"
+          style={{
+            zIndex: DRAG_OVERLAY_Z,
+            background: `color-mix(in srgb, ${col} 10%, rgba(5, 5, 16, 0.68) 90%)`,
+            pointerEvents: "auto",
+            transition: "opacity 0.15s ease",
+          }}
+          aria-hidden
+        />
+      )}
+
+        </div>
+        </LongPressProgressProvider>
+      </div>
+    </div>
+  );
+}
