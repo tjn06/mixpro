@@ -12,14 +12,48 @@ function part(recipe: BlendingRecipe, id: string): number {
   return entry.parts;
 }
 
-function pct(recipe: BlendingRecipe, id: string): number {
-  const entry = recipe.binderPercents.find((p) => p.id === id);
-  if (!entry) throw new Error(`Recipe missing binder percent: ${id}`);
-  return entry.percent;
+function pctOptional(recipe: BlendingRecipe, id: string): number {
+  return recipe.binderPercents.find((p) => p.id === id)?.percent ?? 0;
 }
 
 function totalParts(recipe: BlendingRecipe): number {
   return recipe.binderParts.reduce((sum, p) => sum + p.parts, 0);
+}
+
+/** Whether the recipe defines this mix ingredient (A/B part or percent additive). */
+export function recipeHasIngredient(recipe: BlendingRecipe, id: string): boolean {
+  return (
+    recipe.binderParts.some((p) => p.id === id) ||
+    recipe.binderPercents.some((p) => p.id === id)
+  );
+}
+
+/** Param indexes for editable ingredient cards — excludes TOTAL, preserves recipe order. */
+export function recipeIngredientIndexes(recipe: BlendingRecipe): number[] {
+  const indexes: number[] = [];
+  for (const p of recipe.binderParts) {
+    const idx = MIX_VALUE_ORDER.indexOf(p.id as MixDriverId);
+    if (idx > 0) indexes.push(idx);
+  }
+  for (const p of recipe.binderPercents) {
+    const idx = MIX_VALUE_ORDER.indexOf(p.id as MixDriverId);
+    if (idx > 0 && !indexes.includes(idx)) indexes.push(idx);
+  }
+  return indexes;
+}
+
+/** Liquid epoxy grams (A + B + optional TIX) for volume / bucket math. */
+export function mixEpoxyGrams(recipe: BlendingRecipe, values: number[]): number {
+  let sum = 0;
+  if (recipeHasIngredient(recipe, "A")) sum += values[1];
+  if (recipeHasIngredient(recipe, "B")) sum += values[2];
+  if (recipeHasIngredient(recipe, "TIX")) sum += values[3];
+  return sum;
+}
+
+/** Sand grams when the recipe includes SAND. */
+export function mixSandGrams(recipe: BlendingRecipe, values: number[]): number {
+  return recipeHasIngredient(recipe, "SAND") ? values[4] : 0;
 }
 
 /** 1 + sum(percent/100) — multiplier from binder sum to total weight. */
@@ -29,11 +63,18 @@ export function binderToTotalMultiplier(recipe: BlendingRecipe): number {
 
 function deriveFromBinderSum(recipe: BlendingRecipe, binderSum: number) {
   const tp = totalParts(recipe);
+  const gramsById: Record<string, number> = {};
+  for (const p of recipe.binderParts) {
+    gramsById[p.id] = binderSum * (p.parts / tp);
+  }
+  for (const p of recipe.binderPercents) {
+    gramsById[p.id] = binderSum * (p.percent / 100);
+  }
   return {
-    a: binderSum * (part(recipe, "A") / tp),
-    b: binderSum * (part(recipe, "B") / tp),
-    sand: binderSum * (pct(recipe, "SAND") / 100),
-    tix: binderSum * (pct(recipe, "TIX") / 100),
+    a: gramsById.A ?? 0,
+    b: gramsById.B ?? 0,
+    sand: gramsById.SAND ?? 0,
+    tix: gramsById.TIX ?? 0,
   };
 }
 
@@ -46,10 +87,16 @@ function binderSumFromDriver(recipe: BlendingRecipe, driver: MixDriverId, grams:
       return grams * (1 + bParts / aParts);
     case "B":
       return grams * (1 + aParts / bParts);
-    case "SAND":
-      return grams / (pct(recipe, "SAND") / 100);
-    case "TIX":
-      return grams / (pct(recipe, "TIX") / 100);
+    case "SAND": {
+      const sandPct = pctOptional(recipe, "SAND");
+      if (sandPct <= 0) return grams;
+      return grams / (sandPct / 100);
+    }
+    case "TIX": {
+      const tixPct = pctOptional(recipe, "TIX");
+      if (tixPct <= 0) return grams;
+      return grams / (tixPct / 100);
+    }
     case "TOTAL":
       return grams / binderToTotalMultiplier(recipe);
   }
@@ -57,7 +104,7 @@ function binderSumFromDriver(recipe: BlendingRecipe, driver: MixDriverId, grams:
 
 /**
  * Recalculate all mix weights from one driver value while keeping recipe ratios locked.
- * Returns [TOTAL, A, B, TIX, SAND] in grams.
+ * Returns [TOTAL, A, B, TIX, SAND] in grams — absent ingredients are 0.
  */
 export function applyRecipeChange(
   recipe: BlendingRecipe,
@@ -72,6 +119,9 @@ export function applyRecipeChange(
   let b = raw.b;
   let sand = raw.sand;
   let tix = raw.tix;
+
+  if (!recipeHasIngredient(recipe, "SAND")) sand = 0;
+  if (!recipeHasIngredient(recipe, "TIX")) tix = 0;
 
   switch (driver) {
     case "A":
@@ -115,6 +165,11 @@ export function initialMixValues(recipe: BlendingRecipe, binderSum = 1000): numb
   return applyRecipeChange(recipe, "A", deriveFromBinderSum(recipe, binderSum).a);
 }
 
+/** Binder reference for a recipe — uses recipe.initialBinderSum when set. */
+export function recipeBinderSum(recipe: BlendingRecipe, defaultBinderSum = 1000): number {
+  return recipe.initialBinderSum ?? defaultBinderSum;
+}
+
 export function driverIdFromIndex(index: number): MixDriverId {
   return MIX_VALUE_ORDER[index] ?? "TOTAL";
 }
@@ -123,7 +178,7 @@ export function driverIdFromIndex(index: number): MixDriverId {
 export function formatRecipeLine(recipe: BlendingRecipe): string {
   const parts = recipe.binderParts.map((p) => `${p.id}:${p.parts}`).join("  ·  ");
   const percents = recipe.binderPercents.map((p) => `${p.id}:${p.percent}%`).join("  ·  ");
-  return `${parts}  ·  ${percents}`;
+  return percents ? `${parts}  ·  ${percents}` : parts;
 }
 
 /** Short locked-ratio label for an ingredient card back strip (e.g. `2p`, `555%`). */
@@ -135,15 +190,21 @@ export function formatLockedRatioLabel(recipe: BlendingRecipe, id: string): stri
   return "";
 }
 
+function formatRatioNumber(n: number): string {
+  if (Number.isInteger(n)) return String(n);
+  const s = n.toFixed(2);
+  return s.replace(/\.?0+$/, "");
+}
+
 /** Structured ratio for recipe ratio cards — value + unit on separate rows. */
 export function getLockedRatioDisplay(
   recipe: BlendingRecipe,
   id: string,
 ): { value: string; unit: string } {
   const partEntry = recipe.binderParts.find((p) => p.id === id);
-  if (partEntry) return { value: String(partEntry.parts), unit: "PARTS" };
+  if (partEntry) return { value: formatRatioNumber(partEntry.parts), unit: "PARTS" };
   const pctEntry = recipe.binderPercents.find((p) => p.id === id);
-  if (pctEntry) return { value: String(pctEntry.percent), unit: "%" };
+  if (pctEntry) return { value: formatRatioNumber(pctEntry.percent), unit: "%" };
   return { value: "", unit: "" };
 }
 

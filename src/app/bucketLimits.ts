@@ -4,12 +4,16 @@ import {
   type BucketSize,
 } from "./bucketTypes";
 import { estimateMixVolume, type SandType } from "./mixVolume";
-import { applyRecipeChange, type BlendingRecipe } from "./recipe";
+import { applyRecipeChange, mixEpoxyGrams, mixSandGrams, type BlendingRecipe } from "./recipe";
 
-export function mixLitersFromValues(values: number[], sandType: SandType): number {
+export function mixLitersFromValues(
+  values: number[],
+  sandType: SandType,
+  recipe: BlendingRecipe,
+): number {
   return estimateMixVolume({
-    epoxyGrams: values[1] + values[2] + values[3],
-    sandGrams: values[4],
+    epoxyGrams: mixEpoxyGrams(recipe, values),
+    sandGrams: mixSandGrams(recipe, values),
     sandType,
   }).estimatedLiters;
 }
@@ -24,7 +28,7 @@ export function clampMixValuesToBucketMax(
   if (bucket === "none") return values;
 
   const maxLiters = maxMixLitersForBucket(bucket as BucketSize);
-  const liters = mixLitersFromValues(values, sandType);
+  const liters = mixLitersFromValues(values, sandType, recipe);
   if (liters <= maxLiters || liters <= 0 || values[0] <= 0) return values;
 
   let lo = 0;
@@ -34,7 +38,7 @@ export function clampMixValuesToBucketMax(
   while (lo <= hi) {
     const mid = Math.floor((lo + hi) / 2);
     const candidate = applyRecipeChange(recipe, "TOTAL", mid);
-    if (mixLitersFromValues(candidate, sandType) <= maxLiters + 1e-9) {
+    if (mixLitersFromValues(candidate, sandType, recipe) <= maxLiters + 1e-9) {
       best = candidate;
       lo = mid + 1;
     } else {
@@ -56,10 +60,10 @@ export function enforceBucketLimitOnChange(
   if (bucket === "none") return next;
 
   const maxLiters = maxMixLitersForBucket(bucket as BucketSize);
-  const nextLiters = mixLitersFromValues(next, sandType);
+  const nextLiters = mixLitersFromValues(next, sandType, recipe);
   if (nextLiters <= maxLiters) return next;
 
-  const curLiters = mixLitersFromValues(current, sandType);
+  const curLiters = mixLitersFromValues(current, sandType, recipe);
   if (nextLiters > curLiters) {
     return clampMixValuesToBucketMax(next, recipe, bucket, sandType);
   }

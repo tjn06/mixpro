@@ -17,6 +17,10 @@ import {
   getIngredientLabel,
   getLockedRatioDisplay,
   initialMixValues,
+  mixEpoxyGrams,
+  mixSandGrams,
+  recipeBinderSum,
+  recipeIngredientIndexes,
 } from "./recipe";
 import { RecipeSelect } from "./components/RecipeSelect";
 import type { BlendingRecipe } from "./recipeTypes";
@@ -659,8 +663,9 @@ export function BatchMixer({
   const [activeRecipe, setActiveRecipe] = useState<BlendingRecipe>(() =>
     resolveRecipe(initialRecipe, recipes),
   );
+  const resolvedInitial = resolveRecipe(initialRecipe, recipes);
   const [values, setValues]         = useState<number[]>(() =>
-    initialMixValues(resolveRecipe(initialRecipe, recipes), initialBinderSum),
+    initialMixValues(resolvedInitial, recipeBinderSum(resolvedInitial, initialBinderSum)),
   );
   const [bucketSelection, setBucketSelection] = useState<BucketSelection>(initialBucketSelection);
   const [active, setActive]         = useState(0);
@@ -705,18 +710,23 @@ export function BatchMixer({
   const totalParam = PARAMS[0];
   const isTotalAct = active === 0;
 
+  const ingredientIndexes = useMemo(
+    () => recipeIngredientIndexes(activeRecipe),
+    [activeRecipe],
+  );
+
   const mixVolume = useMemo(
     () =>
       estimateMixVolume({
-        epoxyGrams: values[1] + values[2] + values[3],
-        sandGrams: values[4],
+        epoxyGrams: mixEpoxyGrams(activeRecipe, values),
+        sandGrams: mixSandGrams(activeRecipe, values),
         sandType,
       }),
-    [values, sandType],
+    [activeRecipe, values, sandType],
   );
 
   const recommendedTotalGrams = useMemo(
-    () => initialMixValues(activeRecipe, initialBinderSum)[0],
+    () => initialMixValues(activeRecipe, recipeBinderSum(activeRecipe, initialBinderSum))[0],
     [activeRecipe, initialBinderSum],
   );
 
@@ -724,10 +734,17 @@ export function BatchMixer({
     (next: BlendingRecipe) => {
       if (next.id === activeRecipe.id) return;
       setActiveRecipe(next);
-      setValues(initialMixValues(next, initialBinderSum));
+      setValues(initialMixValues(next, recipeBinderSum(next, initialBinderSum)));
+      setActive(0);
     },
     [activeRecipe.id, initialBinderSum],
   );
+
+  useEffect(() => {
+    if (active !== 0 && !ingredientIndexes.includes(active)) {
+      setActive(0);
+    }
+  }, [active, ingredientIndexes]);
 
   useEffect(() => {
     setBucketSelection((prev) =>
@@ -807,7 +824,8 @@ export function BatchMixer({
 
   const handleResetToRecommended = useCallback(() => {
     pushUndo();
-    setValues(initialMixValues(recipeRef.current, initialBinderSum));
+    const recipe = recipeRef.current;
+    setValues(initialMixValues(recipe, recipeBinderSum(recipe, initialBinderSum)));
   }, [pushUndo, initialBinderSum]);
 
   const updateScale = useCallback(() => {
@@ -849,7 +867,7 @@ export function BatchMixer({
     const swipeR = swipeEl.getBoundingClientRect();
     const lines: CardConnector[] = [];
 
-    for (const pi of [1, 2, 3, 4]) {
+    for (const pi of ingredientIndexes) {
       const cardEl = cardRefs.current[pi];
       if (!cardEl) continue;
       const cardR = cardEl.getBoundingClientRect();
@@ -872,7 +890,7 @@ export function BatchMixer({
     }
 
     setConnectorLines(lines);
-  }, [active, isLocked]);
+  }, [active, ingredientIndexes, isLocked]);
 
   useLayoutEffect(() => {
     measureCardConnectors();
@@ -1030,7 +1048,7 @@ export function BatchMixer({
       sandType,
     );
     if (bucket !== "none") {
-      const nextLiters = mixLitersFromValues(next, sandType);
+      const nextLiters = mixLitersFromValues(next, sandType, recipeRef.current);
       if (isBucketAtMaxFill(nextLiters, bucket as BucketSize) && snapped > dragBaseVal.current) {
         dragBaseVal.current = next[active];
         dragStartY.current = clientY;
@@ -1118,7 +1136,7 @@ export function BatchMixer({
               />
             </div>
             <div className="flex items-stretch pointer-events-none">
-              {[1, 2, 4, 3].map((pi, i) => {
+              {ingredientIndexes.map((pi, i) => {
                 const p = PARAMS[pi];
                 const { value, unit } = getLockedRatioDisplay(activeRecipe, p.id);
                 return (
@@ -1139,8 +1157,8 @@ export function BatchMixer({
 
           <div style={{ pointerEvents: isLocked ? "none" : "auto" }}>
             <MixBucket
-              epoxyGrams={values[1] + values[2] + values[3]}
-              sandGrams={values[4]}
+              epoxyGrams={mixEpoxyGrams(activeRecipe, values)}
+              sandGrams={mixSandGrams(activeRecipe, values)}
               bucketSelection={bucketSelection}
               onBucketChange={setBucketSelection}
               onForceBucketChange={handleForceBucketChange}
@@ -1158,7 +1176,7 @@ export function BatchMixer({
           style={{ pointerEvents: isLocked ? "none" : "auto" }}
         >
           <div className="flex" style={{ gap: CARD_ROW_GAP }}>
-            {[1, 2, 4, 3].map((pi) => {
+            {ingredientIndexes.map((pi) => {
               const p       = PARAMS[pi];
               const isAct   = active === pi;
               const cardLit = isLocked || isAct;
