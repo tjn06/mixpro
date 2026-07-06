@@ -37,3 +37,43 @@ export const DEFAULT_RECIPE: BlendingRecipe = {
     { id: "TIX", percent: 5, label: "Thickener" },
   ],
 };
+
+export const THIN_COAT_RECIPE: BlendingRecipe = {
+  id: "thin-coat",
+  name: "Thin Coat",
+  nameSubline: "Epoxy",
+  binderParts: [
+    { id: "A", parts: 2, label: "Resin" },
+    { id: "B", parts: 1, label: "Hardener" },
+  ],
+  binderPercents: [
+    { id: "SAND", percent: 200, label: "Filler" },
+    { id: "TIX", percent: 2, label: "Thickener" },
+  ],
+};
+
+export const HEAVY_FILL_RECIPE: BlendingRecipe = {
+  id: "heavy-fill",
+  name: "Heavy Fill",
+  nameSubline: "Epoxy",
+  binderParts: [
+    { id: "A", parts: 3, label: "Resin" },
+    { id: "B", parts: 1, label: "Hardener" },
+  ],
+  binderPercents: [
+    { id: "SAND", percent: 800, label: "Filler" },
+    { id: "TIX", percent: 8, label: "Thickener" },
+  ],
+};
+
+export const PRESET_RECIPES: BlendingRecipe[] = [
+  DEFAULT_RECIPE,
+  THIN_COAT_RECIPE,
+  HEAVY_FILL_RECIPE,
+];
+
+export function recipeMenuLabel(recipe: BlendingRecipe): string {
+  const name = recipe.name?.trim() || recipe.id;
+  const sub = recipe.nameSubline?.trim();
+  return sub ? `${name} — ${sub}` : name;
+}

@@ -27,8 +27,22 @@ export function clampMixValuesToBucketMax(
   const liters = mixLitersFromValues(values, sandType);
   if (liters <= maxLiters || liters <= 0 || values[0] <= 0) return values;
 
-  const scale = maxLiters / liters;
-  return applyRecipeChange(recipe, "TOTAL", Math.max(0, Math.round(values[0] * scale)));
+  let lo = 0;
+  let hi = values[0];
+  let best = applyRecipeChange(recipe, "TOTAL", 0);
+
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const candidate = applyRecipeChange(recipe, "TOTAL", mid);
+    if (mixLitersFromValues(candidate, sandType) <= maxLiters + 1e-9) {
+      best = candidate;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+
+  return best;
 }
 
 /** Block increases past the bucket cap; allow decreases freely. */

@@ -16,6 +16,12 @@ export function maxMixLitersForBucket(size: BucketSize): number {
   return size * (RECOMMENDED_MAX_FILL_PERCENT / 100);
 }
 
+/** Gap below hard cap still treated as full (integer-gram volume quantization). */
+export function bucketMaxFillToleranceLiters(capacityLiters: BucketSize): number {
+  const maxLiters = maxMixLitersForBucket(capacityLiters);
+  return Math.max(0.015, maxLiters * 0.004);
+}
+
 /** Actual fill % of bucket volume (0–86 at cap). */
 export function displayFillPercent(estimatedLiters: number, capacityLiters: BucketSize): number {
   if (capacityLiters <= 0) return 0;
@@ -24,7 +30,9 @@ export function displayFillPercent(estimatedLiters: number, capacityLiters: Buck
 }
 
 export function isBucketAtMaxFill(estimatedLiters: number, capacityLiters: BucketSize): boolean {
-  return estimatedLiters >= maxMixLitersForBucket(capacityLiters) - 1e-6;
+  const maxLiters = maxMixLitersForBucket(capacityLiters);
+  if (estimatedLiters > maxLiters + 1e-6) return false;
+  return estimatedLiters >= maxLiters - bucketMaxFillToleranceLiters(capacityLiters);
 }
 
 /** SVG fill height as fraction of bucket (0–0.86 at cap). */

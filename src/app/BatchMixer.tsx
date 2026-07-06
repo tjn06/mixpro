@@ -18,7 +18,9 @@ import {
   getLockedRatioDisplay,
   initialMixValues,
 } from "./recipe";
+import { RecipeSelect } from "./components/RecipeSelect";
 import type { BlendingRecipe } from "./recipeTypes";
+import { PRESET_RECIPES } from "./recipeTypes";
 
 // All values stored internally in grams — index order: TOTAL, A, B, TIX, SAND
 const PARAMS = [
@@ -128,9 +130,9 @@ const RECIPE_ZONE_PT = 0;
 const RECIPE_RATIO_BG = "transparent";
 const RECIPE_RATIO_BORDER_COLOR = "rgba(255,255,255,0.14)";
 const RECIPE_CONTAINER_PX = "4px 12px";
-const RECIPE_META_CARD_H = 92;
 const RECIPE_CARD_H = 96;
-const RECIPE_META_GAP = 10;
+/** Matches bucket row `FEATURE_ROW_GAP` and mix-card `CARD_ROW_GAP`. */
+const RECIPE_META_GAP = 8;
 const RECIPE_CARD_PX = 6;
 const RECIPE_META_LABEL_SIZE = 14;
 const RECIPE_ID_SIZE = 12;
@@ -280,7 +282,7 @@ function RecipeMetaCard({
       aria-hidden
       className="flex-1 min-w-0 rounded-xl flex flex-col items-center justify-between pointer-events-none"
       style={{
-        height: RECIPE_META_CARD_H,
+        height: RECIPE_CARD_H,
         padding: `4px ${RECIPE_CARD_PX}px 6px`,
         background: RECIPE_RATIO_BG,
       }}
@@ -630,7 +632,10 @@ const TotalTile = forwardRef<HTMLButtonElement, {
 // interface Line { x1: number; y1: number; x2: number; y2: number }
 
 export interface BatchMixerProps {
-  recipe: BlendingRecipe;
+  /** Initial / preferred recipe (must exist in `recipes`). */
+  recipe?: BlendingRecipe;
+  /** Selectable recipes for the RECIPE dropdown. */
+  recipes?: BlendingRecipe[];
   /** Binder base (A + B) in grams for the initial mix. Default 1000 g. */
   initialBinderSum?: number;
   /** Initial bucket selection — 5, 10, 17 L or none. Default 17 L. */
@@ -639,13 +644,24 @@ export interface BatchMixerProps {
   sandType?: SandType;
 }
 
+function resolveRecipe(seed: BlendingRecipe | undefined, catalog: BlendingRecipe[]): BlendingRecipe {
+  const pick = seed ?? catalog[0];
+  return catalog.find((r) => r.id === pick.id) ?? catalog[0];
+}
+
 export function BatchMixer({
-  recipe,
+  recipe: initialRecipe,
+  recipes = PRESET_RECIPES,
   initialBinderSum = 1000,
   initialBucketSelection = DEFAULT_BUCKET_SELECTION,
   sandType = "medium",
 }: BatchMixerProps) {
-  const [values, setValues]         = useState<number[]>(() => initialMixValues(recipe, initialBinderSum));
+  const [activeRecipe, setActiveRecipe] = useState<BlendingRecipe>(() =>
+    resolveRecipe(initialRecipe, recipes),
+  );
+  const [values, setValues]         = useState<number[]>(() =>
+    initialMixValues(resolveRecipe(initialRecipe, recipes), initialBinderSum),
+  );
   const [bucketSelection, setBucketSelection] = useState<BucketSelection>(initialBucketSelection);
   const [active, setActive]         = useState(0);
   const [activeZone, setActiveZone] = useState<number | null>(null);
@@ -667,8 +683,8 @@ export function BatchMixer({
   const cardRefs       = useRef<(HTMLButtonElement | null)[]>([]);
   const totalTileRef   = useRef<HTMLButtonElement>(null);
   const scaleRef       = useRef(1);
-  const recipeRef      = useRef(recipe);
-  recipeRef.current    = recipe;
+  const recipeRef      = useRef(activeRecipe);
+  recipeRef.current    = activeRecipe;
   const bucketSelectionRef = useRef(bucketSelection);
   bucketSelectionRef.current = bucketSelection;
 
@@ -688,8 +704,6 @@ export function BatchMixer({
 
   const totalParam = PARAMS[0];
   const isTotalAct = active === 0;
-  const recipeDisplayName = recipe.name?.trim() || recipe.id;
-  const recipeDisplaySubline = recipe.nameSubline?.trim();
 
   const mixVolume = useMemo(
     () =>
@@ -701,11 +715,18 @@ export function BatchMixer({
     [values, sandType],
   );
 
-  const atBucketCap = useMemo(
-    () =>
-      bucketSelection !== "none" &&
-      isBucketAtMaxFill(mixVolume.estimatedLiters, bucketSelection),
-    [bucketSelection, mixVolume.estimatedLiters],
+  const recommendedTotalGrams = useMemo(
+    () => initialMixValues(activeRecipe, initialBinderSum)[0],
+    [activeRecipe, initialBinderSum],
+  );
+
+  const handleRecipeChange = useCallback(
+    (next: BlendingRecipe) => {
+      if (next.id === activeRecipe.id) return;
+      setActiveRecipe(next);
+      setValues(initialMixValues(next, initialBinderSum));
+    },
+    [activeRecipe.id, initialBinderSum],
   );
 
   useEffect(() => {
@@ -716,6 +737,7 @@ export function BatchMixer({
 
   useEffect(() => {
     if (bucketSelection === "none") return;
+    if (isBucketAtMaxFill(mixVolume.estimatedLiters, bucketSelection)) return;
     const maxLiters = maxMixLitersForBucket(bucketSelection);
     if (mixVolume.estimatedLiters <= maxLiters + 1e-6) return;
     setValues((current) =>
@@ -774,6 +796,19 @@ export function BatchMixer({
     );
     setValues(next);
   }, [pushUndo, sandType]);
+
+  const handleForceBucketChange = useCallback((size: BucketSize) => {
+    pushUndo();
+    const current = valuesRef.current;
+    const next = clampMixValuesToBucketMax(current, recipeRef.current, size, sandType);
+    setBucketSelection(size);
+    setValues(next);
+  }, [pushUndo, sandType]);
+
+  const handleResetToRecommended = useCallback(() => {
+    pushUndo();
+    setValues(initialMixValues(recipeRef.current, initialBinderSum));
+  }, [pushUndo, initialBinderSum]);
 
   const updateScale = useCallback(() => {
     const el = shellRef.current;
@@ -995,9 +1030,8 @@ export function BatchMixer({
       sandType,
     );
     if (bucket !== "none") {
-      const maxLiters = maxMixLitersForBucket(bucket as BucketSize);
       const nextLiters = mixLitersFromValues(next, sandType);
-      if (nextLiters >= maxLiters - 1e-6 && snapped > dragBaseVal.current) {
+      if (isBucketAtMaxFill(nextLiters, bucket as BucketSize) && snapped > dragBaseVal.current) {
         dragBaseVal.current = next[active];
         dragStartY.current = clientY;
         triggerDragBlocked();
@@ -1057,9 +1091,12 @@ export function BatchMixer({
       <AppHeader isLocked={isLocked} onBack={handleBack} onToggleLock={toggleLock} />
       <LongPressHeaderBar />
 
-      {/* ── Recipe ratio cards (high) + mix cards (just above swipe) ─────────── */}
+      {/* ── Recipe + bucket (high) · mix cards (just above swipe) ───────────── */}
       <div className="flex-1 min-h-0 flex flex-col">
-        <div className="shrink-0 px-4 pointer-events-none" style={{ paddingTop: RECIPE_ZONE_PT }}>
+        <div
+          className="shrink-0 px-4 flex flex-col"
+          style={{ paddingTop: RECIPE_ZONE_PT, gap: RECIPE_META_GAP }}
+        >
           <div
             className="rounded-xl flex flex-col min-w-0"
             style={{
@@ -1068,23 +1105,28 @@ export function BatchMixer({
               gap: RECIPE_META_GAP,
             }}
           >
-            <RecipeMetaCard
-              label="RECIPE"
-              value={recipeDisplayName}
-              valueLine2={recipeDisplaySubline}
-              muted={isLocked}
-              valueFontFamily="'Outfit', sans-serif"
-            />
-            <div className="flex items-stretch">
+            <div
+              className={isLocked ? "pointer-events-none" : "pointer-events-auto"}
+              style={{ opacity: isLocked ? 0.88 : 1, transition: "opacity 0.2s ease" }}
+            >
+              <RecipeSelect
+                recipes={recipes}
+                value={activeRecipe}
+                onChange={handleRecipeChange}
+                disabled={isLocked}
+                muted={isLocked}
+              />
+            </div>
+            <div className="flex items-stretch pointer-events-none">
               {[1, 2, 4, 3].map((pi, i) => {
                 const p = PARAMS[pi];
-                const { value, unit } = getLockedRatioDisplay(recipe, p.id);
+                const { value, unit } = getLockedRatioDisplay(activeRecipe, p.id);
                 return (
                   <React.Fragment key={`recipe-${p.id}`}>
                     {i > 0 && <RecipeRatioGapSeparator />}
                     <RecipeRatioCard
                       id={p.id}
-                      sublabel={getIngredientLabel(recipe, p.id)}
+                      sublabel={getIngredientLabel(activeRecipe, p.id)}
                       value={value}
                       unit={unit}
                       muted={isLocked}
@@ -1094,25 +1136,27 @@ export function BatchMixer({
               })}
             </div>
           </div>
+
+          <div style={{ pointerEvents: isLocked ? "none" : "auto" }}>
+            <MixBucket
+              epoxyGrams={values[1] + values[2] + values[3]}
+              sandGrams={values[4]}
+              bucketSelection={bucketSelection}
+              onBucketChange={setBucketSelection}
+              onForceBucketChange={handleForceBucketChange}
+              recommendedTotalGrams={recommendedTotalGrams}
+              onResetToRecommended={handleResetToRecommended}
+              sandType={sandType}
+              muted={isLocked}
+              disabled={isLocked}
+            />
+          </div>
         </div>
 
         <div
-          className="flex-1 min-h-0 flex items-center justify-center px-4"
+          className="shrink-0 px-4 mt-auto"
           style={{ pointerEvents: isLocked ? "none" : "auto" }}
         >
-          <MixBucket
-            epoxyGrams={values[1] + values[2] + values[3]}
-            sandGrams={values[4]}
-            bucketSelection={bucketSelection}
-            onBucketChange={setBucketSelection}
-            sandType={sandType}
-            muted={isLocked}
-            disabled={isLocked}
-            fillBlockedFlash={dragBlocked && atBucketCap}
-          />
-        </div>
-
-        <div className="shrink-0 px-4 pt-2" style={{ pointerEvents: isLocked ? "none" : "auto" }}>
           <div className="flex" style={{ gap: CARD_ROW_GAP }}>
             {[1, 2, 4, 3].map((pi) => {
               const p       = PARAMS[pi];
@@ -1316,6 +1360,8 @@ export function BatchMixer({
         </div>
       )}
 
+      </div>
+
       {isLocked && (
         <div
           className="absolute inset-0"
@@ -1323,8 +1369,6 @@ export function BatchMixer({
           aria-hidden
         />
       )}
-
-      </div>
 
       {dragFocus && !isLocked && (
         <div
