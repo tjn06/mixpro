@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, forwardRef, type CSSProperties } from "react";
-import { LongPressButton } from "./components/LongPressButton";
+import { LongPressButton, LongPressEdgeProvider } from "./components/LongPressButton";
 import { AppHeader } from "./components/AppHeader";
 import {
   MixBucket,
@@ -1072,6 +1072,7 @@ export function BatchMixer({
         style={{ width: DESIGN_W * scale, height: DESIGN_H * scale }}
       >
         <LongPressProgressProvider>
+        <LongPressEdgeProvider edgeRef={containerRef}>
         <div
           ref={containerRef}
           className="relative flex flex-col overflow-hidden select-none"
@@ -1402,6 +1403,7 @@ export function BatchMixer({
       )}
 
         </div>
+        </LongPressEdgeProvider>
         </LongPressProgressProvider>
       </div>
     </div>

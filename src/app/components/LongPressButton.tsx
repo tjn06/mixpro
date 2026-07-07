@@ -1,5 +1,27 @@
-import { useRef, useState, useCallback, type PointerEvent } from "react";
+import { useRef, useState, useCallback, createContext, useContext, type PointerEvent, type RefObject, type ReactNode } from "react";
 import { useLongPressProgressReporter } from "./LongPressProgressContext";
+import { LongPressBeamBurst } from "./LongPressBeamBurst";
+
+const LongPressEdgeContext = createContext<RefObject<HTMLElement | null> | null>(null);
+
+/** Supplies app content bounds for side beam progress on LongPressButton instances. */
+export function LongPressEdgeProvider({
+  edgeRef,
+  children,
+}: {
+  edgeRef: RefObject<HTMLElement | null>;
+  children: ReactNode;
+}) {
+  return (
+    <LongPressEdgeContext.Provider value={edgeRef}>
+      {children}
+    </LongPressEdgeContext.Provider>
+  );
+}
+
+function useLongPressEdgeContainer() {
+  return useContext(LongPressEdgeContext);
+}
 
 const LONG_PRESS_MS = 600;
 /** Longer hold for header navigation (back / forward). */
@@ -141,6 +163,9 @@ interface LongPressButtonProps {
   accentColor?: string;
   disabled?: boolean;
   variant?: "primary" | "secondary";
+  /** fill = in-button bars; beam = side loading bars to app edge (default) */
+  progressVariant?: "fill" | "beam";
+  edgeContainerRef?: RefObject<HTMLElement | null>;
   className?: string;
   labelSize?: number;
   compact?: boolean;
@@ -153,10 +178,15 @@ export function LongPressButton({
   accentColor,
   disabled = false,
   variant = "secondary",
+  progressVariant = "beam",
+  edgeContainerRef,
   className = "",
   labelSize = 9,
   compact = false,
 }: LongPressButtonProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const contextEdgeRef = useLongPressEdgeContainer();
+  const beamEdgeRef = edgeContainerRef ?? contextEdgeRef;
   const { progress, holding, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } =
     useLongPress(onLongPress, disabled, { accentColor, confirmAction });
 
@@ -177,7 +207,17 @@ export function LongPressButton({
           : ACTION_SECONDARY_LABEL;
 
   return (
+    <>
+      {progressVariant === "beam" && (
+        <LongPressBeamBurst
+          progress={progress}
+          anchorRef={buttonRef}
+          accentColor={accentColor}
+          edgeContainerRef={beamEdgeRef}
+        />
+      )}
     <button
+      ref={buttonRef}
       type="button"
       disabled={disabled}
       className={`relative flex flex-col items-center justify-center rounded-xl overflow-hidden touch-none transition-colors duration-150 ${className}`}
@@ -192,7 +232,9 @@ export function LongPressButton({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
     >
-      <LongPressProgress progress={progress} accentColor={accentColor} />
+      {progressVariant === "fill" && (
+        <LongPressProgress progress={progress} accentColor={accentColor} />
+      )}
       <span style={{
         position: "relative", zIndex: 1,
         fontSize: labelSize, letterSpacing: compact ? "0" : "0.2em", fontWeight: 500,
@@ -203,5 +245,6 @@ export function LongPressButton({
         {label}
       </span>
     </button>
+    </>
   );
 }
