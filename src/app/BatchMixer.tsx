@@ -10,7 +10,7 @@ import { reconcileBucketSelection, maxMixLitersForBucket, isBucketAtMaxFill, typ
 import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues } from "./bucketLimits";
 import { estimateMixVolume, type SandType } from "./mixVolume";
 import { LongPressProgressProvider, LongPressHeaderBar } from "./components/LongPressProgressContext";
-import { saveBlendingMix } from "./mixStorage";
+import { saveBlendingMix, getSavedMixes } from "./mixStorage";
 import {
   applyRecipeChange,
   driverIdFromIndex,
@@ -23,7 +23,8 @@ import {
   recipeIngredientIndexes,
 } from "./recipe";
 import { RecipeSelect } from "./components/RecipeSelect";
-import { RecBatchPanel } from "./components/RecBatchPanel";
+import { RecBatchPanel, LockIcon } from "./components/RecBatchPanel";
+import { UndoIcon } from "./components/ActionIcons";
 import type { BlendingRecipe } from "./recipeTypes";
 import { PRESET_RECIPES } from "./recipeTypes";
 
@@ -801,6 +802,22 @@ export function BatchMixer({
     setTimeout(() => setSaveFlash(false), 1500);
   }, []);
 
+  const canLoad = getSavedMixes().length > 0;
+
+  const handleLoad = useCallback(() => {
+    const mixes = getSavedMixes();
+    if (mixes.length === 0) return;
+    const latest = mixes[mixes.length - 1]!;
+    pushUndo();
+    setValues([
+      latest.values.total,
+      latest.values.a,
+      latest.values.b,
+      latest.values.tix,
+      latest.values.sand,
+    ]);
+  }, [pushUndo]);
+
   const scaleMix = useCallback((factor: number) => {
     pushUndo();
     const current = valuesRef.current;
@@ -1179,9 +1196,12 @@ export function BatchMixer({
             <RecBatchPanel
               recommendedTotalGrams={recommendedTotalGrams}
               onReset={handleResetToRecommended}
+              onSave={handleSave}
+              onLoad={handleLoad}
+              saveFlash={saveFlash}
+              canLoad={canLoad}
               isLocked={isLocked}
-              onToggleLock={toggleLock}
-              unlockZIndex={LOCK_UNLOCK_Z}
+              panelZIndex={LOCK_UNLOCK_Z}
               disabled={isLocked}
               muted={isLocked}
             />
@@ -1314,19 +1334,20 @@ export function BatchMixer({
               <div className="flex-1 min-w-0">
                 {!isLocked && (
                   <LongPressButton
-                    label={saveFlash ? "SAVED" : "SAVE"}
-                    confirmAction="SAVE MIX"
-                    onLongPress={handleSave}
-                    variant="primary"
+                    label="Lock screen"
+                    confirmAction="LOCK SCREEN"
+                    onLongPress={toggleLock}
+                    icon={<LockIcon locked={false} />}
                     className="w-full h-full"
                   />
                 )}
               </div>
               <LongPressButton
-                label="UNDO"
+                label="Undo"
                 confirmAction="UNDO"
                 onLongPress={handleUndo}
-                disabled={!canUndo}
+                disabled={!canUndo || isLocked}
+                icon={<UndoIcon />}
                 className="flex-1 h-full"
               />
             </div>
@@ -1369,7 +1390,7 @@ export function BatchMixer({
 
       {isLocked && (
         <div
-          className="absolute"
+          className="absolute rounded-xl overflow-hidden"
           style={{
             zIndex: LOCK_PANEL_Z,
             transition: LOCK_TRANSITION,
@@ -1378,14 +1399,18 @@ export function BatchMixer({
             left: SWIPE_INSET_X,
             width: `calc(100% - ${SWIPE_INSET_X * 2}px)`,
             height: BOTTOM_ACTION_H,
+            background: ENTITY_SURFACE_IDLE,
+            border: "1.5px solid rgba(255,255,255,0.12)",
           }}
         >
           <LongPressButton
-            label={saveFlash ? "SAVED" : "SAVE"}
-            confirmAction="SAVE MIX"
-            onLongPress={handleSave}
+            label="Unlock"
+            confirmAction="UNLOCK"
+            onLongPress={toggleLock}
             variant="primary"
+            icon={<LockIcon locked />}
             className="w-full h-full"
+            style={{ background: ENTITY_SURFACE_IDLE, border: "none", minHeight: 0 }}
           />
         </div>
       )}

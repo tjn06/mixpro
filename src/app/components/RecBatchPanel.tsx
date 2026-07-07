@@ -1,5 +1,6 @@
 import React from "react";
 import { LongPressButton } from "./LongPressButton";
+import { LoadIcon, SavedIcon, SaveIcon } from "./ActionIcons";
 
 const REC_BATCH_LABEL = "Rec. batch";
 const PANEL_PAD = "7px 6px 6px";
@@ -21,7 +22,7 @@ function formatRecommendedBatch(grams: number): string {
   return `${Math.round(grams)} g`;
 }
 
-function LockIcon({ locked }: { locked: boolean }) {
+export function LockIcon({ locked }: { locked: boolean }) {
   if (locked) {
     return (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -38,27 +39,15 @@ function LockIcon({ locked }: { locked: boolean }) {
   );
 }
 
-function PlaceholderButton() {
-  return (
-    <div
-      className="flex-1 min-w-0 flex items-center justify-center rounded-xl pointer-events-none"
-      style={{
-        height: ACTION_ROW_H,
-        background: "#0d0d1c",
-        border: "1.5px solid rgba(255,255,255,0.07)",
-        opacity: 0.42,
-      }}
-      aria-hidden
-    />
-  );
-}
-
 export interface RecBatchPanelProps {
   recommendedTotalGrams: number;
   onReset: () => void;
+  onSave: () => void;
+  onLoad: () => void;
+  saveFlash?: boolean;
+  canLoad?: boolean;
   isLocked?: boolean;
-  onToggleLock?: () => void;
-  unlockZIndex?: number;
+  panelZIndex?: number;
   disabled?: boolean;
   muted?: boolean;
 }
@@ -66,9 +55,12 @@ export interface RecBatchPanelProps {
 export function RecBatchPanel({
   recommendedTotalGrams,
   onReset,
+  onSave,
+  onLoad,
+  saveFlash = false,
+  canLoad = false,
   isLocked = false,
-  onToggleLock,
-  unlockZIndex,
+  panelZIndex,
   disabled = false,
   muted = false,
 }: RecBatchPanelProps) {
@@ -83,8 +75,8 @@ export function RecBatchPanel({
         gap: ACTION_ROW_GAP,
         justifyContent: "space-between",
         pointerEvents: "auto",
-        ...(isLocked && unlockZIndex != null
-          ? { position: "relative" as const, zIndex: unlockZIndex }
+        ...(isLocked && panelZIndex != null
+          ? { position: "relative" as const, zIndex: panelZIndex }
           : {}),
       }}
     >
@@ -130,19 +122,22 @@ export function RecBatchPanel({
           style={{ height: ACTION_ROW_H }}
         />
         <div className="flex min-w-0" style={{ gap: ACTION_ROW_GAP, height: ACTION_ROW_H }}>
-          {onToggleLock ? (
-            <LongPressButton
-              label={isLocked ? "Unlock" : "Lock screen"}
-              confirmAction={isLocked ? "UNLOCK" : "LOCK SCREEN"}
-              onLongPress={onToggleLock}
-              active={isLocked}
-              icon={<LockIcon locked={isLocked} />}
-              className="flex-1 h-full"
-            />
-          ) : (
-            <PlaceholderButton />
-          )}
-          <PlaceholderButton />
+          <LongPressButton
+            label={saveFlash ? "Saved" : "Save mix"}
+            confirmAction="SAVE MIX"
+            onLongPress={onSave}
+            variant="primary"
+            icon={saveFlash ? <SavedIcon /> : <SaveIcon />}
+            className="flex-1 h-full"
+          />
+          <LongPressButton
+            label="Load mix"
+            confirmAction="LOAD MIX"
+            onLongPress={onLoad}
+            disabled={!canLoad || disabled}
+            icon={<LoadIcon />}
+            className="flex-1 h-full"
+          />
         </div>
       </div>
     </div>
