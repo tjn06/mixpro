@@ -17,6 +17,16 @@ import {
   estimateMixVolume,
   type SandType,
 } from "../mixVolume";
+import {
+  FEATURE_PANEL_PAD,
+  FEATURE_CONTENT_GAP,
+  FEATURE_VALUE_COLOR,
+  FEATURE_VALUE_COLOR_MUTED,
+  FEATURE_VALUE_FONT,
+  FEATURE_VALUE_TEXT_CLASS,
+  BUCKET_VALUE_STYLE,
+} from "../featureReadout";
+import { FeatureReadoutStack } from "./FeatureReadoutStack";
 
 export {
   DEFAULT_BUCKET_SELECTION,
@@ -46,25 +56,6 @@ const DROPDOWN_MENU_MIN_W = 200;
 
 const BUCKET_SIZE_LABEL = "Bucket size";
 const NO_BUCKET_OPACITY = 0.38;
-
-/** Match `RecBatchPanel` readout stack. */
-const FEATURE_CARD_PX = 6;
-const FEATURE_CARD_PAD = `7px ${FEATURE_CARD_PX}px 6px`;
-const FEATURE_LABEL_GAP = 4;
-const FEATURE_TITLE_SIZE = 12;
-const FEATURE_VALUE_SIZE = 16;
-const FEATURE_TITLE_COLOR = "#8888a8";
-const FEATURE_TITLE_COLOR_MUTED = "#686878";
-const FEATURE_VALUE_COLOR = "#c4c4dc";
-const FEATURE_VALUE_COLOR_MUTED = "#9898b4";
-
-const BUCKET_VALUE_STYLE: React.CSSProperties = {
-  fontFamily: "'Outfit', sans-serif",
-  fontSize: FEATURE_VALUE_SIZE,
-  fontWeight: 600,
-  letterSpacing: "0.06em",
-  lineHeight: 1,
-};
 
 function BucketFeaturePanel({
   clipId,
@@ -100,25 +91,13 @@ function BucketFeaturePanel({
       className="w-full min-w-0 select-none rounded-xl flex flex-col items-center"
       aria-label={ariaLabel}
       style={{
-        padding: FEATURE_CARD_PAD,
+        padding: FEATURE_PANEL_PAD,
         background: BUCKET_CARD_BG,
         opacity: muted ? 0.88 : 1,
         transition: "opacity 0.2s ease",
       }}
     >
-      <div className="flex flex-col items-center shrink-0 w-full min-w-0" style={{ gap: FEATURE_LABEL_GAP }}>
-        <span
-          className="uppercase truncate max-w-full text-center"
-          style={{
-            fontSize: FEATURE_TITLE_SIZE,
-            letterSpacing: "0.12em",
-            fontWeight: 700,
-            color: muted ? FEATURE_TITLE_COLOR_MUTED : FEATURE_TITLE_COLOR,
-            lineHeight: 1.1,
-          }}
-        >
-          {BUCKET_SIZE_LABEL}
-        </span>
+      <FeatureReadoutStack label={BUCKET_SIZE_LABEL} muted={muted}>
         <BucketSizeValue
           bucketSelection={bucketSelection}
           onBucketChange={onBucketChange}
@@ -127,10 +106,10 @@ function BucketFeaturePanel({
           disabled={disabled}
           muted={muted}
         />
-      </div>
+      </FeatureReadoutStack>
       <div
-        className="pointer-events-none transition-opacity duration-200 shrink-0"
-        style={{ opacity: noBucket ? NO_BUCKET_OPACITY : 1, marginTop: FEATURE_LABEL_GAP }}
+        className="pointer-events-none transition-opacity duration-200 shrink-0 w-full flex justify-center"
+        style={{ opacity: noBucket ? NO_BUCKET_OPACITY : 1, marginTop: FEATURE_CONTENT_GAP }}
       >
         <BucketSvg
           clipId={clipId}
@@ -174,11 +153,10 @@ function BucketSizeValue({
   }
   return (
     <span
-      className="block whitespace-nowrap text-center"
+      className={FEATURE_VALUE_TEXT_CLASS}
       style={{
-        ...BUCKET_VALUE_STYLE,
+        ...FEATURE_VALUE_FONT,
         color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
-        lineHeight: 1.1,
       }}
     >
       {bucketSelectionLabel(bucketSelection)}
@@ -481,14 +459,14 @@ function BucketSelectDropdown({
   const options: BucketSelection[] = [...BUCKET_SIZES, "none"];
 
   return (
-    <div ref={rootRef} className="relative w-fit max-w-full mx-auto">
+    <div ref={rootRef} className="relative w-full max-w-full mx-auto">
       <button
         type="button"
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => !disabled && setOpen((o) => !o)}
-        className="inline-flex items-center justify-center gap-1 min-w-0 touch-manipulation transition-colors duration-150"
+        className="w-full inline-flex items-center justify-center gap-1 min-w-0 touch-manipulation transition-colors duration-150"
         style={{
           ...BUCKET_VALUE_STYLE,
           color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
@@ -496,10 +474,10 @@ function BucketSelectDropdown({
           opacity: disabled ? 0.45 : 1,
           background: "transparent",
           border: "none",
-          padding: "0 2px 0 0",
+          padding: 0,
         }}
       >
-        <span className="truncate">{bucketSelectionLabel(value)}</span>
+        <span className="truncate tabular-nums">{bucketSelectionLabel(value)}</span>
         <ChevronDown open={open} />
       </button>
 

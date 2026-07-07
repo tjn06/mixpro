@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, createContext, useContext, type CSSProperties, type PointerEvent, type RefObject, type ReactNode } from "react";
+import React, { forwardRef, useRef, useState, useCallback, createContext, useContext, type CSSProperties, type PointerEvent, type RefObject, type ReactNode } from "react";
 import { useLongPressProgressReporter } from "./LongPressProgressContext";
 import { LongPressBeamBurst } from "./LongPressBeamBurst";
 
@@ -174,7 +174,7 @@ interface LongPressButtonProps {
   compact?: boolean;
 }
 
-export function LongPressButton({
+export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProps>(function LongPressButton({
   label,
   onLongPress,
   confirmAction,
@@ -189,8 +189,13 @@ export function LongPressButton({
   style,
   labelSize = 9,
   compact = false,
-}: LongPressButtonProps) {
+}, ref) {
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const setButtonRef = useCallback((el: HTMLButtonElement | null) => {
+    buttonRef.current = el;
+    if (typeof ref === "function") ref(el);
+    else if (ref) ref.current = el;
+  }, [ref]);
   const contextEdgeRef = useLongPressEdgeContainer();
   const beamEdgeRef = edgeContainerRef ?? contextEdgeRef;
   const { progress, holding, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } =
@@ -225,7 +230,7 @@ export function LongPressButton({
         />
       )}
     <button
-      ref={buttonRef}
+      ref={setButtonRef}
       type="button"
       disabled={disabled}
       aria-label={label}
@@ -269,4 +274,4 @@ export function LongPressButton({
     </button>
     </>
   );
-}
+});

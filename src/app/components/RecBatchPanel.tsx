@@ -1,38 +1,40 @@
-import React from "react";
+import React, { type RefObject } from "react";
 import { LongPressButton } from "./LongPressButton";
 import { LoadIcon, SavedIcon, SaveIcon } from "./ActionIcons";
+import {
+  FEATURE_PANEL_PAD,
+  FEATURE_CONTENT_GAP,
+  FEATURE_VALUE_COLOR,
+  FEATURE_VALUE_COLOR_MUTED,
+  FEATURE_VALUE_FONT,
+  FEATURE_VALUE_TEXT_CLASS,
+} from "../featureReadout";
+import { FeatureReadoutStack } from "./FeatureReadoutStack";
 
 const REC_BATCH_LABEL = "Rec. batch";
-const PANEL_PAD = "7px 6px 6px";
 const PANEL_BG = "transparent";
-const TITLE_SIZE = 12;
-const VALUE_SIZE = 16;
-const TITLE_COLOR = "#8888a8";
-const TITLE_COLOR_MUTED = "#686878";
-const VALUE_COLOR = "#c4c4dc";
-const VALUE_COLOR_MUTED = "#9898b4";
 
 /** Match bottom action grid in BatchMixer. */
-const ACTION_ROW_H = 38;
-const ACTION_ROW_GAP = 8;
-const ACTION_BLOCK_H = ACTION_ROW_H * 2 + ACTION_ROW_GAP;
+export const ACTION_ROW_H = 38;
+export const ACTION_ROW_GAP = 8;
+export const ACTION_BLOCK_H = ACTION_ROW_H * 2 + ACTION_ROW_GAP;
 
 function formatRecommendedBatch(grams: number): string {
   if (grams >= 1000) return `${(grams / 1000).toFixed(3)} kg`;
   return `${Math.round(grams)} g`;
 }
 
-export function LockIcon({ locked }: { locked: boolean }) {
+export function LockIcon({ locked, size = 16 }: { locked: boolean; size?: number }) {
   if (locked) {
     return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <rect x="5" y="11" width="14" height="10" rx="2" />
         <path d="M7 11V7a5 5 0 0 1 9.5-1" />
       </svg>
     );
   }
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <rect x="5" y="11" width="14" height="10" rx="2" />
       <path d="M8 11V7a4 4 0 0 1 8 0v4" />
     </svg>
@@ -50,6 +52,8 @@ export interface RecBatchPanelProps {
   panelZIndex?: number;
   disabled?: boolean;
   muted?: boolean;
+  saveButtonRef?: RefObject<HTMLButtonElement | null>;
+  actionsBlockRef?: RefObject<HTMLDivElement | null>;
 }
 
 export function RecBatchPanel({
@@ -63,52 +67,38 @@ export function RecBatchPanel({
   panelZIndex,
   disabled = false,
   muted = false,
+  saveButtonRef,
+  actionsBlockRef,
 }: RecBatchPanelProps) {
   return (
     <div
       className="flex flex-1 flex-col min-w-0 rounded-xl"
       style={{
-        padding: PANEL_PAD,
+        padding: FEATURE_PANEL_PAD,
         background: PANEL_BG,
         opacity: muted ? 0.88 : 1,
         transition: "opacity 0.2s ease",
-        gap: ACTION_ROW_GAP,
-        justifyContent: "space-between",
+        gap: FEATURE_CONTENT_GAP,
         pointerEvents: "auto",
         ...(isLocked && panelZIndex != null
           ? { position: "relative" as const, zIndex: panelZIndex }
           : {}),
       }}
     >
-      <div className="flex flex-col items-center shrink-0" style={{ gap: 4 }}>
+      <FeatureReadoutStack label={REC_BATCH_LABEL} muted={muted}>
         <span
-          className="uppercase truncate max-w-full text-center"
+          className={FEATURE_VALUE_TEXT_CLASS}
           style={{
-            fontSize: TITLE_SIZE,
-            letterSpacing: "0.12em",
-            fontWeight: 700,
-            color: muted ? TITLE_COLOR_MUTED : TITLE_COLOR,
-            lineHeight: 1.1,
-          }}
-        >
-          {REC_BATCH_LABEL}
-        </span>
-        <span
-          className="whitespace-nowrap tabular-nums text-center truncate max-w-full"
-          style={{
-            fontFamily: "'Outfit', sans-serif",
-            fontSize: VALUE_SIZE,
-            fontWeight: 600,
-            letterSpacing: "0.06em",
-            lineHeight: 1,
-            color: muted ? VALUE_COLOR_MUTED : VALUE_COLOR,
+            ...FEATURE_VALUE_FONT,
+            color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
           }}
         >
           {formatRecommendedBatch(recommendedTotalGrams)}
         </span>
-      </div>
+      </FeatureReadoutStack>
 
       <div
+        ref={actionsBlockRef}
         className="flex flex-col shrink-0"
         style={{ gap: ACTION_ROW_GAP, height: ACTION_BLOCK_H }}
       >
@@ -123,6 +113,7 @@ export function RecBatchPanel({
         />
         <div className="flex min-w-0" style={{ gap: ACTION_ROW_GAP, height: ACTION_ROW_H }}>
           <LongPressButton
+            ref={saveButtonRef}
             label={saveFlash ? "Saved" : "Save mix"}
             confirmAction="SAVE MIX"
             onLongPress={onSave}

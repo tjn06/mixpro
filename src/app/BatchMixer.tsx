@@ -9,7 +9,7 @@ import {
 import { reconcileBucketSelection, maxMixLitersForBucket, isBucketAtMaxFill, type BucketSize } from "./bucketTypes";
 import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues } from "./bucketLimits";
 import { estimateMixVolume, type SandType } from "./mixVolume";
-import { LongPressProgressProvider, LongPressHeaderBar } from "./components/LongPressProgressContext";
+import { LongPressProgressProvider } from "./components/LongPressProgressContext";
 import { saveBlendingMix, getSavedMixes } from "./mixStorage";
 import {
   applyRecipeChange,
@@ -24,6 +24,7 @@ import {
 } from "./recipe";
 import { RecipeSelect } from "./components/RecipeSelect";
 import { RecBatchPanel, LockIcon } from "./components/RecBatchPanel";
+import { LockedSaveOverlay, LOCKED_ACTION_ICON_SIZE } from "./components/LockedSaveOverlay";
 import { UndoIcon } from "./components/ActionIcons";
 import type { BlendingRecipe } from "./recipeTypes";
 import { PRESET_RECIPES } from "./recipeTypes";
@@ -96,10 +97,13 @@ const BOTTOM_TOTAL_WIDTH = "48%";
 const BOTTOM_SUB_ROW_H = 38;
 const BOTTOM_ROW_GAP    = 8;
 const BOTTOM_ACTION_H   = BOTTOM_SUB_ROW_H * 2 + BOTTOM_ROW_GAP;
-const SWIPE_PAD_TOP     = 12;
-const BOTTOM_PAD_TOP    = 12;
+/** Vertical gap between swipe, bottom deck, and the edit/cards block. */
+const SECTION_ROW_GAP   = 12;
+/** Tighter gap from save/load row down to mix cards (same visual rhythm as other sections). */
+const EDIT_CARDS_GAP    = 6;
+const SWIPE_PAD_TOP     = 0;
+const BOTTOM_PAD_TOP    = SECTION_ROW_GAP;
 const BOTTOM_PAD_BOTTOM = 28;
-const SWIPE_INSET_X     = 16;
 const LOCK_TRANSITION   = `top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, left ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, width ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, height ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, bottom ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
 const LOCK_FADE_TRANSITION = `opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
 const LOCK_TEXT_TRANSITION = `font-size ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, margin-top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, width ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
@@ -133,7 +137,8 @@ function swipeZoneStripe(even: boolean): string {
 }
 
 /** Locked recipe ratio cards (read-only, above mix cards). */
-const RECIPE_ZONE_PT = 0;
+/** Space below header chrome before recipe title + ratio cards (8pt grid; pairs with header `pb-3`). */
+const RECIPE_ZONE_PT = 12;
 const RECIPE_RATIO_BG = "transparent";
 const RECIPE_RATIO_BORDER_COLOR = "rgba(255,255,255,0.14)";
 const RECIPE_CONTAINER_PX = "4px 12px";
@@ -160,7 +165,7 @@ const RECIPE_ID_COLOR_MUTED = "#686878";
 const RECIPE_UNIT_COLOR = "#707088";
 const RECIPE_COLON_COLOR = "#484860";
 /** Matches mix-card row `gap-2` — colon slots use this width explicitly. */
-const CARD_ROW_GAP = 8;
+const CARD_ROW_GAP = SECTION_ROW_GAP;
 
 function RecipeRatioGapSeparator() {
   return (
@@ -689,7 +694,11 @@ export function BatchMixer({
   const containerRef   = useRef<HTMLDivElement>(null);
   const swipeAreaRef   = useRef<HTMLDivElement>(null);
   const cardRefs       = useRef<(HTMLButtonElement | null)[]>([]);
-  const totalTileRef   = useRef<HTMLButtonElement>(null);
+  const totalTileRef    = useRef<HTMLButtonElement>(null);
+  const bucketRef       = useRef<HTMLDivElement>(null);
+  const editRowRef      = useRef<HTMLDivElement>(null);
+  const actionsBlockRef = useRef<HTMLDivElement>(null);
+  const saveButtonRef   = useRef<HTMLButtonElement>(null);
   const scaleRef       = useRef(1);
   const recipeRef      = useRef(activeRecipe);
   recipeRef.current    = activeRecipe;
@@ -1127,7 +1136,7 @@ export function BatchMixer({
 
       {/* ── App header ─────────────────────────────────────────────────────── */}
       <AppHeader isLocked={isLocked} onBack={handleBack} />
-      <LongPressHeaderBar />
+      {/* <LongPressHeaderBar /> — reserved confirm slot; disabled to save vertical space */}
 
       {/* ── Recipe (high) · editing area + mix cards (just above swipe) ───── */}
       <div className="flex-1 min-h-0 flex flex-col">
@@ -1178,10 +1187,15 @@ export function BatchMixer({
 
         <div
           className="shrink-0 px-4 mt-auto flex flex-col"
-          style={{ gap: CARD_ROW_GAP, pointerEvents: isLocked ? "none" : "auto" }}
+          style={{
+            gap: SECTION_ROW_GAP,
+            paddingBottom: BOTTOM_PAD_BOTTOM,
+            pointerEvents: isLocked ? "none" : "auto",
+          }}
         >
-          <div className="flex gap-2 items-start">
-            <div style={{ flex: `0 0 ${BOTTOM_TOTAL_WIDTH}`, minWidth: 0 }}>
+          <div className="flex flex-col" style={{ gap: EDIT_CARDS_GAP }}>
+          <div ref={editRowRef} className="relative flex gap-2 items-start">
+            <div ref={bucketRef} style={{ flex: `0 0 ${BOTTOM_TOTAL_WIDTH}`, minWidth: 0 }}>
               <MixBucket
                 epoxyGrams={mixEpoxyGrams(activeRecipe, values)}
                 sandGrams={mixSandGrams(activeRecipe, values)}
@@ -1200,10 +1214,23 @@ export function BatchMixer({
               onLoad={handleLoad}
               saveFlash={saveFlash}
               canLoad={canLoad}
-              isLocked={isLocked}
-              panelZIndex={LOCK_UNLOCK_Z}
               disabled={isLocked}
               muted={isLocked}
+              saveButtonRef={saveButtonRef}
+              actionsBlockRef={actionsBlockRef}
+            />
+            <LockedSaveOverlay
+              isLocked={isLocked}
+              anchorRef={editRowRef}
+              bucketRef={bucketRef}
+              actionsBlockRef={actionsBlockRef}
+              saveButtonRef={saveButtonRef}
+              onSave={handleSave}
+              saveFlash={saveFlash}
+              expandMs={LOCK_EXPAND_MS}
+              expandEase={LOCK_EASE}
+              zIndex={LOCK_UNLOCK_Z}
+              surfaceBg={ENTITY_SURFACE_IDLE}
             />
           </div>
 
@@ -1219,8 +1246,10 @@ export function BatchMixer({
                   key={p.id}
                   ref={(el) => { cardRefs.current[pi] = el; }}
                   onClick={() => setActive(pi)}
-                  className="flex-1 flex flex-col items-center rounded-xl py-3 relative overflow-hidden"
+                  className="flex-1 flex flex-col items-center rounded-xl relative overflow-hidden"
                   style={{
+                    paddingTop: 8,
+                    paddingBottom: 12,
                     background: cardLit ? entitySurfaceLit(p.color) : ENTITY_SURFACE_IDLE,
                     border: chrome.border,
                     boxShadow: chrome.boxShadow,
@@ -1254,15 +1283,14 @@ export function BatchMixer({
               );
             })}
           </div>
-        </div>
-      </div>
+          </div>
 
       {/* ── Control deck: swipe + bottom (floating TOTAL / SAVE animate here) ─ */}
-      <div className="relative shrink-0">
+      <div className="relative shrink-0 flex flex-col" style={{ gap: SECTION_ROW_GAP }}>
 
       {/* ── Swipe area ─────────────────────────────────────────────────────── */}
       <div
-        className="shrink-0 px-4 pt-3"
+        className="shrink-0"
         style={{
           zIndex: dragFocus && !isLocked ? DRAG_FOCUS_Z : 2,
           position: "relative",
@@ -1323,7 +1351,7 @@ export function BatchMixer({
       </div>
 
       {/* ── Bottom layout spacer + secondary actions ──────────────────────── */}
-      <div className="relative shrink-0 px-4 pt-3 pb-7">
+      <div className="relative shrink-0">
         <div
           className="flex gap-2 items-stretch"
           style={{ pointerEvents: isLocked ? "none" : "auto" }}
@@ -1376,13 +1404,13 @@ export function BatchMixer({
           pointerEvents: isLocked || dragFocus ? "none" : "auto",
           ...(isLocked ? {
             top: SWIPE_PAD_TOP,
-            left: SWIPE_INSET_X,
-            width: `calc(100% - ${SWIPE_INSET_X * 2}px)`,
+            left: 0,
+            width: "100%",
             height: SWIPE_HEIGHT,
           } : {
             top: SWIPE_PAD_TOP + SWIPE_HEIGHT + BOTTOM_PAD_TOP,
-            left: SWIPE_INSET_X,
-            width: `calc((100% - ${SWIPE_INSET_X * 2}px - ${BOTTOM_ROW_GAP}px) * 0.48)`,
+            left: 0,
+            width: `calc((100% - ${BOTTOM_ROW_GAP}px) * 0.48)`,
             height: BOTTOM_ACTION_H,
           }),
         }}
@@ -1396,8 +1424,8 @@ export function BatchMixer({
             transition: LOCK_TRANSITION,
             pointerEvents: "auto",
             top: SWIPE_PAD_TOP + SWIPE_HEIGHT + BOTTOM_PAD_TOP,
-            left: SWIPE_INSET_X,
-            width: `calc(100% - ${SWIPE_INSET_X * 2}px)`,
+            left: 0,
+            width: "100%",
             height: BOTTOM_ACTION_H,
             background: ENTITY_SURFACE_IDLE,
             border: "1.5px solid rgba(255,255,255,0.12)",
@@ -1408,13 +1436,15 @@ export function BatchMixer({
             confirmAction="UNLOCK"
             onLongPress={toggleLock}
             variant="primary"
-            icon={<LockIcon locked />}
+            icon={<LockIcon locked size={LOCKED_ACTION_ICON_SIZE} />}
             className="w-full h-full"
             style={{ background: ENTITY_SURFACE_IDLE, border: "none", minHeight: 0 }}
           />
         </div>
       )}
 
+      </div>
+      </div>
       </div>
 
       {isLocked && (

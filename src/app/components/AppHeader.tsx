@@ -108,7 +108,7 @@ export function AppHeader({
   onSettings,
 }: AppHeaderProps) {
   return (
-    <div className="relative shrink-0 px-3 pt-9 pb-0" style={{ zIndex: 10 }}>
+    <div className="relative shrink-0 px-3 pt-9 pb-3" style={{ zIndex: 10 }}>
       <div className="flex items-center gap-2.5" style={{ minHeight: 44 }}>
         {onBack ? (
           <HeaderLongPressIconButton

@@ -123,11 +123,10 @@ export function RecipeSelect({
 
   return (
     <RecipeZoneMeta
-      label="RECIPE"
       muted={muted}
       className={open ? "relative overflow-visible" : "relative overflow-hidden"}
     >
-      <div ref={rootRef} className="w-full min-w-0 flex flex-col items-center py-2">
+      <div ref={rootRef} className="w-full min-w-0 flex flex-col items-center py-1">
         {selectable ? (
           <>
             <button
