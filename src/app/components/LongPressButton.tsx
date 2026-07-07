@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, createContext, useContext, type PointerEvent, type RefObject, type ReactNode } from "react";
+import { useRef, useState, useCallback, createContext, useContext, type CSSProperties, type PointerEvent, type RefObject, type ReactNode } from "react";
 import { useLongPressProgressReporter } from "./LongPressProgressContext";
 import { LongPressBeamBurst } from "./LongPressBeamBurst";
 
@@ -162,11 +162,14 @@ interface LongPressButtonProps {
   confirmAction?: string;
   accentColor?: string;
   disabled?: boolean;
+  active?: boolean;
+  icon?: ReactNode;
   variant?: "primary" | "secondary";
   /** fill = in-button bars; beam = side loading bars to app edge (default) */
   progressVariant?: "fill" | "beam";
   edgeContainerRef?: RefObject<HTMLElement | null>;
   className?: string;
+  style?: CSSProperties;
   labelSize?: number;
   compact?: boolean;
 }
@@ -177,10 +180,13 @@ export function LongPressButton({
   confirmAction,
   accentColor,
   disabled = false,
+  active = false,
+  icon,
   variant = "secondary",
   progressVariant = "beam",
   edgeContainerRef,
   className = "",
+  style,
   labelSize = 9,
   compact = false,
 }: LongPressButtonProps) {
@@ -206,6 +212,8 @@ export function LongPressButton({
           ? ACTION_COMPACT_LABEL
           : ACTION_SECONDARY_LABEL;
 
+  const lit = active || holding;
+
   return (
     <>
       {progressVariant === "beam" && (
@@ -220,12 +228,14 @@ export function LongPressButton({
       ref={buttonRef}
       type="button"
       disabled={disabled}
+      aria-label={label}
       className={`relative flex flex-col items-center justify-center rounded-xl overflow-hidden touch-none transition-colors duration-150 ${className}`}
       style={{
         cursor: disabled ? "default" : "pointer",
-        background: holding ? "#10101e" : "#0d0d1c",
-        border: `1.5px solid rgba(255,255,255,${holding ? 0.14 : idleBorder})`,
+        background: holding ? "#10101e" : active ? "rgba(255,255,255,0.08)" : "#0d0d1c",
+        border: `1.5px solid rgba(255,255,255,${holding ? 0.14 : lit ? 0.22 : idleBorder})`,
         minHeight: compact ? 0 : 32,
+        ...style,
       }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -235,15 +245,27 @@ export function LongPressButton({
       {progressVariant === "fill" && (
         <LongPressProgress progress={progress} accentColor={accentColor} />
       )}
-      <span style={{
-        position: "relative", zIndex: 1,
-        fontSize: labelSize, letterSpacing: compact ? "0" : "0.2em", fontWeight: 500,
-        color: idleLabel,
-        lineHeight: 1,
-        transition: "color 0.15s ease",
-      }}>
-        {label}
-      </span>
+      {icon ? (
+        <span
+          className="relative z-[1] flex items-center justify-center"
+          style={{
+            color: idleLabel,
+            transition: "color 0.15s ease",
+          }}
+        >
+          {icon}
+        </span>
+      ) : (
+        <span style={{
+          position: "relative", zIndex: 1,
+          fontSize: labelSize, letterSpacing: compact ? "0" : "0.2em", fontWeight: 500,
+          color: idleLabel,
+          lineHeight: 1,
+          transition: "color 0.15s ease",
+        }}>
+          {label}
+        </span>
+      )}
     </button>
     </>
   );

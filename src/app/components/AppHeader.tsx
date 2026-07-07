@@ -7,7 +7,6 @@ interface AppHeaderProps {
   onBack?: () => void;
   onForward?: () => void;
   onSettings?: () => void;
-  onToggleLock?: () => void;
 }
 
 function HeaderIconButton({
@@ -107,7 +106,6 @@ export function AppHeader({
   onBack,
   onForward,
   onSettings,
-  onToggleLock,
 }: AppHeaderProps) {
   return (
     <div className="relative shrink-0 px-3 pt-9 pb-0" style={{ zIndex: 10 }}>
@@ -158,26 +156,6 @@ export function AppHeader({
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
         </HeaderIconButton>
-        {onToggleLock && (
-          <HeaderLongPressIconButton
-            label={isLocked ? "Unlock" : "Lock screen"}
-            onLongPress={onToggleLock}
-            confirmAction={isLocked ? "UNLOCK" : "LOCK SCREEN"}
-            active={isLocked}
-          >
-            {isLocked ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="5" y="11" width="14" height="10" rx="2" />
-                <path d="M7 11V7a5 5 0 0 1 9.5-1" />
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="5" y="11" width="14" height="10" rx="2" />
-                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              </svg>
-            )}
-          </HeaderLongPressIconButton>
-        )}
         <HeaderLongPressIconButton
           label="Forward"
           onLongPress={onForward ?? (() => {})}

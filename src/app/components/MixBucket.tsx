@@ -44,175 +44,27 @@ const DROPDOWN_MENU_ACTIVE_BG = "rgba(255,255,255,0.07)";
 /** Menu wide enough for size label + ⇣ FORCE FIT on locked rows. */
 const DROPDOWN_MENU_MIN_W = 200;
 
-const BUCKET_LABEL_LINES = ["Bucket", "Size"] as const;
-const REC_BATCH_LABEL = "Rec. batch";
+const BUCKET_SIZE_LABEL = "Bucket size";
 const NO_BUCKET_OPACITY = 0.38;
 
-/** Match `RecipeRatioCard` / mix card row in BatchMixer. */
-const FEATURE_CARD_H = 96;
+/** Match `RecBatchPanel` readout stack. */
 const FEATURE_CARD_PX = 6;
 const FEATURE_CARD_PAD = `7px ${FEATURE_CARD_PX}px 6px`;
-const FEATURE_ROW_GAP = 8;
-const FEATURE_ID_SIZE = 12;
-const FEATURE_SUBLABEL_SIZE = 10;
-const FEATURE_ID_SUBLABEL_GAP = 8;
-const FEATURE_ID_COLOR = "#8888a8";
-const FEATURE_ID_COLOR_MUTED = "#686878";
-const FEATURE_SUBLABEL_COLOR = "#8888a8";
+const FEATURE_LABEL_GAP = 4;
+const FEATURE_TITLE_SIZE = 12;
+const FEATURE_VALUE_SIZE = 16;
+const FEATURE_TITLE_COLOR = "#8888a8";
+const FEATURE_TITLE_COLOR_MUTED = "#686878";
 const FEATURE_VALUE_COLOR = "#c4c4dc";
 const FEATURE_VALUE_COLOR_MUTED = "#9898b4";
-const BUCKET_GRID_ROW_GAP = 5;
 
 const BUCKET_VALUE_STYLE: React.CSSProperties = {
   fontFamily: "'Outfit', sans-serif",
-  fontSize: 17,
+  fontSize: FEATURE_VALUE_SIZE,
   fontWeight: 600,
   letterSpacing: "0.06em",
   lineHeight: 1,
 };
-
-function FeaturePanel({
-  children,
-  muted = false,
-  layout = "center",
-}: {
-  children: React.ReactNode;
-  muted?: boolean;
-  layout?: "center" | "start" | "evenly";
-}) {
-  const justifyContent =
-    layout === "evenly" ? "space-evenly" : layout === "start" ? "flex-start" : "center";
-
-  return (
-    <div
-      className="flex-1 min-w-0 rounded-xl flex flex-col items-center"
-      style={{
-        height: FEATURE_CARD_H,
-        padding: FEATURE_CARD_PAD,
-        background: BUCKET_CARD_BG,
-        opacity: muted ? 0.88 : 1,
-        transition: "opacity 0.2s ease",
-        justifyContent,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function FeatureIdBlock({
-  lines,
-  muted = false,
-  align = "center",
-}: {
-  lines: readonly string[];
-  muted?: boolean;
-  align?: "center" | "start";
-}) {
-  const [primary, secondary] = lines;
-  return (
-    <div
-      className={`flex flex-col max-w-full min-w-0 ${align === "start" ? "items-start" : "items-center"}`}
-      style={{ gap: FEATURE_ID_SUBLABEL_GAP }}
-    >
-      <span
-        className="uppercase truncate max-w-full"
-        style={{
-          fontSize: FEATURE_ID_SIZE,
-          letterSpacing: "0.12em",
-          fontWeight: 700,
-          color: muted ? FEATURE_ID_COLOR_MUTED : FEATURE_ID_COLOR,
-          lineHeight: 1.1,
-        }}
-      >
-        {primary}
-      </span>
-      {secondary != null && (
-        <span
-          className="uppercase truncate max-w-full"
-          style={{
-            fontSize: FEATURE_SUBLABEL_SIZE,
-            letterSpacing: "0.02em",
-            fontWeight: 600,
-            color: muted ? FEATURE_ID_COLOR_MUTED : FEATURE_SUBLABEL_COLOR,
-            opacity: muted ? 0.75 : 0.9,
-            lineHeight: 1.1,
-          }}
-        >
-          {secondary}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function FeatureTitle({
-  children,
-  muted = false,
-}: {
-  children: string;
-  muted?: boolean;
-}) {
-  return (
-    <span
-      className="uppercase truncate max-w-full text-center"
-      style={{
-        fontSize: FEATURE_ID_SIZE,
-        letterSpacing: "0.12em",
-        fontWeight: 700,
-        color: muted ? FEATURE_ID_COLOR_MUTED : FEATURE_ID_COLOR,
-        lineHeight: 1.1,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
-function formatRecommendedBatch(grams: number): string {
-  if (grams >= 1000) return `${(grams / 1000).toFixed(3)} kg`;
-  return `${Math.round(grams)} g`;
-}
-
-function RecommendedBatchPanel({
-  recommendedTotalGrams,
-  onReset,
-  disabled,
-  muted,
-}: {
-  recommendedTotalGrams: number;
-  onReset: () => void;
-  disabled: boolean;
-  muted: boolean;
-}) {
-  return (
-    <FeaturePanel muted={muted} layout="start">
-      <div
-        className="flex flex-col items-center w-full min-w-0"
-        style={{ gap: FEATURE_ROW_GAP }}
-      >
-        <FeatureTitle muted={muted}>{REC_BATCH_LABEL}</FeatureTitle>
-        <span
-          className="whitespace-nowrap tabular-nums text-center truncate max-w-full"
-          style={{
-            ...BUCKET_VALUE_STYLE,
-            color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
-          }}
-        >
-          {formatRecommendedBatch(recommendedTotalGrams)}
-        </span>
-        <LongPressButton
-          label="RESET"
-          confirmAction="RESET TO REC. BATCH"
-          onLongPress={onReset}
-          disabled={disabled}
-          labelSize={9}
-          className="shrink-0 w-[92px] min-h-[32px]"
-        />
-      </div>
-    </FeaturePanel>
-  );
-}
 
 function BucketFeaturePanel({
   clipId,
@@ -227,6 +79,7 @@ function BucketFeaturePanel({
   noBucket,
   disabled,
   muted,
+  ariaLabel,
 }: {
   clipId: string;
   fillY: number;
@@ -240,45 +93,55 @@ function BucketFeaturePanel({
   noBucket: boolean;
   disabled: boolean;
   muted: boolean;
+  ariaLabel: string;
 }) {
   return (
-    <FeaturePanel muted={muted} layout="start">
-      <div
-        className="grid items-start w-max max-w-full min-w-0 mx-auto"
-        style={{
-          gridTemplateColumns: `${SVG_W}px auto`,
-          columnGap: FEATURE_ROW_GAP,
-          rowGap: BUCKET_GRID_ROW_GAP,
-        }}
-      >
-        <div
-          className="pointer-events-none col-start-1 row-start-1 row-span-2 self-start justify-self-end transition-opacity duration-200"
-          style={{ opacity: noBucket ? NO_BUCKET_OPACITY : 1 }}
+    <div
+      className="w-full min-w-0 select-none rounded-xl flex flex-col items-center"
+      aria-label={ariaLabel}
+      style={{
+        padding: FEATURE_CARD_PAD,
+        background: BUCKET_CARD_BG,
+        opacity: muted ? 0.88 : 1,
+        transition: "opacity 0.2s ease",
+      }}
+    >
+      <div className="flex flex-col items-center shrink-0 w-full min-w-0" style={{ gap: FEATURE_LABEL_GAP }}>
+        <span
+          className="uppercase truncate max-w-full text-center"
+          style={{
+            fontSize: FEATURE_TITLE_SIZE,
+            letterSpacing: "0.12em",
+            fontWeight: 700,
+            color: muted ? FEATURE_TITLE_COLOR_MUTED : FEATURE_TITLE_COLOR,
+            lineHeight: 1.1,
+          }}
         >
-          <BucketSvg
-            clipId={clipId}
-            fillY={fillY}
-            fillRx={fillRx}
-            fillRatio={fillRatio}
-            bucketFull={bucketFull}
-            muted={muted}
-          />
-        </div>
-        <div className="col-start-2 row-start-1 justify-self-start min-w-0">
-          <FeatureIdBlock lines={BUCKET_LABEL_LINES} muted={muted} align="start" />
-        </div>
-        <div className="col-start-2 row-start-2 justify-self-start min-w-0">
-          <BucketSizeValue
-            bucketSelection={bucketSelection}
-            onBucketChange={onBucketChange}
-            onForceBucketChange={onForceBucketChange}
-            fillLiters={fillLiters}
-            disabled={disabled}
-            muted={muted}
-          />
-        </div>
+          {BUCKET_SIZE_LABEL}
+        </span>
+        <BucketSizeValue
+          bucketSelection={bucketSelection}
+          onBucketChange={onBucketChange}
+          onForceBucketChange={onForceBucketChange}
+          fillLiters={fillLiters}
+          disabled={disabled}
+          muted={muted}
+        />
       </div>
-    </FeaturePanel>
+      <div
+        className="pointer-events-none transition-opacity duration-200 shrink-0"
+        style={{ opacity: noBucket ? NO_BUCKET_OPACITY : 1, marginTop: FEATURE_LABEL_GAP }}
+      >
+        <BucketSvg
+          clipId={clipId}
+          fillY={fillY}
+          fillRx={fillRx}
+          fillRatio={fillRatio}
+          bucketFull={bucketFull}
+          muted={muted}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -311,10 +174,10 @@ function BucketSizeValue({
   }
   return (
     <span
-      className="block whitespace-nowrap"
+      className="block whitespace-nowrap text-center"
       style={{
         ...BUCKET_VALUE_STYLE,
-        color: muted ? TITLE_COLOR_MUTED : TITLE_COLOR,
+        color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
         lineHeight: 1.1,
       }}
     >
@@ -618,21 +481,17 @@ function BucketSelectDropdown({
   const options: BucketSelection[] = [...BUCKET_SIZES, "none"];
 
   return (
-    <div ref={rootRef} className="relative min-w-0">
+    <div ref={rootRef} className="relative w-fit max-w-full mx-auto">
       <button
         type="button"
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => !disabled && setOpen((o) => !o)}
-        className="inline-flex items-center justify-start gap-1 min-w-0 touch-manipulation transition-colors duration-150"
+        className="inline-flex items-center justify-center gap-1 min-w-0 touch-manipulation transition-colors duration-150"
         style={{
-          fontFamily: "'Outfit', sans-serif",
-          fontSize: 17,
-          fontWeight: 600,
-          color: muted ? TITLE_COLOR_MUTED : TITLE_COLOR,
-          letterSpacing: "0.06em",
-          lineHeight: 1,
+          ...BUCKET_VALUE_STYLE,
+          color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
           cursor: disabled ? "default" : "pointer",
           opacity: disabled ? 0.45 : 1,
           background: "transparent",
@@ -648,7 +507,7 @@ function BucketSelectDropdown({
         <ul
           role="listbox"
           aria-label="Bucket size"
-          className="absolute left-0 top-full z-20 mt-1.5 rounded-xl overflow-hidden shadow-lg"
+          className="absolute left-1/2 top-full z-20 mt-1.5 -translate-x-1/2 rounded-xl overflow-hidden shadow-lg"
           style={{
             width: "max-content",
             minWidth: DROPDOWN_MENU_MIN_W,
@@ -695,8 +554,6 @@ export interface MixBucketProps {
   bucketSelection?: BucketSelection;
   onBucketChange?: (selection: BucketSelection) => void;
   onForceBucketChange?: (size: BucketSize) => void;
-  recommendedTotalGrams?: number;
-  onResetToRecommended?: () => void;
   sandType?: SandType;
   sandBulkDensity?: number;
   muted?: boolean;
@@ -709,8 +566,6 @@ export function MixBucket({
   bucketSelection = DEFAULT_BUCKET_SELECTION,
   onBucketChange,
   onForceBucketChange,
-  recommendedTotalGrams,
-  onResetToRecommended,
   sandType = "medium",
   sandBulkDensity = DEFAULT_SAND_BULK_DENSITY,
   muted = false,
@@ -751,34 +606,20 @@ export function MixBucket({
   const noBucket = !hasBucket;
 
   return (
-    <div
-      className="w-full min-w-0 select-none flex items-stretch"
-      style={{ gap: FEATURE_ROW_GAP }}
-      aria-label={ariaLabel}
-    >
-      <BucketFeaturePanel
-        clipId={clipId}
-        fillY={fillY}
-        fillRx={fillRx}
-        fillRatio={hasBucket ? fillRatio : 0}
-        bucketFull={bucketFull}
-        bucketSelection={bucketSelection}
-        onBucketChange={onBucketChange}
-        onForceBucketChange={onForceBucketChange}
-        fillLiters={fillLiters}
-        noBucket={noBucket}
-        disabled={disabled}
-        muted={muted}
-      />
-
-      {recommendedTotalGrams != null && onResetToRecommended && (
-        <RecommendedBatchPanel
-          recommendedTotalGrams={recommendedTotalGrams}
-          onReset={onResetToRecommended}
-          disabled={disabled}
-          muted={muted}
-        />
-      )}
-    </div>
+    <BucketFeaturePanel
+      clipId={clipId}
+      fillY={fillY}
+      fillRx={fillRx}
+      fillRatio={hasBucket ? fillRatio : 0}
+      bucketFull={bucketFull}
+      bucketSelection={bucketSelection}
+      onBucketChange={onBucketChange}
+      onForceBucketChange={onForceBucketChange}
+      fillLiters={fillLiters}
+      noBucket={noBucket}
+      disabled={disabled}
+      muted={muted}
+      ariaLabel={ariaLabel}
+    />
   );
 }

@@ -23,6 +23,7 @@ import {
   recipeIngredientIndexes,
 } from "./recipe";
 import { RecipeSelect } from "./components/RecipeSelect";
+import { RecBatchPanel } from "./components/RecBatchPanel";
 import type { BlendingRecipe } from "./recipeTypes";
 import { PRESET_RECIPES } from "./recipeTypes";
 
@@ -86,6 +87,7 @@ const CARD_LIMIT_FLASH_TINT_PCT = 50;
 const BUCKET_LIMIT_VIBRATE_MS = [10, 28, 10] as const;
 const LOCK_PANEL_Z      = 6;
 const LOCK_SHIELD_Z     = 5;
+const LOCK_UNLOCK_Z     = 7;
 const LOCK_EXPAND_MS    = 360;
 const LOCK_EASE         = "cubic-bezier(0.2, 0.8, 0.2, 1)";
 const UNDO_MAX = 20;
@@ -141,8 +143,8 @@ const RECIPE_CARD_PX = 6;
 const RECIPE_META_LABEL_SIZE = 14;
 const RECIPE_ID_SIZE = 12;
 const RECIPE_SUBLABEL_SIZE = 10;
-const RECIPE_META_VALUE_SIZE = 17;
-const RECIPE_RATIO_SIZE = 18;
+const RECIPE_META_VALUE_SIZE = 16;
+const RECIPE_RATIO_SIZE = 16;
 const RECIPE_UNIT_SIZE = 10;
 const RECIPE_COLON_SIZE = 14;
 const RECIPE_LABEL_GAP = 2;
@@ -1107,10 +1109,10 @@ export function BatchMixer({
       ))}
 
       {/* ── App header ─────────────────────────────────────────────────────── */}
-      <AppHeader isLocked={isLocked} onBack={handleBack} onToggleLock={toggleLock} />
+      <AppHeader isLocked={isLocked} onBack={handleBack} />
       <LongPressHeaderBar />
 
-      {/* ── Recipe + bucket (high) · mix cards (just above swipe) ───────────── */}
+      {/* ── Recipe (high) · editing area + mix cards (just above swipe) ───── */}
       <div className="flex-1 min-h-0 flex flex-col">
         <div
           className="shrink-0 px-4 flex flex-col"
@@ -1155,27 +1157,36 @@ export function BatchMixer({
               })}
             </div>
           </div>
-
-          <div style={{ pointerEvents: isLocked ? "none" : "auto" }}>
-            <MixBucket
-              epoxyGrams={mixEpoxyGrams(activeRecipe, values)}
-              sandGrams={mixSandGrams(activeRecipe, values)}
-              bucketSelection={bucketSelection}
-              onBucketChange={setBucketSelection}
-              onForceBucketChange={handleForceBucketChange}
-              recommendedTotalGrams={recommendedTotalGrams}
-              onResetToRecommended={handleResetToRecommended}
-              sandType={sandType}
-              muted={isLocked}
-              disabled={isLocked}
-            />
-          </div>
         </div>
 
         <div
-          className="shrink-0 px-4 mt-auto"
-          style={{ pointerEvents: isLocked ? "none" : "auto" }}
+          className="shrink-0 px-4 mt-auto flex flex-col"
+          style={{ gap: CARD_ROW_GAP, pointerEvents: isLocked ? "none" : "auto" }}
         >
+          <div className="flex gap-2 items-start">
+            <div style={{ flex: `0 0 ${BOTTOM_TOTAL_WIDTH}`, minWidth: 0 }}>
+              <MixBucket
+                epoxyGrams={mixEpoxyGrams(activeRecipe, values)}
+                sandGrams={mixSandGrams(activeRecipe, values)}
+                bucketSelection={bucketSelection}
+                onBucketChange={setBucketSelection}
+                onForceBucketChange={handleForceBucketChange}
+                sandType={sandType}
+                muted={isLocked}
+                disabled={isLocked}
+              />
+            </div>
+            <RecBatchPanel
+              recommendedTotalGrams={recommendedTotalGrams}
+              onReset={handleResetToRecommended}
+              isLocked={isLocked}
+              onToggleLock={toggleLock}
+              unlockZIndex={LOCK_UNLOCK_Z}
+              disabled={isLocked}
+              muted={isLocked}
+            />
+          </div>
+
           <div className="flex" style={{ gap: CARD_ROW_GAP }}>
             {ingredientIndexes.map((pi) => {
               const p       = PARAMS[pi];
@@ -1384,7 +1395,7 @@ export function BatchMixer({
       {isLocked && (
         <div
           className="absolute inset-0"
-          style={{ zIndex: LOCK_SHIELD_Z, pointerEvents: "auto" }}
+          style={{ zIndex: LOCK_SHIELD_Z, pointerEvents: "none" }}
           aria-hidden
         />
       )}
