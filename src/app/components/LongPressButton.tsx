@@ -164,6 +164,10 @@ interface LongPressButtonProps {
   disabled?: boolean;
   active?: boolean;
   icon?: ReactNode;
+  /** Secondary hint below the title (stacked layout). */
+  description?: string;
+  /** Icon + title + optional description, for large locked overlays. */
+  stacked?: boolean;
   variant?: "primary" | "secondary";
   /** fill = in-button bars; beam = side loading bars to app edge (default) */
   progressVariant?: "fill" | "beam";
@@ -171,6 +175,7 @@ interface LongPressButtonProps {
   className?: string;
   style?: CSSProperties;
   labelSize?: number;
+  descriptionSize?: number;
   compact?: boolean;
 }
 
@@ -182,12 +187,15 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
   disabled = false,
   active = false,
   icon,
+  description,
+  stacked = false,
   variant = "secondary",
   progressVariant = "beam",
   edgeContainerRef,
   className = "",
   style,
   labelSize = 9,
+  descriptionSize = 9,
   compact = false,
 }, ref) {
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -250,7 +258,50 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
       {progressVariant === "fill" && (
         <LongPressProgress progress={progress} accentColor={accentColor} />
       )}
-      {icon ? (
+      {stacked ? (
+        <span
+          className="relative z-[1] flex items-center text-left"
+          style={{ gap: 12, maxWidth: "92%", padding: "0 12px" }}
+        >
+          {icon ? (
+            <span
+              className="flex shrink-0 items-center justify-center"
+              style={{ color: idleLabel, transition: "color 0.15s ease" }}
+            >
+              {icon}
+            </span>
+          ) : null}
+          <span className="flex min-w-0 flex-col" style={{ gap: description ? 5 : 0 }}>
+            <span
+              style={{
+                fontSize: labelSize,
+                letterSpacing: "0.14em",
+                fontWeight: 600,
+                color: idleLabel,
+                lineHeight: 1.15,
+                transition: "color 0.15s ease",
+              }}
+            >
+              {label}
+            </span>
+            {description ? (
+              <span
+                style={{
+                  fontSize: descriptionSize,
+                  letterSpacing: "0.03em",
+                  fontWeight: 500,
+                  color: idleLabel,
+                  opacity: holding ? 0.95 : 0.72,
+                  lineHeight: 1.35,
+                  transition: "color 0.15s ease, opacity 0.15s ease",
+                }}
+              >
+                {description}
+              </span>
+            ) : null}
+          </span>
+        </span>
+      ) : icon ? (
         <span
           className="relative z-[1] flex items-center justify-center"
           style={{

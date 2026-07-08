@@ -48,6 +48,15 @@ export function LoadIcon({ size = DEFAULT_ICON_SIZE }: { size?: number }) {
   );
 }
 
+/** Simple right arrow — go to / open. */
+export function GoToIcon({ size = DEFAULT_ICON_SIZE }: { size?: number }) {
+  return (
+    <svg {...iconProps(size)}>
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  );
+}
+
 export function UndoIcon({ size = DEFAULT_ICON_SIZE }: { size?: number }) {
   return (
     <svg {...iconProps(size)}>

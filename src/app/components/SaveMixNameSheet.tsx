@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { APP_HEADER_HEIGHT } from "./AppHeader";
 import { LongPressButton } from "./LongPressButton";
 import { SaveIcon } from "./ActionIcons";
@@ -10,9 +10,26 @@ const TITLE_COLOR = "#c0c0e0";
 const MUTED = "#8888a8";
 const LIST_SIZE = 12;
 const OUTSIDE_DIM = "rgba(5, 5, 16, 0.28)";
-const INPUT_BG = "rgba(255, 255, 255, 0.05)";
-const INPUT_BORDER = "1px solid rgba(255, 255, 255, 0.12)";
-const CONFIRM_H = 42;
+
+/** Match LoadSavedMixesSheet chrome. */
+const HEADER_HEIGHT_FRAC = "32%";
+const TITLE_SIZE = 30;
+const SUBTITLE_SIZE = 14;
+const SHEET_MARGIN_X = 16;
+const SHEET_MARGIN_TOP = 6;
+const SHEET_MARGIN_BOTTOM = 16;
+const SHEET_RADIUS = 28;
+const SHEET_PAD_X = 20;
+const CLOSE_SIZE = 44;
+const FOOTER_H = 64;
+const INPUT_H = 40;
+const INPUT_BG = "rgba(255,255,255,0.06)";
+const INPUT_BORDER = "1px solid rgba(255,255,255,0.10)";
+const CONFIRM_H = 44;
+/** Apple-ish rhythm: 20pt section gaps, 8pt label-to-control. */
+const CONTENT_TOP = 20;
+const SECTION_GAP = 20;
+const LABEL_GAP = 8;
 
 type SaveMixNameSheetProps =
   | {
@@ -55,29 +72,16 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
   if (!open) return null;
 
   const title = mode === "save" ? "Save mix" : "Rename mix";
-  const hint =
+  const subtitle =
     mode === "save"
       ? "Optional label — recipe name is kept either way"
       : "Clear custom label to show the recipe name again";
+  const confirmLabel = mode === "save" ? "Save mix" : "Rename";
+  const confirmAction = mode === "save" ? "SAVE MIX" : "RENAME";
 
   const handleConfirm = () => {
     onConfirm(name);
     onOpenChange(false);
-  };
-
-  const inputStyle: CSSProperties = {
-    width: "100%",
-    boxSizing: "border-box",
-    background: INPUT_BG,
-    border: INPUT_BORDER,
-    borderRadius: 12,
-    padding: "11px 12px",
-    color: TITLE_COLOR,
-    fontSize: LIST_SIZE + 1,
-    fontFamily: "'Outfit', sans-serif",
-    fontWeight: 500,
-    letterSpacing: "0.03em",
-    outline: "none",
   };
 
   return (
@@ -97,107 +101,181 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
       />
 
       <div
-        className="load-sheet-panel relative flex flex-col mx-3 mt-2 mb-4 rounded-2xl overflow-hidden"
+        className="load-sheet-panel relative flex flex-col min-h-0 flex-1 overflow-hidden"
         style={{
+          marginLeft: SHEET_MARGIN_X,
+          marginRight: SHEET_MARGIN_X,
+          marginTop: SHEET_MARGIN_TOP,
+          marginBottom: SHEET_MARGIN_BOTTOM,
+          borderRadius: SHEET_RADIUS,
           border: PANEL_BORDER,
-          boxShadow: "0 16px 48px rgba(0, 0, 0, 0.25)",
+          boxShadow: "0 20px 56px rgba(0, 0, 0, 0.32)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="shrink-0 flex items-center gap-3 px-4 pt-4 pb-3">
+        <header
+          className="shrink-0 flex flex-col items-center justify-end text-center"
+          style={{
+            height: HEADER_HEIGHT_FRAC,
+            minHeight: 108,
+            paddingLeft: SHEET_PAD_X,
+            paddingRight: SHEET_PAD_X,
+            paddingBottom: 10,
+          }}
+        >
+          <h2
+            id="save-mix-name-title"
+            style={{
+              fontFamily: "'Outfit', sans-serif",
+              fontSize: TITLE_SIZE,
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              color: TITLE_COLOR,
+              lineHeight: 1.1,
+              margin: 0,
+            }}
+          >
+            {title}
+          </h2>
+          <p
+            style={{
+              fontFamily: "'Outfit', sans-serif",
+              fontSize: SUBTITLE_SIZE,
+              fontWeight: 500,
+              letterSpacing: "0.01em",
+              color: MUTED,
+              marginTop: 6,
+              lineHeight: 1.4,
+              maxWidth: 280,
+            }}
+          >
+            {subtitle}
+          </p>
+        </header>
+
+        <div
+          className="flex-1 min-h-0 flex flex-col"
+          style={{ paddingLeft: SHEET_PAD_X, paddingRight: SHEET_PAD_X }}
+        >
+          {/* Recipe stays higher (near the header). */}
+          <div
+            className="shrink-0"
+            style={{ paddingTop: CONTENT_TOP }}
+          >
+            <div style={{ maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>
+              <p
+                style={{
+                  fontSize: LIST_SIZE,
+                  color: MUTED,
+                  letterSpacing: "0.05em",
+                  marginBottom: LABEL_GAP,
+                  textAlign: "center",
+                }}
+              >
+                Recipe
+              </p>
+              <p
+                className="truncate"
+                style={{
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: LIST_SIZE + 1,
+                  fontWeight: 600,
+                  color: TITLE_COLOR,
+                  textAlign: "center",
+                }}
+              >
+                {recipeName}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex-1 min-h-0" aria-hidden />
+
+          {/* Editable content + action pinned to the bottom (above close). */}
+          <div className="shrink-0" style={{ paddingBottom: 12 }}>
+            <div
+              style={{
+                maxWidth: 360,
+                marginLeft: "auto",
+                marginRight: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: SECTION_GAP,
+              }}
+            >
+              <div>
+                <label
+                  htmlFor="save-mix-name-input"
+                  style={{
+                    display: "block",
+                    fontSize: LIST_SIZE,
+                    color: MUTED,
+                    letterSpacing: "0.05em",
+                    marginBottom: LABEL_GAP,
+                    textAlign: "center",
+                  }}
+                >
+                  Display name
+                </label>
+                <input
+                  id="save-mix-name-input"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={64}
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="w-full outline-none"
+                  style={{
+                    height: INPUT_H,
+                    boxSizing: "border-box",
+                    borderRadius: 14,
+                    padding: "0 14px",
+                    background: INPUT_BG,
+                    border: INPUT_BORDER,
+                    color: TITLE_COLOR,
+                    fontFamily: "'Outfit', sans-serif",
+                    fontSize: 14,
+                    fontWeight: 500,
+                    letterSpacing: "0.01em",
+                    textAlign: "center",
+                  }}
+                />
+              </div>
+
+              <LongPressButton
+                label={confirmLabel}
+                confirmAction={confirmAction}
+                onLongPress={handleConfirm}
+                variant="primary"
+                icon={<SaveIcon size={16} />}
+                className="w-full"
+                style={{ height: CONFIRM_H, minHeight: 0 }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <footer
+          className="shrink-0 flex items-center justify-center"
+          style={{ height: FOOTER_H }}
+        >
           <button
             type="button"
             aria-label="Close"
             onClick={() => onOpenChange(false)}
-            className="flex items-center justify-center rounded-xl shrink-0 transition-colors duration-150"
+            className="flex items-center justify-center rounded-full shrink-0 transition-colors duration-150"
             style={{
-              width: 40,
-              height: 40,
-              background: INPUT_BG,
-              border: INPUT_BORDER,
+              width: CLOSE_SIZE,
+              height: CLOSE_SIZE,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
               color: MUTED,
             }}
           >
             <CloseIcon />
           </button>
-          <div className="flex-1 min-w-0">
-            <h2
-              id="save-mix-name-title"
-              style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: LIST_SIZE + 2,
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                color: TITLE_COLOR,
-                lineHeight: 1.2,
-              }}
-            >
-              {title}
-            </h2>
-            <p style={{ fontSize: LIST_SIZE, color: MUTED, marginTop: 2 }}>{hint}</p>
-          </div>
-        </header>
-
-        <div className="px-4 pb-4 flex flex-col gap-3">
-          <div>
-            <p
-              style={{
-                fontSize: LIST_SIZE,
-                color: MUTED,
-                letterSpacing: "0.05em",
-                marginBottom: 6,
-              }}
-            >
-              Recipe
-            </p>
-            <p
-              className="truncate"
-              style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: LIST_SIZE + 1,
-                fontWeight: 600,
-                color: TITLE_COLOR,
-              }}
-            >
-              {recipeName}
-            </p>
-          </div>
-
-          <div>
-            <label
-              htmlFor="save-mix-name-input"
-              style={{
-                display: "block",
-                fontSize: LIST_SIZE,
-                color: MUTED,
-                letterSpacing: "0.05em",
-                marginBottom: 6,
-              }}
-            >
-              Display name
-            </label>
-            <input
-              id="save-mix-name-input"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={64}
-              autoComplete="off"
-              spellCheck={false}
-              style={inputStyle}
-            />
-          </div>
-
-          <LongPressButton
-            label="Save mix"
-            confirmAction="SAVE MIX"
-            onLongPress={handleConfirm}
-            variant="primary"
-            icon={<SaveIcon size={16} />}
-            className="w-full"
-            style={{ height: CONFIRM_H, minHeight: 0 }}
-          />
-        </div>
+        </footer>
       </div>
     </div>
   );

@@ -144,9 +144,13 @@ export function LockedSaveOverlay({
     <div style={shellStyle}>
       <LongPressButton
         label={saveFlash ? "Saved" : "Save mix"}
+        description={saveFlash ? "Stored in your mixes" : "Hold to name and store"}
         confirmAction="SAVE MIX"
         onLongPress={onSave}
         variant="primary"
+        stacked
+        labelSize={11}
+        descriptionSize={10}
         icon={saveFlash ? <SavedIcon size={LOCKED_ACTION_ICON_SIZE} /> : <SaveIcon size={LOCKED_ACTION_ICON_SIZE} />}
         className="w-full h-full"
         style={{ background: "transparent", border: "none", minHeight: 0 }}

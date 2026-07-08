@@ -59,3 +59,13 @@
 .load-sheet-panel {
   animation: loadSheetPanelIn 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* Saved mixes — hide scrollbar; fades are overlay gradients on the panel. */
+.saved-mixes-list {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.saved-mixes-list::-webkit-scrollbar {
+  display: none;
+}

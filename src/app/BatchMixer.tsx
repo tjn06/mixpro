@@ -1205,16 +1205,12 @@ export function BatchMixer({
               gap: RECIPE_META_GAP,
             }}
           >
-            <div
-              className={isLocked ? "pointer-events-none" : "pointer-events-auto"}
-              style={{ opacity: isLocked ? 0.88 : 1, transition: "opacity 0.2s ease" }}
-            >
+            <div className={isLocked ? "pointer-events-none" : "pointer-events-auto"}>
               <RecipeSelect
                 recipes={recipes}
                 value={activeRecipe}
                 onChange={handleRecipeChange}
                 disabled={isLocked}
-                muted={isLocked}
               />
             </div>
             <div className="flex items-stretch pointer-events-none">
@@ -1486,9 +1482,13 @@ export function BatchMixer({
         >
           <LongPressButton
             label="Unlock"
+            description="Hold to edit mix again"
             confirmAction="UNLOCK"
             onLongPress={toggleLock}
             variant="primary"
+            stacked
+            labelSize={11}
+            descriptionSize={10}
             icon={<LockIcon locked size={LOCKED_ACTION_ICON_SIZE} />}
             className="w-full h-full"
             style={{ background: ENTITY_SURFACE_IDLE, border: "none", minHeight: 0 }}
