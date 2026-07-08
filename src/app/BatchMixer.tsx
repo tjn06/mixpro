@@ -10,7 +10,11 @@ import { reconcileBucketSelection, maxMixLitersForBucket, isBucketAtMaxFill, typ
 import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues } from "./bucketLimits";
 import { estimateMixVolume, type SandType } from "./mixVolume";
 import { LongPressProgressProvider } from "./components/LongPressProgressContext";
-import { saveBlendingMix, getSavedMixes } from "./mixStorage";
+import {
+  gramsFromSnapshot,
+  snapshotValuesFromGrams,
+  useSavedMixesStore,
+} from "./stores/savedMixesStore";
 import {
   applyRecipeChange,
   driverIdFromIndex,
@@ -25,18 +29,17 @@ import {
 import { RecipeSelect } from "./components/RecipeSelect";
 import { RecBatchPanel, LockIcon } from "./components/RecBatchPanel";
 import { LockedSaveOverlay, LOCKED_ACTION_ICON_SIZE } from "./components/LockedSaveOverlay";
+import { LoadSavedMixesSheet } from "./components/LoadSavedMixesSheet";
+import { SaveMixNameSheet } from "./components/SaveMixNameSheet";
+import type { SavedMixSnapshot } from "./types/savedMix";
 import { UndoIcon } from "./components/ActionIcons";
 import type { BlendingRecipe } from "./recipeTypes";
-import { PRESET_RECIPES } from "./recipeTypes";
+import { PRESET_RECIPES, recipeMenuLabel } from "./recipeTypes";
+import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "./mixEntities";
+import { BatchTotalsScreen } from "./components/BatchTotalsScreen";
 
 // All values stored internally in grams — index order: TOTAL, A, B, TIX, SAND
-const PARAMS = [
-  { id: "TOTAL", color: "#34d399", glow: "#34d39944", isKg: true },
-  { id: "A",     color: "#a855f7", glow: "#a855f744", isKg: true },
-  { id: "B",     color: "#22d3ee", glow: "#22d3ee44", isKg: true },
-  { id: "TIX",   color: "#a3e635", glow: "#a3e63544", isKg: false },
-  { id: "SAND",  color: "#f97316", glow: "#f9731644", isKg: true },
-] as const;
+// PARAMS imported from mixEntities.ts
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ROUND BUTTONS + SVG CONNECTION LINES — currently disabled (thumb-reach layout)
@@ -516,9 +519,7 @@ function CardReadout({
 const DESIGN_W = 390;
 const DESIGN_H = 844;
 
-function fmt(grams: number, isKg: boolean) {
-  return isKg ? (grams / 1000).toFixed(3) : Math.round(grams).toString();
-}
+type MixerScreen = "mixer" | "totals";
 
 const TotalTile = forwardRef<HTMLButtonElement, {
   valueKg: string;
@@ -681,6 +682,10 @@ export function BatchMixer({
   const [scale, setScale]           = useState(1);
   const [canUndo, setCanUndo]       = useState(false);
   const [saveFlash, setSaveFlash]   = useState(false);
+  const [loadPickerOpen, setLoadPickerOpen] = useState(false);
+  const [saveNameSheetOpen, setSaveNameSheetOpen] = useState(false);
+  const [screen, setScreen] = useState<MixerScreen>("mixer");
+  const [batchMultiplier, setBatchMultiplier] = useState(1);
   const [dragFocus, setDragFocus]   = useState(false);
   const [dragDirection, setDragDirection] = useState<"up" | "down" | null>(null);
   const [dragBlocked, setDragBlocked] = useState(false);
@@ -805,27 +810,51 @@ export function BatchMixer({
     setCanUndo(stack.length > 0);
   }, []);
 
-  const handleSave = useCallback(() => {
-    saveBlendingMix(valuesRef.current);
-    setSaveFlash(true);
-    setTimeout(() => setSaveFlash(false), 1500);
+  const saveMix = useSavedMixesStore((s) => s.saveMix);
+  const canLoad = useSavedMixesStore((s) => s.mixes.length > 0);
+
+  const handleSaveRequest = useCallback(() => {
+    setSaveNameSheetOpen(true);
   }, []);
 
-  const canLoad = getSavedMixes().length > 0;
+  const handleSaveConfirm = useCallback(
+    (metaName?: string) => {
+      const recipeName = recipeMenuLabel(recipeRef.current);
+      saveMix({
+        recipeId: recipeRef.current.id,
+        recipeName,
+        metaName,
+        bucketSelection: bucketSelectionRef.current,
+        sandType,
+        values: snapshotValuesFromGrams(valuesRef.current),
+      });
+      setSaveFlash(true);
+      setTimeout(() => setSaveFlash(false), 1500);
+    },
+    [saveMix, sandType],
+  );
 
   const handleLoad = useCallback(() => {
-    const mixes = getSavedMixes();
-    if (mixes.length === 0) return;
-    const latest = mixes[mixes.length - 1]!;
-    pushUndo();
-    setValues([
-      latest.values.total,
-      latest.values.a,
-      latest.values.b,
-      latest.values.tix,
-      latest.values.sand,
-    ]);
-  }, [pushUndo]);
+    setLoadPickerOpen(true);
+  }, []);
+
+  const handleSavedMixSelect = useCallback(
+    (mix: SavedMixSnapshot) => {
+      pushUndo();
+      const recipe =
+        recipes.find((r) => r.id === mix.recipeId) ?? recipeRef.current;
+      if (recipe.id !== recipeRef.current.id) {
+        setActiveRecipe(recipe);
+        recipeRef.current = recipe;
+      }
+      setBucketSelection(mix.bucketSelection);
+      bucketSelectionRef.current = mix.bucketSelection;
+      const loaded = gramsFromSnapshot(mix.values);
+      setValues(clampMixValuesToBucketMax(loaded, recipe, mix.bucketSelection, sandType));
+      setActive(0);
+    },
+    [pushUndo, recipes, sandType],
+  );
 
   const scaleMix = useCallback((factor: number) => {
     pushUndo();
@@ -996,8 +1025,17 @@ export function BatchMixer({
   }, []);
 
   const handleBack = useCallback(() => {
+    if (screen === "totals") {
+      setScreen("mixer");
+      return;
+    }
     window.history.back();
-  }, []);
+  }, [screen]);
+
+  const handleForward = useCallback(() => {
+    if (screen !== "mixer" || isLocked) return;
+    setScreen("totals");
+  }, [screen, isLocked]);
 
   const endSwipe = useCallback((e?: React.PointerEvent) => {
     if (!isDragging.current) return;
@@ -1114,7 +1152,8 @@ export function BatchMixer({
           }}
         >
 
-      {connectorLines.map((line, i) => (
+      {screen === "mixer" &&
+        connectorLines.map((line, i) => (
         <div
           key={i}
           aria-hidden
@@ -1135,9 +1174,23 @@ export function BatchMixer({
       ))}
 
       {/* ── App header ─────────────────────────────────────────────────────── */}
-      <AppHeader isLocked={isLocked} onBack={handleBack} />
+      <AppHeader
+        isLocked={isLocked}
+        onBack={handleBack}
+        onForward={screen === "mixer" ? handleForward : undefined}
+      />
       {/* <LongPressHeaderBar /> — reserved confirm slot; disabled to save vertical space */}
 
+      {screen === "totals" ? (
+        <BatchTotalsScreen
+          recipe={activeRecipe}
+          values={values}
+          entityIndexes={ingredientIndexes}
+          multiplier={batchMultiplier}
+          onMultiplierChange={setBatchMultiplier}
+        />
+      ) : (
+      <>
       {/* ── Recipe (high) · editing area + mix cards (just above swipe) ───── */}
       <div className="flex-1 min-h-0 flex flex-col">
         <div
@@ -1210,7 +1263,7 @@ export function BatchMixer({
             <RecBatchPanel
               recommendedTotalGrams={recommendedTotalGrams}
               onReset={handleResetToRecommended}
-              onSave={handleSave}
+              onSave={handleSaveRequest}
               onLoad={handleLoad}
               saveFlash={saveFlash}
               canLoad={canLoad}
@@ -1225,7 +1278,7 @@ export function BatchMixer({
               bucketRef={bucketRef}
               actionsBlockRef={actionsBlockRef}
               saveButtonRef={saveButtonRef}
-              onSave={handleSave}
+              onSave={handleSaveRequest}
               saveFlash={saveFlash}
               expandMs={LOCK_EXPAND_MS}
               expandEase={LOCK_EASE}
@@ -1446,8 +1499,10 @@ export function BatchMixer({
       </div>
       </div>
       </div>
+      </>
+      )}
 
-      {isLocked && (
+      {screen === "mixer" && isLocked && (
         <div
           className="absolute inset-0"
           style={{ zIndex: LOCK_SHIELD_Z, pointerEvents: "none" }}
@@ -1455,7 +1510,7 @@ export function BatchMixer({
         />
       )}
 
-      {dragFocus && !isLocked && (
+      {screen === "mixer" && dragFocus && !isLocked && (
         <div
           className="absolute inset-0"
           style={{
@@ -1467,6 +1522,20 @@ export function BatchMixer({
           aria-hidden
         />
       )}
+
+        <LoadSavedMixesSheet
+          open={screen === "mixer" && loadPickerOpen}
+          onOpenChange={setLoadPickerOpen}
+          onSelect={handleSavedMixSelect}
+        />
+
+        <SaveMixNameSheet
+          mode="save"
+          open={screen === "mixer" && saveNameSheetOpen}
+          onOpenChange={setSaveNameSheetOpen}
+          recipeName={recipeMenuLabel(activeRecipe)}
+          onConfirm={handleSaveConfirm}
+        />
 
         </div>
         </LongPressEdgeProvider>

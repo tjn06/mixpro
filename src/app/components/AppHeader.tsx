@@ -1,6 +1,9 @@
 import React, { type ReactNode } from "react";
 import { HEADER_NAV_LONG_PRESS_MS, LongPressProgress, useLongPress } from "./LongPressButton";
 
+/** Design-canvas height of the app header row (`pt-9` + 44px bar + `pb-3`). */
+export const APP_HEADER_HEIGHT = 36 + 44 + 12;
+
 interface AppHeaderProps {
   title?: string;
   isLocked?: boolean;
@@ -160,7 +163,7 @@ export function AppHeader({
           label="Forward"
           onLongPress={onForward ?? (() => {})}
           confirmAction="GO FORWARD"
-          disabled={isLocked}
+          disabled={isLocked || !onForward}
           durationMs={HEADER_NAV_LONG_PRESS_MS}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

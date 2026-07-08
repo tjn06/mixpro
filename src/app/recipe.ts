@@ -217,6 +217,19 @@ export function getIngredientLabel(recipe: BlendingRecipe, id: string): string |
   return undefined;
 }
 
+/** Secondary line under entity id on mix cards (Epoxy, Resin, Filler, …). */
+export function getEntityMetaLabel(recipe: BlendingRecipe, id: string): string | undefined {
+  if (id === "TOTAL") {
+    return "Total epoxymass";
+  }
+  const label = getIngredientLabel(recipe, id);
+  if (label) return label;
+  if ((id === "A" || id === "B") && recipe.nameSubline?.trim()) {
+    return recipe.nameSubline.trim();
+  }
+  return undefined;
+}
+
 /** @deprecated Use getIngredientLabel — kept for recipe ratio cards on A/B. */
 export function getBinderPartLabel(recipe: BlendingRecipe, id: string): string | undefined {
   return getIngredientLabel(recipe, id);
