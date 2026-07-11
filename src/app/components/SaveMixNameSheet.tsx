@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { APP_HEADER_HEIGHT } from "./AppHeader";
 import { LongPressButton } from "./LongPressButton";
 import { SaveIcon } from "./ActionIcons";
@@ -64,6 +64,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
     mode === "save" ? recipeName : savedMixDisplayName(props.mix);
 
   const [name, setName] = useState(initialName);
+  const sheetPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) setName(initialName);
@@ -101,6 +102,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
       />
 
       <div
+        ref={sheetPanelRef}
         className="load-sheet-panel relative flex flex-col min-h-0 flex-1 overflow-hidden"
         style={{
           marginLeft: SHEET_MARGIN_X,
@@ -250,6 +252,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                 variant="primary"
                 icon={<SaveIcon size={16} />}
                 className="w-full"
+                edgeContainerRef={sheetPanelRef}
                 style={{ height: CONFIRM_H, minHeight: 0 }}
               />
             </div>
