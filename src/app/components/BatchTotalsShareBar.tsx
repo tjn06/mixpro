@@ -121,7 +121,6 @@ export interface BatchTotalsShareBarProps {
   values: number[];
   entityIndexes: number[];
   multiplier: number;
-  horizontalPad: number;
 }
 
 export function BatchTotalsShareBar({
@@ -129,7 +128,6 @@ export function BatchTotalsShareBar({
   values,
   entityIndexes,
   multiplier,
-  horizontalPad,
 }: BatchTotalsShareBarProps) {
   const [copied, setCopied] = useState(false);
   const [language, setLanguage] = useState<BatchReportLanguage>("sv");
@@ -172,8 +170,8 @@ export function BatchTotalsShareBar({
 
   return (
     <div
-      className="shrink-0 flex flex-col items-stretch min-w-0"
-      style={{ paddingLeft: horizontalPad, paddingRight: horizontalPad, paddingTop: 12, paddingBottom: 20, gap: 10 }}
+      className="shrink-0 app-gutter-x flex flex-col items-stretch min-w-0"
+      style={{ paddingTop: 12, paddingBottom: 20, gap: 10 }}
     >
       <div className="flex items-center gap-2 min-w-0 w-full">
         <input

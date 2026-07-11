@@ -33,7 +33,6 @@ const SUM_UNIT_SIZE_TOTAL = 14;
 const MULT_SIZE_TOTAL = 14;
 const TOTAL_ROW_MB = 14;
 const ENTITY_COL_W_TOTAL = 108;
-const H_PAD = 16; // matches px-4 — keep all content inside mixer gutters
 const ROW_COL_GAP = 10;
 
 /** Sum uses auto width (never clipped); card column shrinks first. */
@@ -97,8 +96,8 @@ export function BatchTotalsScreen({
   return (
     <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-x-hidden">
       <div
-        className="shrink-0 flex flex-col min-w-0"
-        style={{ paddingTop: RECIPE_ZONE_PT, paddingLeft: H_PAD, paddingRight: H_PAD, gap: RECIPE_META_GAP }}
+        className="shrink-0 app-gutter-x flex flex-col min-w-0"
+        style={{ paddingTop: RECIPE_ZONE_PT, gap: RECIPE_META_GAP }}
       >
         <div
           className="rounded-xl flex flex-col min-w-0"
@@ -114,10 +113,7 @@ export function BatchTotalsScreen({
         </div>
       </div>
 
-      <div
-        className="flex-1 min-h-0 min-w-0 flex flex-col justify-evenly"
-        style={{ paddingLeft: H_PAD, paddingRight: H_PAD }}
-      >
+      <div className="flex-1 min-h-0 min-w-0 app-gutter-x flex flex-col justify-evenly">
         <div className="shrink-0 flex flex-col items-center min-w-0">
           <p
             style={{
@@ -243,7 +239,6 @@ export function BatchTotalsScreen({
         values={values}
         entityIndexes={entityIndexes}
         multiplier={multiplier}
-        horizontalPad={H_PAD}
       />
     </div>
   );

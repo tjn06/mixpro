@@ -105,7 +105,6 @@ const BOTTOM_ACTION_H   = BOTTOM_SUB_ROW_H * 2 + BOTTOM_ROW_GAP;
 const SECTION_ROW_GAP   = 12;
 const SWIPE_PAD_TOP     = 0;
 const BOTTOM_PAD_TOP    = SECTION_ROW_GAP;
-const BOTTOM_PAD_BOTTOM = 28;
 const LOCK_TRANSITION   = `top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, left ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, width ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, height ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, bottom ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
 const LOCK_FADE_TRANSITION = `opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
 const LOCK_TEXT_TRANSITION = `font-size ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, margin-top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, width ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
@@ -1213,7 +1212,7 @@ export function BatchMixer({
       <div className="flex-1 min-h-0 flex flex-col overflow-x-hidden">
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <div
-            className="shrink-0 px-4 flex flex-col"
+            className="shrink-0 app-gutter-x flex flex-col"
             style={{ paddingTop: RECIPE_ZONE_PT, gap: RECIPE_META_GAP }}
           >
             <div
@@ -1255,10 +1254,10 @@ export function BatchMixer({
         </div>
 
         <div
-          className="shrink-0 px-4 flex flex-col"
+          className="shrink-0 app-gutter-x flex flex-col"
           style={{
             gap: SECTION_ROW_GAP,
-            paddingBottom: BOTTOM_PAD_BOTTOM,
+            paddingBottom: "var(--space-4)",
             pointerEvents: isLocked ? "none" : "auto",
           }}
         >
