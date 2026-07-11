@@ -1,11 +1,15 @@
 import React, { type ReactNode } from "react";
-import { HEADER_NAV_LONG_PRESS_MS, LongPressProgress, useLongPress } from "./LongPressButton";
+import { LongPressButton } from "./LongPressButton";
 
 /** Design-canvas height of the app header row (`pt-9` + 44px bar + `pb-3` + divider). */
 export const APP_HEADER_HEIGHT = 36 + 44 + 12 + 1;
 
 const HEADER_BG = "#0a0a14";
 const HEADER_DIVIDER = "1px solid rgba(255,255,255,0.08)";
+
+const ROUND_NAV_BTN_CLASS = "shrink-0";
+/** Half of 40×40 — visually round; avoids 9999px radius breaking beam underlap math. */
+const ROUND_NAV_BTN_STYLE = { width: 40, height: 40, minHeight: 0, borderRadius: 20 };
 
 interface AppHeaderProps {
   title?: string;
@@ -35,7 +39,7 @@ function HeaderIconButton({
       aria-disabled={disabled || undefined}
       disabled={disabled}
       onClick={onClick}
-      className="flex items-center justify-center rounded-full transition-colors duration-150"
+      className="flex items-center justify-center rounded-full transition-colors duration-150 shrink-0"
       style={{
         width: 40,
         height: 40,
@@ -51,61 +55,6 @@ function HeaderIconButton({
   );
 }
 
-function HeaderLongPressIconButton({
-  label,
-  children,
-  onLongPress,
-  confirmAction,
-  active = false,
-  disabled = false,
-  durationMs,
-}: {
-  label: string;
-  children: ReactNode;
-  onLongPress: () => void;
-  confirmAction: string;
-  active?: boolean;
-  disabled?: boolean;
-  durationMs?: number;
-}) {
-  const { progress, holding, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } =
-    useLongPress(onLongPress, disabled, {
-      confirmAction,
-      headerProgress: true,
-      durationMs,
-    });
-
-  const lit = active || holding;
-
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-disabled={disabled || undefined}
-      disabled={disabled}
-      className="relative flex items-center justify-center rounded-full overflow-hidden touch-none transition-colors duration-150"
-      style={{
-        width: 40,
-        height: 40,
-        background: holding ? "#10101e" : active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
-        border: lit
-          ? "1px solid rgba(255,255,255,0.28)"
-          : "1px solid rgba(255,255,255,0.07)",
-        color: lit ? "#c0c0e0" : "#8888a8",
-        opacity: disabled ? 0.35 : 1,
-        cursor: disabled ? "default" : "pointer",
-      }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-    >
-      <LongPressProgress progress={progress} inset={4} />
-      <span className="relative z-[1] flex items-center justify-center">{children}</span>
-    </button>
-  );
-}
-
 export function AppHeader({
   title = "MIXpro",
   isLocked = false,
@@ -116,32 +65,22 @@ export function AppHeader({
   return (
     <div
       className="relative shrink-0 px-3 pt-9 pb-3"
-      style={{
-        zIndex: 10,
-        background: HEADER_BG,
-        borderBottom: HEADER_DIVIDER,
-      }}
+      style={{ background: HEADER_BG, borderBottom: HEADER_DIVIDER }}
     >
       <div className="flex items-center gap-2.5" style={{ minHeight: 44 }}>
-        {onBack ? (
-          <HeaderLongPressIconButton
-            label="Back"
-            onLongPress={onBack}
-            confirmAction="GO BACK"
-            disabled={isLocked}
-            durationMs={HEADER_NAV_LONG_PRESS_MS}
-          >
+        <LongPressButton
+          label="Back"
+          confirmAction="GO BACK"
+          onLongPress={onBack ?? (() => {})}
+          disabled={isLocked || !onBack}
+          className={ROUND_NAV_BTN_CLASS}
+          style={ROUND_NAV_BTN_STYLE}
+          icon={
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 18l-6-6 6-6" />
             </svg>
-          </HeaderLongPressIconButton>
-        ) : (
-          <HeaderIconButton label="Back" disabled={isLocked}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </HeaderIconButton>
-        )}
+          }
+        />
 
         <h1
           className="flex-1 min-w-0 truncate text-center pointer-events-none"
@@ -169,17 +108,19 @@ export function AppHeader({
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
         </HeaderIconButton>
-        <HeaderLongPressIconButton
+        <LongPressButton
           label="Forward"
-          onLongPress={onForward ?? (() => {})}
           confirmAction="GO FORWARD"
+          onLongPress={onForward ?? (() => {})}
           disabled={isLocked || !onForward}
-          durationMs={HEADER_NAV_LONG_PRESS_MS}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </HeaderLongPressIconButton>
+          className={ROUND_NAV_BTN_CLASS}
+          style={ROUND_NAV_BTN_STYLE}
+          icon={
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          }
+        />
       </div>
     </div>
   );

@@ -4,6 +4,8 @@ import { BEAM_Z, LongPressBeamBurst } from "./LongPressBeamBurst";
 
 const BUTTON_OVER_BEAM_Z = BEAM_Z + 8;
 
+export { BUTTON_OVER_BEAM_Z };
+
 const LongPressEdgeContext = createContext<RefObject<HTMLElement | null> | null>(null);
 
 /** Supplies app content bounds for side beam progress on LongPressButton instances. */
@@ -24,6 +26,8 @@ export function LongPressEdgeProvider({
 function useLongPressEdgeContainer() {
   return useContext(LongPressEdgeContext);
 }
+
+export { useLongPressEdgeContainer };
 
 const LONG_PRESS_MS = 600;
 /** Longer hold for header navigation (back / forward). */
@@ -170,7 +174,7 @@ interface LongPressButtonProps {
   description?: string;
   /** Icon + title + optional description, for large locked overlays. */
   stacked?: boolean;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "header";
   /** fill = in-button bars; beam = side loading bars to app edge (default) */
   progressVariant?: "fill" | "beam";
   edgeContainerRef?: RefObject<HTMLElement | null>;
@@ -179,6 +183,7 @@ interface LongPressButtonProps {
   labelSize?: number;
   descriptionSize?: number;
   compact?: boolean;
+  durationMs?: number;
 }
 
 export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProps>(function LongPressButton({
@@ -199,6 +204,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
   labelSize = 9,
   descriptionSize = 9,
   compact = false,
+  durationMs,
 }, ref) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const setButtonRef = useCallback((el: HTMLButtonElement | null) => {
@@ -209,25 +215,54 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
   const contextEdgeRef = useLongPressEdgeContainer();
   const beamEdgeRef = edgeContainerRef ?? contextEdgeRef;
   const { progress, holding, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } =
-    useLongPress(onLongPress, disabled, { accentColor, confirmAction });
+    useLongPress(onLongPress, disabled, { accentColor, confirmAction, durationMs });
+
+  const isHeader = variant === "header";
 
   const idleBorder = disabled
     ? 0.07
-    : variant === "primary"
-      ? 0.12
-      : 0.10;
+    : isHeader
+      ? 0.07
+      : variant === "primary"
+        ? 0.12
+        : 0.10;
 
   const idleLabel = disabled
     ? ACTION_DISABLED_LABEL
     : holding
-      ? ACTION_HOLDING_LABEL
-      : variant === "primary"
-        ? ACTION_PRIMARY_LABEL
-        : compact
-          ? ACTION_COMPACT_LABEL
-          : ACTION_SECONDARY_LABEL;
+      ? isHeader
+        ? "#c0c0e0"
+        : ACTION_HOLDING_LABEL
+      : isHeader
+        ? "#8888a8"
+        : variant === "primary"
+          ? ACTION_PRIMARY_LABEL
+          : compact
+            ? ACTION_COMPACT_LABEL
+            : ACTION_SECONDARY_LABEL;
 
   const lit = active || holding;
+
+  const idleBackground = isHeader
+    ? active
+      ? "rgba(255,255,255,0.12)"
+      : "rgba(255,255,255,0.04)"
+    : active
+      ? "rgba(255,255,255,0.08)"
+      : "#0d0d1c";
+
+  const holdingBackground = "#10101e";
+
+  const borderWidth = isHeader ? 1 : 1.5;
+  const borderAlpha = holding
+    ? isHeader
+      ? 0.28
+      : 0.14
+    : lit
+      ? isHeader
+        ? 0.28
+        : 0.22
+      : idleBorder;
 
   return (
     <>
@@ -244,12 +279,15 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
       type="button"
       disabled={disabled}
       aria-label={label}
-      className={`relative flex flex-col items-center justify-center rounded-xl overflow-hidden touch-none transition-colors duration-150 ${className}`}
+      className={`relative flex flex-col items-center justify-center overflow-hidden touch-none transition-colors duration-150 ${
+        isHeader ? "rounded-full shrink-0" : "rounded-xl"
+      } ${className}`}
       style={{
         cursor: disabled ? "default" : "pointer",
-        background: holding ? "#10101e" : active ? "rgba(255,255,255,0.08)" : "#0d0d1c",
-        border: `1.5px solid rgba(255,255,255,${holding ? 0.14 : lit ? 0.22 : idleBorder})`,
-        minHeight: compact ? 0 : 32,
+        background: holding ? holdingBackground : idleBackground,
+        border: `${borderWidth}px solid rgba(255,255,255,${borderAlpha})`,
+        minHeight: isHeader ? 0 : compact ? 0 : 32,
+        ...(isHeader ? { width: 40, height: 40, opacity: disabled ? 0.35 : 1 } : {}),
         ...(progressVariant === "beam" && holding
           ? { position: "relative" as const, zIndex: BUTTON_OVER_BEAM_Z, isolation: "isolate" as const }
           : {}),

@@ -41,15 +41,25 @@ function measureLayout(anchor: HTMLElement, canvas: HTMLElement): Layout {
     parseFloat(cs.borderLeftWidth) || 0,
     parseFloat(cs.borderRightWidth) || 0,
   );
-  const cornerLeft = Math.max(
-    parseRadiusPx(cs.borderTopLeftRadius),
-    parseRadiusPx(cs.borderBottomLeftRadius),
-    FALLBACK_RADIUS,
+  const btnW = a.width / s;
+  const btnH = a.height / s;
+  const cornerCap = Math.min(btnW, btnH) / 2;
+
+  const cornerLeft = Math.min(
+    Math.max(
+      parseRadiusPx(cs.borderTopLeftRadius),
+      parseRadiusPx(cs.borderBottomLeftRadius),
+      FALLBACK_RADIUS,
+    ),
+    cornerCap,
   );
-  const cornerRight = Math.max(
-    parseRadiusPx(cs.borderTopRightRadius),
-    parseRadiusPx(cs.borderBottomRightRadius),
-    FALLBACK_RADIUS,
+  const cornerRight = Math.min(
+    Math.max(
+      parseRadiusPx(cs.borderTopRightRadius),
+      parseRadiusPx(cs.borderBottomRightRadius),
+      FALLBACK_RADIUS,
+    ),
+    cornerCap,
   );
 
   return {

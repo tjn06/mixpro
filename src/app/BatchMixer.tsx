@@ -1216,7 +1216,6 @@ export function BatchMixer({
         onBack={handleBack}
         onForward={screen === "mixer" ? handleForward : undefined}
       />
-      {/* <LongPressHeaderBar /> — reserved confirm slot; disabled to save vertical space */}
 
       {screen === "totals" ? (
         <BatchTotalsScreen
