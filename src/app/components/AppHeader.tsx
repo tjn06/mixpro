@@ -1,11 +1,8 @@
 import React, { type ReactNode } from "react";
 import { LongPressButton } from "./LongPressButton";
 
-/** Design-canvas height of the app header row (`pt-9` + 44px bar + `pb-3` + divider). */
-export const APP_HEADER_HEIGHT = 36 + 44 + 12 + 1;
-
-const HEADER_BG = "#0a0a14";
-const HEADER_DIVIDER = "1px solid rgba(255,255,255,0.08)";
+/** Sheet / overlay top offset — keep in sync with `--header-h` in app-layout.css. */
+export const APP_HEADER_HEIGHT = "var(--header-h)";
 
 const ROUND_NAV_BTN_CLASS = "shrink-0";
 /** Half of 40×40 — visually round; avoids 9999px radius breaking beam underlap math. */
@@ -61,11 +58,8 @@ export function AppHeader({
   onForward,
 }: AppHeaderProps) {
   return (
-    <div
-      className="relative shrink-0 px-3 pt-9 pb-3"
-      style={{ background: HEADER_BG, borderBottom: HEADER_DIVIDER }}
-    >
-      <div className="flex items-center gap-2.5" style={{ minHeight: 44 }}>
+    <header className="app-header">
+      <div className="app-header__row">
         <LongPressButton
           label="Back"
           confirmAction="GO BACK"
@@ -81,14 +75,14 @@ export function AppHeader({
         />
 
         <h1
-          className="flex-1 min-w-0 truncate text-center pointer-events-none"
+          className="flex-1 min-w-0 truncate text-center pointer-events-none px-1"
           style={{
             fontFamily: "'Outfit', sans-serif",
             fontSize: 17,
             fontWeight: 600,
             color: "#c0c0e0",
             letterSpacing: "0.06em",
-            lineHeight: 1,
+            lineHeight: 1.2,
           }}
         >
           {title}
@@ -120,6 +114,6 @@ export function AppHeader({
           }
         />
       </div>
-    </div>
+    </header>
   );
 }

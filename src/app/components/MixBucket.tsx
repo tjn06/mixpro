@@ -246,7 +246,7 @@ function fillGeometryFromPercent(fillPercent: number): {
   const target = total * (clamped / 100);
 
   let lo = 0;
-  let hi = H;
+  let hi: number = H;
   for (let i = 0; i < 40; i++) {
     const mid = (lo + hi) / 2;
     if (volumeAtHeight(mid) < target) lo = mid;
@@ -447,13 +447,6 @@ function BucketSelectOptionRow({
   );
 }
 
-function canvasScale(canvas: HTMLElement): number {
-  const scale = canvas.offsetWidth > 0
-    ? canvas.getBoundingClientRect().width / canvas.offsetWidth
-    : 1;
-  return Number.isFinite(scale) && scale > 0 ? scale : 1;
-}
-
 function BucketSelectDropdown({
   value,
   onChange,
@@ -479,13 +472,12 @@ function BucketSelectDropdown({
     const trigger = triggerRef.current;
     const canvas = trigger?.closest<HTMLElement>("[data-beam-canvas]");
     if (!trigger || !canvas) return null;
-    const s = canvasScale(canvas);
     const tR = trigger.getBoundingClientRect();
     const cR = canvas.getBoundingClientRect();
     return {
-      top: (tR.bottom - cR.top) / s + 6,
-      left: (tR.left + tR.width / 2 - cR.left) / s,
-      minWidth: Math.max(tR.width / s, DROPDOWN_MENU_MIN_W),
+      top: tR.bottom - cR.top + 6,
+      left: tR.left + tR.width / 2 - cR.left,
+      minWidth: Math.max(tR.width, DROPDOWN_MENU_MIN_W),
     };
   }, []);
 

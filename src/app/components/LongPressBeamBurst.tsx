@@ -17,33 +17,21 @@ type Layout = {
   underlapRight: number;
 };
 
-function canvasScale(el: HTMLElement): number {
-  const w = el.offsetWidth;
-  if (w <= 0) return 1;
-  const s = el.getBoundingClientRect().width / w;
-  return Number.isFinite(s) && s > 0 ? s : 1;
-}
-
 function parseRadiusPx(value: string): number {
   const n = parseFloat(value);
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 function measureLayout(anchor: HTMLElement, canvas: HTMLElement): Layout {
-  const s = canvasScale(canvas);
   const a = anchor.getBoundingClientRect();
   const c = canvas.getBoundingClientRect();
-  const lx = (x: number) => (x - c.left) / s;
-  const ly = (y: number) => (y - c.top) / s;
 
   const cs = getComputedStyle(anchor);
   const borderX = Math.max(
     parseFloat(cs.borderLeftWidth) || 0,
     parseFloat(cs.borderRightWidth) || 0,
   );
-  const btnW = a.width / s;
-  const btnH = a.height / s;
-  const cornerCap = Math.min(btnW, btnH) / 2;
+  const cornerCap = Math.min(a.width, a.height) / 2;
 
   const cornerLeft = Math.min(
     Math.max(
@@ -63,11 +51,11 @@ function measureLayout(anchor: HTMLElement, canvas: HTMLElement): Layout {
   );
 
   return {
-    top: ly(a.top),
-    height: a.height / s,
-    buttonLeft: lx(a.left),
-    buttonRight: lx(a.right),
-    canvasWidth: canvas.offsetWidth,
+    top: a.top - c.top,
+    height: a.height,
+    buttonLeft: a.left - c.left,
+    buttonRight: a.right - c.left,
+    canvasWidth: canvas.clientWidth,
     underlapLeft: cornerLeft + borderX,
     underlapRight: cornerRight + borderX,
   };
@@ -129,7 +117,7 @@ function resolveCanvas(
   return (
     edgeContainerRef?.current
     ?? anchor.closest<HTMLElement>("[data-beam-canvas]")
-    ?? anchor.closest<HTMLElement>(".mobile-shell__slot")
+    ?? anchor.closest<HTMLElement>(".app-frame")
   );
 }
 

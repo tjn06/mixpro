@@ -1,21 +1,14 @@
 export type Rect = { top: number; left: number; width: number; height: number };
 
-/**
- * Element position in the anchor's local layout space.
- * Corrects for the mobile-shell `transform: scale()` on the app canvas.
- */
+/** Element position in the anchor's local layout space. */
 export function localRect(el: HTMLElement, anchor: HTMLElement): Rect {
-  const scale = anchor.offsetWidth > 0
-    ? anchor.getBoundingClientRect().width / anchor.offsetWidth
-    : 1;
-  const s = Number.isFinite(scale) && scale > 0 ? scale : 1;
   const elR = el.getBoundingClientRect();
   const ancR = anchor.getBoundingClientRect();
   return {
-    top: (elR.top - ancR.top) / s,
-    left: (elR.left - ancR.left) / s,
-    width: elR.width / s,
-    height: elR.height / s,
+    top: elR.top - ancR.top,
+    left: elR.left - ancR.left,
+    width: elR.width,
+    height: elR.height,
   };
 }
 

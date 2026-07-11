@@ -1,0 +1,58 @@
+/**
+ * Native-like app frame: fluid 375–430px width, full viewport height.
+ * Design reference 390px; no whole-UI transform scale.
+ */
+:root {
+  --app-max-w: 430px;
+  --app-ref-w: 390px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  --space-1: clamp(4px, 1.1vw, 6px);
+  --space-2: clamp(8px, 2.1vw, 12px);
+  --space-3: clamp(12px, 3.1vw, 16px);
+  --space-4: clamp(14px, 4.1vw, 16px);
+
+  --swipe-h: clamp(120px, 18dvh, 180px);
+  --control-h: clamp(40px, 11vw, 44px);
+
+  /* App header — safe-top lives here; 40px row matches nav buttons */
+  --header-inset-x: clamp(14px, 4.1vw, 16px);
+  --header-bar-h: 40px;
+  --header-row-gap: clamp(6px, 1.8vw, 8px);
+  --header-pad-bottom: 4px;
+  --header-pad-top: max(4px, var(--safe-top));
+  --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
+}
+
+.app-header {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  position: relative;
+  padding: var(--header-pad-top) var(--header-inset-x) var(--header-pad-bottom);
+  background: #0a0a14;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-header__row {
+  display: flex;
+  align-items: center;
+  gap: var(--header-row-gap);
+  height: var(--header-bar-h);
+  min-height: var(--header-bar-h);
+}
+
+.app-frame {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--app-max-w);
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  flex-shrink: 0;
+  position: relative;
+  touch-action: manipulation;
+}

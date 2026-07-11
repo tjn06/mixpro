@@ -515,9 +515,6 @@ function CardReadout({
   );
 }
 
-const DESIGN_W = 390;
-const DESIGN_H = 844;
-
 type MixerScreen = "mixer" | "totals";
 
 const TotalTile = forwardRef<HTMLButtonElement, {
@@ -678,7 +675,6 @@ export function BatchMixer({
   const [bucketSelection, setBucketSelection] = useState<BucketSelection>(initialBucketSelection);
   const [active, setActive]         = useState(0);
   const [activeZone, setActiveZone] = useState<number | null>(null);
-  const [scale, setScale]           = useState(1);
   const [canUndo, setCanUndo]       = useState(false);
   const [saveFlash, setSaveFlash]   = useState(false);
   const [loadPickerOpen, setLoadPickerOpen] = useState(false);
@@ -691,11 +687,11 @@ export function BatchMixer({
   const [isLocked, setIsLocked]     = useState(false);
   const [unlockOverlayActive, setUnlockOverlayActive] = useState(false);
   const [connectorLines, setConnectorLines] = useState<CardConnector[]>([]);
+  const [swipeHeight, setSwipeHeight] = useState(SWIPE_HEIGHT);
 
   // /* LINE_MEASUREMENT_LEGACY */
   // const [lines, setLines] = useState<Line[]>([]);
 
-  const shellRef       = useRef<HTMLDivElement>(null);
   const containerRef   = useRef<HTMLDivElement>(null);
   const swipeAreaRef   = useRef<HTMLDivElement>(null);
   const cardRefs       = useRef<(HTMLButtonElement | null)[]>([]);
@@ -712,7 +708,6 @@ export function BatchMixer({
   const controlDeckRef  = useRef<HTMLDivElement>(null);
   const lockButtonRef   = useRef<HTMLButtonElement>(null);
   const ingredientCardsRef = useRef<HTMLDivElement>(null);
-  const scaleRef       = useRef(1);
   const recipeRef      = useRef(activeRecipe);
   recipeRef.current    = activeRecipe;
   const bucketSelectionRef = useRef(bucketSelection);
@@ -849,6 +844,28 @@ export function BatchMixer({
     };
   }, [screen, recommendedTotalGrams, saveFlash, canLoad, isLocked, bucketSelection]);
 
+  /** Keep floating TOTAL tile aligned with fluid swipe height (`--swipe-h`). */
+  useLayoutEffect(() => {
+    if (screen !== "mixer") return;
+    const el = swipeAreaRef.current;
+    if (!el) return;
+    const sync = () => {
+      const h = el.offsetHeight;
+      if (h > 0) setSwipeHeight(h);
+    };
+    sync();
+    const raf = requestAnimationFrame(sync);
+    if (typeof ResizeObserver === "undefined") {
+      return () => cancelAnimationFrame(raf);
+    }
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [screen, isLocked, dragFocus]);
+
   const handleSaveRequest = useCallback(() => {
     setSaveNameSheetOpen(true);
   }, []);
@@ -921,29 +938,6 @@ export function BatchMixer({
     setValues(initialMixValues(recipe, recipeBinderSum(recipe, initialBinderSum)));
   }, [pushUndo, initialBinderSum]);
 
-  const updateScale = useCallback(() => {
-    const el = shellRef.current;
-    if (!el) return;
-    const { clientWidth, clientHeight } = el;
-    const s = Math.min(1, clientWidth / DESIGN_W, clientHeight / DESIGN_H);
-    scaleRef.current = s;
-    setScale(s);
-  }, []);
-
-  useEffect(() => {
-    updateScale();
-    const ro = new ResizeObserver(updateScale);
-    if (shellRef.current) ro.observe(shellRef.current);
-    const vv = window.visualViewport;
-    vv?.addEventListener("resize", updateScale);
-    vv?.addEventListener("scroll", updateScale);
-    return () => {
-      ro.disconnect();
-      vv?.removeEventListener("resize", updateScale);
-      vv?.removeEventListener("scroll", updateScale);
-    };
-  }, [updateScale]);
-
   const measureCardConnectors = useCallback(() => {
     if (isLocked) {
       setConnectorLines([]);
@@ -955,7 +949,6 @@ export function BatchMixer({
       setConnectorLines([]);
       return;
     }
-    const s = scaleRef.current;
     const rootR = root.getBoundingClientRect();
     const swipeR = swipeEl.getBoundingClientRect();
     const lines: CardConnector[] = [];
@@ -964,9 +957,9 @@ export function BatchMixer({
       const cardEl = cardRefs.current[pi];
       if (!cardEl) continue;
       const cardR = cardEl.getBoundingClientRect();
-      const x = (cardR.left + cardR.width / 2 - rootR.left) / s;
-      const y1 = (cardR.bottom - rootR.top) / s;
-      const y2 = (swipeR.top - rootR.top) / s;
+      const x = cardR.left + cardR.width / 2 - rootR.left;
+      const y1 = cardR.bottom - rootR.top;
+      const y2 = swipeR.top - rootR.top;
       if (y2 <= y1) continue;
       lines.push({ x, y1, y2, color: PARAMS[pi].color, active: active === pi });
     }
@@ -974,9 +967,9 @@ export function BatchMixer({
     const totalEl = totalTileRef.current;
     if (totalEl) {
       const totalR = totalEl.getBoundingClientRect();
-      const x = (totalR.left + totalR.width / 2 - rootR.left) / s;
-      const y1 = (swipeR.bottom - rootR.top) / s;
-      const y2 = (totalR.top - rootR.top) / s;
+      const x = totalR.left + totalR.width / 2 - rootR.left;
+      const y1 = swipeR.bottom - rootR.top;
+      const y2 = totalR.top - rootR.top;
       if (y2 > y1) {
         lines.push({ x, y1, y2, color: PARAMS[0].color, active: active === 0 });
       }
@@ -987,7 +980,7 @@ export function BatchMixer({
 
   useLayoutEffect(() => {
     measureCardConnectors();
-  }, [measureCardConnectors, scale, values]);
+  }, [measureCardConnectors, values]);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -1132,7 +1125,8 @@ export function BatchMixer({
 
     const step      = dragStepSize.current;
     const dy        = dragStartY.current - clientY;
-    const pxPerStep = (SWIPE_HEIGHT * scaleRef.current) / SWIPE_STEPS_PER_DRAG;
+    const swipeH    = el.offsetHeight > 0 ? el.offsetHeight : SWIPE_HEIGHT;
+    const pxPerStep = swipeH / SWIPE_STEPS_PER_DRAG;
     const raw       = dragBaseVal.current + (dy / pxPerStep) * step;
     const snapped   = Math.round(raw / step) * step;
     const driver    = driverIdFromIndex(active);
@@ -1164,22 +1158,14 @@ export function BatchMixer({
   const col  = activeParam.color;
 
   return (
-    <div ref={shellRef} className="mobile-shell">
-      <div
-        className="mobile-shell__slot"
-        style={{ width: DESIGN_W * scale, height: DESIGN_H * scale }}
-      >
+    <div className="mobile-shell">
         <LongPressProgressProvider>
         <LongPressEdgeProvider edgeRef={containerRef}>
         <div
           ref={containerRef}
           data-beam-canvas
-          className="relative flex flex-col overflow-hidden select-none"
+          className="app-frame relative flex flex-col overflow-hidden select-none"
           style={{
-            width: DESIGN_W,
-            height: DESIGN_H,
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
             background: "#07070f",
             fontFamily: "'DM Mono', monospace",
           }}
@@ -1223,51 +1209,53 @@ export function BatchMixer({
         />
       ) : (
       <>
-      {/* ── Recipe (high) · editing area + mix cards (just above swipe) ───── */}
-      <div className="flex-1 min-h-0 flex flex-col">
-        <div
-          className="shrink-0 px-4 flex flex-col"
-          style={{ paddingTop: RECIPE_ZONE_PT, gap: RECIPE_META_GAP }}
-        >
+      {/* ── Mixer: recipe scrolls; bottom deck pinned ─────────────────────── */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-x-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <div
-            className="rounded-xl flex flex-col min-w-0"
-            style={{
-              background: RECIPE_RATIO_BG,
-              padding: RECIPE_CONTAINER_PX,
-              gap: RECIPE_META_GAP,
-            }}
+            className="shrink-0 px-4 flex flex-col"
+            style={{ paddingTop: RECIPE_ZONE_PT, gap: RECIPE_META_GAP }}
           >
-            <div className={isLocked ? "pointer-events-none" : "pointer-events-auto"}>
-              <RecipeSelect
-                recipes={recipes}
-                value={activeRecipe}
-                onChange={handleRecipeChange}
-                disabled={isLocked}
-              />
-            </div>
-            <div className="flex items-stretch pointer-events-none">
-              {ingredientIndexes.map((pi, i) => {
-                const p = PARAMS[pi];
-                const { value, unit } = getLockedRatioDisplay(activeRecipe, p.id);
-                return (
-                  <React.Fragment key={`recipe-${p.id}`}>
-                    {i > 0 && <RecipeRatioGapSeparator />}
-                    <RecipeRatioCard
-                      id={p.id}
-                      sublabel={getIngredientLabel(activeRecipe, p.id)}
-                      value={value}
-                      unit={unit}
-                      muted={isLocked}
-                    />
-                  </React.Fragment>
-                );
-              })}
+            <div
+              className="rounded-xl flex flex-col min-w-0"
+              style={{
+                background: RECIPE_RATIO_BG,
+                padding: RECIPE_CONTAINER_PX,
+                gap: RECIPE_META_GAP,
+              }}
+            >
+              <div className={isLocked ? "pointer-events-none" : "pointer-events-auto"}>
+                <RecipeSelect
+                  recipes={recipes}
+                  value={activeRecipe}
+                  onChange={handleRecipeChange}
+                  disabled={isLocked}
+                />
+              </div>
+              <div className="flex items-stretch pointer-events-none">
+                {ingredientIndexes.map((pi, i) => {
+                  const p = PARAMS[pi];
+                  const { value, unit } = getLockedRatioDisplay(activeRecipe, p.id);
+                  return (
+                    <React.Fragment key={`recipe-${p.id}`}>
+                      {i > 0 && <RecipeRatioGapSeparator />}
+                      <RecipeRatioCard
+                        id={p.id}
+                        sublabel={getIngredientLabel(activeRecipe, p.id)}
+                        value={value}
+                        unit={unit}
+                        muted={isLocked}
+                      />
+                    </React.Fragment>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
 
         <div
-          className="shrink-0 px-4 mt-auto flex flex-col"
+          className="shrink-0 px-4 flex flex-col"
           style={{
             gap: SECTION_ROW_GAP,
             paddingBottom: BOTTOM_PAD_BOTTOM,
@@ -1398,7 +1386,8 @@ export function BatchMixer({
           ref={swipeAreaRef}
           className="relative flex rounded-xl overflow-hidden touch-none cursor-ns-resize"
           style={{
-            height: SWIPE_HEIGHT,
+            height: "var(--swipe-h)",
+            minHeight: 120,
             border: `${ENTITY_BORDER_W} solid ${col}${ENTITY_BORDER_ACTIVE}`,
             boxShadow: dragFocus && !isLocked
               ? `${entityActiveRing(col)}, ${entityCardShadow(col)}`
@@ -1503,9 +1492,9 @@ export function BatchMixer({
             top: SWIPE_PAD_TOP,
             left: 0,
             width: "100%",
-            height: SWIPE_HEIGHT,
+            height: swipeHeight,
           } : {
-            top: SWIPE_PAD_TOP + SWIPE_HEIGHT + BOTTOM_PAD_TOP,
+            top: SWIPE_PAD_TOP + swipeHeight + BOTTOM_PAD_TOP,
             left: 0,
             width: `calc((100% - ${BOTTOM_ROW_GAP}px) * 0.48)`,
             height: BOTTOM_ACTION_H,
@@ -1522,7 +1511,7 @@ export function BatchMixer({
         expandEase={LOCK_EASE}
         zIndex={LOCK_UNLOCK_Z}
         surfaceBg={ENTITY_SURFACE_IDLE}
-        expandedTop={SWIPE_PAD_TOP + SWIPE_HEIGHT + BOTTOM_PAD_TOP}
+        expandedTop={SWIPE_PAD_TOP + swipeHeight + BOTTOM_PAD_TOP}
         expandedHeight={BOTTOM_ACTION_H}
         onOverlayActiveChange={setUnlockOverlayActive}
       />
@@ -1571,7 +1560,6 @@ export function BatchMixer({
         </div>
         </LongPressEdgeProvider>
         </LongPressProgressProvider>
-      </div>
     </div>
   );
 }
