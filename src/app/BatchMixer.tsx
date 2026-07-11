@@ -1160,6 +1160,7 @@ export function BatchMixer({
     <div className="mobile-shell">
         <LongPressProgressProvider>
         <LongPressEdgeProvider edgeRef={containerRef}>
+        <div className="app-frame-host">
         <div
           ref={containerRef}
           data-beam-canvas
@@ -1556,6 +1557,7 @@ export function BatchMixer({
           onConfirm={handleSaveConfirm}
         />
 
+        </div>
         </div>
         </LongPressEdgeProvider>
         </LongPressProgressProvider>

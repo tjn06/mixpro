@@ -1,11 +1,13 @@
 /**
  * Mobile app frame: fluid 375–430px width, full shell height.
- * Layout tokens scale from .app-frame (container), not the viewport.
+ * Layout tokens scale from .app-frame-host (container), not the viewport.
  * Reference width: --app-ref-w (390px); 1cqi ≈ 3.9px at that width.
  */
 :root {
   --app-max-w: 430px;
   --app-ref-w: 390px;
+  /** Frame height at or above this gets the full 180px swipe; shorter phones scale down. */
+  --swipe-fixed-min-h: 668px;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -13,7 +15,8 @@
   --safe-left: env(safe-area-inset-left, 0px);
 }
 
-.app-frame {
+/* Size container on host so height queries can style .app-frame (containers cannot query self). */
+.app-frame-host {
   box-sizing: border-box;
   width: 100%;
   max-width: var(--app-max-w);
@@ -21,11 +24,18 @@
   min-height: 0;
   min-width: 0;
   flex-shrink: 0;
-  position: relative;
-  touch-action: manipulation;
-
   container-type: size;
   container-name: app;
+}
+
+.app-frame {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+  touch-action: manipulation;
 }
 
 /* Container-query units (preferred) */
@@ -36,7 +46,6 @@
     --space-3: clamp(12px, 3.1cqi, 16px);
     --space-4: clamp(14px, 4.1cqi, 16px);
 
-    --swipe-h: clamp(120px, 18cqh, 180px);
     --control-h: clamp(40px, 11cqi, 44px);
 
     --header-inset-x: clamp(14px, 4.1cqi, 16px);
@@ -45,6 +54,18 @@
     --header-pad-bottom: 4px;
     --header-pad-top: max(4px, var(--safe-top));
     --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
+  }
+
+  @container app (min-height: 668px) {
+    .app-frame {
+      --swipe-h: 180px;
+    }
+  }
+
+  @container app (max-height: 667px) {
+    .app-frame {
+      --swipe-h: clamp(120px, 18cqh, 180px);
+    }
   }
 }
 
@@ -56,7 +77,6 @@
     --space-3: clamp(12px, 3.1vw, 16px);
     --space-4: clamp(14px, 4.1vw, 16px);
 
-    --swipe-h: clamp(120px, 18dvh, 180px);
     --control-h: clamp(40px, 11vw, 44px);
 
     --header-inset-x: clamp(14px, 4.1vw, 16px);
@@ -65,6 +85,18 @@
     --header-pad-bottom: 4px;
     --header-pad-top: max(4px, var(--safe-top));
     --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
+  }
+
+  @media (min-height: 668px) {
+    .app-frame {
+      --swipe-h: 180px;
+    }
+  }
+
+  @media (max-height: 667px) {
+    .app-frame {
+      --swipe-h: clamp(120px, 18dvh, 180px);
+    }
   }
 }
 
