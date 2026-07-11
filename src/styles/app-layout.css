@@ -6,8 +6,9 @@
 :root {
   --app-max-w: 430px;
   --app-ref-w: 390px;
-  /** Frame height at or above this gets the full 180px swipe; shorter phones scale down. */
-  --swipe-fixed-min-h: 668px;
+  /** Full 180px swipe above this; at 764px and below the drag area scales down. */
+  --swipe-compromise-max-h: 764px;
+  --swipe-fixed-min-h: 765px;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -56,13 +57,13 @@
     --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
   }
 
-  @container app (min-height: 668px) {
+  @container app (min-height: 765px) {
     .app-frame {
       --swipe-h: 180px;
     }
   }
 
-  @container app (max-height: 667px) {
+  @container app (max-height: 764px) {
     .app-frame {
       --swipe-h: clamp(120px, 18cqh, 180px);
     }
@@ -87,13 +88,13 @@
     --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
   }
 
-  @media (min-height: 668px) {
+  @media (min-height: 765px) {
     .app-frame {
       --swipe-h: 180px;
     }
   }
 
-  @media (max-height: 667px) {
+  @media (max-height: 764px) {
     .app-frame {
       --swipe-h: clamp(120px, 18dvh, 180px);
     }
