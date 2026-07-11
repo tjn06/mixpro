@@ -58,12 +58,12 @@ export function EntityMixCard({
     const valueStyle = {
       ...cardReadoutValueStyle(readout.valueColor),
       fontSize: emphasized ? "calc(var(--text-card-value) + 4px)" : "var(--text-card-value)",
-      marginTop: emphasized ? "var(--recipe-row-gap)" : "var(--entity-card-readout-mt)",
+      marginTop: 0,
     };
     const unitStyle = {
       ...cardReadoutUnitStyle(readout.unitColor),
       fontSize: emphasized ? "calc(var(--text-card-unit) + 1px)" : "var(--text-card-unit)",
-      marginTop: emphasized ? "calc(var(--entity-card-unit-mt) + 1px)" : "var(--entity-card-unit-mt)",
+      marginTop: 0,
     };
 
     return (
@@ -81,14 +81,22 @@ export function EntityMixCard({
       >
         <span className="truncate max-w-full" style={nameStyle}>{id}</span>
         {metaLabel ? (
-          <span className="truncate max-w-full" style={metaStyle}>
+          <span className="max-w-full" style={metaStyle}>
             {metaLabel}
           </span>
         ) : null}
-        <span className="tabular-nums truncate max-w-full" style={valueStyle}>
-          {value}
-        </span>
-        <span className="truncate max-w-full" style={unitStyle}>{unit}</span>
+        <div
+          className="flex items-baseline min-w-0 max-w-full"
+          style={{
+            marginTop: emphasized ? "var(--recipe-row-gap)" : "var(--entity-card-readout-mt)",
+            gap: 4,
+          }}
+        >
+          <span className="tabular-nums shrink-0" style={valueStyle}>
+            {value}
+          </span>
+          <span className="shrink-0" style={unitStyle}>{unit}</span>
+        </div>
       </div>
     );
   }

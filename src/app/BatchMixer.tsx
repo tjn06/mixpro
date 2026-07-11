@@ -97,6 +97,7 @@ const DRAG_FOCUS_Z      = 5;
 const DRAG_OVERLAY_HIDE_MS = 320;
 const DRAG_BLOCKED_MS = 120;
 const CARD_LIMIT_FLASH_TINT_PCT = 50;
+const BUCKET_LIMIT_COLOR = "#c95868";
 const BUCKET_LIMIT_VIBRATE_MS = [10, 28, 10] as const;
 const LOCK_PANEL_Z      = 6;
 const LOCK_SHIELD_Z     = 5;
@@ -390,13 +391,13 @@ function entityCardChrome(color: string, lit: boolean): { border: string; boxSha
 
 const CARD_CHROME_TRANSITION = "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, transform 0.1s ease-out";
 
-function CardLimitFlash({ color }: { color: string }) {
+function CardLimitFlash() {
   return (
     <div
       aria-hidden
       className="absolute inset-0 rounded-xl pointer-events-none"
       style={{
-        background: surfaceTint(color, CARD_LIMIT_FLASH_TINT_PCT, "transparent"),
+        background: surfaceTint(BUCKET_LIMIT_COLOR, CARD_LIMIT_FLASH_TINT_PCT, "transparent"),
         zIndex: 2,
       }}
     />
@@ -515,7 +516,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
           paddingBottom: "var(--total-tile-expanded-py)",
         }}
       >
-        {limitFlash && <CardLimitFlash color={color} />}
+        {limitFlash && <CardLimitFlash />}
         <div style={{
           width: 32,
           height: 4,
@@ -570,7 +571,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
         padding: "var(--total-tile-pad-y) var(--total-tile-pad-x)",
       }}
     >
-      {limitFlash && <CardLimitFlash color={color} />}
+      {limitFlash && <CardLimitFlash />}
       <div style={{
         width: "var(--total-tile-bar-w)",
         flexShrink: 0,
@@ -1329,7 +1330,7 @@ export function BatchMixer({
                   }}
                 >
                   {dragBlocked && isAct && !isLocked && (
-                    <CardLimitFlash color={p.color} />
+                    <CardLimitFlash />
                   )}
                   <div style={{
                     width: 22,

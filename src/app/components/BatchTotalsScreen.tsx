@@ -24,14 +24,7 @@ const TABLE_TEXT: CSSProperties = {
   lineHeight: 1.35,
 };
 
-const ENTITY_COL_W = 92;
-const MULT_COL_W = 36;
-const TOTAL_ROW_MB = 14;
-const ENTITY_COL_W_TOTAL = 108;
-const ROW_COL_GAP = 10;
-
-/** Sum uses auto width (never clipped); card column shrinks first. */
-const ROW_GRID = `minmax(0, ${ENTITY_COL_W}px) ${MULT_COL_W}px auto`;
+const ENTITY_COL_W = 104;
 
 const MULTIPLIER_BTN = 32;
 
@@ -86,7 +79,7 @@ export function BatchTotalsScreen({
   multiplier,
   onMultiplierChange,
 }: BatchTotalsScreenProps) {
-  const rows = [0, ...entityIndexes.filter((i) => i !== 0)];
+  const rows = [...entityIndexes.filter((i) => i !== 0), 0];
 
   return (
     <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-x-hidden">
@@ -158,28 +151,19 @@ export function BatchTotalsScreen({
         {rows.map((pi) => {
           const p = MIX_PARAMS[pi];
           const sumGrams = values[pi] * multiplier;
-          const isTotal = pi === 0;
-          const rowGrid = isTotal
-            ? `minmax(0, ${ENTITY_COL_W_TOTAL}px) ${MULT_COL_W + 6}px auto`
-            : ROW_GRID;
 
           return (
             <div
               key={p.id}
-              className="grid items-center min-w-0 w-full"
-              style={{
-                gridTemplateColumns: rowGrid,
-                columnGap: ROW_COL_GAP,
-                marginBottom: isTotal ? TOTAL_ROW_MB : 0,
-              }}
+              className="flex items-center min-w-0 w-full"
+              style={{ justifyContent: "space-evenly" }}
             >
               <div
-                className="min-w-0 box-border overflow-hidden"
-                style={{ maxWidth: isTotal ? ENTITY_COL_W_TOTAL : ENTITY_COL_W }}
+                className="box-border shrink-0"
+                style={{ width: ENTITY_COL_W, minWidth: ENTITY_COL_W }}
               >
                 <EntityMixCard
                   variant="table"
-                  emphasized={isTotal}
                   id={p.id}
                   color={p.color}
                   metaLabel={getEntityMetaLabel(recipe, p.id)}
@@ -189,12 +173,11 @@ export function BatchTotalsScreen({
               </div>
 
               <span
-                className="tabular-nums text-center whitespace-nowrap justify-self-center"
+                className="tabular-nums text-center whitespace-nowrap shrink-0"
                 style={{
                   ...TABLE_TEXT,
-                  fontSize: isTotal ? "var(--text-totals-mult)" : "var(--text-totals-table)",
                   color: p.color,
-                  fontWeight: isTotal ? 700 : 600,
+                  fontWeight: 600,
                   textShadow: `0 0 8px ${p.color}33`,
                 }}
               >
@@ -202,12 +185,24 @@ export function BatchTotalsScreen({
               </span>
 
               <span
-                className="tabular-nums text-right whitespace-nowrap justify-self-end"
+                aria-hidden
+                className="text-center whitespace-nowrap shrink-0"
                 style={{
                   ...TABLE_TEXT,
-                  fontSize: isTotal ? "var(--text-totals-sum-hero)" : "var(--text-totals-sum)",
+                  color: MUTED,
+                  fontWeight: 500,
+                }}
+              >
+                =
+              </span>
+
+              <span
+                className="tabular-nums text-center whitespace-nowrap shrink-0"
+                style={{
+                  ...TABLE_TEXT,
+                  fontSize: "var(--text-totals-sum)",
                   color: VALUE_COLOR,
-                  fontWeight: isTotal ? 700 : 600,
+                  fontWeight: 600,
                   lineHeight: 1.1,
                 }}
               >
@@ -217,7 +212,7 @@ export function BatchTotalsScreen({
                     color: MUTED,
                     fontWeight: 500,
                     marginLeft: 4,
-                    fontSize: isTotal ? "var(--text-totals-unit-hero)" : "var(--text-totals-unit)",
+                    fontSize: "var(--text-totals-unit)",
                   }}
                 >
                   {p.isKg ? "kg" : "g"}
