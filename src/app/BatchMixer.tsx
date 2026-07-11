@@ -1061,12 +1061,8 @@ export function BatchMixer({
   }, []);
 
   const handleBack = useCallback(() => {
-    if (screen === "totals") {
-      setScreen("mixer");
-      return;
-    }
-    window.history.back();
-  }, [screen]);
+    setScreen("mixer");
+  }, []);
 
   const handleForward = useCallback(() => {
     if (screen !== "mixer" || isLocked) return;
@@ -1213,7 +1209,7 @@ export function BatchMixer({
       {/* ── App header ─────────────────────────────────────────────────────── */}
       <AppHeader
         isLocked={isLocked}
-        onBack={handleBack}
+        onBack={screen === "totals" ? handleBack : undefined}
         onForward={screen === "mixer" ? handleForward : undefined}
       />
 

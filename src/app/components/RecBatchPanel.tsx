@@ -133,7 +133,7 @@ export function RecBatchPanel({
 
         <LongPressButton
           ref={resetButtonRef}
-          label="Reset"
+          label="RESET"
           confirmAction="RESET"
           onLongPress={onReset}
           disabled={disabled}
