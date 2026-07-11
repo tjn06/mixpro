@@ -1,6 +1,8 @@
 import React, { forwardRef, useRef, useState, useCallback, createContext, useContext, type CSSProperties, type PointerEvent, type RefObject, type ReactNode } from "react";
 import { useLongPressProgressReporter } from "./LongPressProgressContext";
-import { LongPressBeamBurst } from "./LongPressBeamBurst";
+import { BEAM_Z, LongPressBeamBurst } from "./LongPressBeamBurst";
+
+const BUTTON_OVER_BEAM_Z = BEAM_Z + 8;
 
 const LongPressEdgeContext = createContext<RefObject<HTMLElement | null> | null>(null);
 
@@ -248,6 +250,9 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
         background: holding ? "#10101e" : active ? "rgba(255,255,255,0.08)" : "#0d0d1c",
         border: `1.5px solid rgba(255,255,255,${holding ? 0.14 : lit ? 0.22 : idleBorder})`,
         minHeight: compact ? 0 : 32,
+        ...(progressVariant === "beam" && holding
+          ? { position: "relative" as const, zIndex: BUTTON_OVER_BEAM_Z, isolation: "isolate" as const }
+          : {}),
         ...style,
       }}
       onPointerDown={onPointerDown}

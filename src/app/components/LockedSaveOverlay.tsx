@@ -1,43 +1,15 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { LongPressButton } from "./LongPressButton";
 import { SavedIcon, SaveIcon } from "./ActionIcons";
+import {
+  crossfadeLayerStyles,
+  LOCKED_ACTION_ICON_SIZE,
+  PRIMARY_BORDER,
+  TRANSPARENT_BTN,
+} from "./lockedActionCrossfade";
+import { localRect, saveCoverTargetRect, type Rect } from "./lockedOverlayMeasure";
 
-type Rect = { top: number; left: number; width: number; height: number };
-
-/**
- * Element position in the anchor's local layout space.
- * Corrects for the mobile-shell `transform: scale()` on the app canvas —
- * raw getBoundingClientRect deltas are in screen px and cause a jump if used
- * as absolute top/left inside the scaled container.
- */
-function localRect(el: HTMLElement, anchor: HTMLElement): Rect {
-  const scale = anchor.offsetWidth > 0
-    ? anchor.getBoundingClientRect().width / anchor.offsetWidth
-    : 1;
-  const s = Number.isFinite(scale) && scale > 0 ? scale : 1;
-  const elR = el.getBoundingClientRect();
-  const ancR = anchor.getBoundingClientRect();
-  return {
-    top: (elR.top - ancR.top) / s,
-    left: (elR.left - ancR.left) / s,
-    width: elR.width / s,
-    height: elR.height / s,
-  };
-}
-
-/** Full edit-row width, action-block height only (matches swipe / unlock row below). */
-function coverTargetRect(actions: Rect, anchorWidth: number): Rect {
-  return {
-    top: actions.top,
-    left: 0,
-    width: anchorWidth,
-    height: actions.height,
-  };
-}
-
-const PRIMARY_BORDER = "1.5px solid rgba(255,255,255,0.12)";
-/** Save / lock icons scale up in locked expanded overlays. */
-export const LOCKED_ACTION_ICON_SIZE = 24;
+export { LOCKED_ACTION_ICON_SIZE } from "./lockedActionCrossfade";
 
 type OverlayState = {
   show: boolean;
@@ -48,10 +20,11 @@ type OverlayState = {
 
 export interface LockedSaveOverlayProps {
   isLocked: boolean;
-  /** `position: relative` row wrapping bucket + rec. batch panel. */
   anchorRef: RefObject<HTMLElement | null>;
-  bucketRef: RefObject<HTMLElement | null>;
+  bucketReadoutRef: RefObject<HTMLElement | null>;
+  recReadoutRef: RefObject<HTMLElement | null>;
   actionsBlockRef: RefObject<HTMLElement | null>;
+  ingredientCardsRef: RefObject<HTMLElement | null>;
   saveButtonRef: RefObject<HTMLButtonElement | null>;
   onSave: () => void;
   saveFlash?: boolean;
@@ -59,13 +32,16 @@ export interface LockedSaveOverlayProps {
   expandEase: string;
   zIndex: number;
   surfaceBg: string;
+  sectionRowGap: number;
 }
 
 export function LockedSaveOverlay({
   isLocked,
   anchorRef,
-  bucketRef,
+  bucketReadoutRef,
+  recReadoutRef,
   actionsBlockRef,
+  ingredientCardsRef,
   saveButtonRef,
   onSave,
   saveFlash = false,
@@ -73,6 +49,7 @@ export function LockedSaveOverlay({
   expandEase,
   zIndex,
   surfaceBg,
+  sectionRowGap,
 }: LockedSaveOverlayProps) {
   const [overlay, setOverlay] = useState<OverlayState | null>(null);
   const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -83,26 +60,66 @@ export function LockedSaveOverlay({
       collapseTimer.current = null;
     }
 
-    const anchor = anchorRef.current;
-    const bucket = bucketRef.current;
-    const actions = actionsBlockRef.current;
-    const save = saveButtonRef.current;
-    if (!anchor || !bucket || !actions || !save) return;
+    const measure = () => {
+      const anchor = anchorRef.current;
+      const bucketReadout = bucketReadoutRef.current;
+      const recReadout = recReadoutRef.current;
+      const actions = actionsBlockRef.current;
+      const save = saveButtonRef.current;
+      const cards = ingredientCardsRef.current;
+      if (!anchor || !bucketReadout || !recReadout || !actions || !save) return null;
 
-    const collapsed = localRect(save, anchor);
-    const expanded = coverTargetRect(localRect(actions, anchor), anchor.offsetWidth);
+      const collapsed = localRect(save, anchor);
+      const expanded = saveCoverTargetRect(
+        localRect(bucketReadout, anchor),
+        localRect(recReadout, anchor),
+        localRect(actions, anchor),
+        cards ? localRect(cards, anchor) : null,
+        anchor.offsetWidth,
+        sectionRowGap,
+      );
+      return { collapsed, expanded };
+    };
+
+    const apply = (next: { collapsed: Rect; expanded: Rect }, expanded: boolean) => {
+      setOverlay((prev) => ({
+        show: true,
+        expanded,
+        rect: expanded ? next.expanded : next.collapsed,
+        collapsed: next.collapsed,
+      }));
+    };
+
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => {
+      if (!isLocked) return;
+      const next = measure();
+      if (next) apply(next, true);
+    }) : null;
+
+    const observe = (el: HTMLElement | null) => {
+      if (el && ro) ro.observe(el);
+    };
+    observe(anchorRef.current);
+    observe(bucketReadoutRef.current);
+    observe(recReadoutRef.current);
+    observe(actionsBlockRef.current);
+    observe(ingredientCardsRef.current);
+
+    const next = measure();
+    if (!next) return () => ro?.disconnect();
 
     if (isLocked) {
-      setOverlay({ show: true, expanded: false, rect: collapsed, collapsed });
+      setOverlay({ show: true, expanded: false, rect: next.collapsed, collapsed: next.collapsed });
       let innerId = 0;
       const outerId = requestAnimationFrame(() => {
         innerId = requestAnimationFrame(() => {
-          setOverlay({ show: true, expanded: true, rect: expanded, collapsed });
+          apply(next, true);
         });
       });
       return () => {
         cancelAnimationFrame(outerId);
         if (innerId) cancelAnimationFrame(innerId);
+        ro?.disconnect();
       };
     }
 
@@ -117,8 +134,19 @@ export function LockedSaveOverlay({
         clearTimeout(collapseTimer.current);
         collapseTimer.current = null;
       }
+      ro?.disconnect();
     };
-  }, [isLocked, anchorRef, bucketRef, actionsBlockRef, saveButtonRef, expandMs]);
+  }, [
+    isLocked,
+    anchorRef,
+    bucketReadoutRef,
+    recReadoutRef,
+    actionsBlockRef,
+    ingredientCardsRef,
+    saveButtonRef,
+    expandMs,
+    sectionRowGap,
+  ]);
 
   if (!overlay?.show) return null;
 
@@ -140,21 +168,42 @@ export function LockedSaveOverlay({
     border: overlay.expanded ? PRIMARY_BORDER : "1.5px solid transparent",
   };
 
+  const saveLabel = saveFlash ? "Saved" : "Save mix";
+  const saveDescription = saveFlash ? "Stored in your mixes" : "Hold to name and store";
+  const saveIcon = saveFlash
+    ? <SavedIcon size={LOCKED_ACTION_ICON_SIZE} />
+    : <SaveIcon size={LOCKED_ACTION_ICON_SIZE} />;
+  const compactIcon = saveFlash ? <SavedIcon /> : <SaveIcon />;
+  const expanded = overlay.expanded;
+
   return (
     <div style={shellStyle}>
-      <LongPressButton
-        label={saveFlash ? "Saved" : "Save mix"}
-        description={saveFlash ? "Stored in your mixes" : "Hold to name and store"}
-        confirmAction="SAVE MIX"
-        onLongPress={onSave}
-        variant="primary"
-        stacked
-        labelSize={11}
-        descriptionSize={10}
-        icon={saveFlash ? <SavedIcon size={LOCKED_ACTION_ICON_SIZE} /> : <SaveIcon size={LOCKED_ACTION_ICON_SIZE} />}
-        className="w-full h-full"
-        style={{ background: "transparent", border: "none", minHeight: 0 }}
-      />
+      <div style={crossfadeLayerStyles(expanded, expandEase, true)}>
+        <LongPressButton
+          label={saveLabel}
+          description={saveDescription}
+          confirmAction="SAVE MIX"
+          onLongPress={onSave}
+          variant="primary"
+          stacked
+          labelSize={11}
+          descriptionSize={10}
+          icon={saveIcon}
+          className="w-full h-full"
+          style={TRANSPARENT_BTN}
+        />
+      </div>
+      <div style={crossfadeLayerStyles(expanded, expandEase, false)}>
+        <LongPressButton
+          label={saveLabel}
+          confirmAction="SAVE MIX"
+          onLongPress={onSave}
+          variant="primary"
+          icon={compactIcon}
+          className="w-full h-full"
+          style={TRANSPARENT_BTN}
+        />
+      </div>
     </div>
   );
 }

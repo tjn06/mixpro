@@ -1,112 +1,125 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
-const DEFAULT_BAR_COLOR = "#9090b8";
-const BAR_Z_INDEX = 40;
+const BAR_COLOR = "#9090b8";
 const TRACK_COLOR = "rgba(255,255,255,0.07)";
+const FALLBACK_RADIUS = 14;
+/** Above panel chrome inside the beam canvas; sheets use their own canvas at z≈31. */
+export const BEAM_Z = 20;
 
-type SideBarMetrics = {
-  centerY: number;
-  barHeight: number;
-  anchorLeft: number;
-  anchorRight: number;
-  edgeLeft: number;
-  edgeRight: number;
-  maxLeft: number;
-  maxRight: number;
+type Layout = {
+  top: number;
+  height: number;
+  buttonLeft: number;
+  buttonRight: number;
+  canvasWidth: number;
+  underlapLeft: number;
+  underlapRight: number;
 };
 
-function resolveEdgeContainer(
+function canvasScale(el: HTMLElement): number {
+  const w = el.offsetWidth;
+  if (w <= 0) return 1;
+  const s = el.getBoundingClientRect().width / w;
+  return Number.isFinite(s) && s > 0 ? s : 1;
+}
+
+function parseRadiusPx(value: string): number {
+  const n = parseFloat(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function measureLayout(anchor: HTMLElement, canvas: HTMLElement): Layout {
+  const s = canvasScale(canvas);
+  const a = anchor.getBoundingClientRect();
+  const c = canvas.getBoundingClientRect();
+  const lx = (x: number) => (x - c.left) / s;
+  const ly = (y: number) => (y - c.top) / s;
+
+  const cs = getComputedStyle(anchor);
+  const borderX = Math.max(
+    parseFloat(cs.borderLeftWidth) || 0,
+    parseFloat(cs.borderRightWidth) || 0,
+  );
+  const cornerLeft = Math.max(
+    parseRadiusPx(cs.borderTopLeftRadius),
+    parseRadiusPx(cs.borderBottomLeftRadius),
+    FALLBACK_RADIUS,
+  );
+  const cornerRight = Math.max(
+    parseRadiusPx(cs.borderTopRightRadius),
+    parseRadiusPx(cs.borderBottomRightRadius),
+    FALLBACK_RADIUS,
+  );
+
+  return {
+    top: ly(a.top),
+    height: a.height / s,
+    buttonLeft: lx(a.left),
+    buttonRight: lx(a.right),
+    canvasWidth: canvas.offsetWidth,
+    underlapLeft: cornerLeft + borderX,
+    underlapRight: cornerRight + borderX,
+  };
+}
+
+function SideBar({
+  side,
+  layout,
+  progress,
+  color,
+}: {
+  side: "left" | "right";
+  layout: Layout;
+  progress: number;
+  color: string;
+}) {
+  const h = layout.height;
+  const span =
+    side === "left" ? layout.buttonLeft : layout.canvasWidth - layout.buttonRight;
+  if (span <= 0 || h <= 0) return null;
+
+  const underlap = side === "left" ? layout.underlapLeft : layout.underlapRight;
+  const barW = span + underlap;
+  const left = side === "left" ? 0 : layout.buttonRight - underlap;
+  /** Progress uses visible strip only (canvas edge → button edge). */
+  const fillW = span * progress;
+  const hidden = span - fillW;
+
+  const clipPath =
+    side === "left"
+      ? `inset(0 0 0 ${hidden}px)`
+      : `inset(0 ${hidden}px 0 0)`;
+
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute overflow-hidden"
+      style={{ left, top: layout.top, width: barW, height: h, zIndex: BEAM_Z }}
+    >
+      <div className="absolute inset-0" style={{ background: TRACK_COLOR }} />
+      {fillW > 0 && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: color,
+            clipPath,
+            filter: `drop-shadow(0 0 5px ${color}88)`,
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function resolveCanvas(
   anchor: HTMLElement,
   edgeContainerRef?: RefObject<HTMLElement | null>,
 ) {
   return (
     edgeContainerRef?.current
+    ?? anchor.closest<HTMLElement>("[data-beam-canvas]")
     ?? anchor.closest<HTMLElement>(".mobile-shell__slot")
-    ?? anchor.closest<HTMLElement>(".mobile-shell")
-  );
-}
-
-function measureSideBarMetrics(
-  anchor: HTMLElement,
-  edge: HTMLElement,
-): SideBarMetrics {
-  const anchorRect = anchor.getBoundingClientRect();
-  const edgeRect = edge.getBoundingClientRect();
-  const maxLeft = anchorRect.left - edgeRect.left;
-  const maxRight = edgeRect.right - anchorRect.right;
-  return {
-    centerY: anchorRect.top + anchorRect.height / 2,
-    barHeight: anchorRect.height,
-    anchorLeft: anchorRect.left,
-    anchorRight: anchorRect.right,
-    edgeLeft: edgeRect.left,
-    edgeRight: edgeRect.right,
-    maxLeft,
-    maxRight,
-  };
-}
-
-function sideFillWidth(
-  side: "left" | "right",
-  metrics: SideBarMetrics,
-  progress: number,
-): number {
-  const span = side === "left" ? metrics.maxLeft : metrics.maxRight;
-  return span * progress;
-}
-
-function SideLoadingBar({
-  side,
-  metrics,
-  progress,
-  color,
-}: {
-  side: "left" | "right";
-  metrics: SideBarMetrics;
-  progress: number;
-  color: string;
-}) {
-  const span = side === "left" ? metrics.maxLeft : metrics.maxRight;
-  const fillW = sideFillWidth(side, metrics, progress);
-  if (span <= 0) return null;
-
-  const trackLeft = side === "left" ? metrics.edgeLeft : metrics.anchorRight;
-  const fillLeft = side === "left" ? metrics.anchorLeft - fillW : metrics.anchorRight;
-
-  return (
-    <>
-      <div
-        className="pointer-events-none"
-        style={{
-          position: "fixed",
-          left: trackLeft,
-          top: metrics.centerY,
-          width: span,
-          height: metrics.barHeight,
-          transform: "translateY(-50%)",
-          background: TRACK_COLOR,
-          zIndex: BAR_Z_INDEX,
-        }}
-        aria-hidden
-      />
-      {fillW > 0 && (
-        <div
-          className="pointer-events-none"
-          style={{
-            position: "fixed",
-            left: fillLeft,
-            top: metrics.centerY,
-            width: fillW,
-            height: metrics.barHeight,
-            transform: "translateY(-50%)",
-            background: color,
-            zIndex: BAR_Z_INDEX + 1,
-          }}
-          aria-hidden
-        />
-      )}
-    </>
   );
 }
 
@@ -121,28 +134,50 @@ export function LongPressBeamBurst({
   accentColor?: string;
   edgeContainerRef?: RefObject<HTMLElement | null>;
 }) {
-  const [metrics, setMetrics] = useState<SideBarMetrics | null>(null);
-  const color = accentColor ?? DEFAULT_BAR_COLOR;
+  const [layout, setLayout] = useState<Layout | null>(null);
+  const [portal, setPortal] = useState<HTMLElement | null>(null);
+  const color = accentColor ?? BAR_COLOR;
 
   useLayoutEffect(() => {
     if (progress <= 0) {
-      setMetrics(null);
+      setLayout(null);
+      setPortal(null);
       return;
     }
+
+    const measure = () => {
+      const anchor = anchorRef.current;
+      if (!anchor) return;
+      const canvas = resolveCanvas(anchor, edgeContainerRef);
+      if (!canvas) return;
+      setPortal(canvas);
+      setLayout(measureLayout(anchor, canvas));
+    };
+
+    measure();
+
     const anchor = anchorRef.current;
-    if (!anchor) return;
-    const edge = resolveEdgeContainer(anchor, edgeContainerRef);
-    if (!edge) return;
-    setMetrics(measureSideBarMetrics(anchor, edge));
+    const canvas = anchor ? resolveCanvas(anchor, edgeContainerRef) : null;
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    if (ro) {
+      if (anchor) ro.observe(anchor);
+      if (canvas) ro.observe(canvas);
+    }
+    window.addEventListener("resize", measure);
+
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, [progress, anchorRef, edgeContainerRef]);
 
-  if (progress <= 0 || !metrics) return null;
+  if (progress <= 0 || !layout || !portal) return null;
 
   return createPortal(
-    <>
-      <SideLoadingBar side="left" metrics={metrics} progress={progress} color={color} />
-      <SideLoadingBar side="right" metrics={metrics} progress={progress} color={color} />
-    </>,
-    document.body,
+    <div className="pointer-events-none absolute inset-0" style={{ zIndex: BEAM_Z }} aria-hidden>
+      <SideBar side="left" layout={layout} progress={progress} color={color} />
+      <SideBar side="right" layout={layout} progress={progress} color={color} />
+    </div>,
+    portal,
   );
 }

@@ -1,4 +1,5 @@
-import React, { useId, useMemo, useRef, useState, useEffect, forwardRef } from "react";
+import React, { useId, useMemo, useRef, useState, useEffect, useLayoutEffect, useCallback, forwardRef } from "react";
+import { createPortal } from "react-dom";
 import {
   BUCKET_SIZES,
   bucketFits,
@@ -73,6 +74,7 @@ function BucketFeaturePanel({
   muted,
   ariaLabel,
   panelRef,
+  readoutRef,
 }: {
   clipId: string;
   fillY: number;
@@ -88,11 +90,12 @@ function BucketFeaturePanel({
   muted: boolean;
   ariaLabel: string;
   panelRef?: React.Ref<HTMLDivElement>;
+  readoutRef?: React.Ref<HTMLDivElement>;
 }) {
   return (
     <div
       ref={panelRef}
-      className="w-full min-w-0 min-h-0 select-none rounded-xl flex flex-col items-center overflow-hidden"
+      className="w-full min-w-0 min-h-0 h-full self-stretch select-none rounded-xl flex flex-col items-center overflow-hidden"
       aria-label={ariaLabel}
       style={{
         padding: FEATURE_PANEL_PAD,
@@ -103,7 +106,11 @@ function BucketFeaturePanel({
         boxSizing: "border-box",
       }}
     >
-      <div className="shrink-0 w-full">
+      <div
+        ref={readoutRef}
+        className="shrink-0 w-full"
+        style={disabled ? { position: "relative", zIndex: 8 } : undefined}
+      >
         <FeatureReadoutStack label={BUCKET_SIZE_LABEL} muted={muted}>
           <BucketSizeValue
             bucketSelection={bucketSelection}
@@ -195,8 +202,8 @@ const BUCKET = {
 
 /** Crop tight to bucket body — minimal headroom so rim aligns with label row. */
 const VIEW = { x: 82, y: 172, w: 828, h: 628 };
-/** Match REC. batch column stack (title + 2× gap + value + 32px reset). */
-const BUCKET_SVG_TARGET_H = 78;
+/** Reference render height — fixed size, not stretched with the synced panel. */
+const BUCKET_SVG_TARGET_H = 72;
 const SVG_H = BUCKET_SVG_TARGET_H;
 const SVG_W = Math.round(SVG_H * (VIEW.w / VIEW.h));
 
@@ -301,7 +308,8 @@ function BucketSvg({
       viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`}
       fill="none"
       aria-hidden
-      className="h-full max-h-full w-auto max-w-full"
+      className="shrink-0 max-w-full"
+      style={{ width: SVG_W, height: SVG_H }}
       preserveAspectRatio="xMidYMid meet"
     >
       <defs>
@@ -439,6 +447,13 @@ function BucketSelectOptionRow({
   );
 }
 
+function canvasScale(canvas: HTMLElement): number {
+  const scale = canvas.offsetWidth > 0
+    ? canvas.getBoundingClientRect().width / canvas.offsetWidth
+    : 1;
+  return Number.isFinite(scale) && scale > 0 ? scale : 1;
+}
+
 function BucketSelectDropdown({
   value,
   onChange,
@@ -455,12 +470,46 @@ function BucketSelectDropdown({
   muted?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [menuLayout, setMenuLayout] = useState<{ top: number; left: number; minWidth: number } | null>(null);
+  const [portal, setPortal] = useState<HTMLElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
+
+  const measureMenu = useCallback(() => {
+    const trigger = triggerRef.current;
+    const canvas = trigger?.closest<HTMLElement>("[data-beam-canvas]");
+    if (!trigger || !canvas) return null;
+    const s = canvasScale(canvas);
+    const tR = trigger.getBoundingClientRect();
+    const cR = canvas.getBoundingClientRect();
+    return {
+      top: (tR.bottom - cR.top) / s + 6,
+      left: (tR.left + tR.width / 2 - cR.left) / s,
+      minWidth: Math.max(tR.width / s, DROPDOWN_MENU_MIN_W),
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setMenuLayout(null);
+      setPortal(null);
+      return;
+    }
+    const trigger = triggerRef.current;
+    const canvas = trigger?.closest<HTMLElement>("[data-beam-canvas]") ?? null;
+    setPortal(canvas);
+    const update = () => setMenuLayout(measureMenu());
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [open, measureMenu]);
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
@@ -468,15 +517,68 @@ function BucketSelectDropdown({
 
   const options: BucketSelection[] = [...BUCKET_SIZES, "none"];
 
+  const menu = open && !disabled && menuLayout && portal ? (
+    createPortal(
+      <ul
+        ref={menuRef}
+        role="listbox"
+        aria-label="Bucket size"
+        className="rounded-xl overflow-hidden shadow-lg"
+        style={{
+          position: "absolute",
+          top: menuLayout.top,
+          left: menuLayout.left,
+          transform: "translateX(-50%)",
+          zIndex: 40,
+          width: "max-content",
+          minWidth: menuLayout.minWidth,
+          maxWidth: 280,
+          background: DROPDOWN_MENU_BG,
+          border: `1px solid ${DROPDOWN_MENU_BORDER}`,
+          boxShadow: "0 8px 20px rgba(0,0,0,0.4)",
+        }}
+      >
+        {options.map((option) => {
+          const isSize = option !== "none";
+          const size = isSize ? (option as BucketSize) : null;
+          const tooSmall = size != null && !bucketFits(size, estimatedLiters);
+          const locked = tooSmall && onForceChange != null;
+          const active = value === option;
+          return (
+            <li key={String(option)} role="none">
+              <BucketSelectOptionRow
+                label={bucketSelectionLabel(option, "menu")}
+                active={active}
+                locked={locked}
+                size={size ?? 5}
+                onSelect={() => {
+                  onChange(option);
+                  setOpen(false);
+                }}
+                onForceFit={() => {
+                  if (size == null) return;
+                  onForceChange?.(size);
+                  setOpen(false);
+                }}
+              />
+            </li>
+          );
+        })}
+      </ul>,
+      portal,
+    )
+  ) : null;
+
   return (
-    <div ref={rootRef} className="relative w-full max-w-full mx-auto">
+    <div className="relative w-full min-w-0">
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => !disabled && setOpen((o) => !o)}
-        className="w-full inline-flex items-center justify-center gap-1 min-w-0 touch-manipulation transition-colors duration-150"
+        className="w-full inline-flex items-center justify-center gap-0.5 min-w-0 touch-manipulation transition-colors duration-150"
         style={{
           ...BUCKET_VALUE_STYLE,
           color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
@@ -490,48 +592,7 @@ function BucketSelectDropdown({
         <span className="truncate tabular-nums">{bucketSelectionLabel(value)}</span>
         <ChevronDown open={open} />
       </button>
-
-      {open && !disabled && (
-        <ul
-          role="listbox"
-          aria-label="Bucket size"
-          className="absolute left-1/2 top-full z-20 mt-1.5 -translate-x-1/2 rounded-xl overflow-hidden shadow-lg"
-          style={{
-            width: "max-content",
-            minWidth: DROPDOWN_MENU_MIN_W,
-            background: DROPDOWN_MENU_BG,
-            border: `1px solid ${DROPDOWN_MENU_BORDER}`,
-            boxShadow: "0 8px 20px rgba(0,0,0,0.4)",
-          }}
-        >
-          {options.map((option) => {
-            const isSize = option !== "none";
-            const size = isSize ? (option as BucketSize) : null;
-            const tooSmall = size != null && !bucketFits(size, estimatedLiters);
-            const locked = tooSmall && onForceChange != null;
-            const active = value === option;
-            return (
-              <li key={String(option)} role="none">
-                <BucketSelectOptionRow
-                  label={bucketSelectionLabel(option, "menu")}
-                  active={active}
-                  locked={locked}
-                  size={size ?? 5}
-                  onSelect={() => {
-                    onChange(option);
-                    setOpen(false);
-                  }}
-                  onForceFit={() => {
-                    if (size == null) return;
-                    onForceChange?.(size);
-                    setOpen(false);
-                  }}
-                />
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {menu}
     </div>
   );
 }
@@ -546,6 +607,7 @@ export interface MixBucketProps {
   sandBulkDensity?: number;
   muted?: boolean;
   disabled?: boolean;
+  readoutRef?: React.Ref<HTMLDivElement>;
 }
 
 export const MixBucket = forwardRef<HTMLDivElement, MixBucketProps>(function MixBucket(
@@ -559,6 +621,7 @@ export const MixBucket = forwardRef<HTMLDivElement, MixBucketProps>(function Mix
     sandBulkDensity = DEFAULT_SAND_BULK_DENSITY,
     muted = false,
     disabled = false,
+    readoutRef,
   },
   ref,
 ) {
@@ -612,6 +675,7 @@ export const MixBucket = forwardRef<HTMLDivElement, MixBucketProps>(function Mix
       disabled={disabled}
       muted={muted}
       ariaLabel={ariaLabel}
+      readoutRef={readoutRef}
     />
   );
 });

@@ -6,6 +6,8 @@ export const FEATURE_PANEL_BG = "transparent";
 export const FEATURE_PANEL_BORDER = "1.5px solid rgba(255,255,255,0.14)";
 
 export const FEATURE_LABEL_GAP = 4;
+/** Vertical gap between major UI sections (matches BatchMixer SECTION_ROW_GAP). */
+export const SECTION_ROW_GAP = 12;
 /** Gap from value row to content below (bucket SVG / action buttons). */
 export const FEATURE_CONTENT_GAP = 8;
 

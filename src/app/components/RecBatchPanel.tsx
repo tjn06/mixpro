@@ -55,6 +55,11 @@ export interface RecBatchPanelProps {
   muted?: boolean;
   saveButtonRef?: RefObject<HTMLButtonElement | null>;
   actionsBlockRef?: RefObject<HTMLDivElement | null>;
+  resetButtonRef?: RefObject<HTMLButtonElement | null>;
+  /** Rec. batch readout + Reset card (excludes Save/Load). */
+  recPanelRef?: RefObject<HTMLDivElement | null>;
+  /** Rec. batch label + value row (excluded from locked Save overlay). */
+  recReadoutRef?: RefObject<HTMLDivElement | null>;
 }
 
 export function RecBatchPanel({
@@ -70,10 +75,13 @@ export function RecBatchPanel({
   muted = false,
   saveButtonRef,
   actionsBlockRef,
+  resetButtonRef,
+  recPanelRef,
+  recReadoutRef,
 }: RecBatchPanelProps) {
   return (
     <div
-      className="flex flex-1 flex-col min-w-0 w-full min-h-0"
+      className="flex flex-1 flex-col min-w-0 w-full min-h-0 h-full"
       style={{
         gap: ACTION_ROW_GAP,
         pointerEvents: "auto",
@@ -85,6 +93,7 @@ export function RecBatchPanel({
       }}
     >
       <div
+        ref={recPanelRef}
         className="flex w-full flex-col min-w-0 rounded-xl overflow-hidden shrink-0"
         style={{
           background: FEATURE_PANEL_BG,
@@ -93,8 +102,14 @@ export function RecBatchPanel({
         }}
       >
         <div
+          ref={recReadoutRef}
           className="flex flex-col items-center text-center w-full min-w-0"
-          style={{ paddingTop: 7, paddingBottom: ACTION_ROW_GAP, gap: FEATURE_LABEL_GAP }}
+          style={{
+            paddingTop: 7,
+            paddingBottom: ACTION_ROW_GAP,
+            gap: FEATURE_LABEL_GAP,
+            ...(disabled ? { position: "relative" as const, zIndex: 8 } : {}),
+          }}
         >
           <span
             className="uppercase truncate w-full"
@@ -117,6 +132,7 @@ export function RecBatchPanel({
         </div>
 
         <LongPressButton
+          ref={resetButtonRef}
           label="Reset"
           confirmAction="RESET"
           onLongPress={onReset}

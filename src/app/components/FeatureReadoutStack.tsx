@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import React, { type ReactNode } from "react";
 import {
   FEATURE_LABEL_GAP,
   FEATURE_TITLE_COLOR,

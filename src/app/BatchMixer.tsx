@@ -28,7 +28,8 @@ import {
 } from "./recipe";
 import { RecipeSelect } from "./components/RecipeSelect";
 import { RecBatchPanel, LockIcon } from "./components/RecBatchPanel";
-import { LockedSaveOverlay, LOCKED_ACTION_ICON_SIZE } from "./components/LockedSaveOverlay";
+import { LockedSaveOverlay } from "./components/LockedSaveOverlay";
+import { LockedUnlockOverlay } from "./components/LockedUnlockOverlay";
 import { LoadSavedMixesSheet } from "./components/LoadSavedMixesSheet";
 import { SaveMixNameSheet } from "./components/SaveMixNameSheet";
 import type { SavedMixSnapshot } from "./types/savedMix";
@@ -688,6 +689,7 @@ export function BatchMixer({
   const [dragDirection, setDragDirection] = useState<"up" | "down" | null>(null);
   const [dragBlocked, setDragBlocked] = useState(false);
   const [isLocked, setIsLocked]     = useState(false);
+  const [unlockOverlayActive, setUnlockOverlayActive] = useState(false);
   const [connectorLines, setConnectorLines] = useState<CardConnector[]>([]);
 
   // /* LINE_MEASUREMENT_LEGACY */
@@ -699,10 +701,17 @@ export function BatchMixer({
   const cardRefs       = useRef<(HTMLButtonElement | null)[]>([]);
   const totalTileRef    = useRef<HTMLButtonElement>(null);
   const bucketRef       = useRef<HTMLDivElement>(null);
+  const bucketReadoutRef = useRef<HTMLDivElement>(null);
   const recBatchColRef  = useRef<HTMLDivElement>(null);
   const editRowRef      = useRef<HTMLDivElement>(null);
+  const recPanelRef     = useRef<HTMLDivElement>(null);
+  const recReadoutRef   = useRef<HTMLDivElement>(null);
+  const resetButtonRef  = useRef<HTMLButtonElement>(null);
   const actionsBlockRef = useRef<HTMLDivElement>(null);
   const saveButtonRef   = useRef<HTMLButtonElement>(null);
+  const controlDeckRef  = useRef<HTMLDivElement>(null);
+  const lockButtonRef   = useRef<HTMLButtonElement>(null);
+  const ingredientCardsRef = useRef<HTMLDivElement>(null);
   const scaleRef       = useRef(1);
   const recipeRef      = useRef(activeRecipe);
   recipeRef.current    = activeRecipe;
@@ -821,13 +830,23 @@ export function BatchMixer({
 
     const sync = () => {
       const h = recCol.offsetHeight;
-      if (h > 0) bucketPanel.style.height = `${h}px`;
+      if (h > 0) {
+        bucketPanel.style.height = `${h}px`;
+        bucketPanel.style.minHeight = `${h}px`;
+      }
     };
 
     sync();
+    const raf = requestAnimationFrame(() => sync());
+    if (typeof ResizeObserver === "undefined") {
+      return () => cancelAnimationFrame(raf);
+    }
     const ro = new ResizeObserver(sync);
     ro.observe(recCol);
-    return () => ro.disconnect();
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, [screen, recommendedTotalGrams, saveFlash, canLoad, isLocked, bucketSelection]);
 
   const handleSaveRequest = useCallback(() => {
@@ -1158,6 +1177,7 @@ export function BatchMixer({
         <LongPressEdgeProvider edgeRef={containerRef}>
         <div
           ref={containerRef}
+          data-beam-canvas
           className="relative flex flex-col overflow-hidden select-none"
           style={{
             width: DESIGN_W,
@@ -1265,11 +1285,12 @@ export function BatchMixer({
             style={{
               gridTemplateColumns: `${BOTTOM_TOTAL_WIDTH} minmax(0, 1fr)`,
               gap: CARD_ROW_GAP,
-              alignItems: "start",
+              alignItems: "stretch",
             }}
           >
             <MixBucket
               ref={bucketRef}
+              readoutRef={bucketReadoutRef}
               epoxyGrams={mixEpoxyGrams(activeRecipe, values)}
               sandGrams={mixSandGrams(activeRecipe, values)}
               bucketSelection={bucketSelection}
@@ -1279,7 +1300,7 @@ export function BatchMixer({
               muted={isLocked}
               disabled={isLocked}
             />
-            <div ref={recBatchColRef} className="min-w-0">
+            <div ref={recBatchColRef} className="min-w-0 h-full">
             <RecBatchPanel
               recommendedTotalGrams={recommendedTotalGrams}
               onReset={handleResetToRecommended}
@@ -1291,13 +1312,18 @@ export function BatchMixer({
               muted={isLocked}
               saveButtonRef={saveButtonRef}
               actionsBlockRef={actionsBlockRef}
+              resetButtonRef={resetButtonRef}
+              recPanelRef={recPanelRef}
+              recReadoutRef={recReadoutRef}
             />
             </div>
             <LockedSaveOverlay
               isLocked={isLocked}
               anchorRef={editRowRef}
-              bucketRef={bucketRef}
+              bucketReadoutRef={bucketReadoutRef}
+              recReadoutRef={recReadoutRef}
               actionsBlockRef={actionsBlockRef}
+              ingredientCardsRef={ingredientCardsRef}
               saveButtonRef={saveButtonRef}
               onSave={handleSaveRequest}
               saveFlash={saveFlash}
@@ -1305,10 +1331,11 @@ export function BatchMixer({
               expandEase={LOCK_EASE}
               zIndex={LOCK_UNLOCK_Z}
               surfaceBg={ENTITY_SURFACE_IDLE}
+              sectionRowGap={SECTION_ROW_GAP}
             />
           </div>
 
-          <div className="flex" style={{ gap: CARD_ROW_GAP }}>
+          <div ref={ingredientCardsRef} className="flex" style={{ gap: CARD_ROW_GAP }}>
             {ingredientIndexes.map((pi) => {
               const p       = PARAMS[pi];
               const isAct   = active === pi;
@@ -1358,10 +1385,10 @@ export function BatchMixer({
             })}
           </div>
 
-      {/* ── Control deck: swipe + bottom (floating TOTAL / SAVE animate here) ─ */}
-      <div className="relative shrink-0 flex flex-col" style={{ gap: SECTION_ROW_GAP }}>
+          {/* ── Control deck: swipe + bottom (floating TOTAL / SAVE animate here) ─ */}
+          <div ref={controlDeckRef} className="relative shrink-0 flex flex-col" style={{ gap: SECTION_ROW_GAP }}>
 
-      {/* ── Swipe area ─────────────────────────────────────────────────────── */}
+          {/* ── Swipe area ─────────────────────────────────────────────────────── */}
       <div
         className="shrink-0"
         style={{
@@ -1433,15 +1460,17 @@ export function BatchMixer({
           <div className="flex flex-1 flex-col gap-2 min-w-0 justify-center">
             <div className="flex gap-2" style={{ height: BOTTOM_SUB_ROW_H }}>
               <div className="flex-1 min-w-0">
-                {!isLocked && (
-                  <LongPressButton
-                    label="Lock screen"
-                    confirmAction="LOCK SCREEN"
-                    onLongPress={toggleLock}
-                    icon={<LockIcon locked={false} />}
-                    className="w-full h-full"
-                  />
-                )}
+                <LongPressButton
+                  ref={lockButtonRef}
+                  label="Lock screen"
+                  confirmAction="LOCK SCREEN"
+                  onLongPress={toggleLock}
+                  icon={<LockIcon locked={false} />}
+                  className="w-full h-full"
+                  style={{
+                    visibility: isLocked || unlockOverlayActive ? "hidden" : "visible",
+                  }}
+                />
               </div>
               <LongPressButton
                 label="Undo"
@@ -1489,36 +1518,19 @@ export function BatchMixer({
         }}
       />
 
-      {isLocked && (
-        <div
-          className="absolute rounded-xl overflow-hidden"
-          style={{
-            zIndex: LOCK_PANEL_Z,
-            transition: LOCK_TRANSITION,
-            pointerEvents: "auto",
-            top: SWIPE_PAD_TOP + SWIPE_HEIGHT + BOTTOM_PAD_TOP,
-            left: 0,
-            width: "100%",
-            height: BOTTOM_ACTION_H,
-            background: ENTITY_SURFACE_IDLE,
-            border: "1.5px solid rgba(255,255,255,0.12)",
-          }}
-        >
-          <LongPressButton
-            label="Unlock"
-            description="Hold to edit mix again"
-            confirmAction="UNLOCK"
-            onLongPress={toggleLock}
-            variant="primary"
-            stacked
-            labelSize={11}
-            descriptionSize={10}
-            icon={<LockIcon locked size={LOCKED_ACTION_ICON_SIZE} />}
-            className="w-full h-full"
-            style={{ background: ENTITY_SURFACE_IDLE, border: "none", minHeight: 0 }}
-          />
-        </div>
-      )}
+      <LockedUnlockOverlay
+        isLocked={isLocked}
+        anchorRef={controlDeckRef}
+        lockButtonRef={lockButtonRef}
+        onUnlock={toggleLock}
+        expandMs={LOCK_EXPAND_MS}
+        expandEase={LOCK_EASE}
+        zIndex={LOCK_UNLOCK_Z}
+        surfaceBg={ENTITY_SURFACE_IDLE}
+        expandedTop={SWIPE_PAD_TOP + SWIPE_HEIGHT + BOTTOM_PAD_TOP}
+        expandedHeight={BOTTOM_ACTION_H}
+        onOverlayActiveChange={setUnlockOverlayActive}
+      />
 
       </div>
       </div>
