@@ -1,12 +1,5 @@
-import React, { useId, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
-/** Match `RecipeRatioCard` horizontal padding in BatchMixer. */
-export const RECIPE_META_CARD_PX = 6;
-export const RECIPE_META_LABEL_GAP = 4;
-
-const RECIPE_META_LABEL_SIZE = 14;
-/** Recipe dropdown trigger title. */
-const RECIPE_META_VALUE_SIZE = 20;
 const RECIPE_ID_COLOR = "#8888a8";
 const RECIPE_ID_COLOR_MUTED = "#686878";
 const RECIPE_VALUE_COLOR = "#c4c4dc";
@@ -32,8 +25,10 @@ export function RecipeZoneMeta({
       aria-labelledby={label ? labelId : undefined}
       className={`w-full min-w-0 rounded-xl flex flex-col items-center justify-start ${className}`}
       style={{
-        padding: label ? `7px ${RECIPE_META_CARD_PX}px 6px` : `4px ${RECIPE_META_CARD_PX}px 4px`,
-        gap: label ? RECIPE_META_LABEL_GAP : 0,
+        padding: label
+          ? "var(--recipe-card-pt) var(--recipe-card-px) var(--recipe-card-pb)"
+          : "var(--recipe-card-pt-alt) var(--recipe-card-px) var(--recipe-card-pt-alt)",
+        gap: label ? "var(--feature-label-gap)" : 0,
       }}
     >
       {label ? (
@@ -41,7 +36,7 @@ export function RecipeZoneMeta({
           id={labelId}
           className="uppercase truncate max-w-full"
           style={{
-            fontSize: RECIPE_META_LABEL_SIZE,
+            fontSize: "var(--text-recipe-meta-label)",
             letterSpacing: "0.12em",
             fontWeight: 700,
             color: muted ? RECIPE_ID_COLOR_MUTED : RECIPE_ID_COLOR,
@@ -70,7 +65,7 @@ export function RecipeZoneMetaValue({
       className={`truncate max-w-full text-center ${className}`}
       style={{
         fontFamily: "'Outfit', sans-serif",
-        fontSize: RECIPE_META_VALUE_SIZE,
+        fontSize: "var(--text-recipe-select)",
         letterSpacing: "0.04em",
         fontWeight: 600,
         color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,

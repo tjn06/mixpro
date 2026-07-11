@@ -1,9 +1,6 @@
 import type { CSSProperties } from "react";
 import {
   CARD_CHROME_TRANSITION,
-  CARD_NAME_SIZE,
-  CARD_UNIT_SIZE,
-  CARD_VALUE_SIZE,
   cardReadoutNameStyle,
   cardReadoutUnitStyle,
   cardReadoutValueStyle,
@@ -44,7 +41,7 @@ export function EntityMixCard({
   const readout = entityCardReadoutStyle(color, lit);
 
   const metaStyle: CSSProperties = {
-    fontSize: emphasized ? 10 : 9,
+    fontSize: emphasized ? "var(--text-recipe-sublabel)" : "calc(var(--text-recipe-unit) - 1px)",
     letterSpacing: "0.03em",
     fontWeight: 600,
     color: readout.unitColor,
@@ -56,17 +53,17 @@ export function EntityMixCard({
   if (variant === "table") {
     const nameStyle = {
       ...cardReadoutNameStyle(readout.nameColor),
-      fontSize: emphasized ? 14 : CARD_NAME_SIZE,
+      fontSize: emphasized ? "var(--text-recipe-meta-label)" : "var(--text-card-name)",
     };
     const valueStyle = {
       ...cardReadoutValueStyle(readout.valueColor),
-      fontSize: emphasized ? 20 : CARD_VALUE_SIZE,
-      marginTop: emphasized ? 5 : 4,
+      fontSize: emphasized ? "calc(var(--text-card-value) + 4px)" : "var(--text-card-value)",
+      marginTop: emphasized ? "var(--recipe-row-gap)" : "var(--entity-card-readout-mt)",
     };
     const unitStyle = {
       ...cardReadoutUnitStyle(readout.unitColor),
-      fontSize: emphasized ? 13 : CARD_UNIT_SIZE,
-      marginTop: emphasized ? 3 : 2,
+      fontSize: emphasized ? "calc(var(--text-card-unit) + 1px)" : "var(--text-card-unit)",
+      marginTop: emphasized ? "calc(var(--entity-card-unit-mt) + 1px)" : "var(--entity-card-unit-mt)",
     };
 
     return (
@@ -100,8 +97,8 @@ export function EntityMixCard({
     <div
       className={`flex flex-col items-center rounded-xl relative overflow-hidden ${className}`}
       style={{
-        paddingTop: 8,
-        paddingBottom: 12,
+        paddingTop: "var(--entity-card-pt)",
+        paddingBottom: "var(--entity-card-pb)",
         background: chrome.background,
         border: chrome.border,
         boxShadow: chrome.boxShadow,
@@ -116,7 +113,7 @@ export function EntityMixCard({
           borderRadius: 2,
           background: color,
           opacity: readout.barOpacity,
-          marginBottom: 6,
+          marginBottom: "var(--entity-card-bar-mb)",
           boxShadow: lit ? `0 0 6px ${color}` : "none",
         }}
       />

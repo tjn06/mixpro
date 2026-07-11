@@ -38,6 +38,13 @@ import type { BlendingRecipe } from "./recipeTypes";
 import { PRESET_RECIPES, recipeMenuLabel } from "./recipeTypes";
 import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "./mixEntities";
 import { BatchTotalsScreen } from "./components/BatchTotalsScreen";
+import {
+  CARD_NAME_WEIGHT,
+  CARD_UNIT_WEIGHT,
+  cardReadoutNameStyle,
+  cardReadoutUnitStyle,
+  cardReadoutValueStyle,
+} from "./entityCardStyles";
 
 // All values stored internally in grams — index order: TOTAL, A, B, TIX, SAND
 // PARAMS imported from mixEntities.ts
@@ -98,13 +105,7 @@ const LOCK_EXPAND_MS    = 360;
 const LOCK_EASE         = "cubic-bezier(0.2, 0.8, 0.2, 1)";
 const UNDO_MAX = 20;
 const BOTTOM_TOTAL_WIDTH = "48%";
-const BOTTOM_SUB_ROW_H = 38;
-const BOTTOM_ROW_GAP    = 8;
-const BOTTOM_ACTION_H   = BOTTOM_SUB_ROW_H * 2 + BOTTOM_ROW_GAP;
-/** Vertical gap between swipe, bottom deck, and the edit/cards block. */
-const SECTION_ROW_GAP   = 12;
 const SWIPE_PAD_TOP     = 0;
-const BOTTOM_PAD_TOP    = SECTION_ROW_GAP;
 const LOCK_TRANSITION   = `top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, left ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, width ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, height ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, bottom ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
 const LOCK_FADE_TRANSITION = `opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
 const LOCK_TEXT_TRANSITION = `font-size ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, margin-top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, width ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
@@ -138,26 +139,9 @@ function swipeZoneStripe(even: boolean): string {
 }
 
 /** Locked recipe ratio cards (read-only, above mix cards). */
-/** Space below header chrome before recipe title + ratio cards (8pt grid; pairs with header `pb-3`). */
-const RECIPE_ZONE_PT = 12;
 const RECIPE_RATIO_BG = "transparent";
 const RECIPE_RATIO_BORDER_COLOR = "rgba(255,255,255,0.14)";
 const RECIPE_CONTAINER_PX = "4px 0";
-const RECIPE_CARD_H = 96;
-/** Matches bucket row `FEATURE_ROW_GAP` and mix-card `CARD_ROW_GAP`. */
-const RECIPE_META_GAP = 8;
-const RECIPE_CARD_PX = 6;
-const RECIPE_META_LABEL_SIZE = 14;
-const RECIPE_ID_SIZE = 12;
-const RECIPE_SUBLABEL_SIZE = 10;
-const RECIPE_META_VALUE_SIZE = 16;
-const RECIPE_RATIO_SIZE = 16;
-const RECIPE_UNIT_SIZE = 10;
-const RECIPE_COLON_SIZE = 14;
-const RECIPE_LABEL_GAP = 2;
-const RECIPE_ID_SUBLABEL_GAP = 8;
-const RECIPE_META_NAME_GAP = 8;
-const RECIPE_ROW_GAP = 5;
 /** High-contrast readouts on dark recipe cards — not pure white. */
 const RECIPE_VALUE_COLOR = "#c4c4dc";
 const RECIPE_VALUE_COLOR_MUTED = "#9898b4";
@@ -165,19 +149,17 @@ const RECIPE_ID_COLOR = "#8888a8";
 const RECIPE_ID_COLOR_MUTED = "#686878";
 const RECIPE_UNIT_COLOR = "#707088";
 const RECIPE_COLON_COLOR = "#484860";
-/** Matches mix-card row `gap-2` — colon slots use this width explicitly. */
-const CARD_ROW_GAP = SECTION_ROW_GAP;
 
 function RecipeRatioGapSeparator() {
   return (
     <div
       aria-hidden
       className="flex shrink-0 items-center justify-center pointer-events-none self-stretch"
-      style={{ width: CARD_ROW_GAP }}
+      style={{ width: "var(--section-gap)" }}
     >
       <span
         style={{
-          fontSize: RECIPE_COLON_SIZE,
+          fontSize: "var(--text-recipe-colon)",
           color: RECIPE_COLON_COLOR,
           lineHeight: 1,
           fontWeight: 600,
@@ -207,19 +189,19 @@ function RecipeRatioCard({
       aria-hidden
       className="flex-1 min-w-0 rounded-xl flex flex-col items-center justify-between pointer-events-none"
       style={{
-        height: RECIPE_CARD_H,
-        padding: `7px ${RECIPE_CARD_PX}px 6px`,
+        height: "var(--recipe-card-h)",
+        padding: "var(--recipe-card-pt) var(--recipe-card-px) var(--recipe-card-pb)",
         background: RECIPE_RATIO_BG,
       }}
     >
       <div
         className="flex flex-col items-center max-w-full min-h-0"
-        style={{ gap: RECIPE_ID_SUBLABEL_GAP }}
+        style={{ gap: "var(--recipe-id-sublabel-gap)" }}
       >
         <span
           className="uppercase truncate max-w-full"
           style={{
-            fontSize: RECIPE_ID_SIZE,
+            fontSize: "var(--text-recipe-id)",
             letterSpacing: "0.12em",
             fontWeight: 700,
             color: muted ? RECIPE_ID_COLOR_MUTED : RECIPE_ID_COLOR,
@@ -232,7 +214,7 @@ function RecipeRatioCard({
           <span
             className="truncate max-w-full capitalize"
             style={{
-              fontSize: RECIPE_SUBLABEL_SIZE,
+              fontSize: "var(--text-recipe-sublabel)",
               letterSpacing: "0.02em",
               fontWeight: 600,
               color: muted ? RECIPE_UNIT_COLOR : RECIPE_ID_COLOR,
@@ -247,12 +229,12 @@ function RecipeRatioCard({
       <span
         className="tabular-nums truncate max-w-full"
         style={{
-          fontSize: RECIPE_RATIO_SIZE,
+          fontSize: "var(--text-recipe-ratio)",
           letterSpacing: "-0.02em",
           fontWeight: 600,
           color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
           lineHeight: 1,
-          marginTop: RECIPE_ROW_GAP,
+          marginTop: "var(--recipe-row-gap)",
         }}
       >
         {value}
@@ -260,13 +242,13 @@ function RecipeRatioCard({
       <span
         className="uppercase truncate max-w-full"
         style={{
-          fontSize: RECIPE_UNIT_SIZE,
+          fontSize: "var(--text-recipe-unit)",
           letterSpacing: unit.length > 1 ? "0.1em" : "0.05em",
           fontWeight: 600,
           color: RECIPE_UNIT_COLOR,
           opacity: muted ? 0.7 : 1,
           lineHeight: 1.1,
-          marginTop: RECIPE_LABEL_GAP,
+          marginTop: "var(--recipe-label-gap)",
         }}
       >
         {unit}
@@ -295,15 +277,15 @@ function RecipeMetaCard({
       aria-hidden
       className="flex-1 min-w-0 rounded-xl flex flex-col items-center justify-between pointer-events-none"
       style={{
-        height: RECIPE_CARD_H,
-        padding: `4px ${RECIPE_CARD_PX}px 6px`,
+        height: "var(--recipe-card-h)",
+        padding: "var(--recipe-card-pt-alt) var(--recipe-card-px) var(--recipe-card-pb)",
         background: RECIPE_RATIO_BG,
       }}
     >
       <span
         className="uppercase truncate max-w-full"
         style={{
-          fontSize: RECIPE_META_LABEL_SIZE,
+          fontSize: "var(--text-recipe-meta-label)",
           letterSpacing: "0.12em",
           fontWeight: 700,
           color: muted ? RECIPE_ID_COLOR_MUTED : RECIPE_ID_COLOR,
@@ -315,13 +297,13 @@ function RecipeMetaCard({
       {valueLine2 ? (
         <div
           className="flex flex-col items-center max-w-full min-h-0"
-          style={{ gap: RECIPE_LABEL_GAP, marginTop: RECIPE_META_NAME_GAP }}
+          style={{ gap: "var(--recipe-label-gap)", marginTop: "var(--recipe-meta-name-gap)" }}
         >
           <span
             className="truncate max-w-full text-center"
             style={{
               fontFamily: valueFontFamily,
-              fontSize: RECIPE_META_VALUE_SIZE,
+              fontSize: "var(--text-recipe-meta-value)",
               letterSpacing: "0.04em",
               fontWeight: 600,
               color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
@@ -334,7 +316,7 @@ function RecipeMetaCard({
             className="truncate max-w-full text-center"
             style={{
               fontFamily: valueFontFamily,
-              fontSize: RECIPE_META_VALUE_SIZE,
+              fontSize: "var(--text-recipe-meta-value)",
               letterSpacing: "0.04em",
               fontWeight: 600,
               color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
@@ -349,12 +331,12 @@ function RecipeMetaCard({
           className="tabular-nums truncate max-w-full"
           style={{
             fontFamily: valueFontFamily,
-            fontSize: unit ? RECIPE_RATIO_SIZE : RECIPE_META_VALUE_SIZE,
+            fontSize: unit ? "var(--text-recipe-ratio)" : "var(--text-recipe-meta-value)",
             letterSpacing: unit ? "-0.02em" : "0.04em",
             fontWeight: 600,
             color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
             lineHeight: 1,
-            marginTop: RECIPE_ROW_GAP,
+            marginTop: "var(--recipe-row-gap)",
           }}
         >
           {value}
@@ -363,13 +345,13 @@ function RecipeMetaCard({
       <span
         className="uppercase truncate max-w-full"
         style={{
-          fontSize: RECIPE_UNIT_SIZE,
+          fontSize: "var(--text-recipe-unit)",
           letterSpacing: unit && unit.length > 1 ? "0.1em" : "0.05em",
           fontWeight: 600,
           color: RECIPE_UNIT_COLOR,
           opacity: unit ? (muted ? 0.7 : 1) : 0,
           lineHeight: 1.1,
-          marginTop: RECIPE_LABEL_GAP,
+          marginTop: "var(--recipe-label-gap)",
           visibility: unit ? "visible" : "hidden",
         }}
       >
@@ -378,13 +360,6 @@ function RecipeMetaCard({
     </div>
   );
 }
-
-/** Shared label / value / unit sizes for all param cards. */
-const CARD_NAME_SIZE      = 12;
-const CARD_NAME_WEIGHT    = 700;
-const CARD_VALUE_SIZE     = 16;
-const CARD_UNIT_SIZE      = 12;
-const CARD_UNIT_WEIGHT    = 600;
 
 /** Subtle selected-state glow in the entity's theme color. */
 function entityCardShadow(color: string): string {
@@ -484,32 +459,9 @@ function CardReadout({
 }) {
   return (
     <div className={`flex flex-col min-w-0 ${centered ? "items-center" : "items-start"}`}>
-      <span style={{
-        fontSize: CARD_NAME_SIZE,
-        letterSpacing: "0.18em",
-        color: nameColor,
-        fontWeight: CARD_NAME_WEIGHT,
-      }}>
-        {name}
-      </span>
-      <span className="tabular-nums" style={{
-        fontSize: CARD_VALUE_SIZE,
-        fontWeight: 600,
-        color: valueColor,
-        lineHeight: 1,
-        marginTop: 4,
-      }}>
-        {value}
-      </span>
-      <span style={{
-        fontSize: CARD_UNIT_SIZE,
-        color: unitColor,
-        letterSpacing: "0.08em",
-        fontWeight: CARD_UNIT_WEIGHT,
-        marginTop: 2,
-      }}>
-        {unit}
-      </span>
+      <span style={cardReadoutNameStyle(nameColor)}>{name}</span>
+      <span className="tabular-nums" style={cardReadoutValueStyle(valueColor)}>{value}</span>
+      <span style={cardReadoutUnitStyle(unitColor)}>{unit}</span>
     </div>
   );
 }
@@ -556,8 +508,12 @@ const TotalTile = forwardRef<HTMLButtonElement, {
         type="button"
         ref={ref}
         onClick={onClick}
-        className={`flex flex-col items-center justify-center rounded-xl w-full h-full py-3.5 touch-none overflow-hidden relative ${className}`}
-        style={tileStyle}
+        className={`flex flex-col items-center justify-center rounded-xl w-full h-full touch-none overflow-hidden relative ${className}`}
+        style={{
+          ...tileStyle,
+          paddingTop: "var(--total-tile-expanded-py)",
+          paddingBottom: "var(--total-tile-expanded-py)",
+        }}
       >
         {limitFlash && <CardLimitFlash color={color} />}
         <div style={{
@@ -566,12 +522,12 @@ const TotalTile = forwardRef<HTMLButtonElement, {
           borderRadius: 2,
           background: color,
           opacity: barOpacity,
-          marginBottom: 12,
+          marginBottom: "var(--lock-bar-mb)",
           boxShadow: cardLit ? `0 0 6px ${color}` : "none",
           transition: LOCK_TEXT_TRANSITION,
         }} />
         <span style={{
-          fontSize: CARD_NAME_SIZE + 1,
+          fontSize: "var(--text-lock-name)",
           letterSpacing: "0.18em",
           color: nameColor,
           fontWeight: CARD_NAME_WEIGHT,
@@ -580,21 +536,21 @@ const TotalTile = forwardRef<HTMLButtonElement, {
           TOTAL
         </span>
         <span className="tabular-nums" style={{
-          fontSize: 32,
+          fontSize: "var(--text-lock-value)",
           fontWeight: 600,
           color: valueColor,
           lineHeight: 1,
-          marginTop: 8,
+          marginTop: "var(--lock-value-mt)",
           transition: LOCK_TEXT_TRANSITION,
         }}>
           {valueKg}
         </span>
         <span style={{
-          fontSize: CARD_UNIT_SIZE + 2,
+          fontSize: "var(--text-lock-unit)",
           color: CARD_UNIT_INACTIVE,
           letterSpacing: "0.08em",
           fontWeight: CARD_UNIT_WEIGHT,
-          marginTop: 4,
+          marginTop: "var(--lock-unit-mt)",
           transition: LOCK_TEXT_TRANSITION,
         }}>
           kg
@@ -608,17 +564,20 @@ const TotalTile = forwardRef<HTMLButtonElement, {
       type="button"
       ref={ref}
       onClick={onClick}
-      className={`flex items-stretch justify-start rounded-xl px-3 py-3 w-full h-full touch-none overflow-hidden relative ${className}`}
-      style={tileStyle}
+      className={`flex items-stretch justify-start rounded-xl w-full h-full touch-none overflow-hidden relative ${className}`}
+      style={{
+        ...tileStyle,
+        padding: "var(--total-tile-pad-y) var(--total-tile-pad-x)",
+      }}
     >
       {limitFlash && <CardLimitFlash color={color} />}
       <div style={{
-        width: 3,
+        width: "var(--total-tile-bar-w)",
         flexShrink: 0,
         borderRadius: 2,
         background: color,
         opacity: barOpacity,
-        marginRight: 10,
+        marginRight: "var(--total-tile-bar-gap)",
         boxShadow: cardLit ? `0 0 6px ${color}` : "none",
         transition: CARD_CHROME_TRANSITION,
       }} />
@@ -687,6 +646,7 @@ export function BatchMixer({
   const [unlockOverlayActive, setUnlockOverlayActive] = useState(false);
   const [connectorLines, setConnectorLines] = useState<CardConnector[]>([]);
   const [swipeHeight, setSwipeHeight] = useState(SWIPE_HEIGHT);
+  const [sectionGap, setSectionGap] = useState(12);
 
   // /* LINE_MEASUREMENT_LEGACY */
   // const [lines, setLines] = useState<Line[]>([]);
@@ -705,6 +665,7 @@ export function BatchMixer({
   const actionsBlockRef = useRef<HTMLDivElement>(null);
   const saveButtonRef   = useRef<HTMLButtonElement>(null);
   const controlDeckRef  = useRef<HTMLDivElement>(null);
+  const bottomActionsColRef = useRef<HTMLDivElement>(null);
   const lockButtonRef   = useRef<HTMLButtonElement>(null);
   const ingredientCardsRef = useRef<HTMLDivElement>(null);
   const recipeRef      = useRef(activeRecipe);
@@ -864,6 +825,28 @@ export function BatchMixer({
       ro.disconnect();
     };
   }, [screen, isLocked, dragFocus]);
+
+  /** Sync section gap from computed layout (tracks compact container tokens). */
+  useLayoutEffect(() => {
+    if (screen !== "mixer") return;
+    const deck = controlDeckRef.current;
+    if (!deck) return;
+    const sync = () => {
+      const gap = parseFloat(getComputedStyle(deck).gap);
+      if (gap > 0) setSectionGap(gap);
+    };
+    sync();
+    const raf = requestAnimationFrame(sync);
+    if (typeof ResizeObserver === "undefined") {
+      return () => cancelAnimationFrame(raf);
+    }
+    const ro = new ResizeObserver(sync);
+    ro.observe(deck);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [screen]);
 
   const handleSaveRequest = useCallback(() => {
     setSaveNameSheetOpen(true);
@@ -1214,14 +1197,14 @@ export function BatchMixer({
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <div
             className="shrink-0 app-gutter-x flex flex-col"
-            style={{ paddingTop: RECIPE_ZONE_PT, gap: RECIPE_META_GAP }}
+            style={{ paddingTop: "var(--recipe-zone-pt)", gap: "var(--recipe-meta-gap)" }}
           >
             <div
               className="rounded-xl flex flex-col min-w-0"
               style={{
                 background: RECIPE_RATIO_BG,
                 padding: RECIPE_CONTAINER_PX,
-                gap: RECIPE_META_GAP,
+                gap: "var(--recipe-meta-gap)",
               }}
             >
               <div className={isLocked ? "pointer-events-none" : "pointer-events-auto"}>
@@ -1257,7 +1240,7 @@ export function BatchMixer({
         <div
           className="shrink-0 app-gutter-x flex flex-col"
           style={{
-            gap: SECTION_ROW_GAP,
+            gap: "var(--section-gap)",
             paddingBottom: "var(--space-4)",
             pointerEvents: isLocked ? "none" : "auto",
           }}
@@ -1267,7 +1250,7 @@ export function BatchMixer({
             className="relative grid min-w-0"
             style={{
               gridTemplateColumns: `${BOTTOM_TOTAL_WIDTH} minmax(0, 1fr)`,
-              gap: CARD_ROW_GAP,
+              gap: "var(--section-gap)",
               alignItems: "stretch",
             }}
           >
@@ -1314,11 +1297,10 @@ export function BatchMixer({
               expandEase={LOCK_EASE}
               zIndex={LOCK_UNLOCK_Z}
               surfaceBg={ENTITY_SURFACE_IDLE}
-              sectionRowGap={SECTION_ROW_GAP}
             />
           </div>
 
-          <div ref={ingredientCardsRef} className="flex" style={{ gap: CARD_ROW_GAP }}>
+          <div ref={ingredientCardsRef} className="flex" style={{ gap: "var(--section-gap)" }}>
             {ingredientIndexes.map((pi) => {
               const p       = PARAMS[pi];
               const isAct   = active === pi;
@@ -1332,8 +1314,8 @@ export function BatchMixer({
                   onClick={() => setActive(pi)}
                   className="flex-1 flex flex-col items-center rounded-xl relative overflow-hidden"
                   style={{
-                    paddingTop: 8,
-                    paddingBottom: 12,
+                    paddingTop: "var(--entity-card-pt)",
+                    paddingBottom: "var(--entity-card-pb)",
                     background: cardLit ? entitySurfaceLit(p.color) : ENTITY_SURFACE_IDLE,
                     border: chrome.border,
                     boxShadow: chrome.boxShadow,
@@ -1351,7 +1333,7 @@ export function BatchMixer({
                     borderRadius: 2,
                     background: p.color,
                     opacity: cardLit ? 1 : 0.4,
-                    marginBottom: 6,
+                    marginBottom: "var(--entity-card-bar-mb)",
                     boxShadow: cardLit ? `0 0 6px ${p.color}` : "none",
                   }} />
                   <CardReadout
@@ -1369,7 +1351,7 @@ export function BatchMixer({
           </div>
 
           {/* ── Control deck: swipe + bottom (floating TOTAL / SAVE animate here) ─ */}
-          <div ref={controlDeckRef} className="relative shrink-0 flex flex-col" style={{ gap: SECTION_ROW_GAP }}>
+          <div ref={controlDeckRef} className="relative shrink-0 flex flex-col" style={{ gap: "var(--section-gap)" }}>
 
           {/* ── Swipe area ─────────────────────────────────────────────────────── */}
       <div
@@ -1420,7 +1402,7 @@ export function BatchMixer({
                 <SwipeChevronStack direction="up" active={upActive} color={col} />
 
                 <span style={{
-                  fontSize: isColAct ? 14 : 13, fontWeight: 500,
+                  fontSize: isColAct ? "var(--text-swipe-col-active)" : "var(--text-swipe-col)", fontWeight: 500,
                   color: isColAct ? col : SWIPE_STEP_IDLE,
                   lineHeight: 1, transition: "all 0.15s",
                 }} className="pointer-events-none">
@@ -1437,12 +1419,12 @@ export function BatchMixer({
       {/* ── Bottom layout spacer + secondary actions ──────────────────────── */}
       <div className="relative shrink-0">
         <div
-          className="flex gap-2 items-stretch"
-          style={{ pointerEvents: isLocked ? "none" : "auto" }}
+          className="flex items-stretch"
+          style={{ pointerEvents: isLocked ? "none" : "auto", gap: "var(--action-row-gap)" }}
         >
-          <div style={{ flex: `0 0 ${BOTTOM_TOTAL_WIDTH}`, height: BOTTOM_ACTION_H }} aria-hidden />
-          <div className="flex flex-1 flex-col gap-2 min-w-0 justify-center">
-            <div className="flex gap-2" style={{ height: BOTTOM_SUB_ROW_H }}>
+          <div style={{ flex: `0 0 ${BOTTOM_TOTAL_WIDTH}`, height: "var(--bottom-action-h)" }} aria-hidden />
+          <div ref={bottomActionsColRef} className="flex flex-1 flex-col min-w-0 justify-center" style={{ gap: "var(--action-row-gap)" }}>
+            <div className="flex" style={{ height: "var(--bottom-sub-row-h)", gap: "var(--action-row-gap)" }}>
               <div className="flex-1 min-w-0">
                 <LongPressButton
                   ref={lockButtonRef}
@@ -1465,9 +1447,9 @@ export function BatchMixer({
                 className="flex-1 h-full"
               />
             </div>
-            <div className="flex gap-2" style={{ height: BOTTOM_SUB_ROW_H }}>
-              <LongPressButton label="÷2" confirmAction="HALVE MIX" onLongPress={() => scaleMix(0.5)} className="flex-1 h-full" labelSize={14} compact />
-              <LongPressButton label="×2" confirmAction="DOUBLE MIX" onLongPress={() => scaleMix(2)} className="flex-1 h-full" labelSize={14} compact />
+            <div className="flex" style={{ height: "var(--bottom-sub-row-h)", gap: "var(--action-row-gap)" }}>
+              <LongPressButton label="÷2" confirmAction="HALVE MIX" onLongPress={() => scaleMix(0.5)} className="flex-1 h-full" labelSize="var(--text-action-md)" compact />
+              <LongPressButton label="×2" confirmAction="DOUBLE MIX" onLongPress={() => scaleMix(2)} className="flex-1 h-full" labelSize="var(--text-action-md)" compact />
             </div>
           </div>
         </div>
@@ -1494,10 +1476,10 @@ export function BatchMixer({
             width: "100%",
             height: swipeHeight,
           } : {
-            top: SWIPE_PAD_TOP + swipeHeight + BOTTOM_PAD_TOP,
+            top: `calc(${swipeHeight}px + var(--section-gap))`,
             left: 0,
-            width: `calc((100% - ${BOTTOM_ROW_GAP}px) * 0.48)`,
-            height: BOTTOM_ACTION_H,
+            width: "calc((100% - var(--bottom-row-gap)) * 0.48)",
+            height: "var(--bottom-action-h)",
           }),
         }}
       />
@@ -1511,8 +1493,8 @@ export function BatchMixer({
         expandEase={LOCK_EASE}
         zIndex={LOCK_UNLOCK_Z}
         surfaceBg={ENTITY_SURFACE_IDLE}
-        expandedTop={SWIPE_PAD_TOP + swipeHeight + BOTTOM_PAD_TOP}
-        expandedHeight={BOTTOM_ACTION_H}
+        expandedTop={SWIPE_PAD_TOP + swipeHeight + sectionGap}
+        actionColRef={bottomActionsColRef}
         onOverlayActiveChange={setUnlockOverlayActive}
       />
 

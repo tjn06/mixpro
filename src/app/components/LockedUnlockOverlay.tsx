@@ -26,8 +26,18 @@ export interface LockedUnlockOverlayProps {
   zIndex: number;
   surfaceBg: string;
   expandedTop: number;
-  expandedHeight: number;
+  actionColRef: RefObject<HTMLElement | null>;
   onOverlayActiveChange?: (active: boolean) => void;
+}
+
+function readBottomActionH(actionCol: HTMLElement | null): number {
+  const h = actionCol?.offsetHeight ?? 0;
+  if (h > 0) return h;
+  const frame = actionCol?.closest(".app-frame");
+  if (!frame) return 84;
+  const raw = getComputedStyle(frame).getPropertyValue("--bottom-action-h").trim();
+  const n = parseFloat(raw);
+  return Number.isFinite(n) && n > 0 ? n : 84;
 }
 
 export function LockedUnlockOverlay({
@@ -40,7 +50,7 @@ export function LockedUnlockOverlay({
   zIndex,
   surfaceBg,
   expandedTop,
-  expandedHeight,
+  actionColRef,
   onOverlayActiveChange,
 }: LockedUnlockOverlayProps) {
   const [overlay, setOverlay] = useState<OverlayState | null>(null);
@@ -65,7 +75,7 @@ export function LockedUnlockOverlay({
       const expanded = unlockExpandedRect(
         anchor.offsetWidth,
         expandedTop,
-        expandedHeight,
+        readBottomActionH(actionColRef.current),
       );
       return { collapsed, expanded };
     };
@@ -90,6 +100,7 @@ export function LockedUnlockOverlay({
     };
     observe(anchorRef.current);
     observe(lockButtonRef.current);
+    observe(actionColRef.current);
 
     const next = measure();
     if (!next) return () => ro?.disconnect();
@@ -122,7 +133,7 @@ export function LockedUnlockOverlay({
       }
       ro?.disconnect();
     };
-  }, [isLocked, anchorRef, lockButtonRef, expandMs, expandedTop, expandedHeight]);
+  }, [isLocked, anchorRef, lockButtonRef, actionColRef, expandMs, expandedTop]);
 
   if (!overlay?.show) return null;
 
@@ -156,7 +167,7 @@ export function LockedUnlockOverlay({
           onLongPress={onUnlock}
           variant="primary"
           stacked
-          labelSize={11}
+          labelSize="var(--text-ui-sm)"
           descriptionSize={10}
           icon={<LockIcon locked size={LOCKED_ACTION_ICON_SIZE} />}
           className="w-full h-full"

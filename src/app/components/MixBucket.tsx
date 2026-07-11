@@ -19,10 +19,8 @@ import {
   type SandType,
 } from "../mixVolume";
 import {
-  FEATURE_PANEL_PAD,
   FEATURE_PANEL_BG,
   FEATURE_PANEL_BORDER,
-  FEATURE_CONTENT_GAP,
   FEATURE_VALUE_COLOR,
   FEATURE_VALUE_COLOR_MUTED,
   FEATURE_VALUE_FONT,
@@ -95,10 +93,10 @@ function BucketFeaturePanel({
   return (
     <div
       ref={panelRef}
-      className="w-full min-w-0 min-h-0 h-full self-stretch select-none rounded-xl flex flex-col items-center overflow-hidden"
+      className="w-full min-w-0 self-start select-none rounded-xl flex flex-col items-center overflow-hidden"
       aria-label={ariaLabel}
       style={{
-        padding: FEATURE_PANEL_PAD,
+        padding: "var(--feature-panel-pt) 0 var(--feature-panel-pb)",
         background: FEATURE_PANEL_BG,
         border: FEATURE_PANEL_BORDER,
         opacity: muted ? 0.88 : 1,
@@ -123,10 +121,10 @@ function BucketFeaturePanel({
         </FeatureReadoutStack>
       </div>
       <div
-        className="pointer-events-none transition-opacity duration-200 flex-1 min-h-0 w-full flex items-center justify-center"
+        className="pointer-events-none transition-opacity duration-200 shrink-0 w-full flex items-center justify-center bucket-svg-slot"
         style={{
           opacity: noBucket ? NO_BUCKET_OPACITY : 1,
-          marginTop: FEATURE_CONTENT_GAP,
+          marginTop: "var(--feature-content-gap)",
         }}
       >
         <BucketSvg
@@ -202,14 +200,10 @@ const BUCKET = {
 
 /** Crop tight to bucket body — minimal headroom so rim aligns with label row. */
 const VIEW = { x: 82, y: 172, w: 828, h: 628 };
-/** Reference render height — fixed size, not stretched with the synced panel. */
-const BUCKET_SVG_TARGET_H = 72;
-const SVG_H = BUCKET_SVG_TARGET_H;
-const SVG_W = Math.round(SVG_H * (VIEW.w / VIEW.h));
 
 /** Desired stroke thickness on screen (CSS px) → viewBox user units. */
-function strokeWidthPx(px: number): number {
-  return px * (VIEW.w / SVG_W);
+function strokeWidthPx(px: number, renderWidth: number): number {
+  return px * (VIEW.w / Math.max(renderWidth, 1));
 }
 
 const STROKE_PX = {
@@ -294,6 +288,23 @@ function BucketSvg({
   bucketFull: boolean;
   muted: boolean;
 }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [renderW, setRenderW] = useState(95);
+
+  useLayoutEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const sync = () => {
+      const w = el.clientWidth;
+      if (w > 0) setRenderW(w);
+    };
+    sync();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const fillColor = bucketFull
     ? muted
       ? FILL_COLOR_FULL_MUTED
@@ -305,11 +316,11 @@ function BucketSvg({
 
   return (
     <svg
+      ref={svgRef}
       viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`}
       fill="none"
       aria-hidden
-      className="shrink-0 max-w-full"
-      style={{ width: SVG_W, height: SVG_H }}
+      className="block h-full w-full"
       preserveAspectRatio="xMidYMid meet"
     >
       <defs>
@@ -334,7 +345,7 @@ function BucketSvg({
         stroke={OUTLINE_COLOR}
         strokeLinejoin="round"
         strokeLinecap="round"
-        strokeWidth={strokeWidthPx(STROKE_PX.body)}
+        strokeWidth={strokeWidthPx(STROKE_PX.body, renderW)}
       />
     </svg>
   );
@@ -403,7 +414,7 @@ function BucketSelectOptionRow({
       }`}
       style={{
         fontFamily: "'Outfit', sans-serif",
-        fontSize: 15,
+        fontSize: "var(--text-ui-md)",
         fontWeight: active ? 600 : 500,
         letterSpacing: "0.04em",
         color: DROPDOWN_MENU_TEXT,
@@ -432,7 +443,7 @@ function BucketSelectOptionRow({
       {locked && (
         <span
           style={{
-            fontSize: 11,
+            fontSize: "var(--text-ui-sm)",
             fontWeight: 600,
             letterSpacing: "0.1em",
             color: holding ? TITLE_COLOR : DROPDOWN_MENU_TEXT,

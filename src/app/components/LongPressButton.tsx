@@ -180,8 +180,8 @@ interface LongPressButtonProps {
   edgeContainerRef?: RefObject<HTMLElement | null>;
   className?: string;
   style?: CSSProperties;
-  labelSize?: number;
-  descriptionSize?: number;
+  labelSize?: number | string;
+  descriptionSize?: number | string;
   compact?: boolean;
   durationMs?: number;
 }
@@ -201,8 +201,8 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
   edgeContainerRef,
   className = "",
   style,
-  labelSize = 9,
-  descriptionSize = 9,
+  labelSize = "var(--text-ui-xs)",
+  descriptionSize = "var(--text-ui-xs)",
   compact = false,
   durationMs,
 }, ref) {

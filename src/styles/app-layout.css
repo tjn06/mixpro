@@ -1,14 +1,17 @@
 /**
  * Mobile app frame: fluid 375–430px width, full shell height.
  * Layout tokens scale from .app-frame-host (container), not the viewport.
- * Reference width: --app-ref-w (390px); 1cqi ≈ 3.9px at that width.
+ * Reference: 390px wide × 764px tall (compact breakpoint).
  */
 :root {
   --app-max-w: 430px;
   --app-ref-w: 390px;
-  /** Full 180px swipe above this; at 764px and below the drag area scales down. */
+  --app-ref-h: 764px;
+  /** Full 180px swipe above this; at 764px and below swipe scales via --swipe-cqh-ratio. */
   --swipe-compromise-max-h: 764px;
   --swipe-fixed-min-h: 765px;
+  /** 180 ÷ 764 × 100 — hits 180px at the compromise boundary; gentler than 18cqh. */
+  --swipe-cqh-ratio: 23.56;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -16,7 +19,6 @@
   --safe-left: env(safe-area-inset-left, 0px);
 }
 
-/* Size container on host so height queries can style .app-frame (containers cannot query self). */
 .app-frame-host {
   box-sizing: border-box;
   width: 100%;
@@ -39,70 +41,15 @@
   touch-action: manipulation;
 }
 
-/* Container-query units (preferred) */
-@supports (width: 1cqi) {
-  .app-frame {
-    --space-1: clamp(4px, 1.1cqi, 6px);
-    --space-2: clamp(8px, 2.1cqi, 12px);
-    --space-3: clamp(12px, 3.1cqi, 16px);
-    --space-4: clamp(14px, 4.1cqi, 16px);
-
-    --control-h: clamp(40px, 11cqi, 44px);
-
-    --header-inset-x: clamp(14px, 4.1cqi, 16px);
-    --header-bar-h: 40px;
-    --header-row-gap: clamp(6px, 1.8cqi, 8px);
-    --header-pad-bottom: 4px;
-    --header-pad-top: max(4px, var(--safe-top));
-    --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
-  }
-
-  @container app (min-height: 765px) {
-    .app-frame {
-      --swipe-h: 180px;
-    }
-  }
-
-  @container app (max-height: 764px) {
-    .app-frame {
-      --swipe-h: clamp(120px, 18cqh, 180px);
-    }
-  }
-}
-
-/* Viewport fallbacks when cqi/cqh are unavailable */
-@supports not (width: 1cqi) {
-  .app-frame {
-    --space-1: clamp(4px, 1.1vw, 6px);
-    --space-2: clamp(8px, 2.1vw, 12px);
-    --space-3: clamp(12px, 3.1vw, 16px);
-    --space-4: clamp(14px, 4.1vw, 16px);
-
-    --control-h: clamp(40px, 11vw, 44px);
-
-    --header-inset-x: clamp(14px, 4.1vw, 16px);
-    --header-bar-h: 40px;
-    --header-row-gap: clamp(6px, 1.8vw, 8px);
-    --header-pad-bottom: 4px;
-    --header-pad-top: max(4px, var(--safe-top));
-    --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
-  }
-
-  @media (min-height: 765px) {
-    .app-frame {
-      --swipe-h: 180px;
-    }
-  }
-
-  @media (max-height: 764px) {
-    .app-frame {
-      --swipe-h: clamp(120px, 18dvh, 180px);
-    }
-  }
-}
-
 .app-gutter-x {
   padding-inline: var(--space-4);
+}
+
+.bucket-svg-slot {
+  height: var(--bucket-svg-h);
+  width: calc(var(--bucket-svg-h) * var(--bucket-svg-aspect));
+  max-width: 100%;
+  flex-shrink: 0;
 }
 
 .app-header {
@@ -120,4 +67,326 @@
   gap: var(--header-row-gap);
   height: var(--header-bar-h);
   min-height: var(--header-bar-h);
+}
+
+/* ── Container-query tokens (preferred) ─────────────────────────────────── */
+@supports (width: 1cqi) {
+  .app-frame {
+    --space-1: clamp(4px, 1.1cqi, 6px);
+    --space-2: clamp(8px, 2.1cqi, 12px);
+    --space-3: clamp(12px, 3.1cqi, 16px);
+    --space-4: clamp(14px, 4.1cqi, 16px);
+
+    --control-h: clamp(40px, 11cqi, 44px);
+
+    --header-inset-x: clamp(14px, 4.1cqi, 16px);
+    --header-bar-h: 40px;
+    --header-row-gap: clamp(6px, 1.8cqi, 8px);
+    --header-pad-bottom: 4px;
+    --header-pad-top: max(4px, var(--safe-top));
+    --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
+
+    --section-gap: 12px;
+    --recipe-zone-pt: 12px;
+    --recipe-meta-gap: 8px;
+    --recipe-card-h: 96px;
+    --recipe-card-px: 6px;
+    --recipe-card-pt: 7px;
+    --recipe-card-pb: 6px;
+    --recipe-card-pt-alt: 4px;
+    --recipe-row-gap: 5px;
+    --recipe-label-gap: 2px;
+    --recipe-id-sublabel-gap: 8px;
+    --recipe-meta-name-gap: 8px;
+
+    --bottom-sub-row-h: 38px;
+    --bottom-row-gap: 8px;
+    --bottom-action-h: calc(var(--bottom-sub-row-h) * 2 + var(--bottom-row-gap));
+
+    --entity-card-pt: 8px;
+    --entity-card-pb: 12px;
+    --entity-card-bar-mb: 6px;
+    --entity-card-readout-mt: 4px;
+    --entity-card-unit-mt: 2px;
+
+    --feature-label-gap: 4px;
+    --feature-content-gap: 8px;
+    --feature-panel-pt: 7px;
+    --feature-panel-pb: 6px;
+    --feature-value-row-h: 22px;
+    --feature-value-row-w: 104px;
+    --feature-readout-block-h: 40px;
+
+    --action-row-h: 38px;
+    --action-row-gap: 8px;
+    --action-readout-pb: 8px;
+
+    --bucket-svg-h: 72px;
+    --bucket-svg-aspect: 1.318;
+    --total-tile-pad-x: 12px;
+    --total-tile-pad-y: 12px;
+    --total-tile-expanded-py: 14px;
+    --total-tile-bar-w: 3px;
+    --total-tile-bar-gap: 10px;
+
+    --text-card-name: 12px;
+    --text-card-value: 16px;
+    --text-card-unit: 12px;
+    --text-recipe-id: 12px;
+    --text-recipe-sublabel: 10px;
+    --text-recipe-ratio: 16px;
+    --text-recipe-unit: 10px;
+    --text-recipe-meta-label: 14px;
+    --text-recipe-meta-value: 16px;
+    --text-recipe-colon: 14px;
+    --text-recipe-select: 20px;
+    --text-feature-title: 12px;
+    --text-feature-value: 16px;
+    --text-lock-name: 13px;
+    --text-lock-value: 32px;
+    --text-lock-unit: 14px;
+    --text-swipe-col: 13px;
+    --text-swipe-col-active: 14px;
+    --text-header-title: 17px;
+    --text-ui-md: 15px;
+    --text-ui-sm: 11px;
+    --text-ui-xs: 9px;
+    --text-action-md: 14px;
+    --text-totals-caption: 10px;
+    --text-totals-hero: 34px;
+    --text-totals-table: 11px;
+    --text-totals-mult: 14px;
+    --text-totals-sum: 21px;
+    --text-totals-sum-hero: 28px;
+    --text-totals-unit: 12px;
+    --text-totals-unit-hero: 14px;
+    --text-totals-step: 18px;
+    --text-share-xs: 9px;
+    --text-share-sm: 12px;
+    --lock-bar-mb: 12px;
+    --lock-value-mt: 8px;
+    --lock-unit-mt: 4px;
+  }
+
+  @container app (min-height: 765px) {
+    .app-frame {
+      --swipe-h: 180px;
+    }
+  }
+
+  @container app (max-height: 764px) {
+    .app-frame {
+      --swipe-h: clamp(120px, calc(var(--swipe-cqh-ratio) * 1cqh), 180px);
+
+      --space-3: clamp(10px, 2.6cqi, 16px);
+      --space-4: clamp(12px, 3.6cqi, 16px);
+
+      --header-bar-h: clamp(36px, 5.24cqh, 40px);
+      --header-row-gap: clamp(4px, 1.05cqh, 8px);
+      --header-pad-bottom: clamp(2px, 0.52cqh, 4px);
+      --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
+
+      --section-gap: clamp(8px, 1.57cqh, 12px);
+      --recipe-zone-pt: clamp(6px, 1.57cqh, 12px);
+      --recipe-meta-gap: clamp(6px, 1.05cqh, 8px);
+      --recipe-card-h: clamp(76px, 12.57cqh, 96px);
+      --recipe-card-px: clamp(4px, 1.54cqi, 6px);
+      --recipe-card-pt: clamp(5px, 0.92cqh, 7px);
+      --recipe-card-pb: clamp(4px, 0.79cqh, 6px);
+      --recipe-card-pt-alt: clamp(3px, 0.52cqh, 4px);
+      --recipe-row-gap: clamp(3px, 0.65cqh, 5px);
+      --recipe-label-gap: clamp(1px, 0.26cqh, 2px);
+      --recipe-id-sublabel-gap: clamp(5px, 1.05cqh, 8px);
+      --recipe-meta-name-gap: clamp(5px, 1.05cqh, 8px);
+
+      --bottom-sub-row-h: clamp(32px, 4.97cqh, 38px);
+      --bottom-row-gap: clamp(6px, 1.05cqh, 8px);
+      --bottom-action-h: calc(var(--bottom-sub-row-h) * 2 + var(--bottom-row-gap));
+
+      --entity-card-pt: clamp(6px, 1.05cqh, 8px);
+      --entity-card-pb: clamp(8px, 1.57cqh, 12px);
+      --entity-card-bar-mb: clamp(4px, 0.79cqh, 6px);
+      --entity-card-readout-mt: clamp(3px, 0.52cqh, 4px);
+      --entity-card-unit-mt: clamp(1px, 0.26cqh, 2px);
+
+      --feature-label-gap: clamp(3px, 0.52cqh, 4px);
+      --feature-content-gap: clamp(6px, 1.05cqh, 8px);
+      --feature-panel-pt: clamp(5px, 0.92cqh, 7px);
+      --feature-panel-pb: clamp(4px, 0.79cqh, 6px);
+      --feature-value-row-h: clamp(18px, 2.88cqh, 22px);
+      --feature-value-row-w: clamp(92px, 26.67cqi, 104px);
+      --feature-readout-block-h: clamp(32px, 5.24cqh, 40px);
+
+      --action-row-h: clamp(32px, 4.97cqh, 38px);
+      --action-row-gap: clamp(6px, 1.05cqh, 8px);
+      --action-readout-pb: clamp(6px, 1.05cqh, 8px);
+
+      --bucket-svg-h: clamp(44px, min(18.46cqi, 9.42cqh), 72px);
+      --total-tile-pad-x: clamp(8px, min(3.08cqi, 1.57cqh), 12px);
+      --total-tile-pad-y: clamp(8px, min(3.08cqi, 1.57cqh), 12px);
+      --total-tile-expanded-py: clamp(10px, min(3.59cqi, 1.83cqh), 14px);
+      --total-tile-bar-gap: clamp(6px, min(2.56cqi, 1.31cqh), 10px);
+
+      --text-card-name: clamp(10px, min(3.08cqi, 1.57cqh), 12px);
+      --text-card-value: clamp(14px, min(4.1cqi, 2.09cqh), 16px);
+      --text-card-unit: clamp(10px, min(3.08cqi, 1.57cqh), 12px);
+      --text-recipe-id: clamp(11px, min(3.08cqi, 1.57cqh), 12px);
+      --text-recipe-sublabel: clamp(9px, min(2.56cqi, 1.31cqh), 10px);
+      --text-recipe-ratio: clamp(14px, min(4.1cqi, 2.09cqh), 16px);
+      --text-recipe-unit: clamp(9px, min(2.56cqi, 1.31cqh), 10px);
+      --text-recipe-meta-label: clamp(12px, min(3.59cqi, 1.83cqh), 14px);
+      --text-recipe-meta-value: clamp(14px, min(4.1cqi, 2.09cqh), 16px);
+      --text-recipe-colon: clamp(12px, min(3.59cqi, 1.83cqh), 14px);
+      --text-recipe-select: clamp(16px, min(5.13cqi, 2.62cqh), 20px);
+      --text-feature-title: clamp(10px, min(3.08cqi, 1.57cqh), 12px);
+      --text-feature-value: clamp(14px, min(4.1cqi, 2.09cqh), 16px);
+      --text-lock-name: clamp(11px, min(3.33cqi, 1.7cqh), 13px);
+      --text-lock-value: clamp(26px, min(8.21cqi, 4.19cqh), 32px);
+      --text-lock-unit: clamp(12px, min(3.59cqi, 1.83cqh), 14px);
+      --text-swipe-col: clamp(11px, min(3.33cqi, 1.7cqh), 13px);
+      --text-swipe-col-active: clamp(12px, min(3.59cqi, 1.83cqh), 14px);
+      --text-header-title: clamp(15px, min(4.36cqi, 2.22cqh), 17px);
+      --text-ui-md: clamp(13px, min(3.85cqi, 1.96cqh), 15px);
+      --text-ui-sm: clamp(10px, min(2.82cqi, 1.44cqh), 11px);
+      --text-ui-xs: clamp(8px, min(2.31cqi, 1.18cqh), 9px);
+      --text-action-md: clamp(12px, min(3.59cqi, 1.83cqh), 14px);
+      --text-totals-caption: clamp(9px, min(2.56cqi, 1.31cqh), 10px);
+      --text-totals-hero: clamp(28px, min(8.72cqi, 4.45cqh), 34px);
+      --text-totals-table: clamp(10px, min(2.82cqi, 1.44cqh), 11px);
+      --text-totals-mult: clamp(12px, min(3.59cqi, 1.83cqh), 14px);
+      --text-totals-sum: clamp(18px, min(5.38cqi, 2.75cqh), 21px);
+      --text-totals-sum-hero: clamp(24px, min(7.18cqi, 3.66cqh), 28px);
+      --text-totals-unit: clamp(10px, min(3.08cqi, 1.57cqh), 12px);
+      --text-totals-unit-hero: clamp(12px, min(3.59cqi, 1.83cqh), 14px);
+      --text-totals-step: clamp(16px, min(4.62cqi, 2.36cqh), 18px);
+      --text-share-xs: clamp(8px, min(2.31cqi, 1.18cqh), 9px);
+      --text-share-sm: clamp(10px, min(3.08cqi, 1.57cqh), 12px);
+      --lock-bar-mb: clamp(8px, 1.57cqh, 12px);
+      --lock-value-mt: clamp(6px, 1.05cqh, 8px);
+      --lock-unit-mt: clamp(3px, 0.52cqh, 4px);
+    }
+  }
+}
+
+/* ── Viewport fallbacks when cqi/cqh are unavailable ────────────────────── */
+@supports not (width: 1cqi) {
+  .app-frame {
+    --space-1: clamp(4px, 1.1vw, 6px);
+    --space-2: clamp(8px, 2.1vw, 12px);
+    --space-3: clamp(12px, 3.1vw, 16px);
+    --space-4: clamp(14px, 4.1vw, 16px);
+
+    --control-h: clamp(40px, 11vw, 44px);
+
+    --header-inset-x: clamp(14px, 4.1vw, 16px);
+    --header-bar-h: 40px;
+    --header-row-gap: clamp(6px, 1.8vw, 8px);
+    --header-pad-bottom: 4px;
+    --header-pad-top: max(4px, var(--safe-top));
+    --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
+
+    --section-gap: 12px;
+    --recipe-zone-pt: 12px;
+    --recipe-meta-gap: 8px;
+    --recipe-card-h: 96px;
+    --recipe-card-px: 6px;
+    --recipe-card-pt: 7px;
+    --recipe-card-pb: 6px;
+    --recipe-card-pt-alt: 4px;
+    --recipe-row-gap: 5px;
+    --recipe-label-gap: 2px;
+    --recipe-id-sublabel-gap: 8px;
+    --recipe-meta-name-gap: 8px;
+    --bottom-sub-row-h: 38px;
+    --bottom-row-gap: 8px;
+    --bottom-action-h: calc(var(--bottom-sub-row-h) * 2 + var(--bottom-row-gap));
+    --entity-card-pt: 8px;
+    --entity-card-pb: 12px;
+    --entity-card-bar-mb: 6px;
+    --entity-card-readout-mt: 4px;
+    --entity-card-unit-mt: 2px;
+    --feature-label-gap: 4px;
+    --feature-content-gap: 8px;
+    --feature-panel-pt: 7px;
+    --feature-panel-pb: 6px;
+    --feature-value-row-h: 22px;
+    --feature-value-row-w: 104px;
+    --feature-readout-block-h: 40px;
+    --action-row-h: 38px;
+    --action-row-gap: 8px;
+    --action-readout-pb: 8px;
+    --bucket-svg-h: 72px;
+    --bucket-svg-aspect: 1.318;
+    --total-tile-pad-x: 12px;
+    --total-tile-pad-y: 12px;
+    --total-tile-expanded-py: 14px;
+    --total-tile-bar-w: 3px;
+    --total-tile-bar-gap: 10px;
+    --text-card-name: 12px;
+    --text-card-value: 16px;
+    --text-card-unit: 12px;
+    --text-recipe-id: 12px;
+    --text-recipe-sublabel: 10px;
+    --text-recipe-ratio: 16px;
+    --text-recipe-unit: 10px;
+    --text-recipe-meta-label: 14px;
+    --text-recipe-meta-value: 16px;
+    --text-recipe-colon: 14px;
+    --text-recipe-select: 20px;
+    --text-feature-title: 12px;
+    --text-feature-value: 16px;
+    --text-lock-name: 13px;
+    --text-lock-value: 32px;
+    --text-lock-unit: 14px;
+    --text-swipe-col: 13px;
+    --text-swipe-col-active: 14px;
+    --text-header-title: 17px;
+    --text-ui-md: 15px;
+    --text-ui-sm: 11px;
+    --text-ui-xs: 9px;
+    --text-action-md: 14px;
+    --text-totals-caption: 10px;
+    --text-totals-hero: 34px;
+    --text-totals-table: 11px;
+    --text-totals-mult: 14px;
+    --text-totals-sum: 21px;
+    --text-totals-sum-hero: 28px;
+    --text-totals-unit: 12px;
+    --text-totals-unit-hero: 14px;
+    --text-totals-step: 18px;
+    --text-share-xs: 9px;
+    --text-share-sm: 12px;
+    --lock-bar-mb: 12px;
+    --lock-value-mt: 8px;
+    --lock-unit-mt: 4px;
+  }
+
+  @media (min-height: 765px) {
+    .app-frame {
+      --swipe-h: 180px;
+    }
+  }
+
+  @media (max-height: 764px) {
+    .app-frame {
+      --swipe-h: clamp(120px, calc(var(--swipe-cqh-ratio) * 1dvh), 180px);
+      --space-4: clamp(12px, 3.6vw, 16px);
+      --section-gap: clamp(8px, 1.57dvh, 12px);
+      --recipe-zone-pt: clamp(6px, 1.57dvh, 12px);
+      --recipe-meta-gap: clamp(6px, 1.05dvh, 8px);
+      --recipe-card-h: clamp(76px, 12.57dvh, 96px);
+      --bottom-sub-row-h: clamp(32px, 4.97dvh, 38px);
+      --bottom-row-gap: clamp(6px, 1.05dvh, 8px);
+      --bottom-action-h: calc(var(--bottom-sub-row-h) * 2 + var(--bottom-row-gap));
+      --bucket-svg-h: clamp(44px, min(18.46vw, 9.42dvh), 72px);
+      --total-tile-pad-x: clamp(8px, min(3.08vw, 1.57dvh), 12px);
+      --total-tile-pad-y: clamp(8px, min(3.08vw, 1.57dvh), 12px);
+      --text-card-value: clamp(14px, min(4.1vw, 2.09dvh), 16px);
+      --text-recipe-ratio: clamp(14px, min(4.1vw, 2.09dvh), 16px);
+      --text-lock-value: clamp(26px, min(8.21vw, 4.19dvh), 32px);
+      --text-header-title: clamp(15px, min(4.36vw, 2.22dvh), 17px);
+      --text-ui-md: clamp(13px, min(3.85vw, 1.96dvh), 15px);
+      --text-totals-hero: clamp(28px, min(8.72vw, 4.45dvh), 34px);
+    }
+  }
 }

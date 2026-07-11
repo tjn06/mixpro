@@ -1,28 +1,31 @@
-import React, { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
-  FEATURE_LABEL_GAP,
   FEATURE_TITLE_COLOR,
   FEATURE_TITLE_COLOR_MUTED,
   FEATURE_TITLE_STYLE,
   FEATURE_VALUE_SLOT_STYLE,
-  FEATURE_READOUT_BLOCK_H,
 } from "../featureReadout";
 
-interface FeatureReadoutStackProps {
+export function FeatureReadoutStack({
+  label,
+  children,
+  muted = false,
+}: {
   label: string;
-  muted?: boolean;
   children: ReactNode;
-}
-
-/** Label + fixed-size value slot — shared by bucket size + rec. batch. */
-export function FeatureReadoutStack({ label, muted = false, children }: FeatureReadoutStackProps) {
+  muted?: boolean;
+}) {
   return (
     <div
-      className="flex flex-col items-center w-full min-w-0 shrink-0"
-      style={{ gap: FEATURE_LABEL_GAP, height: FEATURE_READOUT_BLOCK_H, minHeight: FEATURE_READOUT_BLOCK_H }}
+      className="flex flex-col items-center text-center w-full min-w-0"
+      style={{
+        gap: "var(--feature-label-gap)",
+        height: "var(--feature-readout-block-h)",
+        minHeight: "var(--feature-readout-block-h)",
+      }}
     >
       <span
-        className="uppercase truncate w-full text-center"
+        className="uppercase truncate w-full"
         style={{
           ...FEATURE_TITLE_STYLE,
           color: muted ? FEATURE_TITLE_COLOR_MUTED : FEATURE_TITLE_COLOR,
@@ -31,7 +34,7 @@ export function FeatureReadoutStack({ label, muted = false, children }: FeatureR
         {label}
       </span>
       <div
-        className="flex items-center justify-center min-w-0 overflow-visible"
+        className="flex items-center justify-center w-full min-w-0"
         style={FEATURE_VALUE_SLOT_STYLE}
       >
         {children}

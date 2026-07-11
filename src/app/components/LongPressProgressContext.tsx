@@ -102,7 +102,7 @@ export function LongPressHeaderBar() {
         <p
           className="uppercase text-center truncate"
           style={{
-            fontSize: 11,
+            fontSize: "var(--text-ui-sm)",
             letterSpacing: "0.08em",
             color: "#a0a0c0",
             marginTop: 7,

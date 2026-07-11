@@ -78,7 +78,7 @@ export function AppHeader({
           className="flex-1 min-w-0 truncate text-center pointer-events-none px-1"
           style={{
             fontFamily: "'Outfit', sans-serif",
-            fontSize: 17,
+            fontSize: "var(--text-header-title)",
             fontWeight: 600,
             color: "#c0c0e0",
             letterSpacing: "0.06em",

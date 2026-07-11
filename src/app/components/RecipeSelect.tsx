@@ -71,7 +71,7 @@ function RecipeOptionRow({
       }`}
       style={{
         fontFamily: "'Outfit', sans-serif",
-        fontSize: 15,
+        fontSize: "var(--text-ui-md)",
         fontWeight: active ? 600 : 500,
         letterSpacing: "0.04em",
         color: active ? DROPDOWN_MENU_TEXT_MUTED : DROPDOWN_MENU_TEXT,

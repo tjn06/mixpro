@@ -1,9 +1,6 @@
 import type { CSSProperties } from "react";
 
-export const CARD_NAME_SIZE = 12;
 export const CARD_NAME_WEIGHT = 700;
-export const CARD_VALUE_SIZE = 16;
-export const CARD_UNIT_SIZE = 12;
 export const CARD_UNIT_WEIGHT = 600;
 
 export const CARD_VALUE_INACTIVE = "#9a9ab4";
@@ -61,24 +58,24 @@ export function entityCardReadoutStyle(nameColor: string, lit: boolean): {
 }
 
 export const cardReadoutNameStyle = (color: string): CSSProperties => ({
-  fontSize: CARD_NAME_SIZE,
+  fontSize: "var(--text-card-name)",
   letterSpacing: "0.18em",
   color,
   fontWeight: CARD_NAME_WEIGHT,
 });
 
 export const cardReadoutValueStyle = (color: string): CSSProperties => ({
-  fontSize: CARD_VALUE_SIZE,
+  fontSize: "var(--text-card-value)",
   fontWeight: 600,
   color,
   lineHeight: 1,
-  marginTop: 4,
+  marginTop: "var(--entity-card-readout-mt)",
 });
 
 export const cardReadoutUnitStyle = (color: string): CSSProperties => ({
-  fontSize: CARD_UNIT_SIZE,
+  fontSize: "var(--text-card-unit)",
   color,
   letterSpacing: "0.08em",
   fontWeight: CARD_UNIT_WEIGHT,
-  marginTop: 2,
+  marginTop: "var(--entity-card-unit-mt)",
 });

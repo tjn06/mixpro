@@ -58,7 +58,7 @@ function ReportLanguageToggle({
               minWidth: 44,
               height: 24,
               padding: "0 10px",
-              fontSize: 9,
+              fontSize: "var(--text-share-xs)",
               fontWeight: 700,
               letterSpacing: "0.08em",
               lineHeight: 1,
@@ -104,7 +104,7 @@ function ShareButton({
       {icon}
       <span
         style={{
-          fontSize: 9,
+          fontSize: "var(--text-share-xs)",
           fontWeight: 600,
           letterSpacing: "0.06em",
           lineHeight: 1,
@@ -187,7 +187,7 @@ export function BatchTotalsShareBar({
             border: PANEL_BORDER,
             padding: "10px 12px",
             color: TITLE_COLOR,
-            fontSize: 12,
+            fontSize: "var(--text-share-sm)",
             fontFamily: "'Outfit', sans-serif",
             fontWeight: 500,
             letterSpacing: "0.03em",

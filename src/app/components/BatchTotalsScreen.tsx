@@ -18,7 +18,7 @@ const MUTED = "#8888a8";
 const VALUE_COLOR = "#c4c4dc";
 
 const TABLE_TEXT: CSSProperties = {
-  fontSize: 11,
+  fontSize: "var(--text-totals-table)",
   fontWeight: 500,
   letterSpacing: "0.05em",
   lineHeight: 1.35,
@@ -26,11 +26,6 @@ const TABLE_TEXT: CSSProperties = {
 
 const ENTITY_COL_W = 92;
 const MULT_COL_W = 36;
-const SUM_SIZE = 21;
-const SUM_SIZE_TOTAL = 28;
-const SUM_UNIT_SIZE = 12;
-const SUM_UNIT_SIZE_TOTAL = 14;
-const MULT_SIZE_TOTAL = 14;
 const TOTAL_ROW_MB = 14;
 const ENTITY_COL_W_TOTAL = 108;
 const ROW_COL_GAP = 10;
@@ -71,7 +66,7 @@ function StepButton({
         height: MULTIPLIER_BTN,
         background: disabled ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.06)",
         color: disabled ? "#3a3a50" : "#a8a8c4",
-        fontSize: 18,
+        fontSize: "var(--text-totals-step)",
         fontWeight: 300,
         lineHeight: 1,
         cursor: disabled ? "default" : "pointer",
@@ -97,7 +92,7 @@ export function BatchTotalsScreen({
     <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-x-hidden">
       <div
         className="shrink-0 app-gutter-x flex flex-col min-w-0"
-        style={{ paddingTop: RECIPE_ZONE_PT, gap: RECIPE_META_GAP }}
+        style={{ paddingTop: "var(--recipe-zone-pt)", gap: "var(--recipe-meta-gap)" }}
       >
         <div
           className="rounded-xl flex flex-col min-w-0"
@@ -117,7 +112,7 @@ export function BatchTotalsScreen({
         <div className="shrink-0 flex flex-col items-center min-w-0">
           <p
             style={{
-              fontSize: 10,
+              fontSize: "var(--text-totals-caption)",
               color: MUTED,
               letterSpacing: "0.14em",
               fontWeight: 500,
@@ -138,7 +133,7 @@ export function BatchTotalsScreen({
                 className="tabular-nums"
                 style={{
                   fontFamily: "'Outfit', sans-serif",
-                  fontSize: 34,
+                  fontSize: "var(--text-totals-hero)",
                   fontWeight: 300,
                   color: TITLE_COLOR,
                   letterSpacing: "-0.02em",
@@ -197,7 +192,7 @@ export function BatchTotalsScreen({
                 className="tabular-nums text-center whitespace-nowrap justify-self-center"
                 style={{
                   ...TABLE_TEXT,
-                  fontSize: isTotal ? MULT_SIZE_TOTAL : TABLE_TEXT.fontSize,
+                  fontSize: isTotal ? "var(--text-totals-mult)" : "var(--text-totals-table)",
                   color: p.color,
                   fontWeight: isTotal ? 700 : 600,
                   textShadow: `0 0 8px ${p.color}33`,
@@ -210,7 +205,7 @@ export function BatchTotalsScreen({
                 className="tabular-nums text-right whitespace-nowrap justify-self-end"
                 style={{
                   ...TABLE_TEXT,
-                  fontSize: isTotal ? SUM_SIZE_TOTAL : SUM_SIZE,
+                  fontSize: isTotal ? "var(--text-totals-sum-hero)" : "var(--text-totals-sum)",
                   color: VALUE_COLOR,
                   fontWeight: isTotal ? 700 : 600,
                   lineHeight: 1.1,
@@ -222,7 +217,7 @@ export function BatchTotalsScreen({
                     color: MUTED,
                     fontWeight: 500,
                     marginLeft: 4,
-                    fontSize: isTotal ? SUM_UNIT_SIZE_TOTAL : SUM_UNIT_SIZE,
+                    fontSize: isTotal ? "var(--text-totals-unit-hero)" : "var(--text-totals-unit)",
                   }}
                 >
                   {p.isKg ? "kg" : "g"}

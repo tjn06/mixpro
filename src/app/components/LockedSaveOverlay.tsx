@@ -32,7 +32,12 @@ export interface LockedSaveOverlayProps {
   expandEase: string;
   zIndex: number;
   surfaceBg: string;
-  sectionRowGap: number;
+}
+
+function readSectionGap(anchor: HTMLElement): number {
+  const raw = getComputedStyle(anchor).getPropertyValue("--section-gap").trim();
+  const n = parseFloat(raw);
+  return Number.isFinite(n) && n > 0 ? n : 12;
 }
 
 export function LockedSaveOverlay({
@@ -49,7 +54,6 @@ export function LockedSaveOverlay({
   expandEase,
   zIndex,
   surfaceBg,
-  sectionRowGap,
 }: LockedSaveOverlayProps) {
   const [overlay, setOverlay] = useState<OverlayState | null>(null);
   const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -76,7 +80,7 @@ export function LockedSaveOverlay({
         localRect(actions, anchor),
         cards ? localRect(cards, anchor) : null,
         anchor.offsetWidth,
-        sectionRowGap,
+        readSectionGap(anchor),
       );
       return { collapsed, expanded };
     };
@@ -145,7 +149,6 @@ export function LockedSaveOverlay({
     ingredientCardsRef,
     saveButtonRef,
     expandMs,
-    sectionRowGap,
   ]);
 
   if (!overlay?.show) return null;
@@ -186,7 +189,7 @@ export function LockedSaveOverlay({
           onLongPress={onSave}
           variant="primary"
           stacked
-          labelSize={11}
+          labelSize="var(--text-ui-sm)"
           descriptionSize={10}
           icon={saveIcon}
           className="w-full h-full"

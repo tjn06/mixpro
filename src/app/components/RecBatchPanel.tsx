@@ -4,7 +4,6 @@ import { LoadIcon, SavedIcon, SaveIcon } from "./ActionIcons";
 import {
   FEATURE_PANEL_BG,
   FEATURE_PANEL_BORDER,
-  FEATURE_LABEL_GAP,
   FEATURE_TITLE_STYLE,
   FEATURE_TITLE_COLOR,
   FEATURE_TITLE_COLOR_MUTED,
@@ -16,9 +15,7 @@ import {
 const REC_BATCH_LABEL = "Rec. batch";
 
 /** Match bottom action grid in BatchMixer. */
-export const ACTION_ROW_H = 38;
-export const ACTION_ROW_GAP = 8;
-export const ACTION_BLOCK_H = ACTION_ROW_H * 2 + ACTION_ROW_GAP;
+export const ACTION_BLOCK_H = "var(--bottom-action-h)";
 
 function formatRecommendedBatch(grams: number): string {
   if (grams >= 1000) return `${(grams / 1000).toFixed(3)} kg`;
@@ -83,7 +80,7 @@ export function RecBatchPanel({
     <div
       className="flex flex-1 flex-col min-w-0 w-full min-h-0 h-full"
       style={{
-        gap: ACTION_ROW_GAP,
+        gap: "var(--action-row-gap)",
         pointerEvents: "auto",
         opacity: muted ? 0.88 : 1,
         transition: "opacity 0.2s ease",
@@ -105,9 +102,9 @@ export function RecBatchPanel({
           ref={recReadoutRef}
           className="flex flex-col items-center text-center w-full min-w-0"
           style={{
-            paddingTop: 7,
-            paddingBottom: ACTION_ROW_GAP,
-            gap: FEATURE_LABEL_GAP,
+            paddingTop: "var(--feature-panel-pt)",
+            paddingBottom: "var(--action-readout-pb)",
+            gap: "var(--feature-label-gap)",
             ...(disabled ? { position: "relative" as const, zIndex: 8 } : {}),
           }}
         >
@@ -137,10 +134,10 @@ export function RecBatchPanel({
           confirmAction="RESET"
           onLongPress={onReset}
           disabled={disabled}
-          labelSize={9}
+          labelSize="var(--text-ui-xs)"
           className="w-full rounded-none"
           style={{
-            height: ACTION_ROW_H,
+            height: "var(--action-row-h)",
             minHeight: 0,
             borderRadius: 0,
             border: "none",
@@ -152,7 +149,7 @@ export function RecBatchPanel({
       <div
         ref={actionsBlockRef}
         className="flex w-full min-w-0 shrink-0"
-        style={{ gap: ACTION_ROW_GAP, height: ACTION_ROW_H }}
+        style={{ gap: "var(--action-row-gap)", height: "var(--action-row-h)" }}
       >
         <LongPressButton
           ref={saveButtonRef}
