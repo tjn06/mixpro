@@ -66,10 +66,10 @@ import {
 // const BTN_ORDER = [0, 1, 2, 3, 4]; // TOTAL · A · B · TIX · SAND
 
 const ZONES = [
-  { step: 1000, label: "1000 g", weight: 36 },
-  { step: 100,  label: "100 g",  weight: 28 },
+  { step: 1000, label: "1000 g", weight: 40 },
+  { step: 100,  label: "100 g",  weight: 26 },
   { step: 10,   label: "10 g",   weight: 20 },
-  { step: 1,    label: "1 g",    weight: 16 },
+  { step: 1,    label: "1 g",    weight: 18 },
 ] as const;
 
 const ZONE_WEIGHT_TOTAL = ZONES.reduce((sum, z) => sum + z.weight, 0);
