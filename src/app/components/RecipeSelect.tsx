@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { BlendingRecipe } from "../recipeTypes";
 import { recipeMenuLabel } from "../recipeTypes";
 import { HEADER_NAV_LONG_PRESS_MS, LongPressProgress, useLongPress } from "./LongPressButton";
@@ -9,6 +10,7 @@ const DROPDOWN_MENU_BORDER = "rgba(255,255,255,0.1)";
 const DROPDOWN_MENU_TEXT = "#b8b8d0";
 const DROPDOWN_MENU_TEXT_MUTED = "#686878";
 const DROPDOWN_MENU_ACTIVE_BG = "rgba(255,255,255,0.07)";
+const DROPDOWN_MENU_MIN_W = 200;
 
 function ChevronDown({ open }: { open: boolean }) {
   return (
@@ -79,7 +81,7 @@ function RecipeOptionRow({
           ? "#10101e"
           : active
             ? DROPDOWN_MENU_ACTIVE_BG
-            : "transparent",
+            : DROPDOWN_MENU_BG,
         padding: "10px 14px",
         cursor: active ? "default" : "pointer",
         whiteSpace: "nowrap",
@@ -108,28 +110,100 @@ export function RecipeSelect({
   muted = false,
 }: RecipeSelectProps) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [menuLayout, setMenuLayout] = useState<{ top: number; left: number; minWidth: number } | null>(null);
+  const [portal, setPortal] = useState<HTMLElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
   const selectable = recipes.length > 1 && !disabled;
   const recipeName = recipeMenuLabel(value);
+
+  const measureMenu = useCallback(() => {
+    const trigger = triggerRef.current;
+    const canvas = trigger?.closest<HTMLElement>("[data-beam-canvas]");
+    if (!trigger || !canvas) return null;
+    const tR = trigger.getBoundingClientRect();
+    const cR = canvas.getBoundingClientRect();
+    return {
+      top: tR.bottom - cR.top + 6,
+      left: tR.left + tR.width / 2 - cR.left,
+      minWidth: Math.max(tR.width, DROPDOWN_MENU_MIN_W),
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setMenuLayout(null);
+      setPortal(null);
+      return;
+    }
+    const trigger = triggerRef.current;
+    const canvas = trigger?.closest<HTMLElement>("[data-beam-canvas]") ?? null;
+    setPortal(canvas);
+    const update = () => setMenuLayout(measureMenu());
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [open, measureMenu]);
 
   useEffect(() => {
     if (!open) return;
     const onPointerDownOutside = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener("pointerdown", onPointerDownOutside);
     return () => document.removeEventListener("pointerdown", onPointerDownOutside);
   }, [open]);
 
+  const menu = open && selectable && menuLayout && portal ? (
+    createPortal(
+      <ul
+        ref={menuRef}
+        role="listbox"
+        aria-label="Recipe"
+        className="rounded-xl overflow-hidden shadow-lg"
+        style={{
+          position: "absolute",
+          top: menuLayout.top,
+          left: menuLayout.left,
+          transform: "translateX(-50%)",
+          zIndex: 40,
+          width: "max-content",
+          minWidth: menuLayout.minWidth,
+          maxWidth: 280,
+          background: DROPDOWN_MENU_BG,
+          border: `1px solid ${DROPDOWN_MENU_BORDER}`,
+          boxShadow: "0 8px 20px rgba(0,0,0,0.4)",
+        }}
+      >
+        {recipes.map((recipe) => {
+          const active = recipe.id === value.id;
+          return (
+            <li key={recipe.id} role="none">
+              <RecipeOptionRow
+                recipe={recipe}
+                active={active}
+                onSelect={() => {
+                  onChange(recipe);
+                  setOpen(false);
+                }}
+              />
+            </li>
+          );
+        })}
+      </ul>,
+      portal,
+    )
+  ) : null;
+
   return (
-    <RecipeZoneMeta
-      muted={muted}
-      className={open ? "relative overflow-visible" : "relative overflow-hidden"}
-    >
-      <div ref={rootRef} className="w-full min-w-0 flex flex-col items-center py-1">
+    <RecipeZoneMeta muted={muted} className="relative overflow-hidden">
+      <div className="w-full min-w-0 flex flex-col items-center py-1">
         {selectable ? (
           <>
             <button
+              ref={triggerRef}
               type="button"
               aria-haspopup="listbox"
               aria-expanded={open}
@@ -140,38 +214,7 @@ export function RecipeSelect({
               <RecipeZoneMetaValue muted={muted}>{recipeName}</RecipeZoneMetaValue>
               <ChevronDown open={open} />
             </button>
-
-            {open && (
-              <ul
-                role="listbox"
-                aria-label="Recipe"
-                className="absolute left-1/2 top-full z-30 mt-1.5 -translate-x-1/2 rounded-xl overflow-hidden shadow-lg"
-                style={{
-                  width: "max-content",
-                  minWidth: "100%",
-                  maxWidth: 280,
-                  background: DROPDOWN_MENU_BG,
-                  border: `1px solid ${DROPDOWN_MENU_BORDER}`,
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.4)",
-                }}
-              >
-                {recipes.map((recipe) => {
-                  const active = recipe.id === value.id;
-                  return (
-                    <li key={recipe.id} role="none">
-                      <RecipeOptionRow
-                        recipe={recipe}
-                        active={active}
-                        onSelect={() => {
-                          onChange(recipe);
-                          setOpen(false);
-                        }}
-                      />
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            {menu}
           </>
         ) : (
           <RecipeZoneMetaValue muted={muted}>{recipeName}</RecipeZoneMetaValue>

@@ -5,6 +5,7 @@
  */
 :root {
   --app-max-w: 430px;
+  --app-max-h: 960px;
   --app-ref-w: 390px;
   --app-ref-h: 764px;
   /** Full 180px swipe above this; at 764px and below swipe scales via --swipe-cqh-ratio. */
@@ -50,6 +51,40 @@
   width: calc(var(--bucket-svg-h) * var(--bucket-svg-aspect));
   max-width: 100%;
   flex-shrink: 0;
+}
+
+/** Gradient: header → recipe → empty buffer; fades out before bottom deck. */
+.recipe-context-gradient {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+.recipe-context-gradient::before {
+  content: "";
+  position: absolute;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.045) 0,
+    rgba(220, 220, 238, 0.025) calc(var(--recipe-zone-pt) + 2.75rem),
+    rgba(180, 180, 204, 0.016) calc(var(--recipe-zone-pt) + var(--recipe-card-h) + 1.5rem),
+    rgba(255, 255, 255, 0.006) 78%,
+    transparent 94%
+  );
+}
+
+.recipe-context-gradient > * {
+  position: relative;
+  z-index: 1;
 }
 
 .app-header {
@@ -171,6 +206,16 @@
   @container app (min-height: 765px) {
     .app-frame {
       --swipe-h: 180px;
+
+      /* Recipe stays under the header — scale internal rhythm on tall phones. */
+      --recipe-zone-pt: clamp(14px, 1.75cqh, 20px);
+      --recipe-meta-gap: clamp(10px, 1.25cqh, 14px);
+      --recipe-card-h: clamp(96px, 10.5cqh, 104px);
+      --recipe-card-pt: clamp(7px, 0.9cqh, 9px);
+      --recipe-card-pb: clamp(6px, 0.8cqh, 8px);
+      --recipe-row-gap: clamp(5px, 0.65cqh, 7px);
+      --recipe-id-sublabel-gap: clamp(8px, 1.05cqh, 11px);
+      --recipe-meta-name-gap: clamp(8px, 1.05cqh, 11px);
     }
   }
 
@@ -364,6 +409,15 @@
   @media (min-height: 765px) {
     .app-frame {
       --swipe-h: 180px;
+
+      --recipe-zone-pt: clamp(14px, 1.75dvh, 20px);
+      --recipe-meta-gap: clamp(10px, 1.25dvh, 14px);
+      --recipe-card-h: clamp(96px, 10.5dvh, 104px);
+      --recipe-card-pt: clamp(7px, 0.9dvh, 9px);
+      --recipe-card-pb: clamp(6px, 0.8dvh, 8px);
+      --recipe-row-gap: clamp(5px, 0.65dvh, 7px);
+      --recipe-id-sublabel-gap: clamp(8px, 1.05dvh, 11px);
+      --recipe-meta-name-gap: clamp(8px, 1.05dvh, 11px);
     }
   }
 

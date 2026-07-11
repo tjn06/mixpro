@@ -21,6 +21,18 @@
     var(--safe-left);
 }
 
+/** Wide + tall browser windows — cap frame height; phones (≤430px) stay full viewport. */
+@media (min-width: 431px) and (min-height: 961px) {
+  .mobile-shell {
+    align-items: center;
+  }
+
+  .app-frame-host {
+    height: min(100%, var(--app-max-h));
+    max-height: var(--app-max-h);
+  }
+}
+
 .mobile-shell__slot {
   position: relative;
   flex-shrink: 0;

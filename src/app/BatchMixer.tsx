@@ -1175,26 +1175,28 @@ export function BatchMixer({
         />
       ))}
 
-      {/* ── App header ─────────────────────────────────────────────────────── */}
-      <AppHeader
-        isLocked={isLocked}
-        onBack={screen === "totals" ? handleBack : undefined}
-        onForward={screen === "mixer" ? handleForward : undefined}
-      />
-
       {screen === "totals" ? (
-        <BatchTotalsScreen
-          recipe={activeRecipe}
-          values={values}
-          entityIndexes={ingredientIndexes}
-          multiplier={batchMultiplier}
-          onMultiplierChange={setBatchMultiplier}
-        />
+        <>
+          <AppHeader
+            isLocked={isLocked}
+            onBack={handleBack}
+          />
+          <BatchTotalsScreen
+            recipe={activeRecipe}
+            values={values}
+            entityIndexes={ingredientIndexes}
+            multiplier={batchMultiplier}
+            onMultiplierChange={setBatchMultiplier}
+          />
+        </>
       ) : (
       <>
-      {/* ── Mixer: recipe scrolls; bottom deck pinned ─────────────────────── */}
       <div className="flex-1 min-h-0 flex flex-col overflow-x-hidden">
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+        <div className="recipe-context-gradient">
+          <AppHeader
+            isLocked={isLocked}
+            onForward={handleForward}
+          />
           <div
             className="shrink-0 app-gutter-x flex flex-col"
             style={{ paddingTop: "var(--recipe-zone-pt)", gap: "var(--recipe-meta-gap)" }}
@@ -1235,6 +1237,8 @@ export function BatchMixer({
               </div>
             </div>
           </div>
+
+          <div className="flex-1 min-h-0" aria-hidden="true" />
         </div>
 
         <div
