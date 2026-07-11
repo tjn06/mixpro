@@ -1,8 +1,11 @@
 import React, { type ReactNode } from "react";
 import { HEADER_NAV_LONG_PRESS_MS, LongPressProgress, useLongPress } from "./LongPressButton";
 
-/** Design-canvas height of the app header row (`pt-9` + 44px bar + `pb-3`). */
-export const APP_HEADER_HEIGHT = 36 + 44 + 12;
+/** Design-canvas height of the app header row (`pt-9` + 44px bar + `pb-3` + divider). */
+export const APP_HEADER_HEIGHT = 36 + 44 + 12 + 1;
+
+const HEADER_BG = "#0a0a14";
+const HEADER_DIVIDER = "1px solid rgba(255,255,255,0.08)";
 
 interface AppHeaderProps {
   title?: string;
@@ -32,7 +35,7 @@ function HeaderIconButton({
       aria-disabled={disabled || undefined}
       disabled={disabled}
       onClick={onClick}
-      className="flex items-center justify-center rounded-xl transition-colors duration-150"
+      className="flex items-center justify-center rounded-full transition-colors duration-150"
       style={{
         width: 40,
         height: 40,
@@ -80,7 +83,7 @@ function HeaderLongPressIconButton({
       aria-label={label}
       aria-disabled={disabled || undefined}
       disabled={disabled}
-      className="relative flex items-center justify-center rounded-xl overflow-hidden touch-none transition-colors duration-150"
+      className="relative flex items-center justify-center rounded-full overflow-hidden touch-none transition-colors duration-150"
       style={{
         width: 40,
         height: 40,
@@ -111,7 +114,14 @@ export function AppHeader({
   onSettings,
 }: AppHeaderProps) {
   return (
-    <div className="relative shrink-0 px-3 pt-9 pb-3" style={{ zIndex: 10 }}>
+    <div
+      className="relative shrink-0 px-3 pt-9 pb-3"
+      style={{
+        zIndex: 10,
+        background: HEADER_BG,
+        borderBottom: HEADER_DIVIDER,
+      }}
+    >
       <div className="flex items-center gap-2.5" style={{ minHeight: 44 }}>
         {onBack ? (
           <HeaderLongPressIconButton

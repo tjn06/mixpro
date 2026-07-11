@@ -1,7 +1,9 @@
 import type { CSSProperties } from "react";
 
 /** Shared panel chrome — bucket + rec. batch columns. */
-export const FEATURE_PANEL_PAD = "7px 6px 6px";
+export const FEATURE_PANEL_PAD = "7px 0 6px";
+export const FEATURE_PANEL_BG = "transparent";
+export const FEATURE_PANEL_BORDER = "1.5px solid rgba(255,255,255,0.14)";
 
 export const FEATURE_LABEL_GAP = 4;
 /** Gap from value row to content below (bucket SVG / action buttons). */
@@ -16,7 +18,7 @@ export const FEATURE_VALUE_COLOR_MUTED = "#9898b4";
 
 /** Fixed value slot — identical width + height in both columns. */
 export const FEATURE_VALUE_ROW_W = 104;
-export const FEATURE_VALUE_ROW_H = 20;
+export const FEATURE_VALUE_ROW_H = 22;
 
 export const FEATURE_TITLE_STYLE: CSSProperties = {
   fontSize: FEATURE_TITLE_SIZE,
@@ -28,12 +30,12 @@ export const FEATURE_TITLE_STYLE: CSSProperties = {
 export const FEATURE_VALUE_FONT: CSSProperties = {
   fontSize: FEATURE_VALUE_SIZE,
   fontWeight: 600,
-  lineHeight: 1,
+  lineHeight: 1.2,
 };
 
-/** Shared value text layout — matches mix-card numeric readouts (inherits DM Mono). */
+/** Shared value text layout — inherits DM Mono; ellipsis on x only so descenders (g, j…) show. */
 export const FEATURE_VALUE_TEXT_CLASS =
-  "block w-full whitespace-nowrap tabular-nums text-center truncate";
+  "block w-full whitespace-nowrap tabular-nums text-center overflow-x-hidden overflow-y-visible text-ellipsis";
 
 /** Dropdown trigger — Outfit + letter-spacing (menu labels); readout span uses DM Mono. */
 export const BUCKET_VALUE_STYLE: CSSProperties = {
@@ -41,7 +43,7 @@ export const BUCKET_VALUE_STYLE: CSSProperties = {
   fontSize: FEATURE_VALUE_SIZE,
   fontWeight: 600,
   letterSpacing: "0.06em",
-  lineHeight: 1,
+  lineHeight: 1.2,
 };
 
 export const FEATURE_VALUE_SLOT_STYLE: CSSProperties = {
@@ -51,6 +53,7 @@ export const FEATURE_VALUE_SLOT_STYLE: CSSProperties = {
   minHeight: FEATURE_VALUE_ROW_H,
   flexShrink: 0,
   position: "relative",
+  overflow: "visible",
 };
 
 /** Total label + value slot height — both columns align on the same rows. */

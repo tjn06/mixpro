@@ -31,7 +31,7 @@ export function FeatureReadoutStack({ label, muted = false, children }: FeatureR
         {label}
       </span>
       <div
-        className="flex items-center justify-center min-w-0"
+        className="flex items-center justify-center min-w-0 overflow-visible"
         style={FEATURE_VALUE_SLOT_STYLE}
       >
         {children}

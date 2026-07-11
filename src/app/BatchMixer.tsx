@@ -102,8 +102,6 @@ const BOTTOM_ROW_GAP    = 8;
 const BOTTOM_ACTION_H   = BOTTOM_SUB_ROW_H * 2 + BOTTOM_ROW_GAP;
 /** Vertical gap between swipe, bottom deck, and the edit/cards block. */
 const SECTION_ROW_GAP   = 12;
-/** Tighter gap from save/load row down to mix cards (same visual rhythm as other sections). */
-const EDIT_CARDS_GAP    = 6;
 const SWIPE_PAD_TOP     = 0;
 const BOTTOM_PAD_TOP    = SECTION_ROW_GAP;
 const BOTTOM_PAD_BOTTOM = 28;
@@ -144,7 +142,7 @@ function swipeZoneStripe(even: boolean): string {
 const RECIPE_ZONE_PT = 12;
 const RECIPE_RATIO_BG = "transparent";
 const RECIPE_RATIO_BORDER_COLOR = "rgba(255,255,255,0.14)";
-const RECIPE_CONTAINER_PX = "4px 12px";
+const RECIPE_CONTAINER_PX = "4px 0";
 const RECIPE_CARD_H = 96;
 /** Matches bucket row `FEATURE_ROW_GAP` and mix-card `CARD_ROW_GAP`. */
 const RECIPE_META_GAP = 8;
@@ -701,6 +699,7 @@ export function BatchMixer({
   const cardRefs       = useRef<(HTMLButtonElement | null)[]>([]);
   const totalTileRef    = useRef<HTMLButtonElement>(null);
   const bucketRef       = useRef<HTMLDivElement>(null);
+  const recBatchColRef  = useRef<HTMLDivElement>(null);
   const editRowRef      = useRef<HTMLDivElement>(null);
   const actionsBlockRef = useRef<HTMLDivElement>(null);
   const saveButtonRef   = useRef<HTMLButtonElement>(null);
@@ -812,6 +811,24 @@ export function BatchMixer({
 
   const saveMix = useSavedMixesStore((s) => s.saveMix);
   const canLoad = useSavedMixesStore((s) => s.mixes.length > 0);
+
+  /** Bucket bordered panel height follows rec. batch + save/load column — never taller. */
+  useLayoutEffect(() => {
+    if (screen !== "mixer") return;
+    const recCol = recBatchColRef.current;
+    const bucketPanel = bucketRef.current;
+    if (!recCol || !bucketPanel) return;
+
+    const sync = () => {
+      const h = recCol.offsetHeight;
+      if (h > 0) bucketPanel.style.height = `${h}px`;
+    };
+
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(recCol);
+    return () => ro.disconnect();
+  }, [screen, recommendedTotalGrams, saveFlash, canLoad, isLocked, bucketSelection]);
 
   const handleSaveRequest = useCallback(() => {
     setSaveNameSheetOpen(true);
@@ -1242,20 +1259,27 @@ export function BatchMixer({
             pointerEvents: isLocked ? "none" : "auto",
           }}
         >
-          <div className="flex flex-col" style={{ gap: EDIT_CARDS_GAP }}>
-          <div ref={editRowRef} className="relative flex gap-2 items-start">
-            <div ref={bucketRef} style={{ flex: `0 0 ${BOTTOM_TOTAL_WIDTH}`, minWidth: 0 }}>
-              <MixBucket
-                epoxyGrams={mixEpoxyGrams(activeRecipe, values)}
-                sandGrams={mixSandGrams(activeRecipe, values)}
-                bucketSelection={bucketSelection}
-                onBucketChange={setBucketSelection}
-                onForceBucketChange={handleForceBucketChange}
-                sandType={sandType}
-                muted={isLocked}
-                disabled={isLocked}
-              />
-            </div>
+          <div
+            ref={editRowRef}
+            className="relative grid min-w-0"
+            style={{
+              gridTemplateColumns: `${BOTTOM_TOTAL_WIDTH} minmax(0, 1fr)`,
+              gap: CARD_ROW_GAP,
+              alignItems: "start",
+            }}
+          >
+            <MixBucket
+              ref={bucketRef}
+              epoxyGrams={mixEpoxyGrams(activeRecipe, values)}
+              sandGrams={mixSandGrams(activeRecipe, values)}
+              bucketSelection={bucketSelection}
+              onBucketChange={setBucketSelection}
+              onForceBucketChange={handleForceBucketChange}
+              sandType={sandType}
+              muted={isLocked}
+              disabled={isLocked}
+            />
+            <div ref={recBatchColRef} className="min-w-0">
             <RecBatchPanel
               recommendedTotalGrams={recommendedTotalGrams}
               onReset={handleResetToRecommended}
@@ -1268,6 +1292,7 @@ export function BatchMixer({
               saveButtonRef={saveButtonRef}
               actionsBlockRef={actionsBlockRef}
             />
+            </div>
             <LockedSaveOverlay
               isLocked={isLocked}
               anchorRef={editRowRef}
@@ -1331,7 +1356,6 @@ export function BatchMixer({
                 </button>
               );
             })}
-          </div>
           </div>
 
       {/* ── Control deck: swipe + bottom (floating TOTAL / SAVE animate here) ─ */}

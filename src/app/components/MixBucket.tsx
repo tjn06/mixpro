@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useRef, useState, useEffect } from "react";
+import React, { useId, useMemo, useRef, useState, useEffect, forwardRef } from "react";
 import {
   BUCKET_SIZES,
   bucketFits,
@@ -19,6 +19,8 @@ import {
 } from "../mixVolume";
 import {
   FEATURE_PANEL_PAD,
+  FEATURE_PANEL_BG,
+  FEATURE_PANEL_BORDER,
   FEATURE_CONTENT_GAP,
   FEATURE_VALUE_COLOR,
   FEATURE_VALUE_COLOR_MUTED,
@@ -44,7 +46,6 @@ const OUTLINE_COLOR = "rgba(255,255,255,0.32)";
 const LABEL_COLOR = "#8888a8";
 const TITLE_COLOR = "#c0c0e0";
 const TITLE_COLOR_MUTED = "#9898b4";
-const BUCKET_CARD_BG = "transparent";
 const DROPDOWN_MENU_BG = "#3a3a4c";
 const DROPDOWN_MENU_BORDER = "rgba(255,255,255,0.1)";
 const DROPDOWN_MENU_TEXT = "#b8b8d0";
@@ -71,6 +72,7 @@ function BucketFeaturePanel({
   disabled,
   muted,
   ariaLabel,
+  panelRef,
 }: {
   clipId: string;
   fillY: number;
@@ -85,31 +87,40 @@ function BucketFeaturePanel({
   disabled: boolean;
   muted: boolean;
   ariaLabel: string;
+  panelRef?: React.Ref<HTMLDivElement>;
 }) {
   return (
     <div
-      className="w-full min-w-0 select-none rounded-xl flex flex-col items-center"
+      ref={panelRef}
+      className="w-full min-w-0 min-h-0 select-none rounded-xl flex flex-col items-center overflow-hidden"
       aria-label={ariaLabel}
       style={{
         padding: FEATURE_PANEL_PAD,
-        background: BUCKET_CARD_BG,
+        background: FEATURE_PANEL_BG,
+        border: FEATURE_PANEL_BORDER,
         opacity: muted ? 0.88 : 1,
-        transition: "opacity 0.2s ease",
+        transition: "opacity 0.2s ease, border-color 0.2s ease",
+        boxSizing: "border-box",
       }}
     >
-      <FeatureReadoutStack label={BUCKET_SIZE_LABEL} muted={muted}>
-        <BucketSizeValue
-          bucketSelection={bucketSelection}
-          onBucketChange={onBucketChange}
-          onForceBucketChange={onForceBucketChange}
-          fillLiters={fillLiters}
-          disabled={disabled}
-          muted={muted}
-        />
-      </FeatureReadoutStack>
+      <div className="shrink-0 w-full">
+        <FeatureReadoutStack label={BUCKET_SIZE_LABEL} muted={muted}>
+          <BucketSizeValue
+            bucketSelection={bucketSelection}
+            onBucketChange={onBucketChange}
+            onForceBucketChange={onForceBucketChange}
+            fillLiters={fillLiters}
+            disabled={disabled}
+            muted={muted}
+          />
+        </FeatureReadoutStack>
+      </div>
       <div
-        className="pointer-events-none transition-opacity duration-200 shrink-0 w-full flex justify-center"
-        style={{ opacity: noBucket ? NO_BUCKET_OPACITY : 1, marginTop: FEATURE_CONTENT_GAP }}
+        className="pointer-events-none transition-opacity duration-200 flex-1 min-h-0 w-full flex items-center justify-center"
+        style={{
+          opacity: noBucket ? NO_BUCKET_OPACITY : 1,
+          marginTop: FEATURE_CONTENT_GAP,
+        }}
       >
         <BucketSvg
           clipId={clipId}
@@ -287,12 +298,11 @@ function BucketSvg({
 
   return (
     <svg
-      width={SVG_W}
-      height={SVG_H}
       viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`}
       fill="none"
       aria-hidden
-      className="shrink-0"
+      className="h-full max-h-full w-auto max-w-full"
+      preserveAspectRatio="xMidYMid meet"
     >
       <defs>
         <clipPath id={clipId}>
@@ -538,17 +548,20 @@ export interface MixBucketProps {
   disabled?: boolean;
 }
 
-export function MixBucket({
-  epoxyGrams,
-  sandGrams,
-  bucketSelection = DEFAULT_BUCKET_SELECTION,
-  onBucketChange,
-  onForceBucketChange,
-  sandType = "medium",
-  sandBulkDensity = DEFAULT_SAND_BULK_DENSITY,
-  muted = false,
-  disabled = false,
-}: MixBucketProps) {
+export const MixBucket = forwardRef<HTMLDivElement, MixBucketProps>(function MixBucket(
+  {
+    epoxyGrams,
+    sandGrams,
+    bucketSelection = DEFAULT_BUCKET_SELECTION,
+    onBucketChange,
+    onForceBucketChange,
+    sandType = "medium",
+    sandBulkDensity = DEFAULT_SAND_BULK_DENSITY,
+    muted = false,
+    disabled = false,
+  },
+  ref,
+) {
   const clipId = useId();
   const hasBucket = bucketSelection !== "none";
   const capacityLiters = hasBucket ? bucketSelection : null;
@@ -585,6 +598,7 @@ export function MixBucket({
 
   return (
     <BucketFeaturePanel
+      panelRef={ref}
       clipId={clipId}
       fillY={fillY}
       fillRx={fillRx}
@@ -600,4 +614,4 @@ export function MixBucket({
       ariaLabel={ariaLabel}
     />
   );
-}
+});

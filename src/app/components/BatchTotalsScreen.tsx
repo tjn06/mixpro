@@ -9,7 +9,7 @@ import { BatchTotalsShareBar } from "./BatchTotalsShareBar";
 
 const RECIPE_ZONE_PT = 12;
 const RECIPE_RATIO_BG = "transparent";
-const RECIPE_CONTAINER_PX = "4px 12px";
+const RECIPE_CONTAINER_PX = "4px 0";
 const RECIPE_META_GAP = 8;
 const ROW_GAP = 8;
 

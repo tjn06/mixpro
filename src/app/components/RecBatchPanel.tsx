@@ -2,17 +2,18 @@ import React, { type RefObject } from "react";
 import { LongPressButton } from "./LongPressButton";
 import { LoadIcon, SavedIcon, SaveIcon } from "./ActionIcons";
 import {
-  FEATURE_PANEL_PAD,
-  FEATURE_CONTENT_GAP,
+  FEATURE_PANEL_BG,
+  FEATURE_PANEL_BORDER,
+  FEATURE_LABEL_GAP,
+  FEATURE_TITLE_STYLE,
+  FEATURE_TITLE_COLOR,
+  FEATURE_TITLE_COLOR_MUTED,
   FEATURE_VALUE_COLOR,
   FEATURE_VALUE_COLOR_MUTED,
   FEATURE_VALUE_FONT,
-  FEATURE_VALUE_TEXT_CLASS,
 } from "../featureReadout";
-import { FeatureReadoutStack } from "./FeatureReadoutStack";
 
 const REC_BATCH_LABEL = "Rec. batch";
-const PANEL_BG = "transparent";
 
 /** Match bottom action grid in BatchMixer. */
 export const ACTION_ROW_H = 38;
@@ -72,64 +73,88 @@ export function RecBatchPanel({
 }: RecBatchPanelProps) {
   return (
     <div
-      className="flex flex-1 flex-col min-w-0 rounded-xl"
+      className="flex flex-1 flex-col min-w-0 w-full min-h-0"
       style={{
-        padding: FEATURE_PANEL_PAD,
-        background: PANEL_BG,
+        gap: ACTION_ROW_GAP,
+        pointerEvents: "auto",
         opacity: muted ? 0.88 : 1,
         transition: "opacity 0.2s ease",
-        gap: FEATURE_CONTENT_GAP,
-        pointerEvents: "auto",
         ...(isLocked && panelZIndex != null
           ? { position: "relative" as const, zIndex: panelZIndex }
           : {}),
       }}
     >
-      <FeatureReadoutStack label={REC_BATCH_LABEL} muted={muted}>
-        <span
-          className={FEATURE_VALUE_TEXT_CLASS}
-          style={{
-            ...FEATURE_VALUE_FONT,
-            color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
-          }}
-        >
-          {formatRecommendedBatch(recommendedTotalGrams)}
-        </span>
-      </FeatureReadoutStack>
-
       <div
-        ref={actionsBlockRef}
-        className="flex flex-col shrink-0"
-        style={{ gap: ACTION_ROW_GAP, height: ACTION_BLOCK_H }}
+        className="flex w-full flex-col min-w-0 rounded-xl overflow-hidden shrink-0"
+        style={{
+          background: FEATURE_PANEL_BG,
+          border: FEATURE_PANEL_BORDER,
+          transition: "border-color 0.2s ease",
+        }}
       >
+        <div
+          className="flex flex-col items-center text-center w-full min-w-0"
+          style={{ paddingTop: 7, paddingBottom: ACTION_ROW_GAP, gap: FEATURE_LABEL_GAP }}
+        >
+          <span
+            className="uppercase truncate w-full"
+            style={{
+              ...FEATURE_TITLE_STYLE,
+              color: muted ? FEATURE_TITLE_COLOR_MUTED : FEATURE_TITLE_COLOR,
+            }}
+          >
+            {REC_BATCH_LABEL}
+          </span>
+          <span
+            className="tabular-nums whitespace-nowrap"
+            style={{
+              ...FEATURE_VALUE_FONT,
+              color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
+            }}
+          >
+            {formatRecommendedBatch(recommendedTotalGrams)}
+          </span>
+        </div>
+
         <LongPressButton
-          label="RESTORE BATCH"
-          confirmAction="RESTORE BATCH"
+          label="Reset"
+          confirmAction="RESET"
           onLongPress={onReset}
           disabled={disabled}
           labelSize={9}
-          className="w-full"
-          style={{ height: ACTION_ROW_H }}
+          className="w-full rounded-none"
+          style={{
+            height: ACTION_ROW_H,
+            minHeight: 0,
+            borderRadius: 0,
+            border: "none",
+            borderTop: FEATURE_PANEL_BORDER,
+          }}
         />
-        <div className="flex min-w-0" style={{ gap: ACTION_ROW_GAP, height: ACTION_ROW_H }}>
-          <LongPressButton
-            ref={saveButtonRef}
-            label={saveFlash ? "Saved" : "Save mix"}
-            confirmAction="SAVE MIX"
-            onLongPress={onSave}
-            variant="primary"
-            icon={saveFlash ? <SavedIcon /> : <SaveIcon />}
-            className="flex-1 h-full"
-          />
-          <LongPressButton
-            label="Load mix"
-            confirmAction="LOAD MIX"
-            onLongPress={onLoad}
-            disabled={!canLoad || disabled}
-            icon={<LoadIcon />}
-            className="flex-1 h-full"
-          />
-        </div>
+      </div>
+
+      <div
+        ref={actionsBlockRef}
+        className="flex w-full min-w-0 shrink-0"
+        style={{ gap: ACTION_ROW_GAP, height: ACTION_ROW_H }}
+      >
+        <LongPressButton
+          ref={saveButtonRef}
+          label={saveFlash ? "Saved" : "Save mix"}
+          confirmAction="SAVE MIX"
+          onLongPress={onSave}
+          variant="primary"
+          icon={saveFlash ? <SavedIcon /> : <SaveIcon />}
+          className="flex-1 h-full min-w-0"
+        />
+        <LongPressButton
+          label="Load mix"
+          confirmAction="LOAD MIX"
+          onLongPress={onLoad}
+          disabled={!canLoad || disabled}
+          icon={<LoadIcon />}
+          className="flex-1 h-full min-w-0"
+        />
       </div>
     </div>
   );
