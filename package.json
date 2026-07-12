@@ -1,13 +1,13 @@
 {
-  "name": "mixmate",
+  "name": "mixpro",
   "private": true,
   "version": "0.0.1",
-  "description": "Mobile batch-mixing UI with swipe controls, recipe ratios, and bucket fill estimation.",
+  "description": "MIXpro — mobile batch-mixing UI with swipe controls, recipe ratios, and bucket fill estimation.",
   "type": "module",
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "preview": "vite preview --base /mixmate/"
+    "preview": "vite preview --base /mixpro/"
   },
   "dependencies": {
     "date-fns": "3.6.0",
