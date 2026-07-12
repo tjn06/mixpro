@@ -328,28 +328,26 @@ function BatchTotalsSummaryBar({
   multiplier,
   hasExtraBatch,
   totalGrams,
-  compactSummary = false,
 }: {
   multiplier: number;
   hasExtraBatch: boolean;
   totalGrams: number;
-  compactSummary?: boolean;
 }) {
   const totalParam = MIX_PARAMS[0];
   const batchColRef = useRef<HTMLDivElement>(null);
   const [shortExtraLabel, setShortExtraLabel] = useState(false);
 
   useLayoutEffect(() => {
-    if (!compactSummary || !hasExtraBatch) {
+    if (!hasExtraBatch) {
       setShortExtraLabel(false);
       return;
     }
 
     setShortExtraLabel(false);
-  }, [compactSummary, hasExtraBatch, multiplier]);
+  }, [hasExtraBatch, multiplier]);
 
   useLayoutEffect(() => {
-    if (!compactSummary || !hasExtraBatch) return;
+    if (!hasExtraBatch) return;
 
     const node = batchColRef.current;
     if (!node) return;
@@ -362,7 +360,7 @@ function BatchTotalsSummaryBar({
     const ro = new ResizeObserver(measure);
     ro.observe(node);
     return () => ro.disconnect();
-  }, [compactSummary, hasExtraBatch, multiplier, shortExtraLabel]);
+  }, [hasExtraBatch, multiplier, shortExtraLabel]);
 
   const extraBatchLabel = shortExtraLabel ? "EX. BCH" : "Extra batch";
 
@@ -382,7 +380,7 @@ function BatchTotalsSummaryBar({
         >
           <div
             ref={batchColRef}
-            className={`min-w-0 flex items-center${compactSummary ? " flex-nowrap" : " flex-wrap"}`}
+            className="min-w-0 flex items-center flex-nowrap"
             style={{ ...cellItemStyle({ borderRight: "none" }), gap: "4px 6px" }}
           >
             <span style={sectionTitleStyle()}>Batches</span>
@@ -866,7 +864,6 @@ export function BatchTotalsScreen({
           multiplier={multiplier}
           hasExtraBatch={hasExtraBatch}
           totalGrams={grandTotalGrams}
-          compactSummary={compactSummary}
         />
 
         <BatchTotalsShareBar
