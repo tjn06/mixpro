@@ -2,7 +2,9 @@ import {
   Save,
   Check,
   List,
-  ChevronRight,
+  ArrowLeftFromLine,
+  ArrowRightFromLine,
+  FolderOpen,
   Undo2,
   RotateCcw,
   Trash2,
@@ -10,6 +12,7 @@ import {
   Copy,
   Mail,
   MessageSquare,
+  Ellipsis,
   type LucideIcon,
 } from "lucide-react";
 
@@ -39,8 +42,8 @@ export const SavedIcon = createActionIcon(Check);
 /** List with bullets — pick from multiple saved mixes. */
 export const LoadIcon = createActionIcon(List);
 
-/** Simple right arrow — go to / open. */
-export const GoToIcon = createActionIcon(ChevronRight);
+/** Open saved mix — folder. */
+export const GoToIcon = createActionIcon(FolderOpen);
 
 export const UndoIcon = createActionIcon(Undo2);
 
@@ -49,6 +52,15 @@ export const ResetIcon = createActionIcon(RotateCcw);
 export const DeleteIcon = createActionIcon(Trash2);
 
 export const RenameIcon = createActionIcon(Pencil);
+
+/** Overflow / more actions (⋯). */
+export const MoreIcon = createActionIcon(Ellipsis);
+
+/** Panel expands left — reveal more actions on the card strip. */
+export const ExpandActionsIcon = createActionIcon(ArrowLeftFromLine);
+
+/** Collapse expanded action panel back to the card edge. */
+export const CollapseActionsIcon = createActionIcon(ArrowRightFromLine);
 
 export const CopyIcon = createActionIcon(Copy);
 

@@ -6,14 +6,15 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { format, formatDistanceToNow } from "date-fns";
 import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import type { BucketSelection } from "../../domain/bucket/types";
 import { LongPressButton } from "../shared/LongPressButton";
-import { DeleteIcon, GoToIcon, RenameIcon } from "../shared/ActionIcons";
+import { CollapseActionsIcon, DeleteIcon, ExpandActionsIcon, GoToIcon, RenameIcon } from "../shared/ActionIcons";
 import { useSavedMixesStore } from "../../saved-mixes/store";
 import { savedMixDisplayName } from "../../saved-mixes/display";
+import { getHumanSavedTime, getSavedMixTimeSearchText } from "../../saved-mixes/humanSavedTime";
+import { useTickingNow } from "../../hooks/useTickingNow";
 import { SaveMixNameSheet } from "./SaveMixNameSheet";
 import {
   SHEET_FIELD_INPUT_CLASS,
@@ -36,10 +37,44 @@ const THUMB_PAD_MIN_FRAC = 0.48;
 
 const FADE_H = 36;
 
-/** Compact row actions — full-width row under each item. */
-const ROW_ACTION_H = 28;
-const ROW_ACTION_GAP = 4;
-const ROW_ACTION_W = 34;
+/** Two-line compact card — action grid on the right; widens left over content when open. */
+const CARD_PAD_X = 14;
+const CARD_PAD_Y = 12;
+const CARD_GAP = 8;
+const ACTION_ICON = 16;
+const SWIPE_PANEL_CLOSED_W = 52;
+const SWIPE_PANEL_OPEN_W = 104;
+
+/** Solid strip fills — opaque so actions stay visible on the frosted card. */
+const STRIP_PANEL_BG = c.entitySurfaceIdle;
+const STRIP_BTN_NEUTRAL = c.inputSurface;
+const STRIP_BTN_MORE_OPEN = "#1c1c34";
+const STRIP_BTN_RENAME = "#222240";
+const STRIP_BTN_DELETE = "#3a1824";
+const STRIP_BTN_OPEN = "#18182c";
+const STRIP_DIVIDER = "1px solid rgba(255,255,255,0.14)";
+
+const CARD_GRID: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  columnGap: 8,
+  rowGap: 4,
+  alignItems: "center",
+  padding: `${CARD_PAD_Y}px ${CARD_PAD_X + SWIPE_PANEL_CLOSED_W + 4}px ${CARD_PAD_Y}px ${CARD_PAD_X}px`,
+  minWidth: 0,
+};
+
+const stripCellBase: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  minHeight: 0,
+  minWidth: 0,
+  borderRadius: 0,
+  border: "none",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
 
 /** Compact list typography. */
 const LIST_SIZE = 12;
@@ -82,6 +117,10 @@ function formatTotalKg(grams: number): string {
   return `${(grams / 1000).toFixed(3)} kg`;
 }
 
+function mixDetailLine(mix: SavedMixSnapshot): string {
+  return [mix.recipeName, bucketLabel(mix.bucketSelection)].join(" • ");
+}
+
 function CloseIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
@@ -111,114 +150,182 @@ function ScrollFade({
   );
 }
 
+function SavedMixSwipeStrip({
+  open,
+  onToggle,
+  onOpen,
+  onRename,
+  onDelete,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  onOpen: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  const cellR1C1: CSSProperties = {
+    ...stripCellBase,
+    borderRight: STRIP_DIVIDER,
+    borderBottom: STRIP_DIVIDER,
+    color: open ? c.title : c.muted,
+    background: open ? STRIP_BTN_MORE_OPEN : STRIP_BTN_NEUTRAL,
+  };
+  const cellR1C2: CSSProperties = {
+    ...stripCellBase,
+    borderRight: "none",
+    borderBottom: STRIP_DIVIDER,
+    background: STRIP_BTN_DELETE,
+    color: c.bucketLimit,
+  };
+  const cellR2C1: CSSProperties = {
+    ...stripCellBase,
+    borderRight: open ? STRIP_DIVIDER : "none",
+    borderBottom: "none",
+    background: STRIP_BTN_OPEN,
+    color: c.titleMuted,
+  };
+  const cellR2C2: CSSProperties = {
+    ...stripCellBase,
+    background: STRIP_BTN_RENAME,
+    color: c.title,
+  };
+
+  return (
+    <div
+      role="group"
+      aria-label="Mix actions"
+      className={`saved-mix-swipe-panel absolute inset-y-0 right-0 min-h-0 ${
+        open ? "saved-mix-swipe-panel--open" : "saved-mix-swipe-panel--closed"
+      }`}
+      style={{
+        width: open ? SWIPE_PANEL_OPEN_W : SWIPE_PANEL_CLOSED_W,
+        borderLeft: STRIP_DIVIDER,
+        background: STRIP_PANEL_BG,
+        zIndex: 2,
+      }}
+    >
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={open ? "Close actions" : "More actions"}
+        className="saved-mix-swipe-cell saved-mix-swipe-cell--r1c1 transition-colors duration-150"
+        style={cellR1C1}
+        onClick={onToggle}
+      >
+        {open ? <CollapseActionsIcon size={ACTION_ICON} /> : <ExpandActionsIcon size={ACTION_ICON} />}
+      </button>
+
+      {open ? (
+        <LongPressButton
+          label="Delete"
+          confirmAction="DELETE MIX"
+          onLongPress={onDelete}
+          progressVariant="fill"
+          accentColor={c.bucketLimit}
+          icon={<DeleteIcon size={ACTION_ICON} />}
+          compact
+          className="saved-mix-swipe-cell saved-mix-swipe-cell--r1c2 h-full w-full shrink-0 rounded-none"
+          style={cellR1C2}
+        />
+      ) : null}
+
+      <LongPressButton
+        label="Open"
+        confirmAction="LOAD MIX"
+        onLongPress={onOpen}
+        progressVariant="fill"
+        icon={<GoToIcon size={ACTION_ICON} />}
+        compact
+        className="saved-mix-swipe-cell saved-mix-swipe-cell--r2c1 h-full w-full shrink-0 rounded-none"
+        style={cellR2C1}
+      />
+
+      {open ? (
+        <button
+          type="button"
+          aria-label="Edit"
+          className="saved-mix-swipe-cell saved-mix-swipe-cell--r2c2 transition-colors duration-150"
+          style={cellR2C2}
+          onClick={onRename}
+        >
+          <RenameIcon size={ACTION_ICON} />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 function SavedMixRow({
   mix,
+  now,
+  moreMenuOpen,
+  onMoreMenuOpenChange,
   onOpen,
   onDelete,
   onRename,
 }: {
   mix: SavedMixSnapshot;
+  now: Date;
+  moreMenuOpen: boolean;
+  onMoreMenuOpenChange: (open: boolean) => void;
   onOpen: (mix: SavedMixSnapshot) => void;
   onDelete: (mix: SavedMixSnapshot) => void;
   onRename: (mix: SavedMixSnapshot) => void;
 }) {
   const savedDate = new Date(mix.savedAt);
-  const relative = formatDistanceToNow(savedDate, { addSuffix: true });
+  const savedTime = getHumanSavedTime(savedDate, now);
   const displayName = savedMixDisplayName(mix);
-  const hasMetaName = Boolean(mix.metaName?.trim());
 
   return (
-    <div className="w-full text-left" style={{ padding: "10px 2px" }}>
-      <div className="flex items-start justify-between gap-2 min-w-0">
-        <div className="min-w-0 flex-1">
-          <p className="truncate" style={LIST_TITLE}>
-            {displayName}
-          </p>
-          <p className="truncate mt-0.5" style={LIST_MUTED}>
-            {hasMetaName ? `${mix.recipeName} · ` : ""}
-            {bucketLabel(mix.bucketSelection)}
-          </p>
-        </div>
-        <div className="shrink-0 text-right">
-          <p className="tabular-nums" style={LIST_VALUE}>
-            {formatTotalKg(mix.values.total)}
-          </p>
-          <p className="mt-0.5 tabular-nums" style={LIST_MUTED}>
-            {relative}
-          </p>
-        </div>
+    <article
+      className="rounded-2xl min-w-0 overflow-hidden relative"
+      style={{
+        background: s.loadSheetRow,
+        border: b.panel,
+      }}
+    >
+      <div className="min-w-0" style={CARD_GRID}>
+        <p className="truncate min-w-0" style={{ ...LIST_TITLE, gridColumn: 1 }}>
+          {displayName}
+        </p>
+        <p className="shrink-0 tabular-nums" style={{ ...LIST_VALUE, gridColumn: 2 }}>
+          {formatTotalKg(mix.values.total)}
+        </p>
+
+        <p
+          className="break-words min-w-0"
+          style={{ ...LIST_MUTED, gridColumn: "1 / -1" }}
+        >
+          {mixDetailLine(mix)}
+        </p>
+
+        <p
+          className="min-w-0 break-words tabular-nums"
+          style={{
+            ...LIST_MUTED,
+            color: c.mutedDimmer,
+            gridColumn: "1 / -1",
+          }}
+          title={`${savedTime.exactDate}, ${savedTime.exactTime}`}
+        >
+          {savedTime.primary}
+        </p>
       </div>
 
-      <div
-        className="grid min-w-0"
-        style={{
-          marginTop: 6,
-          height: ROW_ACTION_H,
-          gridTemplateColumns: "minmax(0, 1fr) auto",
-          alignItems: "center",
-          columnGap: 10,
+      <SavedMixSwipeStrip
+        open={moreMenuOpen}
+        onToggle={() => onMoreMenuOpenChange(!moreMenuOpen)}
+        onOpen={() => onOpen(mix)}
+        onRename={() => {
+          onRename(mix);
+          onMoreMenuOpenChange(false);
         }}
-      >
-        <div className="min-w-0 flex items-center" style={{ height: "100%" }}>
-          <span
-            className="truncate tabular-nums min-w-0"
-            style={{ ...LIST_MUTED, color: c.mutedDimmer, lineHeight: 1 }}
-          >
-            {format(savedDate, "d MMM yyyy · HH:mm")}
-          </span>
-        </div>
-        <div className="flex shrink-0 items-center justify-end" style={{ height: "100%", gap: ROW_ACTION_GAP }}>
-        <LongPressButton
-          label="Delete"
-          confirmAction="DELETE MIX"
-          onLongPress={() => onDelete(mix)}
-          icon={<DeleteIcon size={14} />}
-          progressVariant="fill"
-          className="shrink-0"
-          style={{
-            height: ROW_ACTION_H,
-            width: ROW_ACTION_W,
-            minHeight: 0,
-            border: "none",
-            padding: 0,
-          }}
-          compact
-        />
-        <LongPressButton
-          label="Edit"
-          confirmAction="RENAME"
-          onLongPress={() => onRename(mix)}
-          icon={<RenameIcon size={14} />}
-          progressVariant="fill"
-          className="shrink-0"
-          style={{
-            height: ROW_ACTION_H,
-            width: ROW_ACTION_W,
-            minHeight: 0,
-            border: "none",
-            padding: 0,
-          }}
-          compact
-        />
-        <LongPressButton
-          label="Go to"
-          confirmAction="LOAD MIX"
-          onLongPress={() => onOpen(mix)}
-          icon={<GoToIcon size={14} />}
-          progressVariant="fill"
-          className="shrink-0"
-          style={{
-            height: ROW_ACTION_H,
-            width: ROW_ACTION_W,
-            minHeight: 0,
-            border: "none",
-            padding: 0,
-          }}
-          compact
-        />
-        </div>
-      </div>
-    </div>
+        onDelete={() => {
+          onDelete(mix);
+          onMoreMenuOpenChange(false);
+        }}
+      />
+    </article>
   );
 }
 
@@ -237,10 +344,12 @@ export function LoadSavedMixesSheet({
   const deleteMix = useSavedMixesStore((s) => s.deleteMix);
   const updateMixMetaName = useSavedMixesStore((s) => s.updateMixMetaName);
   const [renameMix, setRenameMix] = useState<SavedMixSnapshot | null>(null);
+  const [moreMenuMixId, setMoreMenuMixId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [topSpacer, setTopSpacer] = useState(0);
   const [thumbPad, setThumbPad] = useState(0);
   const scrollBoundsRef = useRef({ min: 0, max: 0 });
+  const now = useTickingNow(open);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -317,6 +426,10 @@ export function LoadSavedMixesSheet({
   }, [open]);
 
   useEffect(() => {
+    if (!open) setMoreMenuMixId(null);
+  }, [open]);
+
+  useEffect(() => {
     if (!open) setQuery("");
   }, [open]);
 
@@ -362,7 +475,7 @@ export function LoadSavedMixesSheet({
   const subtitle =
     mixes.length === 0
       ? "No saved mixes yet"
-      : `${mixes.length} saved · hold Open, Rename, or Delete`;
+      : `${mixes.length} saved · tap ⋯ for actions · hold › to open`;
 
   const q = query.trim().toLowerCase();
   const filteredMixes =
@@ -373,11 +486,15 @@ export function LoadSavedMixesSheet({
           const recipe = (m.recipeName || "").toLowerCase();
           const meta = (m.metaName || "").toLowerCase();
           const bucket = bucketLabel(m.bucketSelection).toLowerCase();
+          const detail = mixDetailLine(m).toLowerCase();
+          const savedTime = getSavedMixTimeSearchText(new Date(m.savedAt), now);
           return (
             name.includes(q) ||
             recipe.includes(q) ||
             meta.includes(q) ||
-            bucket.includes(q)
+            bucket.includes(q) ||
+            detail.includes(q) ||
+            savedTime.includes(q)
           );
         });
 
@@ -481,7 +598,10 @@ export function LoadSavedMixesSheet({
                     </p>
                   </div>
                 ) : (
-                  <ul className="flex flex-col list-none m-0 p-0">
+                  <ul
+                    className="flex flex-col list-none m-0 p-0"
+                    style={{ gap: CARD_GAP }}
+                  >
                     {filteredMixes.map((mix, index) => {
                       const isFirst = index === 0;
                       const isLast = index === filteredMixes.length - 1;
@@ -492,10 +612,14 @@ export function LoadSavedMixesSheet({
                             if (isFirst) firstItemRef.current = el;
                             if (isLast) lastItemRef.current = el;
                           }}
-                          style={index < filteredMixes.length - 1 ? { borderBottom: b.divider } : undefined}
                         >
                           <SavedMixRow
                             mix={mix}
+                            now={now}
+                            moreMenuOpen={moreMenuMixId === mix.id}
+                            onMoreMenuOpenChange={(next) =>
+                              setMoreMenuMixId(next ? mix.id : null)
+                            }
                             onOpen={handleOpen}
                             onDelete={handleDelete}
                             onRename={handleRename}

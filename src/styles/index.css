@@ -113,6 +113,48 @@
   display: none;
 }
 
+/* Saved mix card — 2×2 action grid; widens left over content, right edge stays on card. */
+.saved-mix-swipe-panel {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  transition: width 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: width;
+}
+
+.saved-mix-swipe-panel--closed {
+  grid-template-columns: 1fr;
+}
+
+.saved-mix-swipe-panel--open {
+  grid-template-columns: 1fr 1fr;
+}
+
+.saved-mix-swipe-cell--r1c1 {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.saved-mix-swipe-cell--r1c2 {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.saved-mix-swipe-cell--r2c1 {
+  grid-row: 2;
+  grid-column: 1;
+}
+
+.saved-mix-swipe-cell--r2c2 {
+  grid-row: 2;
+  grid-column: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .saved-mix-swipe-panel {
+    transition: none;
+  }
+}
+
 /* Sheet text fields — inset, 1px border; not raised like action buttons. */
 .sheet-field-input {
   cursor: text;
