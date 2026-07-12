@@ -124,9 +124,9 @@
   min-height: var(--header-subline-h);
   padding: var(--header-subline-py)
     max(var(--header-inset-x), var(--safe-left), var(--safe-right));
-  background: var(--ui-header-sub-bg, #0c0c18);
-  box-shadow: var(--ui-header-sub-inset, inset 0 1px 0 rgba(255, 255, 255, 0.04));
-  border-bottom: var(--ui-border-header-sub, 1px solid rgba(255, 255, 255, 0.05));
+  background: transparent;
+  box-shadow: none;
+  border-bottom: transparent;
 }
 
 .app-frame:has(.app-header-sub-stack) {
