@@ -15,14 +15,18 @@ import { DeleteIcon, GoToIcon, RenameIcon } from "../shared/ActionIcons";
 import { useSavedMixesStore } from "../../saved-mixes/store";
 import { savedMixDisplayName } from "../../saved-mixes/display";
 import { SaveMixNameSheet } from "./SaveMixNameSheet";
+import {
+  SHEET_FIELD_INPUT_CLASS,
+  SHEET_SUBTITLE,
+  SHEET_TITLE,
+  sheetFieldInputStyle,
+} from "./sheetChrome";
 import { theme } from "../../../theme";
 
 const { colors: c, borders: b, surfaces: s } = theme;
 
 /** Title block — slightly higher than before. */
 const HEADER_HEIGHT_FRAC = "32%";
-const TITLE_SIZE = 30;
-const SUBTITLE_SIZE = 14;
 const SEARCH_H = 40;
 
 /** Clearance from scroll-area bottom to thumb stop line (above close footer). */
@@ -421,32 +425,10 @@ export function LoadSavedMixesSheet({
               paddingBottom: 10,
             }}
           >
-            <h2
-              id="load-saved-mixes-title"
-              style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: TITLE_SIZE,
-                fontWeight: 600,
-                letterSpacing: "-0.02em",
-                color: c.title,
-                lineHeight: 1.1,
-                margin: 0,
-              }}
-            >
+            <h2 id="load-saved-mixes-title" style={SHEET_TITLE}>
               Saved mixes
             </h2>
-            <p
-              style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: SUBTITLE_SIZE,
-                fontWeight: 500,
-                letterSpacing: "0.01em",
-                color: c.muted,
-                marginTop: 6,
-                lineHeight: 1.4,
-                maxWidth: 280,
-              }}
-            >
+            <p style={{ ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" }}>
               {subtitle}
             </p>
             <div className="w-full" style={{ marginTop: 12 }}>
@@ -456,20 +438,8 @@ export function LoadSavedMixesSheet({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search saved mixes"
                 aria-label="Search saved mixes"
-                className="w-full outline-none"
-                style={{
-                  height: SEARCH_H,
-                  boxSizing: "border-box",
-                  borderRadius: 14,
-                  padding: "0 14px",
-                  background: s.searchBg,
-                  border: b.search,
-                  color: c.title,
-                  fontFamily: "'Outfit', sans-serif",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  letterSpacing: "0.01em",
-                }}
+                className={SHEET_FIELD_INPUT_CLASS}
+                style={sheetFieldInputStyle({ height: SEARCH_H })}
               />
             </div>
           </header>

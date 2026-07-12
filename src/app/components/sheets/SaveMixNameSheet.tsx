@@ -4,14 +4,19 @@ import { LongPressButton } from "../shared/LongPressButton";
 import { SaveIcon } from "../shared/ActionIcons";
 import { savedMixDisplayName } from "../../saved-mixes/display";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
+import {
+  SHEET_FIELD_INPUT_CLASS,
+  SHEET_FIELD_LABEL,
+  SHEET_SUBTITLE,
+  SHEET_TITLE,
+  sheetFieldInputStyle,
+} from "./sheetChrome";
 import { theme } from "../../../theme";
 
 const { colors: c, borders: b, surfaces: s } = theme;
 
 /** Match LoadSavedMixesSheet chrome. */
 const HEADER_HEIGHT_FRAC = "32%";
-const TITLE_SIZE = 30;
-const SUBTITLE_SIZE = 14;
 const SHEET_MARGIN_X = 16;
 const SHEET_MARGIN_TOP = 6;
 const SHEET_MARGIN_BOTTOM = 16;
@@ -25,7 +30,6 @@ const CONFIRM_H = 44;
 const CONTENT_TOP = 20;
 const SECTION_GAP = 20;
 const LABEL_GAP = 8;
-const LIST_SIZE = 12;
 
 type SaveMixNameSheetProps =
   | {
@@ -122,32 +126,10 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
             paddingBottom: 10,
           }}
         >
-          <h2
-            id="save-mix-name-title"
-            style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontSize: TITLE_SIZE,
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              color: c.title,
-              lineHeight: 1.1,
-              margin: 0,
-            }}
-          >
+          <h2 id="save-mix-name-title" style={SHEET_TITLE}>
             {title}
           </h2>
-          <p
-            style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontSize: SUBTITLE_SIZE,
-              fontWeight: 500,
-              letterSpacing: "0.01em",
-              color: c.muted,
-              marginTop: 6,
-              lineHeight: 1.4,
-              maxWidth: 280,
-            }}
-          >
+          <p style={{ ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" }}>
             {subtitle}
           </p>
         </header>
@@ -164,9 +146,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
             <div style={{ maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>
               <p
                 style={{
-                  fontSize: LIST_SIZE,
-                  color: c.muted,
-                  letterSpacing: "0.05em",
+                  ...SHEET_FIELD_LABEL,
                   marginBottom: LABEL_GAP,
                   textAlign: "center",
                 }}
@@ -177,8 +157,9 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                 className="truncate"
                 style={{
                   fontFamily: "'Outfit', sans-serif",
-                  fontSize: LIST_SIZE + 1,
+                  fontSize: "var(--text-recipe-meta-value)",
                   fontWeight: 600,
+                  letterSpacing: "0.04em",
                   color: c.title,
                   textAlign: "center",
                 }}
@@ -206,10 +187,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                 <label
                   htmlFor="save-mix-name-input"
                   style={{
-                    display: "block",
-                    fontSize: LIST_SIZE,
-                    color: c.muted,
-                    letterSpacing: "0.05em",
+                    ...SHEET_FIELD_LABEL,
                     marginBottom: LABEL_GAP,
                     textAlign: "center",
                   }}
@@ -224,21 +202,8 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                   maxLength={64}
                   autoComplete="off"
                   spellCheck={false}
-                  className="w-full outline-none"
-                  style={{
-                    height: INPUT_H,
-                    boxSizing: "border-box",
-                    borderRadius: 14,
-                    padding: "0 14px",
-                    background: s.inputBg,
-                    border: b.input,
-                    color: c.title,
-                    fontFamily: "'Outfit', sans-serif",
-                    fontSize: 14,
-                    fontWeight: 500,
-                    letterSpacing: "0.01em",
-                    textAlign: "center",
-                  }}
+                  className={SHEET_FIELD_INPUT_CLASS}
+                  style={sheetFieldInputStyle({ height: INPUT_H, textAlign: "center" })}
                 />
               </div>
 

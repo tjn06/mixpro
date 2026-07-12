@@ -13,6 +13,10 @@ import {
 } from "../../domain/batch-totals/share";
 import { useAppShellCompact } from "../../hooks/useAppShellCompact";
 import { CopyIcon, MailIcon, MessageIcon, RenameIcon, SavedIcon } from "../shared/ActionIcons";
+import {
+  SHEET_FIELD_INPUT_CLASS,
+  sheetFieldInputStyle,
+} from "../sheets/sheetChrome";
 import { theme } from "../../../theme";
 
 const { colors: c, borders: b, surfaces: s } = theme;
@@ -107,19 +111,8 @@ function CommentInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       aria-label={placeholder}
-      className="flex-1 min-w-0 rounded-xl outline-none w-full"
-      style={{
-        boxSizing: "border-box",
-        background: s.shareTabGroupBg,
-        border: b.panel,
-        padding: "10px 12px",
-        color: c.title,
-        fontSize: "var(--text-share-sm)",
-        fontFamily: "'Outfit', sans-serif",
-        fontWeight: 500,
-        letterSpacing: "0.03em",
-        height: 40,
-      }}
+      className={`${SHEET_FIELD_INPUT_CLASS} flex-1 min-w-0`}
+      style={sheetFieldInputStyle({ padding: "10px 12px" })}
     />
   );
 }

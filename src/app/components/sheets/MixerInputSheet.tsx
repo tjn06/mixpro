@@ -3,6 +3,7 @@ import type { BlendingRecipe } from "../../domain/recipe/types";
 import type { BucketSelection } from "../../domain/bucket/types";
 import type { SandType } from "../../domain/mix/volume";
 import { MixerInputDeck } from "../mixer/MixerInputDeck";
+import { SHEET_SUBTITLE, SHEET_TITLE } from "./sheetChrome";
 import { theme } from "../../../theme";
 
 const { colors: c, borders: b, surfaces: s } = theme;
@@ -106,31 +107,11 @@ export function MixerInputSheet({
       >
         <div className="flex items-start justify-between gap-3 min-w-0">
           <div className="min-w-0 flex-1">
-            <h2
-              id="mixer-input-sheet-title"
-              style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: 22,
-                fontWeight: 600,
-                color: c.title,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.15,
-                margin: 0,
-              }}
-            >
+            <h2 id="mixer-input-sheet-title" style={SHEET_TITLE}>
               {title}
             </h2>
             {subtitle ? (
-              <p
-                style={{
-                  fontSize: 12,
-                  color: c.muted,
-                  letterSpacing: "0.04em",
-                  lineHeight: 1.35,
-                  marginTop: 6,
-                  marginBottom: 0,
-                }}
-              >
+              <p style={{ ...SHEET_SUBTITLE, fontSize: "var(--text-ui-sm)" }}>
                 {subtitle}
               </p>
             ) : null}

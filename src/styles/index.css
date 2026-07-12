@@ -112,3 +112,28 @@
 .saved-mixes-list::-webkit-scrollbar {
   display: none;
 }
+
+/* Sheet text fields — inset, 1px border; not raised like action buttons. */
+.sheet-field-input {
+  cursor: text;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.22);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sheet-field-input::placeholder {
+  color: color-mix(in srgb, var(--ui-muted, #8888a8) 68%, transparent);
+}
+
+.sheet-field-input:focus {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.22),
+    0 0 0 2px rgba(255, 255, 255, 0.06);
+}
+
+.sheet-field-input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
