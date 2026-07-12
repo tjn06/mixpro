@@ -109,9 +109,8 @@ const LIST_TIMESTAMP: CSSProperties = {
   fontVariantNumeric: "tabular-nums",
 };
 
-const SHEET_MARGIN_X = 16;
+const SHEET_MARGIN_X = "var(--app-sheet-margin-x)";
 const SHEET_MARGIN_TOP = 6;
-const SHEET_MARGIN_BOTTOM = 16;
 const SHEET_RADIUS = 28;
 const SHEET_PAD_X = 20;
 
@@ -526,7 +525,7 @@ export function LoadSavedMixesSheet({
             marginLeft: SHEET_MARGIN_X,
             marginRight: SHEET_MARGIN_X,
             marginTop: SHEET_MARGIN_TOP,
-            marginBottom: SHEET_MARGIN_BOTTOM,
+            marginBottom: "var(--app-sheet-margin-bottom)",
             borderRadius: SHEET_RADIUS,
             border: b.panel,
             boxShadow: s.shadowSheet,

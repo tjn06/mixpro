@@ -1242,7 +1242,7 @@ export function BatchMixer({
           className="shrink-0 app-gutter-x flex flex-col"
           style={{
             gap: "var(--section-gap)",
-            paddingBottom: "var(--space-4)",
+            paddingBottom: "var(--app-bottom-inset)",
             pointerEvents: isLocked ? "none" : "auto",
           }}
         >

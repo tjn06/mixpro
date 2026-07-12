@@ -4,7 +4,7 @@ import { theme } from "../../../theme";
 const { colors: c, borders: b, surfaces: s } = theme;
 
 export const SHEET_FOOTER_H = 64;
-export const SHEET_FOOTER_PAD_X = 20;
+export const SHEET_FOOTER_PAD_X = "max(20px, var(--safe-left), var(--safe-right))";
 export const SHEET_FOOTER_BTN_H = 44;
 const SHEET_FOOTER_GAP = 8;
 const SHEET_FOOTER_ICON = 18;

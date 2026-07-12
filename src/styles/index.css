@@ -3,7 +3,7 @@
 @import './theme.css';
 @import './app-layout.css';
 
-/* Mobile shell — centers phone frame on desktop, respects safe areas */
+/* Mobile shell — full bleed; safe areas handled inside .app-frame */
 .mobile-shell {
   box-sizing: border-box;
   width: 100%;
@@ -13,12 +13,7 @@
   justify-content: center;
   overflow: hidden;
   overscroll-behavior: none;
-  background: var(--ui-shell-bg, #030308);
-  padding:
-    0
-    var(--safe-right)
-    var(--safe-bottom)
-    var(--safe-left);
+  background: var(--ui-app-bg, #07070f);
 }
 
 /** Wide + tall browser windows — cap frame height; phones (≤430px) stay full viewport. */

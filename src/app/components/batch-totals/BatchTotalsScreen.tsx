@@ -818,7 +818,7 @@ export function BatchTotalsScreen({
         className="shrink-0 app-gutter-x flex flex-col min-w-0 w-full"
         style={{
           gap: 8,
-          paddingBottom: "var(--space-4)",
+          paddingBottom: "var(--app-bottom-inset)",
         }}
       >
         <BatchTotalsSummaryBar

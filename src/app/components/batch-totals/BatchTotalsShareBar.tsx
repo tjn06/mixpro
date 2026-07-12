@@ -20,8 +20,7 @@ import {
 import { theme } from "../../../theme";
 
 const { colors: c, borders: b, surfaces: s } = theme;
-const SHEET_MARGIN_X = 16;
-const SHEET_MARGIN_BOTTOM = 16;
+const SHEET_MARGIN_X = "var(--app-sheet-margin-x)";
 const SHEET_RADIUS = 28;
 const SHEET_PAD_X = 20;
 const SHEET_PAD_Y = 20;
@@ -162,7 +161,7 @@ function BatchTotalsCommentSheet({
         style={{
           marginLeft: SHEET_MARGIN_X,
           marginRight: SHEET_MARGIN_X,
-          marginBottom: SHEET_MARGIN_BOTTOM,
+          marginBottom: "var(--app-sheet-margin-bottom)",
           borderRadius: SHEET_RADIUS,
           border: b.panel,
           background: c.entitySurfaceIdle,
