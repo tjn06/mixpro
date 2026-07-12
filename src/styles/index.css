@@ -73,6 +73,30 @@
   animation: loadSheetPanelIn 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes mixerInputSheetDimIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mixerInputSheetPanelIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.mixer-input-sheet-dim {
+  animation: mixerInputSheetDimIn 0.22s ease both;
+}
+
+.mixer-input-sheet-panel {
+  animation: mixerInputSheetPanelIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Saved mixes — hide scrollbar; fades are overlay gradients on the panel. */
 .saved-mixes-list {
   scrollbar-width: none;

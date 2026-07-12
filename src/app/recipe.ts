@@ -165,6 +165,15 @@ export function initialMixValues(recipe: BlendingRecipe, binderSum = 1000): numb
   return applyRecipeChange(recipe, "A", deriveFromBinderSum(recipe, binderSum).a);
 }
 
+/** Zeroed mix vector for an optional totals-screen complement batch. */
+export function emptyComplementValues(): number[] {
+  return MIX_VALUE_ORDER.map(() => 0);
+}
+
+export function hasComplementAmounts(complement: number[]): boolean {
+  return complement.some((grams) => grams !== 0);
+}
+
 /** Binder reference for a recipe — uses recipe.initialBinderSum when set. */
 export function recipeBinderSum(recipe: BlendingRecipe, defaultBinderSum = 1000): number {
   return recipe.initialBinderSum ?? defaultBinderSum;

@@ -21,6 +21,7 @@ import {
   getIngredientLabel,
   getLockedRatioDisplay,
   initialMixValues,
+  emptyComplementValues,
   mixEpoxyGrams,
   mixSandGrams,
   recipeBinderSum,
@@ -640,6 +641,7 @@ export function BatchMixer({
   const [saveNameSheetOpen, setSaveNameSheetOpen] = useState(false);
   const [screen, setScreen] = useState<MixerScreen>("mixer");
   const [batchMultiplier, setBatchMultiplier] = useState(1);
+  const [complementValues, setComplementValues] = useState(() => emptyComplementValues());
   const [dragFocus, setDragFocus]   = useState(false);
   const [dragDirection, setDragDirection] = useState<"up" | "down" | null>(null);
   const [dragBlocked, setDragBlocked] = useState(false);
@@ -1037,6 +1039,7 @@ export function BatchMixer({
   }, []);
 
   const handleBack = useCallback(() => {
+    setComplementValues(emptyComplementValues());
     setScreen("mixer");
   }, []);
 
@@ -1185,9 +1188,12 @@ export function BatchMixer({
           <BatchTotalsScreen
             recipe={activeRecipe}
             values={values}
+            complementValues={complementValues}
             entityIndexes={ingredientIndexes}
             multiplier={batchMultiplier}
             onMultiplierChange={setBatchMultiplier}
+            onComplementChange={setComplementValues}
+            sandType={sandType}
           />
         </>
       ) : (

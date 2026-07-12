@@ -119,6 +119,7 @@ function ShareButton({
 export interface BatchTotalsShareBarProps {
   recipe: BlendingRecipe;
   values: number[];
+  complementValues: number[];
   entityIndexes: number[];
   multiplier: number;
 }
@@ -126,6 +127,7 @@ export interface BatchTotalsShareBarProps {
 export function BatchTotalsShareBar({
   recipe,
   values,
+  complementValues,
   entityIndexes,
   multiplier,
 }: BatchTotalsShareBarProps) {
@@ -144,8 +146,9 @@ export function BatchTotalsShareBar({
         multiplier,
         language,
         comment,
+        complementValues,
       ),
-    [recipe, values, entityIndexes, multiplier, language, comment],
+    [recipe, values, entityIndexes, multiplier, language, comment, complementValues],
   );
 
   const reportSubject = useMemo(
