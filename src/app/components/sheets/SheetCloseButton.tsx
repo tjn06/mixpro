@@ -45,7 +45,12 @@ function SheetIconButton({
         cursor: "pointer",
       }}
     >
-      {icon}
+      <span
+        className="flex shrink-0 items-center justify-center"
+        style={{ width: SHEET_FOOTER_ICON, height: SHEET_FOOTER_ICON }}
+      >
+        {icon}
+      </span>
     </button>
   );
 }
