@@ -1,4 +1,5 @@
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useState, useRef, useLayoutEffect, useEffect, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { formatMixAmount, MIX_PARAMS } from "../mixEntities";
 import type { BlendingRecipe } from "../recipeTypes";
 import { getEntityMetaLabel, hasComplementAmounts, emptyComplementValues } from "../recipe";
@@ -109,13 +110,9 @@ function cardHeaderStyle(variant: "batches" | "extra" = "batches"): CSSPropertie
     padding: "var(--totals-card-header-py) var(--totals-card-header-px)",
     background: variant === "extra" ? EXTRA_CARD_HEADER_BG : CARD_HEADER_BG,
     borderBottom: TABLE_BORDER,
-    minHeight: "var(--totals-header-icon-btn)",
+    minHeight: "var(--totals-card-header-min-h, var(--totals-header-icon-btn))",
   };
 }
-
-const MULTIPLIER_VALUE_SIZE = 20;
-const MULTIPLIER_ROW_GAP = 12;
-const TABLE_OP_SEP_H = 22;
 
 function cardRoundBtnStyle(disabled?: boolean, color?: string): CSSProperties {
   return {
@@ -136,6 +133,7 @@ const COL_ITEM = "46%";
 const COL_MULT = "14%";
 const COL_TOTAL = "40%";
 const TABLE_COLS = `${COL_ITEM} ${COL_MULT} ${COL_TOTAL}`;
+const SUMMARY_COLS = "minmax(0, 1fr) auto";
 
 export interface BatchTotalsScreenProps {
   recipe: BlendingRecipe;
@@ -277,7 +275,7 @@ function TableOpSeparator({ symbol }: { symbol: "+" | "=" }) {
   return (
     <div
       className="grid w-full min-w-0 shrink-0 items-center"
-      style={{ gridTemplateColumns: TABLE_COLS, height: TABLE_OP_SEP_H }}
+      style={{ gridTemplateColumns: TABLE_COLS, height: "var(--totals-op-sep-h, 22px)" }}
       aria-hidden
     >
       <span />
@@ -285,7 +283,7 @@ function TableOpSeparator({ symbol }: { symbol: "+" | "=" }) {
         className="flex items-center justify-center tabular-nums"
         style={{
           fontFamily: "'Outfit', sans-serif",
-          fontSize: MULTIPLIER_VALUE_SIZE,
+          fontSize: "var(--totals-op-sep-font-size, 20px)",
           fontWeight: 400,
           color: TITLE_COLOR,
           letterSpacing: "-0.02em",
@@ -313,7 +311,7 @@ function SummaryPlus() {
       className="tabular-nums shrink-0"
       style={{
         fontFamily: "'Outfit', sans-serif",
-        fontSize: MULTIPLIER_VALUE_SIZE,
+        fontSize: "var(--totals-mult-value-size, 20px)",
         fontWeight: 400,
         color: TITLE_COLOR,
         letterSpacing: "-0.02em",
@@ -330,12 +328,43 @@ function BatchTotalsSummaryBar({
   multiplier,
   hasExtraBatch,
   totalGrams,
+  compactSummary = false,
 }: {
   multiplier: number;
   hasExtraBatch: boolean;
   totalGrams: number;
+  compactSummary?: boolean;
 }) {
   const totalParam = MIX_PARAMS[0];
+  const batchColRef = useRef<HTMLDivElement>(null);
+  const [shortExtraLabel, setShortExtraLabel] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!compactSummary || !hasExtraBatch) {
+      setShortExtraLabel(false);
+      return;
+    }
+
+    setShortExtraLabel(false);
+  }, [compactSummary, hasExtraBatch, multiplier]);
+
+  useLayoutEffect(() => {
+    if (!compactSummary || !hasExtraBatch) return;
+
+    const node = batchColRef.current;
+    if (!node) return;
+
+    const measure = () => {
+      setShortExtraLabel((prev) => prev || node.scrollWidth > node.clientWidth);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [compactSummary, hasExtraBatch, multiplier, shortExtraLabel]);
+
+  const extraBatchLabel = shortExtraLabel ? "EX. BCH" : "Extra batch";
 
   return (
     <div className="shrink-0 min-w-0 w-full">
@@ -349,25 +378,30 @@ function BatchTotalsSummaryBar({
       >
         <div
           className="grid items-center min-w-0 w-full"
-          style={{ gridTemplateColumns: TABLE_COLS }}
+          style={{ gridTemplateColumns: SUMMARY_COLS }}
         >
           <div
-            className="min-w-0 flex flex-wrap items-center"
-            style={{ ...cellItemStyle(), gap: "4px 6px" }}
+            ref={batchColRef}
+            className={`min-w-0 flex items-center${compactSummary ? " flex-nowrap" : " flex-wrap"}`}
+            style={{ ...cellItemStyle({ borderRight: "none" }), gap: "4px 6px" }}
           >
             <span style={sectionTitleStyle()}>Batches</span>
             <MultCell value={multiplier} />
             {hasExtraBatch ? (
               <>
                 <SummaryPlus />
-                <span style={sectionTitleStyle(EXTRA_BATCH_ACCENT)}>Extra batch</span>
+                <span
+                  style={sectionTitleStyle(EXTRA_BATCH_ACCENT)}
+                  title={shortExtraLabel ? "Extra batch" : undefined}
+                >
+                  {extraBatchLabel}
+                </span>
                 <MultCell value={1} />
               </>
             ) : null}
           </div>
-          <div style={cellMultStyle()} aria-hidden />
           <div
-            className="text-right min-w-0 flex items-baseline justify-end gap-2"
+            className="text-right min-w-0 flex items-baseline justify-end gap-2 shrink-0"
             style={cellTotalStyle({
               ...TABLE_TEXT,
               fontSize: "var(--text-totals-sum)",
@@ -435,7 +469,11 @@ export function BatchTotalsScreen({
 }: BatchTotalsScreenProps) {
   const shellCompact = useAppShellCompact();
   const [extraBatchSheetOpen, setExtraBatchSheetOpen] = useState(false);
+  const [sheetPortal, setSheetPortal] = useState<HTMLElement | null>(null);
   const ingredientRows = entityIndexes.filter((i) => i !== 0);
+  const batchTableRowCount = ingredientRows.length + 1;
+  const denseTable = batchTableRowCount > 4;
+  const compactSummary = shellCompact && denseTable;
   const hasExtraBatch = hasComplementAmounts(complementValues);
   const grandTotalGrams = batchIngredientTotalGrams(
     values,
@@ -448,17 +486,20 @@ export function BatchTotalsScreen({
     onComplementChange(emptyComplementValues());
   };
 
+  useEffect(() => {
+    setSheetPortal(document.querySelector(".app-frame"));
+  }, []);
+
   return (
     <div
-      className={`batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-x-hidden${shellCompact ? "" : " batch-totals-screen--tall"}`}
+      className={`batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-x-hidden${compactSummary ? " batch-totals-screen--compact-summary" : !shellCompact ? " batch-totals-screen--tall" : ""}`}
+      data-dense-table={denseTable ? "" : undefined}
     >
       <div
         className="flex-1 min-h-0 min-w-0 app-gutter-x flex flex-col"
-        style={{ paddingTop: "var(--recipe-zone-pt)" }}
+        style={{ paddingTop: compactSummary ? 0 : "var(--recipe-zone-pt)" }}
       >
-        <div
-          className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto overscroll-contain"
-        >
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-x-auto overflow-y-auto overscroll-contain batch-totals-scroll-panel">
           <div className="flex min-h-full flex-col">
             <div
               className="w-full min-w-0 shrink-0 rounded-xl overflow-hidden"
@@ -485,13 +526,13 @@ export function BatchTotalsScreen({
                     onClick={() => onMultiplierChange(Math.max(1, multiplier - 1))}
                     disabled={multiplier <= 1}
                     className="absolute"
-                    style={{ right: "100%", marginRight: MULTIPLIER_ROW_GAP }}
+                    style={{ right: "100%", marginRight: "var(--totals-multiplier-row-gap, 12px)" }}
                   />
                   <p
                     className="tabular-nums text-center"
                     style={{
                       fontFamily: "'Outfit', sans-serif",
-                      fontSize: MULTIPLIER_VALUE_SIZE,
+                      fontSize: "var(--totals-mult-value-size, 20px)",
                       fontWeight: 400,
                       color: TITLE_COLOR,
                       letterSpacing: "-0.02em",
@@ -506,7 +547,7 @@ export function BatchTotalsScreen({
                     onClick={() => onMultiplierChange(Math.min(999, multiplier + 1))}
                     disabled={multiplier >= 999}
                     className="absolute"
-                    style={{ left: "100%", marginLeft: MULTIPLIER_ROW_GAP }}
+                    style={{ left: "100%", marginLeft: "var(--totals-multiplier-row-gap, 12px)" }}
                   />
                 </div>
               </div>
@@ -788,7 +829,7 @@ export function BatchTotalsScreen({
               <button
                 type="button"
                 onClick={() => setExtraBatchSheetOpen(true)}
-                className="w-full flex items-center justify-center text-center transition-all duration-200 active:scale-[0.99]"
+                className="w-full flex items-center justify-center text-center"
                 style={{
                   cursor: "pointer",
                   background: "transparent",
@@ -825,6 +866,7 @@ export function BatchTotalsScreen({
           multiplier={multiplier}
           hasExtraBatch={hasExtraBatch}
           totalGrams={grandTotalGrams}
+          compactSummary={compactSummary}
         />
 
         <BatchTotalsShareBar
@@ -836,18 +878,23 @@ export function BatchTotalsScreen({
         />
       </div>
 
-      <MixerInputSheet
-        open={extraBatchSheetOpen}
-        onOpenChange={setExtraBatchSheetOpen}
-        title="Extra batch"
-        subtitle="One custom batch — added on top of your batches"
-        recipe={recipe}
-        values={complementValues}
-        entityIndexes={entityIndexes}
-        bucketSelection="none"
-        sandType={sandType}
-        onApply={onComplementChange}
-      />
+      {sheetPortal
+        ? createPortal(
+            <MixerInputSheet
+              open={extraBatchSheetOpen}
+              onOpenChange={setExtraBatchSheetOpen}
+              title="Extra batch"
+              subtitle="One custom batch — added on top of your batches"
+              recipe={recipe}
+              values={complementValues}
+              entityIndexes={entityIndexes}
+              bucketSelection="none"
+              sandType={sandType}
+              onApply={onComplementChange}
+            />,
+            sheetPortal,
+          )
+        : null}
     </div>
   );
 }

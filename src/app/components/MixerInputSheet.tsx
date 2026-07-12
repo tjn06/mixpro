@@ -77,7 +77,7 @@ export function MixerInputSheet({
 
   return (
     <div
-      className="absolute inset-0 flex flex-col justify-end pointer-events-auto"
+      className="absolute inset-0 pointer-events-auto"
       style={{ zIndex: 35 }}
       role="dialog"
       aria-modal="true"
@@ -92,11 +92,11 @@ export function MixerInputSheet({
       />
 
       <div
-        className="mixer-input-sheet-panel relative flex flex-col min-w-0 overflow-hidden"
+        className="mixer-input-sheet-panel absolute flex flex-col min-w-0 overflow-hidden"
         style={{
-          marginLeft: SHEET_MARGIN_X,
-          marginRight: SHEET_MARGIN_X,
-          marginBottom: SHEET_MARGIN_BOTTOM,
+          left: SHEET_MARGIN_X,
+          right: SHEET_MARGIN_X,
+          bottom: SHEET_MARGIN_BOTTOM,
           borderRadius: SHEET_RADIUS,
           border: PANEL_BORDER,
           boxShadow: "0 -8px 48px rgba(0, 0, 0, 0.45), 0 20px 56px rgba(0, 0, 0, 0.32)",

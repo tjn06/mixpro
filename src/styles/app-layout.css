@@ -257,7 +257,7 @@
       --recipe-id-sublabel-gap: clamp(8px, 1.05cqh, 11px);
       --recipe-meta-name-gap: clamp(8px, 1.05cqh, 11px);
     }
-    .batch-totals-screen {
+    .batch-totals-screen:not(.batch-totals-screen--compact-summary) {
       --totals-card-header-py: clamp(4px, 0.65cqh, 6px);
       --totals-card-header-px: clamp(8px, 1.05cqh, 10px);
       --totals-header-icon-btn: clamp(36px, 5.24cqh, 40px);
@@ -484,7 +484,7 @@
       --recipe-meta-name-gap: clamp(8px, 1.05dvh, 11px);
     }
 
-    .batch-totals-screen {
+    .batch-totals-screen:not(.batch-totals-screen--compact-summary) {
       --totals-card-header-py: clamp(4px, 0.65dvh, 6px);
       --totals-card-header-px: clamp(8px, 1.05dvh, 10px);
       --totals-header-icon-btn: clamp(36px, 5.24dvh, 40px);
@@ -539,7 +539,7 @@
 }
 
 /** Shell height > 764px — applied via useAppShellCompact (container queries alone were unreliable). */
-.batch-totals-screen--tall {
+.batch-totals-screen--tall:not(.batch-totals-screen--compact-summary) {
   --totals-card-header-py: 6px;
   --totals-card-header-px: 10px;
   --totals-header-icon-btn: 40px;
@@ -548,4 +548,48 @@
   --totals-header-cell-pad-x: 6px;
   --totals-section-title-pad-x: 6px;
   --totals-step-font-size: 17px;
+}
+
+/** ≤764px + >4 batch rows — compact card headers and formula separators. */
+.batch-totals-screen--compact-summary {
+  --totals-card-header-py: 0;
+  --totals-card-header-px: 0;
+  --totals-card-header-min-h: 27px;
+  --totals-header-icon-btn: 24px;
+  --totals-header-icon-size: 14px;
+  --totals-step-font-size: 13px;
+  --totals-header-action-gap: 6px;
+  --totals-header-cell-pad-x: 0;
+  --totals-section-title-pad-x: 4px;
+  --totals-mult-value-size: var(--text-totals-caption);
+  --totals-multiplier-row-gap: 8px;
+  --totals-op-sep-font-size: var(--text-totals-caption);
+  --totals-op-sep-h: 16px;
+}
+
+@container app (max-height: 764px) {
+  .batch-totals-screen--compact-summary,
+  .batch-totals-screen[data-dense-table] {
+    --totals-card-header-py: 0;
+    --totals-card-header-px: 0;
+    --totals-card-header-min-h: 27px;
+    --totals-header-icon-btn: 24px;
+    --totals-header-icon-size: 14px;
+    --totals-step-font-size: 13px;
+    --totals-header-action-gap: 6px;
+    --totals-header-cell-pad-x: 0;
+    --totals-section-title-pad-x: 4px;
+    --totals-mult-value-size: var(--text-totals-caption);
+    --totals-multiplier-row-gap: 8px;
+    --totals-op-sep-font-size: var(--text-totals-caption);
+    --totals-op-sep-h: 16px;
+  }
+}
+
+.batch-totals-screen--compact-summary > .flex-1.app-gutter-x {
+  padding-top: 0;
+}
+
+.batch-totals-scroll-panel {
+  overflow-anchor: none;
 }
