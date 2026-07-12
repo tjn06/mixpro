@@ -54,7 +54,7 @@ Pushes to `main` run `.github/workflows/deploy.yml`, which builds and deploys `d
 src/
   app/
     BatchMixer.tsx      # Main mixer UI and swipe editor
-    components/         # Header, bucket, buttons, shadcn/ui
+    components/         # Header, bucket, sheets, icons
     recipe*.ts          # Recipe model and ratio math
     bucket*.ts          # Bucket capacity and fill limits
     mixVolume.ts        # Volume estimation
