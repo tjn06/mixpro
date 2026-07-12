@@ -25,6 +25,7 @@ const CONFIRM_H = 44;
 const CONTENT_TOP = 20;
 const SECTION_GAP = 20;
 const LABEL_GAP = 8;
+const LIST_SIZE = 12;
 
 type SaveMixNameSheetProps =
   | {
@@ -107,6 +108,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
           borderRadius: SHEET_RADIUS,
           border: b.panel,
           boxShadow: s.shadowSheet,
+          background: s.loadSheetPanel,
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -255,8 +257,8 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
         </div>
 
         <footer
-          className="shrink-0 flex items-center justify-center"
-          style={{ height: FOOTER_H }}
+          className="shrink-0 flex items-center justify-center relative z-[11]"
+          style={{ height: FOOTER_H, background: s.loadSheetPanel }}
         >
           <button
             type="button"

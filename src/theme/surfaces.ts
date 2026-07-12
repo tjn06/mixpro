@@ -31,8 +31,14 @@ export const themeSurfaces = {
   sheetPanelFade: "rgba(13, 13, 28, 0.88)",
   loadSheetRow: "rgba(13, 13, 28, 0.52)",
   loadSheetPanel: "rgba(13, 13, 28, 0.42)",
+  /** Frosted-glass blur on load/save sheet panels (over dimmed content behind). */
+  sheetPanelBlur: "20px",
+  sheetPanelSaturate: 1.1,
   outsideDimLight: "rgba(5, 5, 16, 0.28)",
   outsideDimMedium: "rgba(5, 5, 16, 0.42)",
+  /** Backdrop blur on sheet dim overlays (content behind the sheet). */
+  outsideDimBlur: "12px",
+  outsideDimSaturate: 1.08,
   overlayHint: "rgba(5, 5, 16, 0.68)",
   searchBg: "rgba(255,255,255,0.06)",
   inputBg: "rgba(255,255,255,0.06)",

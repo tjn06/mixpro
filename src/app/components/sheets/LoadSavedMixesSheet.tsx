@@ -100,8 +100,8 @@ function ScrollFade({
         height: FADE_H,
         ...(isTop ? { top: 0 } : { bottom: 0 }),
         background: isTop
-          ? `linear-gradient(to bottom, ${s.sheetPanelFade} 0%, transparent 100%)`
-          : `linear-gradient(to top, ${s.sheetPanelFade} 0%, transparent 100%)`,
+          ? `linear-gradient(to bottom, ${s.loadSheetPanel} 0%, transparent 100%)`
+          : `linear-gradient(to top, ${s.loadSheetPanel} 0%, transparent 100%)`,
       }}
     />
   );
@@ -407,6 +407,7 @@ export function LoadSavedMixesSheet({
             borderRadius: SHEET_RADIUS,
             border: b.panel,
             boxShadow: s.shadowSheet,
+            background: s.loadSheetPanel,
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -540,8 +541,8 @@ export function LoadSavedMixesSheet({
           </div>
 
           <footer
-            className="shrink-0 flex items-center justify-center"
-            style={{ height: FOOTER_H }}
+            className="shrink-0 flex items-center justify-center relative z-[11]"
+            style={{ height: FOOTER_H, background: s.loadSheetPanel }}
           >
             <button
               type="button"
