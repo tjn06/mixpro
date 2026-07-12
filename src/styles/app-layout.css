@@ -100,6 +100,10 @@
   border-bottom: var(--ui-border-header, 1px solid rgba(255, 255, 255, 0.08));
 }
 
+.app-header-chrome:has(.app-header-sub) > .app-header {
+  border-bottom-color: transparent;
+}
+
 .app-header-sub {
   box-sizing: border-box;
   flex-shrink: 0;
@@ -108,7 +112,8 @@
   justify-content: center;
   min-height: var(--header-subline-h);
   padding: var(--header-subline-py) var(--header-inset-x);
-  background: transparent;
+  background: var(--ui-header-sub-bg, #0c0c18);
+  box-shadow: var(--ui-header-sub-inset, inset 0 1px 0 rgba(255, 255, 255, 0.04));
   border-bottom: var(--ui-border-header-sub, 1px solid rgba(255, 255, 255, 0.05));
 }
 
@@ -125,7 +130,7 @@
   font-size: var(--text-recipe-meta-value);
   letter-spacing: 0.04em;
   font-weight: 600;
-  color: var(--ui-header-subline, #9898b4);
+  color: var(--ui-header-subline, #a8a8c4);
   line-height: 1.15;
 }
 
@@ -352,7 +357,6 @@
       --text-ui-sm: clamp(10px, min(2.82cqi, 1.44cqh), 11px);
       --text-ui-xs: clamp(8px, min(2.31cqi, 1.18cqh), 9px);
       --text-action-md: clamp(12px, min(3.59cqi, 1.83cqh), 14px);
-      --text-totals-caption: clamp(9px, min(2.56cqi, 1.31cqh), 10px);
       --text-totals-hero: clamp(28px, min(8.72cqi, 4.45cqh), 34px);
       --text-totals-table: clamp(10px, min(2.82cqi, 1.44cqh), 11px);
       --text-totals-mult: clamp(12px, min(3.59cqi, 1.83cqh), 14px);
@@ -516,6 +520,25 @@
       --text-header-title: clamp(15px, min(4.36vw, 2.22dvh), 17px);
       --text-ui-md: clamp(13px, min(3.85vw, 1.96dvh), 15px);
       --text-totals-hero: clamp(28px, min(8.72vw, 4.45dvh), 34px);
+      --text-totals-table: clamp(10px, min(2.82vw, 1.44dvh), 11px);
+      --text-totals-mult: clamp(12px, min(3.59vw, 1.83dvh), 14px);
+      --text-totals-sum: clamp(18px, min(5.38vw, 2.75dvh), 21px);
+      --text-totals-sum-hero: clamp(24px, min(7.18vw, 3.66dvh), 28px);
+      --text-totals-unit: clamp(10px, min(3.08vw, 1.57dvh), 12px);
+      --text-totals-unit-hero: clamp(12px, min(3.59vw, 1.83dvh), 14px);
+      --text-totals-step: clamp(16px, min(4.62vw, 2.36dvh), 18px);
+    }
+
+    .batch-totals-screen:not([data-dense-table]) {
+      --text-card-name: 12px;
+      --text-recipe-unit: 10px;
+      --text-totals-caption: 10px;
+    }
+
+    .batch-totals-screen[data-dense-table] {
+      --text-card-name: clamp(10px, min(3.08vw, 1.57dvh), 12px);
+      --text-recipe-unit: clamp(9px, min(2.56vw, 1.31dvh), 10px);
+      --text-totals-caption: clamp(9px, min(2.56vw, 1.31dvh), 10px);
     }
   }
 }
@@ -573,8 +596,19 @@
 }
 
 @container app (max-height: 764px) {
+  /** ≤4 rows — full-size row labels only; totals column keeps global clamp above. */
+  .batch-totals-screen:not([data-dense-table]) {
+    --text-card-name: 12px;
+    --text-recipe-unit: 10px;
+    --text-totals-caption: 10px;
+  }
+
+  /** >4 rows — shrink row labels (id, meta, /batch line). */
   .batch-totals-screen--compact-summary,
   .batch-totals-screen[data-dense-table] {
+    --text-card-name: clamp(10px, min(3.08cqi, 1.57cqh), 12px);
+    --text-recipe-unit: clamp(9px, min(2.56cqi, 1.31cqh), 10px);
+    --text-totals-caption: clamp(9px, min(2.56cqi, 1.31cqh), 10px);
     --totals-card-header-py: 0;
     --totals-card-header-px: 0;
     --totals-card-header-min-h: 27px;

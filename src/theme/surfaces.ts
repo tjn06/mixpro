@@ -10,6 +10,8 @@ export const themeSurfaces = {
   emptyCardBg: "rgba(255,255,255,0.02)",
   headerBtnBg: "rgba(255,255,255,0.04)",
   headerBtnBgActive: "rgba(255,255,255,0.12)",
+  /** Context strip under the main header bar (recipe name / selector). */
+  headerSubBg: "#0c0c18",
   cardHeaderBtnBg: "rgba(255,255,255,0.04)",
   shareTabGroupBg: "rgba(255,255,255,0.04)",
   shareTabActiveBg: "rgba(255,255,255,0.1)",

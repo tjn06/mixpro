@@ -25,7 +25,7 @@ export const themeColors = {
   actionCompactLabel: "#747494",
   actionDisabledLabel: "#404058",
   actionHoldingLabel: "#9090b8",
-  headerSubline: "#9898b4",
+  headerSubline: "#a8a8c4",
 
   /** Surfaces (solid) */
   entitySurfaceIdle: "#0d0d1c",
