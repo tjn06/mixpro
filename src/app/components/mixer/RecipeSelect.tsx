@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import { recipeMenuLabel } from "../../domain/recipe/types";
 import { HEADER_NAV_LONG_PRESS_MS, LongPressProgress, useLongPress } from "../shared/LongPressButton";
-import { RecipeHeaderSubline, RecipeHeaderSublineValue } from "./RecipeZoneMeta";
+import { RecipeHeaderRecipeRow, RecipeHeaderSubline } from "./RecipeZoneMeta";
 import { theme } from "../../../theme";
 
 const { colors: c, surfaces: s } = theme;
@@ -34,20 +34,22 @@ function ChevronDown({ open }: { open: boolean }) {
 
 function RecipeOptionRow({
   recipe,
-  active,
+  current,
+  selectable,
   onSelect,
 }: {
   recipe: BlendingRecipe;
-  active: boolean;
+  current: boolean;
+  selectable: boolean;
   onSelect: () => void;
 }) {
   const label = recipeMenuLabel(recipe);
   const { progress, holding, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useLongPress(
     onSelect,
-    active,
+    !selectable,
     {
       headerProgress: true,
-      confirmAction: "NEW RECIPE",
+      confirmAction: current ? "RESET RECIPE" : "NEW RECIPE",
       durationMs: HEADER_NAV_LONG_PRESS_MS,
     },
   );
@@ -56,36 +58,40 @@ function RecipeOptionRow({
     <button
       type="button"
       role="option"
-      aria-selected={active}
+      aria-selected={current}
       aria-label={
-        active ? `${label}, current recipe` : `Hold to select ${label}`
+        current
+          ? selectable
+            ? `Hold to reset ${label}`
+            : `${label}, current recipe`
+          : `Hold to select ${label}`
       }
-      disabled={active}
-      onPointerDown={active ? undefined : onPointerDown}
-      onPointerMove={active ? undefined : onPointerMove}
-      onPointerUp={active ? undefined : onPointerUp}
-      onPointerCancel={active ? undefined : onPointerCancel}
+      disabled={!selectable}
+      onPointerDown={selectable ? onPointerDown : undefined}
+      onPointerMove={selectable ? onPointerMove : undefined}
+      onPointerUp={selectable ? onPointerUp : undefined}
+      onPointerCancel={selectable ? onPointerCancel : undefined}
       className={`relative w-full text-left touch-manipulation transition-colors duration-100 ${
-        active ? "" : "touch-none"
+        selectable ? "touch-none" : ""
       }`}
       style={{
         fontFamily: "'Outfit', sans-serif",
         fontSize: "var(--text-ui-md)",
-        fontWeight: active ? 600 : 500,
+        fontWeight: current ? 600 : 500,
         letterSpacing: "0.04em",
-        color: active ? c.dropdownMenuTextMuted : c.dropdownMenuText,
+        color: current && !selectable ? c.dropdownMenuTextMuted : c.dropdownMenuText,
         background: holding
           ? c.inputSurface
-          : active
+          : current && !selectable
             ? s.dropdownMenuActiveBg
             : c.dropdownMenuBg,
         padding: "10px 14px",
-        cursor: active ? "default" : "pointer",
+        cursor: selectable ? "pointer" : "default",
         whiteSpace: "nowrap",
-        opacity: active ? 0.55 : 1,
+        opacity: current && !selectable ? 0.55 : 1,
       }}
     >
-      {!active && <LongPressProgress progress={progress} inset={10} />}
+      {selectable && <LongPressProgress progress={progress} inset={10} />}
       {label}
     </button>
   );
@@ -97,6 +103,8 @@ export interface RecipeSelectProps {
   onChange: (recipe: BlendingRecipe) => void;
   disabled?: boolean;
   muted?: boolean;
+  /** When set, the current recipe stays selectable (reset saved mix / reload defaults). */
+  allowReselectCurrent?: boolean;
 }
 
 export function RecipeSelect({
@@ -105,6 +113,7 @@ export function RecipeSelect({
   onChange,
   disabled = false,
   muted = false,
+  allowReselectCurrent = false,
 }: RecipeSelectProps) {
   const [open, setOpen] = useState(false);
   const [menuLayout, setMenuLayout] = useState<{ top: number; left: number; minWidth: number } | null>(null);
@@ -175,12 +184,14 @@ export function RecipeSelect({
         }}
       >
         {recipes.map((recipe) => {
-          const active = recipe.id === value.id;
+          const current = recipe.id === value.id;
+          const selectable = !current || allowReselectCurrent;
           return (
             <li key={recipe.id} role="none">
               <RecipeOptionRow
                 recipe={recipe}
-                active={active}
+                current={current}
+                selectable={selectable}
                 onSelect={() => {
                   onChange(recipe);
                   setOpen(false);
@@ -207,13 +218,13 @@ export function RecipeSelect({
             className="inline-flex items-center justify-center gap-1 max-w-full min-w-0 touch-manipulation bg-transparent border-none p-0 cursor-pointer"
             onClick={() => setOpen((o) => !o)}
           >
-            <RecipeHeaderSublineValue muted={muted}>{recipeName}</RecipeHeaderSublineValue>
+            <RecipeHeaderRecipeRow muted={muted}>{recipeName}</RecipeHeaderRecipeRow>
             <ChevronDown open={open} />
           </button>
           {menu}
         </>
       ) : (
-        <RecipeHeaderSublineValue muted={muted}>{recipeName}</RecipeHeaderSublineValue>
+        <RecipeHeaderRecipeRow muted={muted}>{recipeName}</RecipeHeaderRecipeRow>
       )}
     </RecipeHeaderSubline>
   );

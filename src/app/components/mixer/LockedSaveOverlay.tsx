@@ -28,6 +28,7 @@ export interface LockedSaveOverlayProps {
   saveButtonRef: RefObject<HTMLButtonElement | null>;
   onSave: () => void;
   saveFlash?: boolean;
+  loadedSavedMix?: { id: string } | null;
   expandMs: number;
   expandEase: string;
   zIndex: number;
@@ -50,6 +51,7 @@ export function LockedSaveOverlay({
   saveButtonRef,
   onSave,
   saveFlash = false,
+  loadedSavedMix = null,
   expandMs,
   expandEase,
   zIndex,
@@ -171,8 +173,12 @@ export function LockedSaveOverlay({
     border: overlay.expanded ? PRIMARY_BORDER : "1.5px solid transparent",
   };
 
-  const saveLabel = saveFlash ? "Saved" : "Save mix";
-  const saveDescription = saveFlash ? "Stored in your mixes" : "Hold to name and store";
+  const saveLabel = saveFlash ? "Saved" : loadedSavedMix ? "Update mix" : "Save mix";
+  const saveDescription = saveFlash
+    ? "Stored in your mixes"
+    : loadedSavedMix
+      ? "Hold to update this saved mix"
+      : "Hold to name and store";
   const saveIcon = saveFlash
     ? <SavedIcon size={LOCKED_ACTION_ICON_SIZE} />
     : <SaveIcon size={LOCKED_ACTION_ICON_SIZE} />;

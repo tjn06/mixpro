@@ -27,13 +27,17 @@ const CONTENT_TOP = 20;
 const SECTION_GAP = 20;
 const LABEL_GAP = 8;
 
+export type SaveMixStrategy = "update" | "new";
+
 type SaveMixNameSheetProps =
   | {
       mode: "save";
       open: boolean;
       onOpenChange: (open: boolean) => void;
       recipeName: string;
-      onConfirm: (metaName?: string) => void;
+      /** When set, user can update this snapshot or save as a new mix. */
+      existingMix?: SavedMixSnapshot | null;
+      onConfirm: (metaName?: string, strategy?: SaveMixStrategy) => void;
       mix?: never;
     }
   | {
@@ -43,31 +47,91 @@ type SaveMixNameSheetProps =
       mix: SavedMixSnapshot;
       onConfirm: (metaName?: string) => void;
       recipeName?: never;
+      existingMix?: never;
     };
+
+function SaveStrategyButton({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className="flex-1 min-w-0 rounded-xl uppercase transition-all duration-200 active:scale-[0.98]"
+      style={{
+        height: 40,
+        background: selected ? s.sheetBtnBgActive : c.entitySurfaceIdle,
+        border: selected ? b.inputActive : b.sheetBtn,
+        color: selected ? c.title : c.actionSecondaryLabel,
+        fontSize: "var(--text-ui-xs)",
+        fontWeight: 600,
+        letterSpacing: "0.1em",
+        cursor: "pointer",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
 
 export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
   const { open, onOpenChange, onConfirm, mode } = props;
   const recipeName = mode === "save" ? props.recipeName : props.mix.recipeName;
-  const initialName =
-    mode === "save" ? recipeName : savedMixDisplayName(props.mix);
+  const existingMix = mode === "save" ? props.existingMix ?? null : null;
+  const hasExistingMix = Boolean(existingMix);
+  const existingDisplayName = existingMix ? savedMixDisplayName(existingMix) : "";
 
-  const [name, setName] = useState(initialName);
+  const [strategy, setStrategy] = useState<SaveMixStrategy>("update");
+  const [name, setName] = useState(recipeName);
 
   useEffect(() => {
-    if (open) setName(initialName);
-  }, [open, initialName]);
+    if (!open) return;
+    setStrategy("update");
+    setName(
+      hasExistingMix && existingMix
+        ? savedMixDisplayName(existingMix)
+        : recipeName,
+    );
+  }, [open, recipeName, hasExistingMix, existingMix]);
+
+  useEffect(() => {
+    if (!open || mode !== "save" || !hasExistingMix) return;
+    setName(
+      strategy === "update" && existingMix
+        ? savedMixDisplayName(existingMix)
+        : recipeName,
+    );
+  }, [open, mode, strategy, hasExistingMix, existingMix, recipeName]);
 
   if (!open) return null;
 
   const title = mode === "save" ? "Save mix" : "Rename mix";
   const subtitle =
     mode === "save"
-      ? "Optional label — recipe name is kept either way"
+      ? hasExistingMix
+        ? `Update “${existingDisplayName}” or save as a new mix`
+        : "Optional label — recipe name is kept either way"
       : "Clear custom label to show the recipe name again";
-  const confirmLabel = mode === "save" ? "Save mix" : "Rename";
+  const confirmLabel =
+    mode === "save"
+      ? strategy === "update" && hasExistingMix
+        ? "Update mix"
+        : "Save mix"
+      : "Rename";
 
   const handleConfirm = () => {
-    onConfirm(name);
+    if (mode === "save") {
+      onConfirm(name, hasExistingMix ? strategy : "new");
+    } else {
+      onConfirm(name);
+    }
     onOpenChange(false);
   };
 
@@ -123,11 +187,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
           className="flex-1 min-h-0 flex flex-col"
           style={{ paddingLeft: SHEET_PAD_X, paddingRight: SHEET_PAD_X }}
         >
-          {/* Recipe stays higher (near the header). */}
-          <div
-            className="shrink-0"
-            style={{ paddingTop: CONTENT_TOP }}
-          >
+          <div className="shrink-0" style={{ paddingTop: CONTENT_TOP }}>
             <div style={{ maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>
               <p
                 style={{
@@ -156,7 +216,6 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
 
           <div className="flex-1 min-h-0" aria-hidden />
 
-          {/* Editable content + action pinned to the bottom (above close). */}
           <div className="shrink-0" style={{ paddingBottom: 12 }}>
             <div
               style={{
@@ -168,6 +227,26 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                 gap: SECTION_GAP,
               }}
             >
+              {mode === "save" && hasExistingMix ? (
+                <div
+                  role="radiogroup"
+                  aria-label="Save option"
+                  className="flex min-w-0"
+                  style={{ gap: 8 }}
+                >
+                  <SaveStrategyButton
+                    label="Update"
+                    selected={strategy === "update"}
+                    onClick={() => setStrategy("update")}
+                  />
+                  <SaveStrategyButton
+                    label="Save new"
+                    selected={strategy === "new"}
+                    onClick={() => setStrategy("new")}
+                  />
+                </div>
+              ) : null}
+
               <div>
                 <label
                   htmlFor="save-mix-name-input"

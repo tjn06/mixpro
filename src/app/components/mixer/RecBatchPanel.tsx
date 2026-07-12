@@ -39,12 +39,15 @@ export function LockIcon({ locked, size = 16 }: { locked: boolean; size?: number
   );
 }
 
+import type { SavedMixSnapshot } from "../../saved-mixes/types";
+
 export interface RecBatchPanelProps {
   recommendedTotalGrams: number;
   onReset: () => void;
   onSave: () => void;
   onLoad: () => void;
   saveFlash?: boolean;
+  loadedSavedMix?: SavedMixSnapshot | null;
   canLoad?: boolean;
   isLocked?: boolean;
   panelZIndex?: number;
@@ -65,6 +68,7 @@ export function RecBatchPanel({
   onSave,
   onLoad,
   saveFlash = false,
+  loadedSavedMix = null,
   canLoad = false,
   isLocked = false,
   panelZIndex,
@@ -76,6 +80,9 @@ export function RecBatchPanel({
   recPanelRef,
   recReadoutRef,
 }: RecBatchPanelProps) {
+  const saveLabel = saveFlash ? "Saved" : loadedSavedMix ? "Update mix" : "Save mix";
+  const saveIcon = saveFlash ? <SavedIcon /> : <SaveIcon />;
+
   return (
     <div
       className="flex flex-1 flex-col min-w-0 w-full min-h-0 h-full"
@@ -153,11 +160,11 @@ export function RecBatchPanel({
       >
         <LongPressButton
           ref={saveButtonRef}
-          label={saveFlash ? "Saved" : "Save mix"}
+          label={saveLabel}
           confirmAction="SAVE MIX"
           onLongPress={onSave}
           variant="primary"
-          icon={saveFlash ? <SavedIcon /> : <SaveIcon />}
+          icon={saveIcon}
           className="flex-1 h-full min-w-0"
         />
         <LongPressButton

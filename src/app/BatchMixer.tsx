@@ -28,7 +28,12 @@ import {
   recipeIngredientIndexes,
 } from "./domain/recipe/calc";
 import { RecipeSelect } from "./components/mixer/RecipeSelect";
-import { RecipeHeaderSubline, RecipeHeaderSublineValue } from "./components/mixer/RecipeZoneMeta";
+import {
+  RecipeHeaderRecipeRow,
+  RecipeHeaderSubline,
+  RecipeHeaderSublineStack,
+  RecipeHeaderMixContext,
+} from "./components/mixer/RecipeZoneMeta";
 import { RecBatchPanel, LockIcon } from "./components/mixer/RecBatchPanel";
 import { LockedSaveOverlay } from "./components/mixer/LockedSaveOverlay";
 import { LockedUnlockOverlay } from "./components/mixer/LockedUnlockOverlay";
@@ -620,6 +625,7 @@ export function BatchMixer({
   const [saveFlash, setSaveFlash]   = useState(false);
   const [loadPickerOpen, setLoadPickerOpen] = useState(false);
   const [saveNameSheetOpen, setSaveNameSheetOpen] = useState(false);
+  const [loadedSavedMix, setLoadedSavedMix] = useState<SavedMixSnapshot | null>(null);
   const [screen, setScreen] = useState<MixerScreen>("mixer");
   const [batchMultiplier, setBatchMultiplier] = useState(1);
   const [complementValues, setComplementValues] = useState(() => emptyComplementValues());
@@ -702,12 +708,19 @@ export function BatchMixer({
 
   const handleRecipeChange = useCallback(
     (next: BlendingRecipe) => {
-      if (next.id === activeRecipe.id) return;
+      if (next.id === activeRecipe.id) {
+        if (!loadedSavedMix) return;
+        setLoadedSavedMix(null);
+        setValues(initialMixValues(next, recipeBinderSum(next, initialBinderSum)));
+        setActive(0);
+        return;
+      }
+      setLoadedSavedMix(null);
       setActiveRecipe(next);
       setValues(initialMixValues(next, recipeBinderSum(next, initialBinderSum)));
       setActive(0);
     },
-    [activeRecipe.id, initialBinderSum],
+    [activeRecipe.id, initialBinderSum, loadedSavedMix],
   );
 
   useEffect(() => {
@@ -764,6 +777,7 @@ export function BatchMixer({
   }, []);
 
   const saveMix = useSavedMixesStore((s) => s.saveMix);
+  const updateMix = useSavedMixesStore((s) => s.updateMix);
   const canLoad = useSavedMixesStore((s) => s.mixes.length > 0);
 
   /** Bucket bordered panel height follows rec. batch + save/load column — never taller. */
@@ -843,20 +857,29 @@ export function BatchMixer({
   }, []);
 
   const handleSaveConfirm = useCallback(
-    (metaName?: string) => {
+    (metaName?: string, strategy: "update" | "new" = "new") => {
       const recipeName = recipeMenuLabel(recipeRef.current);
-      saveMix({
+      const input = {
         recipeId: recipeRef.current.id,
         recipeName,
         metaName,
         bucketSelection: bucketSelectionRef.current,
         sandType,
         values: snapshotValuesFromGrams(valuesRef.current),
-      });
+      };
+
+      if (strategy === "update" && loadedSavedMix) {
+        const updated = updateMix(loadedSavedMix.id, input);
+        if (updated) setLoadedSavedMix(updated);
+      } else {
+        const saved = saveMix(input);
+        setLoadedSavedMix(saved);
+      }
+
       setSaveFlash(true);
       setTimeout(() => setSaveFlash(false), 1500);
     },
-    [saveMix, sandType],
+    [saveMix, updateMix, sandType, loadedSavedMix],
   );
 
   const handleLoad = useCallback(() => {
@@ -877,6 +900,7 @@ export function BatchMixer({
       const loaded = gramsFromSnapshot(mix.values);
       setValues(clampMixValuesToBucketMax(loaded, recipe, mix.bucketSelection, sandType));
       setActive(0);
+      setLoadedSavedMix(mix);
     },
     [pushUndo, recipes, sandType],
   );
@@ -1173,9 +1197,14 @@ export function BatchMixer({
               isLocked={isLocked}
               onBack={handleBack}
               subline={
-                <RecipeHeaderSubline>
-                  <RecipeHeaderSublineValue>{recipeMenuLabel(activeRecipe)}</RecipeHeaderSublineValue>
-                </RecipeHeaderSubline>
+                <RecipeHeaderSublineStack>
+                  <RecipeHeaderSubline>
+                    <RecipeHeaderRecipeRow muted={isLocked}>
+                      {recipeMenuLabel(activeRecipe)}
+                    </RecipeHeaderRecipeRow>
+                  </RecipeHeaderSubline>
+                  <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
+                </RecipeHeaderSublineStack>
               }
             />
             <BatchTotalsScreen
@@ -1198,13 +1227,18 @@ export function BatchMixer({
             isLocked={isLocked}
             onForward={handleForward}
             subline={
-              <div className={isLocked ? "pointer-events-none" : "pointer-events-auto"}>
-                <RecipeSelect
-                  recipes={recipes}
-                  value={activeRecipe}
-                  onChange={handleRecipeChange}
-                  disabled={isLocked}
-                />
+              <div className={isLocked && !loadedSavedMix ? "pointer-events-none" : "pointer-events-auto"}>
+                <RecipeHeaderSublineStack>
+                  <RecipeSelect
+                    recipes={recipes}
+                    value={activeRecipe}
+                    onChange={handleRecipeChange}
+                    disabled={isLocked && !loadedSavedMix}
+                    muted={isLocked && !loadedSavedMix}
+                    allowReselectCurrent={loadedSavedMix != null}
+                  />
+                  <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
+                </RecipeHeaderSublineStack>
               </div>
             }
           />
@@ -1280,6 +1314,7 @@ export function BatchMixer({
               onSave={handleSaveRequest}
               onLoad={handleLoad}
               saveFlash={saveFlash}
+              loadedSavedMix={loadedSavedMix}
               canLoad={canLoad}
               disabled={isLocked}
               muted={isLocked}
@@ -1300,6 +1335,7 @@ export function BatchMixer({
               saveButtonRef={saveButtonRef}
               onSave={handleSaveRequest}
               saveFlash={saveFlash}
+              loadedSavedMix={loadedSavedMix}
               expandMs={LOCK_EXPAND_MS}
               expandEase={LOCK_EASE}
               zIndex={LOCK_UNLOCK_Z}
@@ -1543,6 +1579,7 @@ export function BatchMixer({
           open={screen === "mixer" && saveNameSheetOpen}
           onOpenChange={setSaveNameSheetOpen}
           recipeName={recipeMenuLabel(activeRecipe)}
+          existingMix={loadedSavedMix}
           onConfirm={handleSaveConfirm}
         />
 

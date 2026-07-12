@@ -73,6 +73,7 @@ function normalizeMix(mix: SavedMixSnapshot): SavedMixSnapshot {
 interface SavedMixesState {
   mixes: SavedMixSnapshot[];
   saveMix: (input: SaveMixInput) => SavedMixSnapshot;
+  updateMix: (id: string, input: SaveMixInput) => SavedMixSnapshot | null;
   updateMixMetaName: (id: string, metaName?: string) => void;
   deleteMix: (id: string) => void;
 }
@@ -94,6 +95,28 @@ export const useSavedMixesStore = create<SavedMixesState>()(
         const next = [...get().mixes, mix];
         set({ mixes: next.length > MAX_SAVED_MIXES ? next.slice(-MAX_SAVED_MIXES) : next });
         return mix;
+      },
+
+      updateMix: (id, input) => {
+        const recipeName = input.recipeName.trim() || input.recipeId;
+        let updated: SavedMixSnapshot | null = null;
+        set({
+          mixes: get().mixes.map((mix) => {
+            if (mix.id !== id) return mix;
+            updated = {
+              ...mix,
+              savedAt: new Date().toISOString(),
+              recipeId: input.recipeId,
+              recipeName,
+              metaName: resolveSavedMixMetaName(input.metaName, recipeName),
+              bucketSelection: input.bucketSelection,
+              sandType: input.sandType,
+              values: input.values,
+            };
+            return updated;
+          }),
+        });
+        return updated;
       },
 
       updateMixMetaName: (id, metaName) => {

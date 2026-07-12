@@ -14,6 +14,9 @@ import {
   MessageSquare,
   Ellipsis,
   X,
+  UserRoundCheck,
+  UserRound,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -39,6 +42,12 @@ function createActionIcon(Icon: LucideIcon) {
 export const SaveIcon = createActionIcon(Save);
 
 export const SavedIcon = createActionIcon(Check);
+
+/** User saved config name in header. */
+export const ConfigNameIcon = createActionIcon(UserRound);
+
+/** Built-in admin base config in header. */
+export const BaseConfigIcon = createActionIcon(ShieldCheck);
 
 /** List with bullets — pick from multiple saved mixes. */
 export const LoadIcon = createActionIcon(List);
