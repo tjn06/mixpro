@@ -2,7 +2,7 @@ import {
   differenceInCalendarDays,
   differenceInMinutes,
   format,
-  isSameYear,
+  isSameMonth,
 } from "date-fns";
 import { enGB } from "date-fns/locale/en-GB";
 import { sv } from "date-fns/locale/sv";
@@ -140,14 +140,60 @@ function yesterdayPartLabel(date: Date, language: AppLanguage): string {
 }
 
 export type HumanSavedTime = {
-  /** Primary line for list rows, e.g. "Saved yesterday evening · 22:06". */
+  /** Relative phrase without "Saved" — omitted when only timestamp should show. */
+  comment: string | null;
+  /** Compact date · time; year omitted in the current month. */
+  timestamp: string;
+  /** Full card/search line. */
   primary: string;
   exactTime: string;
   exactDate: string;
 };
 
-function withPrefix(copy: (typeof SAVED_TIME_COPY)[AppLanguage], body: string): string {
-  return `${copy.prefix} ${body}`;
+function formatCardTimestamp(
+  savedAt: Date,
+  now: Date,
+  language: AppLanguage,
+): string {
+  const exactTime = formatExactTime(savedAt, language);
+  const dateLabel = isSameMonth(savedAt, now)
+    ? formatExactDateWithoutYear(savedAt, language)
+    : formatExactDate(savedAt, language);
+  return `${dateLabel} · ${exactTime}`;
+}
+
+function formatCardComment(
+  savedAt: Date,
+  now: Date,
+  language: AppLanguage,
+): string | null {
+  const copy = SAVED_TIME_COPY[language];
+  const minutesAgo = differenceInMinutes(now, savedAt);
+  const daysAgo = differenceInCalendarDays(now, savedAt);
+
+  if (daysAgo >= 7) return null;
+
+  if (minutesAgo < 1) return copy.justNow;
+  if (minutesAgo < 10) return copy.momentsAgo;
+  if (minutesAgo < 60) return copy.minutesAgo(minutesAgo);
+  if (daysAgo === 0) return dayPartLabel(savedAt, language);
+  if (daysAgo === 1) return yesterdayPartLabel(savedAt, language);
+  if (daysAgo < 7) {
+    return `${weekdayLabel(savedAt, language)} ${dayPartLabel(savedAt, language)}`;
+  }
+
+  return null;
+}
+
+function joinCardLine(comment: string | null, timestamp: string): string {
+  return comment ? `${comment} · ${timestamp}` : timestamp;
+}
+
+function capitalizeFirst(text: string, language: AppLanguage): string {
+  const trimmed = text.trim();
+  if (!trimmed) return trimmed;
+  const locale = language === "sv" ? "sv-SE" : "en-GB";
+  return trimmed.charAt(0).toLocaleUpperCase(locale) + trimmed.slice(1);
 }
 
 /**
@@ -159,83 +205,16 @@ export function getHumanSavedTime(
   now: Date = new Date(),
   language: AppLanguage = APP_LANGUAGE,
 ): HumanSavedTime {
-  const copy = SAVED_TIME_COPY[language];
-  const minutesAgo = differenceInMinutes(now, savedAt);
-  const daysAgo = differenceInCalendarDays(now, savedAt);
   const exactTime = formatExactTime(savedAt, language);
   const exactDate = formatExactDate(savedAt, language);
-
-  if (minutesAgo < 1) {
-    return {
-      primary: withPrefix(copy, copy.justNow),
-      exactTime,
-      exactDate,
-    };
-  }
-
-  if (minutesAgo < 10) {
-    return {
-      primary: withPrefix(copy, copy.momentsAgo),
-      exactTime,
-      exactDate,
-    };
-  }
-
-  if (minutesAgo < 60) {
-    return {
-      primary: withPrefix(copy, copy.minutesAgo(minutesAgo)),
-      exactTime,
-      exactDate,
-    };
-  }
-
-  if (daysAgo === 0) {
-    return {
-      primary: withPrefix(copy, copy.sameDay(dayPartLabel(savedAt, language), exactTime)),
-      exactTime,
-      exactDate,
-    };
-  }
-
-  if (daysAgo === 1) {
-    return {
-      primary: withPrefix(
-        copy,
-        copy.yesterday(yesterdayPartLabel(savedAt, language), exactTime),
-      ),
-      exactTime,
-      exactDate,
-    };
-  }
-
-  if (daysAgo < 7) {
-    return {
-      primary: withPrefix(
-        copy,
-        copy.weekday(
-          weekdayLabel(savedAt, language),
-          dayPartLabel(savedAt, language),
-          exactTime,
-        ),
-      ),
-      exactTime,
-      exactDate,
-    };
-  }
-
-  if (isSameYear(savedAt, now)) {
-    return {
-      primary: withPrefix(
-        copy,
-        copy.dateWithTime(formatExactDateWithoutYear(savedAt, language), exactTime),
-      ),
-      exactTime,
-      exactDate,
-    };
-  }
+  const timestamp = formatCardTimestamp(savedAt, now, language);
+  const rawComment = formatCardComment(savedAt, now, language);
+  const comment = rawComment ? capitalizeFirst(rawComment, language) : null;
 
   return {
-    primary: withPrefix(copy, copy.dateWithTime(exactDate, exactTime)),
+    comment,
+    timestamp,
+    primary: joinCardLine(comment, timestamp),
     exactTime,
     exactDate,
   };
@@ -245,7 +224,7 @@ function collectStaticSavedTimePhrases(): string[] {
   const phrases: string[] = [];
   for (const language of ["en", "sv"] as const) {
     const copy = SAVED_TIME_COPY[language];
-    phrases.push(copy.prefix, copy.justNow, copy.momentsAgo);
+    phrases.push(copy.justNow, copy.momentsAgo);
     phrases.push(...Object.values(copy.dayParts));
     phrases.push(...Object.values(copy.yesterdayParts));
   }
@@ -260,8 +239,21 @@ export function getSavedMixTimeSearchText(
   const chunks: string[] = [...collectStaticSavedTimePhrases()];
 
   for (const language of ["en", "sv"] as const) {
-    const { primary, exactDate, exactTime } = getHumanSavedTime(savedAt, now, language);
-    chunks.push(primary, exactDate, exactTime);
+    const copy = SAVED_TIME_COPY[language];
+    const { comment, timestamp, primary, exactDate, exactTime } = getHumanSavedTime(
+      savedAt,
+      now,
+      language,
+    );
+    chunks.push(
+      copy.justNow,
+      copy.momentsAgo,
+      primary,
+      comment ?? "",
+      timestamp,
+      exactDate,
+      exactTime,
+    );
     chunks.push(format(savedAt, "EEEE", { locale: dateFnsLocale(language) }));
     chunks.push(format(savedAt, "MMMM", { locale: dateFnsLocale(language) }));
     chunks.push(format(savedAt, "d MMMM", { locale: dateFnsLocale(language) }));

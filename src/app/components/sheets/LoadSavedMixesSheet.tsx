@@ -100,6 +100,14 @@ const LIST_VALUE: CSSProperties = {
   fontWeight: 600,
   color: c.value,
 };
+const LIST_TIMESTAMP: CSSProperties = {
+  fontSize: "var(--text-ui-xs)",
+  fontWeight: 500,
+  letterSpacing: "0.03em",
+  lineHeight: 1.25,
+  color: c.mutedDimmer,
+  fontVariantNumeric: "tabular-nums",
+};
 
 const SHEET_MARGIN_X = 16;
 const SHEET_MARGIN_TOP = 6;
@@ -300,15 +308,20 @@ function SavedMixRow({
         </p>
 
         <p
-          className="min-w-0 break-words tabular-nums"
+          className="min-w-0 truncate tabular-nums"
           style={{
             ...LIST_MUTED,
             color: c.mutedDimmer,
             gridColumn: "1 / -1",
           }}
-          title={`${savedTime.exactDate}, ${savedTime.exactTime}`}
         >
-          {savedTime.primary}
+          {savedTime.comment ? (
+            <>
+              <span>{savedTime.comment}</span>
+              <span aria-hidden> · </span>
+            </>
+          ) : null}
+          <span style={LIST_TIMESTAMP}>{savedTime.timestamp}</span>
         </p>
       </div>
 
@@ -475,7 +488,9 @@ export function LoadSavedMixesSheet({
   const subtitle =
     mixes.length === 0
       ? "No saved mixes yet"
-      : `${mixes.length} saved · tap ⋯ for actions · hold › to open`;
+      : mixes.length === 1
+        ? "1 saved mix"
+        : `${mixes.length} saved mixes`;
 
   const q = query.trim().toLowerCase();
   const filteredMixes =
