@@ -11,13 +11,13 @@ import {
   RECOMMENDED_MAX_FILL_PERCENT,
   type BucketSelection,
   type BucketSize,
-} from "../bucketTypes";
-import { LongPressProgress, useLongPress, LongPressButton } from "./LongPressButton";
+} from "../../domain/bucket/types";
+import { LongPressProgress, useLongPress, LongPressButton } from "../shared/LongPressButton";
 import {
   DEFAULT_SAND_BULK_DENSITY,
   estimateMixVolume,
   type SandType,
-} from "../mixVolume";
+} from "../../domain/mix/volume";
 import {
   FEATURE_PANEL_BG,
   FEATURE_PANEL_BORDER,
@@ -26,31 +26,20 @@ import {
   FEATURE_VALUE_FONT,
   FEATURE_VALUE_TEXT_CLASS,
   BUCKET_VALUE_STYLE,
-} from "../featureReadout";
+} from "../../presentation/featureReadout";
 import { FeatureReadoutStack } from "./FeatureReadoutStack";
+import { theme } from "../../../theme";
+
+const { colors: c, surfaces: s } = theme;
 
 export {
   DEFAULT_BUCKET_SELECTION,
   DEFAULT_BUCKET_SIZE,
   type BucketSelection,
   type BucketSize,
-} from "../bucketTypes";
+} from "../../domain/bucket/types";
 export const DEFAULT_BUCKET_CAPACITY_LITERS = DEFAULT_BUCKET_SIZE;
 
-const FILL_COLOR = "#9090b8";
-const FILL_COLOR_MUTED = "#686880";
-const FILL_COLOR_FULL = "#c95868";
-const FILL_COLOR_FULL_MUTED = "#8a4558";
-const OUTLINE_COLOR = "rgba(255,255,255,0.32)";
-const LABEL_COLOR = "#8888a8";
-const TITLE_COLOR = "#c0c0e0";
-const TITLE_COLOR_MUTED = "#9898b4";
-const DROPDOWN_MENU_BG = "#3a3a4c";
-const DROPDOWN_MENU_BORDER = "rgba(255,255,255,0.1)";
-const DROPDOWN_MENU_TEXT = "#b8b8d0";
-const DROPDOWN_MENU_TEXT_MUTED = "#686878";
-const DROPDOWN_MENU_LOCKED_LABEL = "#787898";
-const DROPDOWN_MENU_ACTIVE_BG = "rgba(255,255,255,0.07)";
 /** Menu wide enough for size label + ⇣ FORCE FIT on locked rows. */
 const DROPDOWN_MENU_MIN_W = 200;
 
@@ -307,11 +296,11 @@ function BucketSvg({
 
   const fillColor = bucketFull
     ? muted
-      ? FILL_COLOR_FULL_MUTED
-      : FILL_COLOR_FULL
+      ? c.bucketFillFullMuted
+      : c.bucketFillFull
     : muted
-      ? FILL_COLOR_MUTED
-      : FILL_COLOR;
+      ? c.fillMuted
+      : c.fill;
   const showFill = fillRatio > 0.008;
 
   return (
@@ -341,8 +330,8 @@ function BucketSvg({
 
       <path
         d={BODY_PATH}
-        fill="rgba(255,255,255,0.02)"
-        stroke={OUTLINE_COLOR}
+        fill={s.bucketFillEmpty}
+        stroke={c.fillOutline}
         strokeLinejoin="round"
         strokeLinecap="round"
         strokeWidth={strokeWidthPx(STROKE_PX.body, renderW)}
@@ -417,15 +406,15 @@ function BucketSelectOptionRow({
         fontSize: "var(--text-ui-md)",
         fontWeight: active ? 600 : 500,
         letterSpacing: "0.04em",
-        color: DROPDOWN_MENU_TEXT,
+        color: c.dropdownMenuText,
         background: locked
           ? holding
-            ? "#10101e"
+            ? c.inputSurface
             : active
-              ? DROPDOWN_MENU_ACTIVE_BG
+              ? s.dropdownMenuActiveBg
               : "transparent"
           : active
-            ? DROPDOWN_MENU_ACTIVE_BG
+            ? s.dropdownMenuActiveBg
             : "transparent",
         padding: "10px 14px",
         cursor: locked ? "default" : "pointer",
@@ -437,7 +426,7 @@ function BucketSelectOptionRow({
       }}
     >
       {locked && <LongPressProgress progress={progress} inset={10} />}
-      <span style={{ color: locked ? DROPDOWN_MENU_LOCKED_LABEL : DROPDOWN_MENU_TEXT }}>
+      <span style={{ color: locked ? c.dropdownMenuLockedLabel : c.dropdownMenuText }}>
         {label}
       </span>
       {locked && (
@@ -446,7 +435,7 @@ function BucketSelectOptionRow({
             fontSize: "var(--text-ui-sm)",
             fontWeight: 600,
             letterSpacing: "0.1em",
-            color: holding ? TITLE_COLOR : DROPDOWN_MENU_TEXT,
+            color: holding ? c.title : c.dropdownMenuText,
             flexShrink: 0,
             transition: "color 0.15s ease",
           }}
@@ -536,9 +525,9 @@ function BucketSelectDropdown({
           width: "max-content",
           minWidth: menuLayout.minWidth,
           maxWidth: 280,
-          background: DROPDOWN_MENU_BG,
-          border: `1px solid ${DROPDOWN_MENU_BORDER}`,
-          boxShadow: "0 8px 20px rgba(0,0,0,0.4)",
+          background: c.dropdownMenuBg,
+          border: `1px solid ${s.dropdownMenuBorderColor}`,
+          boxShadow: s.shadowDropdown,
         }}
       >
         {options.map((option) => {

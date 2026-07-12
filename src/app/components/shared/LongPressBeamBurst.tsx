@@ -1,8 +1,8 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
+import { theme } from "../../../theme";
 
-const BAR_COLOR = "#9090b8";
-const TRACK_COLOR = "rgba(255,255,255,0.07)";
+const { colors: c, surfaces: s } = theme;
 const FALLBACK_RADIUS = 14;
 /** Above panel chrome inside the beam canvas; sheets use their own canvas at z≈31. */
 export const BEAM_Z = 20;
@@ -95,7 +95,7 @@ function SideBar({
       className="pointer-events-none absolute overflow-hidden"
       style={{ left, top: layout.top, width: barW, height: h, zIndex: BEAM_Z }}
     >
-      <div className="absolute inset-0" style={{ background: TRACK_COLOR }} />
+      <div className="absolute inset-0" style={{ background: s.longPressBeamTrack }} />
       {fillW > 0 && (
         <div
           className="absolute inset-0"
@@ -134,7 +134,7 @@ export function LongPressBeamBurst({
 }) {
   const [layout, setLayout] = useState<Layout | null>(null);
   const [portal, setPortal] = useState<HTMLElement | null>(null);
-  const color = accentColor ?? BAR_COLOR;
+  const color = accentColor ?? c.progress;
 
   useLayoutEffect(() => {
     if (progress <= 0) {

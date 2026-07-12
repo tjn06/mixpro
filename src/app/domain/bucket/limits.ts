@@ -2,9 +2,10 @@ import {
   maxMixLitersForBucket,
   type BucketSelection,
   type BucketSize,
-} from "./bucketTypes";
-import { estimateMixVolume, type SandType } from "./mixVolume";
-import { applyRecipeChange, mixEpoxyGrams, mixSandGrams, type BlendingRecipe } from "./recipe";
+} from "../bucket/types";
+import { estimateMixVolume, type SandType } from "../mix/volume";
+import { applyRecipeChange, mixEpoxyGrams, mixSandGrams } from "../recipe/calc";
+import type { BlendingRecipe } from "../recipe/types";
 
 export function mixLitersFromValues(
   values: number[],

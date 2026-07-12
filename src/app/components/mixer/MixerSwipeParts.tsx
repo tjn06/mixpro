@@ -2,11 +2,11 @@ import {
   cardReadoutNameStyle,
   cardReadoutUnitStyle,
   cardReadoutValueStyle,
-} from "../entityCardStyles";
+} from "../../presentation/entityCardStyles";
 import {
   MIXER_SWIPE_ARROW_IDLE,
   mixerCardLimitFlashBg,
-} from "../mixerSwipeConfig";
+} from "../../presentation/mixerSwipeConfig";
 
 export function MixerCardLimitFlash() {
   return (

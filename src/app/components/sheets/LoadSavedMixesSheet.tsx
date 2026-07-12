@@ -7,31 +7,23 @@ import {
   type CSSProperties,
 } from "react";
 import { format, formatDistanceToNow } from "date-fns";
-import { APP_HEADER_HEIGHT } from "./AppHeader";
-import type { SavedMixSnapshot } from "../types/savedMix";
-import type { BucketSelection } from "../bucketTypes";
-import { LongPressButton } from "./LongPressButton";
-import { DeleteIcon, GoToIcon, RenameIcon } from "./ActionIcons";
-import { useSavedMixesStore } from "../stores/savedMixesStore";
-import { savedMixDisplayName } from "../savedMixDisplay";
+import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
+import type { SavedMixSnapshot } from "../../saved-mixes/types";
+import type { BucketSelection } from "../../domain/bucket/types";
+import { LongPressButton } from "../shared/LongPressButton";
+import { DeleteIcon, GoToIcon, RenameIcon } from "../shared/ActionIcons";
+import { useSavedMixesStore } from "../../saved-mixes/store";
+import { savedMixDisplayName } from "../../saved-mixes/display";
 import { SaveMixNameSheet } from "./SaveMixNameSheet";
+import { theme } from "../../../theme";
 
-const ROW_BG = "rgba(13, 13, 28, 0.52)";
-const DIVIDER = "1px solid rgba(255, 255, 255, 0.08)";
-const PANEL_BORDER = "1.5px solid rgba(255,255,255,0.14)";
-const TITLE_COLOR = "#c0c0e0";
-const MUTED = "#8888a8";
-const VALUE_COLOR = "#c4c4dc";
-const DIM = "#686880";
-const PANEL_FADE = "rgba(13, 13, 28, 0.88)";
+const { colors: c, borders: b, surfaces: s } = theme;
 
 /** Title block — slightly higher than before. */
 const HEADER_HEIGHT_FRAC = "32%";
 const TITLE_SIZE = 30;
 const SUBTITLE_SIZE = 14;
 const SEARCH_H = 40;
-const SEARCH_BG = "rgba(255,255,255,0.06)";
-const SEARCH_BORDER = "1px solid rgba(255,255,255,0.10)";
 
 /** Clearance from scroll-area bottom to thumb stop line (above close footer). */
 const THUMB_BOTTOM_INSET = 20;
@@ -58,19 +50,17 @@ const LIST_TITLE: CSSProperties = {
   ...LIST_TEXT,
   fontFamily: "'Outfit', sans-serif",
   fontWeight: 600,
-  color: TITLE_COLOR,
+  color: c.title,
 };
 const LIST_MUTED: CSSProperties = {
   ...LIST_TEXT,
-  color: MUTED,
+  color: c.muted,
 };
 const LIST_VALUE: CSSProperties = {
   ...LIST_TEXT,
   fontWeight: 600,
-  color: VALUE_COLOR,
+  color: c.value,
 };
-
-const OUTSIDE_DIM = "rgba(5, 5, 16, 0.28)";
 
 const SHEET_MARGIN_X = 16;
 const SHEET_MARGIN_TOP = 6;
@@ -110,8 +100,8 @@ function ScrollFade({
         height: FADE_H,
         ...(isTop ? { top: 0 } : { bottom: 0 }),
         background: isTop
-          ? `linear-gradient(to bottom, ${PANEL_FADE} 0%, transparent 100%)`
-          : `linear-gradient(to top, ${PANEL_FADE} 0%, transparent 100%)`,
+          ? `linear-gradient(to bottom, ${s.sheetPanelFade} 0%, transparent 100%)`
+          : `linear-gradient(to top, ${s.sheetPanelFade} 0%, transparent 100%)`,
       }}
     />
   );
@@ -168,7 +158,7 @@ function SavedMixRow({
         <div className="min-w-0 flex items-center" style={{ height: "100%" }}>
           <span
             className="truncate tabular-nums min-w-0"
-            style={{ ...LIST_MUTED, color: DIM, lineHeight: 1 }}
+            style={{ ...LIST_MUTED, color: c.mutedDimmer, lineHeight: 1 }}
           >
             {format(savedDate, "d MMM yyyy · HH:mm")}
           </span>
@@ -404,7 +394,7 @@ export function LoadSavedMixesSheet({
           aria-label="Close saved mixes"
           className="load-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
           onClick={() => onOpenChange(false)}
-          style={{ backgroundColor: OUTSIDE_DIM }}
+          style={{ backgroundColor: s.outsideDimLight }}
         />
 
         <div
@@ -415,8 +405,8 @@ export function LoadSavedMixesSheet({
             marginTop: SHEET_MARGIN_TOP,
             marginBottom: SHEET_MARGIN_BOTTOM,
             borderRadius: SHEET_RADIUS,
-            border: PANEL_BORDER,
-            boxShadow: "0 20px 56px rgba(0, 0, 0, 0.32)",
+            border: b.panel,
+            boxShadow: s.shadowSheet,
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -437,7 +427,7 @@ export function LoadSavedMixesSheet({
                 fontSize: TITLE_SIZE,
                 fontWeight: 600,
                 letterSpacing: "-0.02em",
-                color: TITLE_COLOR,
+                color: c.title,
                 lineHeight: 1.1,
                 margin: 0,
               }}
@@ -450,7 +440,7 @@ export function LoadSavedMixesSheet({
                 fontSize: SUBTITLE_SIZE,
                 fontWeight: 500,
                 letterSpacing: "0.01em",
-                color: MUTED,
+                color: c.muted,
                 marginTop: 6,
                 lineHeight: 1.4,
                 maxWidth: 280,
@@ -471,9 +461,9 @@ export function LoadSavedMixesSheet({
                   boxSizing: "border-box",
                   borderRadius: 14,
                   padding: "0 14px",
-                  background: SEARCH_BG,
-                  border: SEARCH_BORDER,
-                  color: TITLE_COLOR,
+                  background: s.searchBg,
+                  border: b.search,
+                  color: c.title,
                   fontFamily: "'Outfit', sans-serif",
                   fontSize: 14,
                   fontWeight: 500,
@@ -511,8 +501,8 @@ export function LoadSavedMixesSheet({
                   <div
                     className="rounded-2xl flex flex-col items-center justify-center text-center px-6 py-12"
                     style={{
-                      background: ROW_BG,
-                      border: PANEL_BORDER,
+                      background: s.loadSheetRow,
+                      border: b.panel,
                     }}
                   >
                     <p style={{ ...LIST_MUTED, letterSpacing: "0.04em", lineHeight: 1.45 }}>
@@ -531,7 +521,7 @@ export function LoadSavedMixesSheet({
                             if (isFirst) firstItemRef.current = el;
                             if (isLast) lastItemRef.current = el;
                           }}
-                          style={index < filteredMixes.length - 1 ? { borderBottom: DIVIDER } : undefined}
+                          style={index < filteredMixes.length - 1 ? { borderBottom: b.divider } : undefined}
                         >
                           <SavedMixRow
                             mix={mix}
@@ -561,9 +551,9 @@ export function LoadSavedMixesSheet({
               style={{
                 width: CLOSE_SIZE,
                 height: CLOSE_SIZE,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: MUTED,
+                background: s.sheetCancelBg,
+                border: b.sheetBtn,
+                color: c.muted,
               }}
             >
               <CloseIcon />

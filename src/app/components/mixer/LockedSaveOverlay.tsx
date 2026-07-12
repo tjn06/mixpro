@@ -1,15 +1,15 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
-import { LongPressButton } from "./LongPressButton";
-import { SavedIcon, SaveIcon } from "./ActionIcons";
+import { LongPressButton } from "../shared/LongPressButton";
+import { SavedIcon, SaveIcon } from "../shared/ActionIcons";
 import {
   crossfadeLayerStyles,
   LOCKED_ACTION_ICON_SIZE,
   PRIMARY_BORDER,
   TRANSPARENT_BTN,
-} from "./lockedActionCrossfade";
-import { localRect, saveCoverTargetRect, type Rect } from "./lockedOverlayMeasure";
+} from "../shared/lockedActionCrossfade";
+import { localRect, saveCoverTargetRect, type Rect } from "../shared/lockedOverlayMeasure";
 
-export { LOCKED_ACTION_ICON_SIZE } from "./lockedActionCrossfade";
+export { LOCKED_ACTION_ICON_SIZE } from "../shared/lockedActionCrossfade";
 
 type OverlayState = {
   show: boolean;

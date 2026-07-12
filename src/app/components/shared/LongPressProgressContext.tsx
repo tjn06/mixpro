@@ -6,8 +6,11 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
+import { theme } from "../../../theme";
 
-export const DEFAULT_LONG_PRESS_PROGRESS_COLOR = "#9090b8";
+const { colors: c, surfaces: s } = theme;
+
+export const DEFAULT_LONG_PRESS_PROGRESS_COLOR = c.progress;
 
 /** Fixed slot under header — always reserved so long-press UI never shifts layout. */
 export const HEADER_CONFIRM_SLOT_H = 30;
@@ -85,7 +88,7 @@ export function LongPressHeaderBar() {
           style={{
             height: 2,
             borderRadius: 1,
-            background: "rgba(255,255,255,0.08)",
+            background: s.longPressTrack,
             overflow: "hidden",
           }}
         >
@@ -104,7 +107,7 @@ export function LongPressHeaderBar() {
           style={{
             fontSize: "var(--text-ui-sm)",
             letterSpacing: "0.08em",
-            color: "#a0a0c0",
+            color: c.secondary,
             marginTop: 7,
             lineHeight: 1.3,
             fontWeight: 500,

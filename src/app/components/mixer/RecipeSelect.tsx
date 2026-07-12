@@ -1,15 +1,12 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { BlendingRecipe } from "../recipeTypes";
-import { recipeMenuLabel } from "../recipeTypes";
-import { HEADER_NAV_LONG_PRESS_MS, LongPressProgress, useLongPress } from "./LongPressButton";
+import type { BlendingRecipe } from "../../domain/recipe/types";
+import { recipeMenuLabel } from "../../domain/recipe/types";
+import { HEADER_NAV_LONG_PRESS_MS, LongPressProgress, useLongPress } from "../shared/LongPressButton";
 import { RecipeHeaderSubline, RecipeHeaderSublineValue } from "./RecipeZoneMeta";
+import { theme } from "../../../theme";
 
-const DROPDOWN_MENU_BG = "#3a3a4c";
-const DROPDOWN_MENU_BORDER = "rgba(255,255,255,0.1)";
-const DROPDOWN_MENU_TEXT = "#b8b8d0";
-const DROPDOWN_MENU_TEXT_MUTED = "#686878";
-const DROPDOWN_MENU_ACTIVE_BG = "rgba(255,255,255,0.07)";
+const { colors: c, surfaces: s } = theme;
 const DROPDOWN_MENU_MIN_W = 200;
 
 function ChevronDown({ open }: { open: boolean }) {
@@ -76,12 +73,12 @@ function RecipeOptionRow({
         fontSize: "var(--text-ui-md)",
         fontWeight: active ? 600 : 500,
         letterSpacing: "0.04em",
-        color: active ? DROPDOWN_MENU_TEXT_MUTED : DROPDOWN_MENU_TEXT,
+        color: active ? c.dropdownMenuTextMuted : c.dropdownMenuText,
         background: holding
-          ? "#10101e"
+          ? c.inputSurface
           : active
-            ? DROPDOWN_MENU_ACTIVE_BG
-            : DROPDOWN_MENU_BG,
+            ? s.dropdownMenuActiveBg
+            : c.dropdownMenuBg,
         padding: "10px 14px",
         cursor: active ? "default" : "pointer",
         whiteSpace: "nowrap",
@@ -172,9 +169,9 @@ export function RecipeSelect({
           width: "max-content",
           minWidth: menuLayout.minWidth,
           maxWidth: 280,
-          background: DROPDOWN_MENU_BG,
-          border: `1px solid ${DROPDOWN_MENU_BORDER}`,
-          boxShadow: "0 8px 20px rgba(0,0,0,0.4)",
+          background: c.dropdownMenuBg,
+          border: `1px solid ${s.dropdownMenuBorderColor}`,
+          boxShadow: s.shadowDropdown,
         }}
       >
         {recipes.map((recipe) => {

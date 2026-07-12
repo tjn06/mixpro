@@ -1,13 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
-import { LongPressButton } from "./LongPressButton";
+import { LongPressButton } from "../shared/LongPressButton";
 import { LockIcon } from "./RecBatchPanel";
 import {
   crossfadeLayerStyles,
   LOCKED_ACTION_ICON_SIZE,
   PRIMARY_BORDER,
   TRANSPARENT_BTN,
-} from "./lockedActionCrossfade";
-import { localRect, unlockExpandedRect, type Rect } from "./lockedOverlayMeasure";
+} from "../shared/lockedActionCrossfade";
+import { localRect, unlockExpandedRect, type Rect } from "../shared/lockedOverlayMeasure";
 
 type OverlayState = {
   show: boolean;

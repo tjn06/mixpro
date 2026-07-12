@@ -1,6 +1,6 @@
 import React, { type RefObject } from "react";
-import { LongPressButton } from "./LongPressButton";
-import { LoadIcon, SavedIcon, SaveIcon } from "./ActionIcons";
+import { LongPressButton } from "../shared/LongPressButton";
+import { LoadIcon, SavedIcon, SaveIcon } from "../shared/ActionIcons";
 import {
   FEATURE_PANEL_BG,
   FEATURE_PANEL_BORDER,
@@ -10,7 +10,7 @@ import {
   FEATURE_VALUE_COLOR,
   FEATURE_VALUE_COLOR_MUTED,
   FEATURE_VALUE_FONT,
-} from "../featureReadout";
+} from "../../presentation/featureReadout";
 
 const REC_BATCH_LABEL = "Rec. batch";
 

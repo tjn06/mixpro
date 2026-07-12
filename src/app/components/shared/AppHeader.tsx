@@ -1,5 +1,8 @@
 import React, { type ReactNode } from "react";
 import { LongPressButton } from "./LongPressButton";
+import { theme } from "../../../theme";
+
+const { colors: c, borders: b, surfaces: s } = theme;
 
 /** Sheet / overlay top offset — keep in sync with `--header-h` in app-layout.css. */
 export const APP_HEADER_HEIGHT = "var(--header-h)";
@@ -41,9 +44,9 @@ function HeaderIconButton({
       style={{
         width: 40,
         height: 40,
-        background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
-        border: active ? "1px solid rgba(255,255,255,0.28)" : "1px solid rgba(255,255,255,0.07)",
-        color: active ? "#c0c0e0" : "#8888a8",
+        background: active ? s.headerBtnBgActive : s.headerBtnBg,
+        border: active ? b.headerBtnActive : b.headerBtn,
+        color: active ? c.title : c.muted,
         opacity: disabled ? 0.35 : 1,
         cursor: disabled ? "default" : "pointer",
       }}
@@ -91,7 +94,7 @@ export function AppHeader({
               fontFamily: "'Outfit', sans-serif",
               fontSize: "var(--text-header-title)",
               fontWeight: 600,
-              color: "#c0c0e0",
+              color: c.title,
               letterSpacing: "0.06em",
               lineHeight: 1.2,
             }}

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { theme } from "../../../theme";
 
 /** Save / lock icons scale up in locked expanded overlays. */
 export const LOCKED_ACTION_ICON_SIZE = 24;
@@ -10,7 +11,7 @@ export const CONTENT_FADE_IN_MS = 140;
 export const EXPAND_CONTENT_DELAY_MS = 200;
 export const COLLAPSE_CONTENT_DELAY_MS = 60;
 
-export const PRIMARY_BORDER = "1.5px solid rgba(255,255,255,0.12)";
+export const PRIMARY_BORDER = theme.borders.panelPrimary;
 
 export function contentLayerTransition(
   expanded: boolean,

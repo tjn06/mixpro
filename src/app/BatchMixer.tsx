@@ -1,20 +1,20 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, forwardRef, type CSSProperties } from "react";
-import { LongPressButton, LongPressEdgeProvider } from "./components/LongPressButton";
-import { AppHeader } from "./components/AppHeader";
+import { LongPressButton, LongPressEdgeProvider } from "./components/shared/LongPressButton";
+import { AppHeader } from "./components/shared/AppHeader";
 import {
   MixBucket,
   DEFAULT_BUCKET_SELECTION,
   type BucketSelection,
-} from "./components/MixBucket";
-import { reconcileBucketSelection, maxMixLitersForBucket, isBucketAtMaxFill, type BucketSize } from "./bucketTypes";
-import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues } from "./bucketLimits";
-import { estimateMixVolume, type SandType } from "./mixVolume";
-import { LongPressProgressProvider } from "./components/LongPressProgressContext";
+} from "./components/mixer/MixBucket";
+import { reconcileBucketSelection, maxMixLitersForBucket, isBucketAtMaxFill, type BucketSize } from "./domain/bucket/types";
+import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues } from "./domain/bucket/limits";
+import { estimateMixVolume, type SandType } from "./domain/mix/volume";
+import { LongPressProgressProvider } from "./components/shared/LongPressProgressContext";
 import {
   gramsFromSnapshot,
   snapshotValuesFromGrams,
   useSavedMixesStore,
-} from "./stores/savedMixesStore";
+} from "./saved-mixes/store";
 import {
   applyRecipeChange,
   driverIdFromIndex,
@@ -26,27 +26,39 @@ import {
   mixSandGrams,
   recipeBinderSum,
   recipeIngredientIndexes,
-} from "./recipe";
-import { RecipeSelect } from "./components/RecipeSelect";
-import { RecipeHeaderSubline, RecipeHeaderSublineValue } from "./components/RecipeZoneMeta";
-import { RecBatchPanel, LockIcon } from "./components/RecBatchPanel";
-import { LockedSaveOverlay } from "./components/LockedSaveOverlay";
-import { LockedUnlockOverlay } from "./components/LockedUnlockOverlay";
-import { LoadSavedMixesSheet } from "./components/LoadSavedMixesSheet";
-import { SaveMixNameSheet } from "./components/SaveMixNameSheet";
-import type { SavedMixSnapshot } from "./types/savedMix";
-import { UndoIcon } from "./components/ActionIcons";
-import type { BlendingRecipe } from "./recipeTypes";
-import { PRESET_RECIPES, recipeMenuLabel } from "./recipeTypes";
-import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "./mixEntities";
-import { BatchTotalsScreen } from "./components/BatchTotalsScreen";
+} from "./domain/recipe/calc";
+import { RecipeSelect } from "./components/mixer/RecipeSelect";
+import { RecipeHeaderSubline, RecipeHeaderSublineValue } from "./components/mixer/RecipeZoneMeta";
+import { RecBatchPanel, LockIcon } from "./components/mixer/RecBatchPanel";
+import { LockedSaveOverlay } from "./components/mixer/LockedSaveOverlay";
+import { LockedUnlockOverlay } from "./components/mixer/LockedUnlockOverlay";
+import { LoadSavedMixesSheet } from "./components/sheets/LoadSavedMixesSheet";
+import { SaveMixNameSheet } from "./components/sheets/SaveMixNameSheet";
+import type { SavedMixSnapshot } from "./saved-mixes/types";
+import { UndoIcon } from "./components/shared/ActionIcons";
+import type { BlendingRecipe } from "./domain/recipe/types";
+import { PRESET_RECIPES, recipeMenuLabel } from "./domain/recipe/types";
+import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "./domain/mix/entities";
+import { BatchTotalsScreen } from "./components/batch-totals/BatchTotalsScreen";
 import {
   CARD_NAME_WEIGHT,
   CARD_UNIT_WEIGHT,
+  CARD_VALUE_INACTIVE,
+  CARD_UNIT_INACTIVE,
+  ENTITY_SURFACE_IDLE,
   cardReadoutNameStyle,
   cardReadoutUnitStyle,
   cardReadoutValueStyle,
-} from "./entityCardStyles";
+  entityCardChrome,
+  CARD_CHROME_TRANSITION,
+} from "./presentation/entityCardStyles";
+import { theme } from "../theme";
+import {
+  mixerEntityActiveRing,
+  mixerEntityCardShadow,
+} from "./presentation/mixerSwipeConfig";
+
+const { colors: c, borders: b, surfaces: s, chrome: ch } = theme;
 
 // All values stored internally in grams — index order: TOTAL, A, B, TIX, SAND
 // PARAMS imported from mixEntities.ts
@@ -91,15 +103,14 @@ const SWIPE_STEPS_PER_DRAG = 10;
 const SWIPE_DRAG_MARGIN_PX = 24;
 const SWIPE_MAX_DY_PER_FRAME = 48;
 /** Idle swipe affordances — brighter so vertical drag reads before touch. */
-const SWIPE_ARROW_IDLE  = "#585878";
-const SWIPE_STEP_IDLE   = "#424260";
+const SWIPE_ARROW_IDLE = c.swipeArrowIdle;
+const SWIPE_STEP_IDLE = c.swipeStepIdle;
 const DRAG_OVERLAY_Z    = 4;
 const CARD_CONNECTOR_Z  = 3;
 const DRAG_FOCUS_Z      = 5;
 const DRAG_OVERLAY_HIDE_MS = 320;
 const DRAG_BLOCKED_MS = 120;
-const CARD_LIMIT_FLASH_TINT_PCT = 50;
-const BUCKET_LIMIT_COLOR = "#c95868";
+const BUCKET_LIMIT_COLOR = c.bucketLimit;
 const BUCKET_LIMIT_VIBRATE_MS = [10, 28, 10] as const;
 const LOCK_PANEL_Z      = 6;
 const LOCK_SHIELD_Z     = 5;
@@ -113,17 +124,12 @@ const LOCK_TRANSITION   = `top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, left ${LOCK_EXP
 const LOCK_FADE_TRANSITION = `opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
 const LOCK_TEXT_TRANSITION = `font-size ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, margin-top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, width ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
 
-/** Inactive ingredient card — readable values, muted chrome. */
-const CARD_VALUE_INACTIVE = "#9a9ab4";
-const CARD_UNIT_INACTIVE  = "#787898";
-
 /** Opaque entity surfaces — kept subtle so white readouts stay crisp. */
-const ENTITY_SURFACE_IDLE = "#0d0d1c";
-const SWIPE_SURFACE_BASE  = "#09091a";
-const ENTITY_TINT_LIT_PCT = 8;
-const SWIPE_ZONE_ACTIVE_PCT = 3.5;
-const SWIPE_STRIPE_A_PCT = 2;
-const SWIPE_STRIPE_B_PCT = 0.8;
+const SWIPE_SURFACE_BASE = c.swipeSurfaceBase;
+const ENTITY_TINT_LIT_PCT = ch.entityTintLitPct;
+const SWIPE_ZONE_ACTIVE_PCT = ch.swipeZoneActivePct;
+const SWIPE_STRIPE_A_PCT = ch.swipeStripeAPct;
+const SWIPE_STRIPE_B_PCT = ch.swipeStripeBPct;
 
 function surfaceTint(color: string, pct: number, base: string): string {
   return `color-mix(in srgb, ${color} ${pct}%, ${base})`;
@@ -138,20 +144,20 @@ function swipeZoneActive(color: string): string {
 }
 
 function swipeZoneStripe(even: boolean): string {
-  return surfaceTint("#ffffff", even ? SWIPE_STRIPE_A_PCT : SWIPE_STRIPE_B_PCT, SWIPE_SURFACE_BASE);
+  return surfaceTint(c.white, even ? SWIPE_STRIPE_A_PCT : SWIPE_STRIPE_B_PCT, SWIPE_SURFACE_BASE);
 }
 
 /** Locked recipe ratio cards (read-only, above mix cards). */
-const RECIPE_RATIO_BG = "transparent";
-const RECIPE_RATIO_BORDER_COLOR = "rgba(255,255,255,0.14)";
+const RECIPE_RATIO_BG = s.transparent;
+const RECIPE_RATIO_BORDER_COLOR = b.recipeRatio;
 const RECIPE_CONTAINER_PX = "4px 0";
 /** High-contrast readouts on dark recipe cards — not pure white. */
-const RECIPE_VALUE_COLOR = "#c4c4dc";
-const RECIPE_VALUE_COLOR_MUTED = "#9898b4";
-const RECIPE_ID_COLOR = "#8888a8";
-const RECIPE_ID_COLOR_MUTED = "#686878";
-const RECIPE_UNIT_COLOR = "#707088";
-const RECIPE_COLON_COLOR = "#484860";
+const RECIPE_VALUE_COLOR = c.recipeValue;
+const RECIPE_VALUE_COLOR_MUTED = c.recipeValueMuted;
+const RECIPE_ID_COLOR = c.recipeId;
+const RECIPE_ID_COLOR_MUTED = c.recipeIdMuted;
+const RECIPE_UNIT_COLOR = c.recipeUnit;
+const RECIPE_COLON_COLOR = c.recipeColon;
 
 function RecipeRatioGapSeparator() {
   return (
@@ -364,34 +370,8 @@ function RecipeMetaCard({
   );
 }
 
-/** Subtle selected-state glow in the entity's theme color. */
-function entityCardShadow(color: string): string {
-  return `0 0 14px ${color}55, 0 0 6px ${color}40`;
-}
-
-/** Entity border — 1.5px always (no layout shift). */
-const ENTITY_BORDER_W = "1.5px";
-const ENTITY_BORDER_ACTIVE = "aa";
 /** Connector line between active card and swipe area. */
-const CONNECTOR_W = 2.5;
-
-function entityActiveRing(color: string): string {
-  return `0 0 0 0.5px ${color}${ENTITY_BORDER_ACTIVE}`;
-}
-
-function entityCardChrome(color: string, lit: boolean): { border: string; boxShadow: string } {
-  const border = lit
-    ? `${ENTITY_BORDER_W} solid ${color}${ENTITY_BORDER_ACTIVE}`
-    : `${ENTITY_BORDER_W} solid ${RECIPE_RATIO_BORDER_COLOR}`;
-  if (!lit) return { border, boxShadow: "none" };
-  return {
-    border,
-    // 0.5px ring + glow reads as ~2px active stroke without changing border-width
-    boxShadow: `${entityActiveRing(color)}, ${entityCardShadow(color)}`,
-  };
-}
-
-const CARD_CHROME_TRANSITION = "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, transform 0.1s ease-out";
+const CONNECTOR_W = ch.connectorWidth;
 
 function CardLimitFlash() {
   return (
@@ -399,7 +379,7 @@ function CardLimitFlash() {
       aria-hidden
       className="absolute inset-0 rounded-xl pointer-events-none"
       style={{
-        background: surfaceTint(BUCKET_LIMIT_COLOR, CARD_LIMIT_FLASH_TINT_PCT, "transparent"),
+        background: surfaceTint(BUCKET_LIMIT_COLOR, ch.cardLimitFlashTintPct, "transparent"),
         zIndex: 2,
       }}
     />
@@ -502,7 +482,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
     ...style,
   };
   const nameColor = color;
-  const valueColor = cardLit ? "#ffffff" : CARD_VALUE_INACTIVE;
+  const valueColor = cardLit ? c.white : CARD_VALUE_INACTIVE;
   const barOpacity = cardLit ? 1 : 0.4;
 
   if (expanded) {
@@ -1154,7 +1134,7 @@ export function BatchMixer({
           data-beam-canvas
           className="app-frame relative flex flex-col overflow-hidden select-none"
           style={{
-            background: "#07070f",
+            background: c.appBackground,
             fontFamily: "'DM Mono', monospace",
           }}
         >
@@ -1172,7 +1152,7 @@ export function BatchMixer({
             width: CONNECTOR_W,
             height: line.y2 - line.y1,
             background: line.active
-              ? `${line.color}${ENTITY_BORDER_ACTIVE}`
+              ? `${line.color}${ch.entityBorderActiveSuffix}`
               : RECIPE_RATIO_BORDER_COLOR,
             zIndex: dragFocus && !isLocked && line.active ? DRAG_FOCUS_Z : CARD_CONNECTOR_Z,
             transition: "top 0.2s ease, left 0.2s ease, height 0.2s ease, background-color 0.2s ease, z-index 0s",
@@ -1363,7 +1343,7 @@ export function BatchMixer({
                     unit={p.isKg ? "kg" : "g"}
                     centered
                     nameColor={p.color}
-                    valueColor={cardLit ? "#ffffff" : CARD_VALUE_INACTIVE}
+                    valueColor={cardLit ? c.white : CARD_VALUE_INACTIVE}
                     unitColor={CARD_UNIT_INACTIVE}
                   />
                 </button>
@@ -1391,10 +1371,10 @@ export function BatchMixer({
           style={{
             height: "var(--swipe-h)",
             minHeight: 120,
-            border: `${ENTITY_BORDER_W} solid ${col}${ENTITY_BORDER_ACTIVE}`,
+            border: `${ch.entityBorderWidth} solid ${col}${ch.entityBorderActiveSuffix}`,
             boxShadow: dragFocus && !isLocked
-              ? `${entityActiveRing(col)}, ${entityCardShadow(col)}`
-              : entityActiveRing(col),
+              ? `${mixerEntityActiveRing(col)}, ${mixerEntityCardShadow(col)}`
+              : mixerEntityActiveRing(col),
             background: SWIPE_SURFACE_BASE,
             transition: CARD_CHROME_TRANSITION,
           }}
@@ -1416,7 +1396,7 @@ export function BatchMixer({
                   flex: zone.weight,
                   zIndex: 1,
                   background: isColAct ? swipeZoneActive(col) : swipeZoneStripe(zi % 2 === 0),
-                  borderRight: zi < ZONES.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                  borderRight: zi < ZONES.length - 1 ? b.swipeColumn : "none",
                   padding: "10px 4px",
                 }}
               >
@@ -1538,7 +1518,7 @@ export function BatchMixer({
           className="absolute inset-0"
           style={{
             zIndex: DRAG_OVERLAY_Z,
-            background: `color-mix(in srgb, ${col} 10%, rgba(5, 5, 16, 0.68) 90%)`,
+            background: `color-mix(in srgb, ${col} 10%, ${s.overlayHint} 90%)`,
             pointerEvents: "auto",
             transition: "opacity 0.15s ease",
           }}

@@ -1,6 +1,9 @@
 import React, { forwardRef, useRef, useState, useCallback, createContext, useContext, type CSSProperties, type PointerEvent, type RefObject, type ReactNode } from "react";
 import { useLongPressProgressReporter } from "./LongPressProgressContext";
 import { BEAM_Z, LongPressBeamBurst } from "./LongPressBeamBurst";
+import { theme } from "../../../theme";
+
+const { colors: c, surfaces: s } = theme;
 
 const BUTTON_OVER_BEAM_Z = BEAM_Z + 8;
 
@@ -35,13 +38,13 @@ export const HEADER_NAV_LONG_PRESS_MS = 1000;
 const MOVE_THRESHOLD = 10;
 const LEFT_PROGRESS_W = 3;
 const PROGRESS_INSET = 5;
-const DEFAULT_PROGRESS_COLOR = "#9090b8";
+const DEFAULT_PROGRESS_COLOR = c.progress;
 
-const ACTION_PRIMARY_LABEL   = "#8888a8";
-const ACTION_SECONDARY_LABEL = "#707090";
-const ACTION_COMPACT_LABEL   = "#747494";
-const ACTION_DISABLED_LABEL  = "#404058";
-const ACTION_HOLDING_LABEL   = "#9090b8";
+const ACTION_PRIMARY_LABEL = c.actionPrimaryLabel;
+const ACTION_SECONDARY_LABEL = c.actionSecondaryLabel;
+const ACTION_COMPACT_LABEL = c.actionCompactLabel;
+const ACTION_DISABLED_LABEL = c.actionDisabledLabel;
+const ACTION_HOLDING_LABEL = c.actionHoldingLabel;
 
 export type UseLongPressOptions = {
   accentColor?: string;
@@ -155,7 +158,7 @@ export function LongPressProgress({
         className="absolute inset-x-0 bottom-0 pointer-events-none"
         style={{
           height: `${progress * 100}%`,
-          background: accentColor ? `${accentColor}14` : "rgba(255,255,255,0.04)",
+          background: accentColor ? `${accentColor}14` : s.longPressFill,
         }}
       />
     </>
@@ -231,10 +234,10 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
     ? ACTION_DISABLED_LABEL
     : holding
       ? isHeader
-        ? "#c0c0e0"
+        ? c.title
         : ACTION_HOLDING_LABEL
       : isHeader
-        ? "#8888a8"
+        ? c.muted
         : variant === "primary"
           ? ACTION_PRIMARY_LABEL
           : compact
@@ -245,13 +248,13 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
 
   const idleBackground = isHeader
     ? active
-      ? "rgba(255,255,255,0.12)"
-      : "rgba(255,255,255,0.04)"
+      ? s.headerBtnBgActive
+      : s.headerBtnBg
     : active
-      ? "rgba(255,255,255,0.08)"
-      : "#0d0d1c";
+      ? s.sheetBtnBgActive
+      : c.entitySurfaceIdle;
 
-  const holdingBackground = "#10101e";
+  const holdingBackground = c.holdingSurface;
 
   const borderWidth = isHeader ? 1 : 1.5;
   const borderAlpha = holding

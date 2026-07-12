@@ -1,9 +1,7 @@
 import { useId, type ReactNode } from "react";
+import { theme } from "../../../theme";
 
-const RECIPE_ID_COLOR = "#8888a8";
-const RECIPE_ID_COLOR_MUTED = "#686878";
-const RECIPE_VALUE_COLOR = "#c4c4dc";
-const RECIPE_VALUE_COLOR_MUTED = "#9898b4";
+const { colors: c } = theme;
 
 export function RecipeZoneMeta({
   label,
@@ -39,7 +37,7 @@ export function RecipeZoneMeta({
             fontSize: "var(--text-recipe-meta-label)",
             letterSpacing: "0.12em",
             fontWeight: 700,
-            color: muted ? RECIPE_ID_COLOR_MUTED : RECIPE_ID_COLOR,
+            color: muted ? c.recipeIdMuted : c.recipeId,
             lineHeight: 1.1,
           }}
         >
@@ -68,7 +66,7 @@ export function RecipeZoneMetaValue({
         fontSize: "var(--text-recipe-select)",
         letterSpacing: "0.04em",
         fontWeight: 600,
-        color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
+        color: muted ? c.recipeValueMuted : c.recipeValue,
         lineHeight: 1.15,
       }}
     >
@@ -104,7 +102,7 @@ export function RecipeHeaderSublineValue({
   return (
     <span
       className={`app-header__subline-label truncate max-w-full text-center ${className}`}
-      style={{ color: muted ? RECIPE_VALUE_COLOR_MUTED : undefined }}
+      style={{ color: muted ? c.recipeValueMuted : undefined }}
     >
       {children}
     </span>

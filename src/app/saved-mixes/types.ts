@@ -1,5 +1,5 @@
-import type { BucketSelection } from "../bucketTypes";
-import type { SandType } from "../mixVolume";
+import type { BucketSelection } from "../domain/bucket/types";
+import type { SandType } from "../domain/mix/volume";
 
 /** Persisted snapshot of a saved mix. */
 export interface SavedMixSnapshot {

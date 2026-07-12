@@ -96,8 +96,8 @@
   flex-shrink: 0;
   position: relative;
   padding: var(--header-pad-top) var(--header-inset-x) var(--header-pad-bottom);
-  background: #0a0a14;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ui-header-bg, #0a0a14);
+  border-bottom: var(--ui-border-header, 1px solid rgba(255, 255, 255, 0.08));
 }
 
 .app-header-sub {
@@ -109,7 +109,7 @@
   min-height: var(--header-subline-h);
   padding: var(--header-subline-py) var(--header-inset-x);
   background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: var(--ui-border-header-sub, 1px solid rgba(255, 255, 255, 0.05));
 }
 
 .app-header__subline {
@@ -125,7 +125,7 @@
   font-size: var(--text-recipe-meta-value);
   letter-spacing: 0.04em;
   font-weight: 600;
-  color: #9898b4;
+  color: var(--ui-header-subline, #9898b4);
   line-height: 1.15;
 }
 

@@ -1,13 +1,14 @@
 import type { CSSProperties } from "react";
+import { theme } from "../../theme";
 
 /** Shared panel chrome — bucket + rec. batch columns. */
-export const FEATURE_PANEL_BG = "transparent";
-export const FEATURE_PANEL_BORDER = "1.5px solid rgba(255,255,255,0.14)";
+export const FEATURE_PANEL_BG = theme.surfaces.transparent;
+export const FEATURE_PANEL_BORDER = theme.borders.panel;
 
-export const FEATURE_TITLE_COLOR = "#8888a8";
-export const FEATURE_TITLE_COLOR_MUTED = "#686878";
-export const FEATURE_VALUE_COLOR = "#c4c4dc";
-export const FEATURE_VALUE_COLOR_MUTED = "#9898b4";
+export const FEATURE_TITLE_COLOR = theme.colors.muted;
+export const FEATURE_TITLE_COLOR_MUTED = theme.colors.mutedDim;
+export const FEATURE_VALUE_COLOR = theme.colors.value;
+export const FEATURE_VALUE_COLOR_MUTED = theme.colors.recipeValueMuted;
 
 export const FEATURE_TITLE_STYLE: CSSProperties = {
   fontSize: "var(--text-feature-title)",

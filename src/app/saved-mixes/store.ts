@@ -1,10 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { DEFAULT_BUCKET_SELECTION } from "../bucketTypes";
-import type { BucketSelection } from "../bucketTypes";
-import type { SandType } from "../mixVolume";
-import { resolveSavedMixMetaName } from "../savedMixDisplay";
-import type { SavedMixSnapshot } from "../types/savedMix";
+import { DEFAULT_BUCKET_SELECTION } from "../domain/bucket/types";
+import type { BucketSelection } from "../domain/bucket/types";
+import type { SandType } from "../domain/mix/volume";
+import { resolveSavedMixMetaName } from "./display";
+import type { SavedMixSnapshot } from "./types";
 
 const STORAGE_KEY = "mixmate-saved-mixes";
 const LEGACY_STORAGE_KEY = "blending-mixes";

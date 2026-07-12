@@ -1,29 +1,30 @@
 import type { CSSProperties } from "react";
+import { theme } from "../../theme";
 
 export const CARD_NAME_WEIGHT = 700;
 export const CARD_UNIT_WEIGHT = 600;
 
-export const CARD_VALUE_INACTIVE = "#9a9ab4";
-export const CARD_UNIT_INACTIVE = "#787898";
-export const ENTITY_SURFACE_IDLE = "#0d0d1c";
-export const RECIPE_RATIO_BORDER_COLOR = "rgba(255,255,255,0.14)";
+/** @deprecated Prefer theme.colors.* — kept for existing imports. */
+export const CARD_VALUE_INACTIVE = theme.colors.cardValueInactive;
+/** @deprecated Prefer theme.colors.* — kept for existing imports. */
+export const CARD_UNIT_INACTIVE = theme.colors.cardUnitInactive;
+/** @deprecated Prefer theme.colors.* — kept for existing imports. */
+export const ENTITY_SURFACE_IDLE = theme.colors.entitySurfaceIdle;
+/** @deprecated Prefer theme.borders.* — kept for existing imports. */
+export const RECIPE_RATIO_BORDER_COLOR = theme.borders.recipeRatio;
 
-const ENTITY_BORDER_W = "1.5px";
-const ENTITY_BORDER_ACTIVE = "aa";
-
-export const CARD_CHROME_TRANSITION =
-  "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, transform 0.1s ease-out";
+export const CARD_CHROME_TRANSITION = theme.chrome.cardChromeTransition;
 
 function entityCardShadow(color: string): string {
   return `0 0 14px ${color}55, 0 0 6px ${color}40`;
 }
 
 function entityActiveRing(color: string): string {
-  return `0 0 0 0.5px ${color}${ENTITY_BORDER_ACTIVE}`;
+  return `0 0 0 0.5px ${color}${theme.chrome.entityBorderActiveSuffix}`;
 }
 
 function entitySurfaceLit(color: string): string {
-  return `color-mix(in srgb, ${color} 8%, ${ENTITY_SURFACE_IDLE})`;
+  return `color-mix(in srgb, ${color} ${theme.chrome.entityTintLitPct}%, ${ENTITY_SURFACE_IDLE})`;
 }
 
 export function entityCardChrome(
@@ -31,8 +32,8 @@ export function entityCardChrome(
   lit: boolean,
 ): { border: string; boxShadow: string; background: string } {
   const border = lit
-    ? `${ENTITY_BORDER_W} solid ${color}${ENTITY_BORDER_ACTIVE}`
-    : `${ENTITY_BORDER_W} solid ${RECIPE_RATIO_BORDER_COLOR}`;
+    ? `${theme.chrome.entityBorderWidth} solid ${color}${theme.chrome.entityBorderActiveSuffix}`
+    : `${theme.chrome.entityBorderWidth} solid ${RECIPE_RATIO_BORDER_COLOR}`;
   if (!lit) {
     return { border, boxShadow: "none", background: ENTITY_SURFACE_IDLE };
   }
@@ -51,7 +52,7 @@ export function entityCardReadoutStyle(nameColor: string, lit: boolean): {
 } {
   return {
     nameColor,
-    valueColor: lit ? "#ffffff" : CARD_VALUE_INACTIVE,
+    valueColor: lit ? theme.colors.white : CARD_VALUE_INACTIVE,
     unitColor: CARD_UNIT_INACTIVE,
     barOpacity: lit ? 1 : 0.4,
   };

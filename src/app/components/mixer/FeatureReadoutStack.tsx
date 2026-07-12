@@ -4,7 +4,7 @@ import {
   FEATURE_TITLE_COLOR_MUTED,
   FEATURE_TITLE_STYLE,
   FEATURE_VALUE_SLOT_STYLE,
-} from "../featureReadout";
+} from "../../presentation/featureReadout";
 
 export function FeatureReadoutStack({
   label,

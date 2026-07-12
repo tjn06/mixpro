@@ -6,7 +6,7 @@ import {
   cardReadoutValueStyle,
   entityCardChrome,
   entityCardReadoutStyle,
-} from "../entityCardStyles";
+} from "../../presentation/entityCardStyles";
 
 export interface EntityMixCardProps {
   id: string;

@@ -1,22 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
-import type { BlendingRecipe } from "../recipeTypes";
+import type { BlendingRecipe } from "../../domain/recipe/types";
 import {
   batchReportCommentPlaceholder,
   batchTotalsReportSubject,
   buildBatchTotalsReportText,
   type BatchReportLanguage,
-} from "../batchTotalsReport";
+} from "../../domain/batch-totals/report";
 import {
   copyTextToClipboard,
   openMailWithReport,
   openSmsWithReport,
-} from "../batchTotalsShare";
-import { useAppShellCompact } from "../hooks/useAppShellCompact";
-import { CopyIcon, MailIcon, MessageIcon, RenameIcon, SavedIcon } from "./ActionIcons";
+} from "../../domain/batch-totals/share";
+import { useAppShellCompact } from "../../hooks/useAppShellCompact";
+import { CopyIcon, MailIcon, MessageIcon, RenameIcon, SavedIcon } from "../shared/ActionIcons";
+import { theme } from "../../../theme";
 
-const PANEL_BORDER = "1.5px solid rgba(255,255,255,0.14)";
-const TITLE_COLOR = "#c0c0e0";
-const OUTSIDE_DIM = "rgba(5, 5, 16, 0.42)";
+const { colors: c, borders: b, surfaces: s } = theme;
 const SHEET_MARGIN_X = 16;
 const SHEET_MARGIN_BOTTOM = 16;
 const SHEET_RADIUS = 28;
@@ -54,8 +53,8 @@ function ReportLanguageToggle({
       aria-label="Report language"
       style={{
         padding: 2,
-        background: "rgba(255,255,255,0.04)",
-        border: PANEL_BORDER,
+        background: s.shareTabGroupBg,
+        border: b.panel,
       }}
     >
       {options.map(({ id, label }) => {
@@ -98,7 +97,7 @@ function CommentInput({
   value: string;
   onChange: (next: string) => void;
   placeholder: string;
-  inputRef?: RefObject<HTMLInputElement | null>;
+  inputRef?: RefObject<HTMLInputElement>;
 }) {
   return (
     <input
@@ -111,10 +110,10 @@ function CommentInput({
       className="flex-1 min-w-0 rounded-xl outline-none w-full"
       style={{
         boxSizing: "border-box",
-        background: "rgba(255,255,255,0.04)",
-        border: PANEL_BORDER,
+        background: s.shareTabGroupBg,
+        border: b.panel,
         padding: "10px 12px",
-        color: TITLE_COLOR,
+        color: c.title,
         fontSize: "var(--text-share-sm)",
         fontFamily: "'Outfit', sans-serif",
         fontWeight: 500,
@@ -163,7 +162,7 @@ function BatchTotalsCommentSheet({
         aria-label="Close"
         className="mixer-input-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
         onClick={() => onOpenChange(false)}
-        style={{ backgroundColor: OUTSIDE_DIM }}
+        style={{ backgroundColor: s.outsideDimMedium }}
       />
       <div
         className="mixer-input-sheet-panel relative flex flex-col min-w-0 overflow-hidden"
@@ -172,8 +171,8 @@ function BatchTotalsCommentSheet({
           marginRight: SHEET_MARGIN_X,
           marginBottom: SHEET_MARGIN_BOTTOM,
           borderRadius: SHEET_RADIUS,
-          border: PANEL_BORDER,
-          background: "#0d0d1c",
+          border: b.panel,
+          background: c.entitySurfaceIdle,
           padding: `${SHEET_PAD_Y}px ${SHEET_PAD_X}px`,
           gap: 12,
         }}
@@ -190,9 +189,9 @@ function BatchTotalsCommentSheet({
           className="w-full rounded-xl transition-colors duration-150"
           style={{
             height: DONE_H,
-            background: "rgba(255,255,255,0.08)",
-            border: PANEL_BORDER,
-            color: TITLE_COLOR,
+            background: s.shareSubmitBg,
+            border: b.panel,
+            color: c.title,
             fontSize: "var(--text-share-sm)",
             fontFamily: "'Outfit', sans-serif",
             fontWeight: 600,
@@ -226,9 +225,9 @@ function ShareIconButton({
       className="relative flex flex-col items-center justify-center overflow-hidden touch-none transition-colors duration-150 rounded-xl flex-1 h-full min-w-0"
       style={{
         cursor: "pointer",
-        background: active ? "rgba(255,255,255,0.08)" : "#0d0d1c",
-        border: `1.5px solid rgba(255,255,255,${active ? 0.22 : 0.12})`,
-        color: active ? "#9090b8" : "#8888a8",
+        background: active ? s.shareSubmitBg : c.entitySurfaceIdle,
+        border: active ? b.sharePanelActive : b.sharePanelIdle,
+        color: active ? c.fill : c.muted,
         minHeight: 32,
       }}
     >

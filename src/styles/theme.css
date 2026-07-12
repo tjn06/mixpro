@@ -1,6 +1,6 @@
 /**
  * Minimal global base styles.
- * App chrome colors live in component inline styles / app-layout.css (future: src/theme/*.ts).
+ * App chrome colors live in src/theme/*.ts (injected as --ui-* on :root).
  */
 :root {
   --font-size: 16px;
@@ -13,7 +13,7 @@
 
   body {
     margin: 0;
-    background: #07070f;
-    color: #e2e2f0;
+    background: var(--ui-app-bg, #07070f);
+    color: var(--ui-value, #e2e2f0);
   }
 }

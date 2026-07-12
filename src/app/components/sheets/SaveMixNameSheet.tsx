@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { APP_HEADER_HEIGHT } from "./AppHeader";
-import { LongPressButton } from "./LongPressButton";
-import { SaveIcon } from "./ActionIcons";
-import { savedMixDisplayName } from "../savedMixDisplay";
-import type { SavedMixSnapshot } from "../types/savedMix";
+import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
+import { LongPressButton } from "../shared/LongPressButton";
+import { SaveIcon } from "../shared/ActionIcons";
+import { savedMixDisplayName } from "../../saved-mixes/display";
+import type { SavedMixSnapshot } from "../../saved-mixes/types";
+import { theme } from "../../../theme";
 
-const PANEL_BORDER = "1.5px solid rgba(255,255,255,0.14)";
-const TITLE_COLOR = "#c0c0e0";
-const MUTED = "#8888a8";
-const LIST_SIZE = 12;
-const OUTSIDE_DIM = "rgba(5, 5, 16, 0.28)";
+const { colors: c, borders: b, surfaces: s } = theme;
 
 /** Match LoadSavedMixesSheet chrome. */
 const HEADER_HEIGHT_FRAC = "32%";
@@ -23,8 +20,6 @@ const SHEET_PAD_X = 20;
 const CLOSE_SIZE = 44;
 const FOOTER_H = 64;
 const INPUT_H = 40;
-const INPUT_BG = "rgba(255,255,255,0.06)";
-const INPUT_BORDER = "1px solid rgba(255,255,255,0.10)";
 const CONFIRM_H = 44;
 /** Apple-ish rhythm: 20pt section gaps, 8pt label-to-control. */
 const CONTENT_TOP = 20;
@@ -98,7 +93,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
         aria-label="Close"
         className="load-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
         onClick={() => onOpenChange(false)}
-        style={{ backgroundColor: OUTSIDE_DIM }}
+        style={{ backgroundColor: s.outsideDimLight }}
       />
 
       <div
@@ -110,8 +105,8 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
           marginTop: SHEET_MARGIN_TOP,
           marginBottom: SHEET_MARGIN_BOTTOM,
           borderRadius: SHEET_RADIUS,
-          border: PANEL_BORDER,
-          boxShadow: "0 20px 56px rgba(0, 0, 0, 0.32)",
+          border: b.panel,
+          boxShadow: s.shadowSheet,
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -132,7 +127,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
               fontSize: TITLE_SIZE,
               fontWeight: 600,
               letterSpacing: "-0.02em",
-              color: TITLE_COLOR,
+              color: c.title,
               lineHeight: 1.1,
               margin: 0,
             }}
@@ -145,7 +140,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
               fontSize: SUBTITLE_SIZE,
               fontWeight: 500,
               letterSpacing: "0.01em",
-              color: MUTED,
+              color: c.muted,
               marginTop: 6,
               lineHeight: 1.4,
               maxWidth: 280,
@@ -168,7 +163,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
               <p
                 style={{
                   fontSize: LIST_SIZE,
-                  color: MUTED,
+                  color: c.muted,
                   letterSpacing: "0.05em",
                   marginBottom: LABEL_GAP,
                   textAlign: "center",
@@ -182,7 +177,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                   fontFamily: "'Outfit', sans-serif",
                   fontSize: LIST_SIZE + 1,
                   fontWeight: 600,
-                  color: TITLE_COLOR,
+                  color: c.title,
                   textAlign: "center",
                 }}
               >
@@ -211,7 +206,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                   style={{
                     display: "block",
                     fontSize: LIST_SIZE,
-                    color: MUTED,
+                    color: c.muted,
                     letterSpacing: "0.05em",
                     marginBottom: LABEL_GAP,
                     textAlign: "center",
@@ -233,9 +228,9 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                     boxSizing: "border-box",
                     borderRadius: 14,
                     padding: "0 14px",
-                    background: INPUT_BG,
-                    border: INPUT_BORDER,
-                    color: TITLE_COLOR,
+                    background: s.inputBg,
+                    border: b.input,
+                    color: c.title,
                     fontFamily: "'Outfit', sans-serif",
                     fontSize: 14,
                     fontWeight: 500,
@@ -271,9 +266,9 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
             style={{
               width: CLOSE_SIZE,
               height: CLOSE_SIZE,
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: MUTED,
+              background: s.sheetCancelBg,
+              border: b.sheetBtn,
+              color: c.muted,
             }}
           >
             <CloseIcon />

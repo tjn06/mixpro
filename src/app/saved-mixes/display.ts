@@ -1,4 +1,4 @@
-import type { SavedMixSnapshot } from "./types/savedMix";
+import type { SavedMixSnapshot } from "./types";
 
 /** Custom label when set; otherwise the saved recipe name. */
 export function savedMixDisplayName(mix: SavedMixSnapshot): string {

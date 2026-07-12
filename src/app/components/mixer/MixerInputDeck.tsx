@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "../mixEntities";
+import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "../../domain/mix/entities";
 import {
   CARD_CHROME_TRANSITION,
   CARD_UNIT_INACTIVE,
   CARD_VALUE_INACTIVE,
   ENTITY_SURFACE_IDLE,
   entityCardChrome,
-} from "../entityCardStyles";
+} from "../../presentation/entityCardStyles";
 import {
   MIXER_DRAG_FOCUS_Z,
   MIXER_ENTITY_BORDER_ACTIVE,
@@ -18,16 +18,19 @@ import {
   mixerEntityCardShadow,
   mixerSwipeZoneActive,
   mixerSwipeZoneStripe,
-} from "../mixerSwipeConfig";
-import { useMixerSwipeAdjust } from "../hooks/useMixerSwipeAdjust";
-import type { BlendingRecipe } from "../recipeTypes";
-import type { BucketSelection } from "../bucketTypes";
-import type { SandType } from "../mixVolume";
+} from "../../presentation/mixerSwipeConfig";
+import { useMixerSwipeAdjust } from "../../hooks/useMixerSwipeAdjust";
+import type { BlendingRecipe } from "../../domain/recipe/types";
+import type { BucketSelection } from "../../domain/bucket/types";
+import type { SandType } from "../../domain/mix/volume";
 import {
   MixerCardLimitFlash,
   MixerCardReadout,
   MixerSwipeChevronStack,
 } from "./MixerSwipeParts";
+import { theme } from "../../../theme";
+
+const { colors: c, borders: b } = theme;
 
 function entitySurfaceLit(color: string): string {
   return `color-mix(in srgb, ${color} 8%, ${ENTITY_SURFACE_IDLE})`;
@@ -133,7 +136,7 @@ export function MixerInputDeck({
                 unit={p.isKg ? "kg" : "g"}
                 centered
                 nameColor={p.color}
-                valueColor={cardLit ? "#ffffff" : CARD_VALUE_INACTIVE}
+                valueColor={cardLit ? c.white : CARD_VALUE_INACTIVE}
                 unitColor={CARD_UNIT_INACTIVE}
               />
             </button>
@@ -187,7 +190,7 @@ export function MixerInputDeck({
                     : mixerSwipeZoneStripe(zi % 2 === 0),
                   borderRight:
                     zi < MIXER_SWIPE_ZONES.length - 1
-                      ? "1px solid rgba(255,255,255,0.04)"
+                      ? b.swipeColumn
                       : "none",
                   padding: "10px 4px",
                 }}

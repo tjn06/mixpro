@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
-import type { BucketSelection, BucketSize } from "../bucketTypes";
-import { isBucketAtMaxFill } from "../bucketTypes";
+import type { BucketSelection, BucketSize } from "../domain/bucket/types";
+import { isBucketAtMaxFill } from "../domain/bucket/types";
 import {
   enforceBucketLimitOnChange,
   mixLitersFromValues,
-} from "../bucketLimits";
-import type { SandType } from "../mixVolume";
+} from "../domain/bucket/limits";
+import type { SandType } from "../domain/mix/volume";
 import {
   MIXER_DRAG_BLOCKED_MS,
   MIXER_DRAG_OVERLAY_HIDE_MS,
@@ -16,9 +16,9 @@ import {
   MIXER_SWIPE_STEPS_PER_DRAG,
   MIXER_SWIPE_ZONES,
   mixerZoneIndexFromX,
-} from "../mixerSwipeConfig";
-import { applyRecipeChange, driverIdFromIndex } from "../recipe";
-import type { BlendingRecipe } from "../recipeTypes";
+} from "../presentation/mixerSwipeConfig";
+import { applyRecipeChange, driverIdFromIndex } from "../domain/recipe/calc";
+import type { BlendingRecipe } from "../domain/recipe/types";
 
 export interface UseMixerSwipeAdjustOptions {
   recipe: BlendingRecipe;

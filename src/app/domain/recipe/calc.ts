@@ -1,4 +1,4 @@
-import type { BlendingRecipe } from "./recipeTypes";
+import type { BlendingRecipe } from "./types";
 
 /** Param ids that can drive a locked-ratio recalculation. */
 export type MixDriverId = "TOTAL" | "A" | "B" | "TIX" | "SAND";

@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
-import type { BlendingRecipe } from "../recipeTypes";
-import type { BucketSelection } from "../bucketTypes";
-import type { SandType } from "../mixVolume";
-import { MixerInputDeck } from "./MixerInputDeck";
+import type { BlendingRecipe } from "../../domain/recipe/types";
+import type { BucketSelection } from "../../domain/bucket/types";
+import type { SandType } from "../../domain/mix/volume";
+import { MixerInputDeck } from "../mixer/MixerInputDeck";
+import { theme } from "../../../theme";
 
-const PANEL_BORDER = "1.5px solid rgba(255,255,255,0.14)";
-const TITLE_COLOR = "#c0c0e0";
-const MUTED = "#8888a8";
-const OUTSIDE_DIM = "rgba(5, 5, 16, 0.42)";
+const { colors: c, borders: b, surfaces: s } = theme;
 
 const SHEET_MARGIN_X = 16;
 const SHEET_MARGIN_BOTTOM = 16;
@@ -88,7 +86,7 @@ export function MixerInputSheet({
         aria-label="Close"
         className="mixer-input-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
         onClick={() => onOpenChange(false)}
-        style={{ backgroundColor: OUTSIDE_DIM }}
+        style={{ backgroundColor: s.outsideDimMedium }}
       />
 
       <div
@@ -98,9 +96,9 @@ export function MixerInputSheet({
           right: SHEET_MARGIN_X,
           bottom: SHEET_MARGIN_BOTTOM,
           borderRadius: SHEET_RADIUS,
-          border: PANEL_BORDER,
-          boxShadow: "0 -8px 48px rgba(0, 0, 0, 0.45), 0 20px 56px rgba(0, 0, 0, 0.32)",
-          background: "rgba(13, 13, 28, 0.94)",
+          border: b.panel,
+          boxShadow: s.shadowMixerInputSheet,
+          background: s.sheetPanel,
           padding: `${SHEET_PAD_Y}px ${SHEET_PAD_X}px`,
           gap: 16,
         }}
@@ -114,7 +112,7 @@ export function MixerInputSheet({
                 fontFamily: "'Outfit', sans-serif",
                 fontSize: 22,
                 fontWeight: 600,
-                color: TITLE_COLOR,
+                color: c.title,
                 letterSpacing: "-0.02em",
                 lineHeight: 1.15,
                 margin: 0,
@@ -126,7 +124,7 @@ export function MixerInputSheet({
               <p
                 style={{
                   fontSize: 12,
-                  color: MUTED,
+                  color: c.muted,
                   letterSpacing: "0.04em",
                   lineHeight: 1.35,
                   marginTop: 6,
@@ -145,9 +143,9 @@ export function MixerInputSheet({
             style={{
               width: 36,
               height: 36,
-              background: "rgba(255,255,255,0.06)",
-              color: "#a8a8c4",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: s.mixerInputSecondaryBg,
+              color: c.secondaryMuted,
+              border: b.inputSubtle,
             }}
           >
             <CloseIcon />
@@ -171,13 +169,13 @@ export function MixerInputSheet({
           className="w-full rounded-xl transition-all duration-200 active:scale-[0.98]"
           style={{
             height: DONE_H,
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            color: TITLE_COLOR,
+            background: s.mixerInputPrimaryBg,
+            border: b.inputActive,
+            color: c.title,
             fontSize: 14,
             fontWeight: 600,
             letterSpacing: "0.08em",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+            boxShadow: s.insetHighlightSubtle,
           }}
         >
           Apply

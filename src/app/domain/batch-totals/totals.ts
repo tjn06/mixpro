@@ -1,4 +1,4 @@
-import { formatMixAmount, MIX_PARAMS } from "./mixEntities";
+import { formatMixAmount, MIX_PARAMS } from "../mix/entities";
 
 /** Combined total for one ingredient: N identical batches + optional complement. */
 export function batchIngredientTotalGrams(
