@@ -39,6 +39,9 @@ export const SHEET_FIELD_LABEL: CSSProperties = {
 
 export const SHEET_FIELD_INPUT_CLASS = "sheet-field-input w-full outline-none";
 
+/** iOS Safari skips focus-zoom at 16px and above. */
+export const SHEET_FIELD_INPUT_FONT_SIZE = 16;
+
 /** Flat inset field styling — distinct from raised sheet action buttons. */
 export function sheetFieldInputStyle(overrides?: CSSProperties): CSSProperties {
   return {
@@ -50,7 +53,7 @@ export function sheetFieldInputStyle(overrides?: CSSProperties): CSSProperties {
     border: b.input,
     color: c.title,
     fontFamily: "'Outfit', sans-serif",
-    fontSize: "var(--text-ui-md)",
+    fontSize: SHEET_FIELD_INPUT_FONT_SIZE,
     fontWeight: 500,
     letterSpacing: "0.03em",
     cursor: "text",
