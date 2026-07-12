@@ -9,8 +9,7 @@ import {
 import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import type { BucketSelection } from "../../domain/bucket/types";
-import { LongPressButton } from "../shared/LongPressButton";
-import { CollapseActionsIcon, DeleteIcon, ExpandActionsIcon, GoToIcon, RenameIcon } from "../shared/ActionIcons";
+import { CollapseActionsIcon, DeleteIcon, ExpandActionsIcon, GoToIcon, RenameIcon, CloseIcon } from "../shared/ActionIcons";
 import { useSavedMixesStore } from "../../saved-mixes/store";
 import { savedMixDisplayName } from "../../saved-mixes/display";
 import { getHumanSavedTime, getSavedMixTimeSearchText } from "../../saved-mixes/humanSavedTime";
@@ -22,6 +21,7 @@ import {
   SHEET_TITLE,
   sheetFieldInputStyle,
 } from "./sheetChrome";
+import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
 import { theme } from "../../../theme";
 
 const { colors: c, borders: b, surfaces: s } = theme;
@@ -114,8 +114,6 @@ const SHEET_MARGIN_TOP = 6;
 const SHEET_MARGIN_BOTTOM = 16;
 const SHEET_RADIUS = 28;
 const SHEET_PAD_X = 20;
-const CLOSE_SIZE = 44;
-const FOOTER_H = 64;
 
 function bucketLabel(selection: BucketSelection): string {
   return selection === "none" ? "No bucket" : `${selection} L bucket`;
@@ -127,14 +125,6 @@ function formatTotalKg(grams: number): string {
 
 function mixDetailLine(mix: SavedMixSnapshot): string {
   return [mix.recipeName, bucketLabel(mix.bucketSelection)].join(" • ");
-}
-
-function CloseIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-      <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
-  );
 }
 
 function ScrollFade({
@@ -224,29 +214,26 @@ function SavedMixSwipeStrip({
       </button>
 
       {open ? (
-        <LongPressButton
-          label="Delete"
-          confirmAction="DELETE MIX"
-          onLongPress={onDelete}
-          progressVariant="fill"
-          accentColor={c.bucketLimit}
-          icon={<DeleteIcon size={ACTION_ICON} />}
-          compact
-          className="saved-mix-swipe-cell saved-mix-swipe-cell--r1c2 h-full w-full shrink-0 rounded-none"
+        <button
+          type="button"
+          aria-label="Delete"
+          className="saved-mix-swipe-cell saved-mix-swipe-cell--r1c2 h-full w-full shrink-0 rounded-none transition-colors duration-150"
           style={cellR1C2}
-        />
+          onClick={onDelete}
+        >
+          <DeleteIcon size={ACTION_ICON} />
+        </button>
       ) : null}
 
-      <LongPressButton
-        label="Open"
-        confirmAction="LOAD MIX"
-        onLongPress={onOpen}
-        progressVariant="fill"
-        icon={<GoToIcon size={ACTION_ICON} />}
-        compact
-        className="saved-mix-swipe-cell saved-mix-swipe-cell--r2c1 h-full w-full shrink-0 rounded-none"
+      <button
+        type="button"
+        aria-label="Open"
+        className="saved-mix-swipe-cell saved-mix-swipe-cell--r2c1 h-full w-full shrink-0 rounded-none transition-colors duration-150"
         style={cellR2C1}
-      />
+        onClick={onOpen}
+      >
+        <GoToIcon size={ACTION_ICON} />
+      </button>
 
       {open ? (
         <button
@@ -649,26 +636,16 @@ export function LoadSavedMixesSheet({
             </div>
           </div>
 
-          <footer
-            className="shrink-0 flex items-center justify-center relative z-[11]"
-            style={{ height: FOOTER_H, background: s.loadSheetPanel }}
-          >
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => onOpenChange(false)}
-              className="flex items-center justify-center rounded-full shrink-0 transition-colors duration-150"
-              style={{
-                width: CLOSE_SIZE,
-                height: CLOSE_SIZE,
-                background: s.sheetCancelBg,
-                border: b.sheetBtn,
-                color: c.muted,
-              }}
-            >
-              <CloseIcon />
-            </button>
-          </footer>
+          <SheetFooter
+            buttons={[
+              {
+                key: "close",
+                label: "Close",
+                icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
+                onClick: () => onOpenChange(false),
+              },
+            ]}
+          />
         </div>
       </div>
 

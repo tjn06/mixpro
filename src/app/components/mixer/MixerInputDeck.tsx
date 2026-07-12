@@ -1,3 +1,4 @@
+import { useCallback, useRef } from "react";
 import type { ReactNode } from "react";
 import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "../../domain/mix/entities";
 import {
@@ -20,6 +21,10 @@ import {
   mixerSwipeZoneStripe,
 } from "../../presentation/mixerSwipeConfig";
 import { useMixerSwipeAdjust } from "../../hooks/useMixerSwipeAdjust";
+import {
+  mixerCardConnectorStyle,
+  useMixerCardConnectors,
+} from "../../hooks/useMixerCardConnectors";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import type { BucketSelection } from "../../domain/bucket/types";
 import type { SandType } from "../../domain/mix/volume";
@@ -83,11 +88,37 @@ export function MixerInputDeck({
     disabled,
   });
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const getParamColor = useCallback((pi: number) => PARAMS[pi].color, []);
+  const { connectorLines } = useMixerCardConnectors({
+    containerRef,
+    cardRefs,
+    swipeAreaRef,
+    entityIndexes,
+    active,
+    enabled: !disabled,
+    getParamColor,
+    remeasureKey: values,
+  });
+
   const activeParam = PARAMS[active];
   const col = activeParam.color;
 
   return (
-    <div className={`flex flex-col min-w-0 ${className}`} style={{ gap: "var(--section-gap)" }}>
+    <div
+      ref={containerRef}
+      className={`relative flex flex-col min-w-0 ${className}`}
+      style={{ gap: "var(--section-gap)" }}
+    >
+      {connectorLines.map((line, i) => (
+        <div
+          key={i}
+          aria-hidden
+          style={mixerCardConnectorStyle(line, dragFocus, !disabled)}
+        />
+      ))}
+
       <div className="flex min-w-0" style={{ gap: "var(--section-gap)" }}>
         {entityIndexes.map((pi) => {
           const p = PARAMS[pi];
@@ -99,6 +130,9 @@ export function MixerInputDeck({
           return (
             <button
               key={p.id}
+              ref={(el) => {
+                cardRefs.current[pi] = el;
+              }}
               type="button"
               disabled={disabled}
               onClick={() => onActiveChange(pi)}

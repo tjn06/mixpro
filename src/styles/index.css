@@ -101,6 +101,10 @@
 
 .mixer-input-sheet-panel {
   animation: mixerInputSheetPanelIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  -webkit-backdrop-filter: blur(var(--ui-sheet-panel-blur, 20px))
+    saturate(var(--ui-sheet-panel-saturate, 1.1));
+  backdrop-filter: blur(var(--ui-sheet-panel-blur, 20px))
+    saturate(var(--ui-sheet-panel-saturate, 1.1));
 }
 
 /* Saved mixes — hide scrollbar; fades are overlay gradients on the panel. */

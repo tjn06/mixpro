@@ -13,6 +13,7 @@ import {
   Mail,
   MessageSquare,
   Ellipsis,
+  X,
   type LucideIcon,
 } from "lucide-react";
 
@@ -67,3 +68,5 @@ export const CopyIcon = createActionIcon(Copy);
 export const MailIcon = createActionIcon(Mail);
 
 export const MessageIcon = createActionIcon(MessageSquare);
+
+export const CloseIcon = createActionIcon(X);

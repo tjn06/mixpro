@@ -319,6 +319,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
           ) : null}
           <span className="flex min-w-0 flex-col" style={{ gap: description ? 5 : 0 }}>
             <span
+              className="uppercase"
               style={{
                 fontSize: labelSize,
                 letterSpacing: "0.14em",
@@ -358,9 +359,11 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
           {icon}
         </span>
       ) : (
-        <span style={{
+        <span
+          className="uppercase"
+          style={{
           position: "relative", zIndex: 1,
-          fontSize: labelSize, letterSpacing: compact ? "0" : "0.2em", fontWeight: 500,
+          fontSize: labelSize, letterSpacing: compact ? "0.08em" : "0.12em", fontWeight: 600,
           color: idleLabel,
           lineHeight: 1,
           transition: "color 0.15s ease",

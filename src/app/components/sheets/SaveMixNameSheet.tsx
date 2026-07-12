@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
-import { LongPressButton } from "../shared/LongPressButton";
-import { SaveIcon } from "../shared/ActionIcons";
+import { SaveIcon, RenameIcon, CloseIcon } from "../shared/ActionIcons";
 import { savedMixDisplayName } from "../../saved-mixes/display";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import {
@@ -11,6 +10,7 @@ import {
   SHEET_TITLE,
   sheetFieldInputStyle,
 } from "./sheetChrome";
+import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
 import { theme } from "../../../theme";
 
 const { colors: c, borders: b, surfaces: s } = theme;
@@ -22,10 +22,7 @@ const SHEET_MARGIN_TOP = 6;
 const SHEET_MARGIN_BOTTOM = 16;
 const SHEET_RADIUS = 28;
 const SHEET_PAD_X = 20;
-const CLOSE_SIZE = 44;
-const FOOTER_H = 64;
 const INPUT_H = 40;
-const CONFIRM_H = 44;
 /** Apple-ish rhythm: 20pt section gaps, 8pt label-to-control. */
 const CONTENT_TOP = 20;
 const SECTION_GAP = 20;
@@ -49,14 +46,6 @@ type SaveMixNameSheetProps =
       recipeName?: never;
     };
 
-function CloseIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-      <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
-  );
-}
-
 export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
   const { open, onOpenChange, onConfirm, mode } = props;
   const recipeName = mode === "save" ? props.recipeName : props.mix.recipeName;
@@ -64,7 +53,6 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
     mode === "save" ? recipeName : savedMixDisplayName(props.mix);
 
   const [name, setName] = useState(initialName);
-  const sheetPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) setName(initialName);
@@ -78,7 +66,6 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
       ? "Optional label — recipe name is kept either way"
       : "Clear custom label to show the recipe name again";
   const confirmLabel = mode === "save" ? "Save mix" : "Rename";
-  const confirmAction = mode === "save" ? "SAVE MIX" : "RENAME";
 
   const handleConfirm = () => {
     onConfirm(name);
@@ -102,7 +89,6 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
       />
 
       <div
-        ref={sheetPanelRef}
         className="load-sheet-panel relative flex flex-col min-h-0 flex-1 overflow-hidden"
         style={{
           marginLeft: SHEET_MARGIN_X,
@@ -206,41 +192,32 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                   style={sheetFieldInputStyle({ height: INPUT_H, textAlign: "center" })}
                 />
               </div>
-
-              <LongPressButton
-                label={confirmLabel}
-                confirmAction={confirmAction}
-                onLongPress={handleConfirm}
-                variant="primary"
-                icon={<SaveIcon size={16} />}
-                className="w-full"
-                edgeContainerRef={sheetPanelRef}
-                style={{ height: CONFIRM_H, minHeight: 0 }}
-              />
             </div>
           </div>
         </div>
 
-        <footer
-          className="shrink-0 flex items-center justify-center relative z-[11]"
-          style={{ height: FOOTER_H, background: s.loadSheetPanel }}
-        >
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={() => onOpenChange(false)}
-            className="flex items-center justify-center rounded-full shrink-0 transition-colors duration-150"
-            style={{
-              width: CLOSE_SIZE,
-              height: CLOSE_SIZE,
-              background: s.sheetCancelBg,
-              border: b.sheetBtn,
-              color: c.muted,
-            }}
-          >
-            <CloseIcon />
-          </button>
-        </footer>
+        <SheetFooter
+          buttons={[
+            {
+              key: "close",
+              label: "Close",
+              icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
+              onClick: () => onOpenChange(false),
+            },
+            {
+              key: "confirm",
+              label: confirmLabel,
+              icon:
+                mode === "save" ? (
+                  <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />
+                ) : (
+                  <RenameIcon size={SHEET_FOOTER_ICON_SIZE} />
+                ),
+              onClick: handleConfirm,
+              variant: "primary",
+            },
+          ]}
+        />
       </div>
     </div>
   );

@@ -2,18 +2,23 @@ import { useEffect, useState } from "react";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import type { BucketSelection } from "../../domain/bucket/types";
 import type { SandType } from "../../domain/mix/volume";
+import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
+import { SavedIcon, CloseIcon } from "../shared/ActionIcons";
 import { MixerInputDeck } from "../mixer/MixerInputDeck";
 import { SHEET_SUBTITLE, SHEET_TITLE } from "./sheetChrome";
+import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
 import { theme } from "../../../theme";
 
 const { colors: c, borders: b, surfaces: s } = theme;
 
+/** Match LoadSavedMixesSheet / SaveMixNameSheet chrome. */
+const HEADER_HEIGHT_FRAC = "32%";
 const SHEET_MARGIN_X = 16;
+const SHEET_MARGIN_TOP = 6;
 const SHEET_MARGIN_BOTTOM = 16;
 const SHEET_RADIUS = 28;
 const SHEET_PAD_X = 20;
-const SHEET_PAD_Y = 20;
-const DONE_H = 44;
+const SECTION_GAP = 20;
 
 export interface MixerInputSheetProps {
   open: boolean;
@@ -28,24 +33,7 @@ export interface MixerInputSheetProps {
   onApply: (values: number[]) => void;
 }
 
-function CloseIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden
-    >
-      <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
-  );
-}
-
-/** Bottom overlay with stripped mixer deck — slides up over current screen. */
+/** Full-height sheet below the app header — same footprint as load/save sheets. */
 export function MixerInputSheet({
   open,
   onOpenChange,
@@ -76,8 +64,8 @@ export function MixerInputSheet({
 
   return (
     <div
-      className="absolute inset-0 pointer-events-auto"
-      style={{ zIndex: 35 }}
+      className="absolute inset-x-0 bottom-0 flex flex-col pointer-events-auto"
+      style={{ top: APP_HEADER_HEIGHT, zIndex: 35 }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="mixer-input-sheet-title"
@@ -85,82 +73,91 @@ export function MixerInputSheet({
       <button
         type="button"
         aria-label="Close"
-        className="mixer-input-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
+        className="load-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
         onClick={() => onOpenChange(false)}
-        style={{ backgroundColor: s.outsideDimMedium }}
+        style={{ backgroundColor: s.outsideDimLight }}
       />
 
       <div
-        className="mixer-input-sheet-panel absolute flex flex-col min-w-0 overflow-hidden"
+        className="load-sheet-panel relative flex flex-col min-h-0 flex-1 overflow-hidden"
         style={{
-          left: SHEET_MARGIN_X,
-          right: SHEET_MARGIN_X,
-          bottom: SHEET_MARGIN_BOTTOM,
+          marginLeft: SHEET_MARGIN_X,
+          marginRight: SHEET_MARGIN_X,
+          marginTop: SHEET_MARGIN_TOP,
+          marginBottom: SHEET_MARGIN_BOTTOM,
           borderRadius: SHEET_RADIUS,
           border: b.panel,
-          boxShadow: s.shadowMixerInputSheet,
-          background: s.sheetPanel,
-          padding: `${SHEET_PAD_Y}px ${SHEET_PAD_X}px`,
-          gap: 16,
+          boxShadow: s.shadowSheet,
+          background: s.loadSheetPanel,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 min-w-0">
-          <div className="min-w-0 flex-1">
-            <h2 id="mixer-input-sheet-title" style={SHEET_TITLE}>
-              {title}
-            </h2>
-            {subtitle ? (
-              <p style={{ ...SHEET_SUBTITLE, fontSize: "var(--text-ui-sm)" }}>
-                {subtitle}
-              </p>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={() => onOpenChange(false)}
-            className="shrink-0 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95"
-            style={{
-              width: 36,
-              height: 36,
-              background: s.mixerInputSecondaryBg,
-              color: c.secondaryMuted,
-              border: b.inputSubtle,
-            }}
-          >
-            <CloseIcon />
-          </button>
-        </div>
-
-        <MixerInputDeck
-          recipe={recipe}
-          values={draftValues}
-          entityIndexes={entityIndexes}
-          active={active}
-          onActiveChange={setActive}
-          onValuesChange={setDraftValues}
-          bucketSelection={bucketSelection}
-          sandType={sandType}
-        />
-
-        <button
-          type="button"
-          onClick={handleApply}
-          className="w-full rounded-xl transition-all duration-200 active:scale-[0.98]"
+        <header
+          className="shrink-0 flex flex-col items-center justify-end text-center"
           style={{
-            height: DONE_H,
-            background: s.mixerInputPrimaryBg,
-            border: b.inputActive,
-            color: c.title,
-            fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            boxShadow: s.insetHighlightSubtle,
+            height: HEADER_HEIGHT_FRAC,
+            minHeight: 108,
+            paddingLeft: SHEET_PAD_X,
+            paddingRight: SHEET_PAD_X,
+            paddingBottom: 10,
           }}
         >
-          Apply
-        </button>
+          <h2 id="mixer-input-sheet-title" style={SHEET_TITLE}>
+            {title}
+          </h2>
+          {subtitle ? (
+            <p style={{ ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" }}>
+              {subtitle}
+            </p>
+          ) : null}
+        </header>
+
+        <div
+          className="flex-1 min-h-0 flex flex-col"
+          style={{ paddingLeft: SHEET_PAD_X, paddingRight: SHEET_PAD_X }}
+        >
+          <div className="flex-1 min-h-0" aria-hidden />
+
+          <div className="shrink-0" style={{ paddingBottom: 12 }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: SECTION_GAP,
+              }}
+            >
+              <MixerInputDeck
+                recipe={recipe}
+                values={draftValues}
+                entityIndexes={entityIndexes}
+                active={active}
+                onActiveChange={setActive}
+                onValuesChange={setDraftValues}
+                bucketSelection={bucketSelection}
+                sandType={sandType}
+              />
+            </div>
+          </div>
+        </div>
+
+        <SheetFooter
+          buttons={[
+            {
+              key: "close",
+              label: "Close",
+              icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
+              onClick: () => onOpenChange(false),
+            },
+            {
+              key: "apply",
+              label: "Apply",
+              icon: <SavedIcon size={SHEET_FOOTER_ICON_SIZE} />,
+              onClick: handleApply,
+              variant: "primary",
+              accentColor: c.extraBatchAccent,
+            },
+          ]}
+        />
       </div>
     </div>
   );

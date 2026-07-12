@@ -1,0 +1,130 @@
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  type RefObject,
+} from "react";
+import { RECIPE_RATIO_BORDER_COLOR } from "../presentation/entityCardStyles";
+import {
+  MIXER_DRAG_FOCUS_Z,
+  MIXER_CARD_CONNECTOR_Z,
+} from "../presentation/mixerSwipeConfig";
+import { theme } from "../../theme";
+import type { CSSProperties } from "react";
+
+const { chrome: ch } = theme;
+
+export type CardConnector = {
+  x: number;
+  y1: number;
+  y2: number;
+  color: string;
+  active: boolean;
+};
+
+export function mixerCardConnectorStyle(
+  line: CardConnector,
+  dragFocus: boolean,
+  enabled: boolean,
+): CSSProperties {
+  return {
+    position: "absolute",
+    left: line.x - ch.connectorWidth / 2,
+    top: line.y1,
+    width: ch.connectorWidth,
+    height: line.y2 - line.y1,
+    background: line.active
+      ? `${line.color}${ch.entityBorderActiveSuffix}`
+      : RECIPE_RATIO_BORDER_COLOR,
+    zIndex:
+      dragFocus && enabled && line.active
+        ? MIXER_DRAG_FOCUS_Z
+        : MIXER_CARD_CONNECTOR_Z,
+    transition:
+      "top 0.2s ease, left 0.2s ease, height 0.2s ease, background-color 0.2s ease, z-index 0s",
+    pointerEvents: "none",
+  };
+}
+
+export interface UseMixerCardConnectorsOptions {
+  containerRef: RefObject<HTMLElement | null>;
+  cardRefs: RefObject<(HTMLElement | null)[]>;
+  swipeAreaRef: RefObject<HTMLElement | null>;
+  entityIndexes: number[];
+  active: number;
+  enabled: boolean;
+  getParamColor: (index: number) => string;
+  remeasureKey?: unknown;
+}
+
+export function useMixerCardConnectors({
+  containerRef,
+  cardRefs,
+  swipeAreaRef,
+  entityIndexes,
+  active,
+  enabled,
+  getParamColor,
+  remeasureKey,
+}: UseMixerCardConnectorsOptions) {
+  const [connectorLines, setConnectorLines] = useState<CardConnector[]>([]);
+
+  const measure = useCallback(() => {
+    if (!enabled) {
+      setConnectorLines([]);
+      return;
+    }
+    const root = containerRef.current;
+    const swipeEl = swipeAreaRef.current;
+    if (!root || !swipeEl) {
+      setConnectorLines([]);
+      return;
+    }
+
+    const rootR = root.getBoundingClientRect();
+    const swipeR = swipeEl.getBoundingClientRect();
+    const lines: CardConnector[] = [];
+
+    for (const pi of entityIndexes) {
+      const cardEl = cardRefs.current[pi];
+      if (!cardEl) continue;
+      const cardR = cardEl.getBoundingClientRect();
+      const x = cardR.left + cardR.width / 2 - rootR.left;
+      const y1 = cardR.bottom - rootR.top;
+      const y2 = swipeR.top - rootR.top;
+      if (y2 <= y1) continue;
+      lines.push({
+        x,
+        y1,
+        y2,
+        color: getParamColor(pi),
+        active: active === pi,
+      });
+    }
+
+    setConnectorLines(lines);
+  }, [
+    enabled,
+    containerRef,
+    swipeAreaRef,
+    cardRefs,
+    entityIndexes,
+    active,
+    getParamColor,
+  ]);
+
+  useLayoutEffect(() => {
+    measure();
+  }, [measure, remeasureKey]);
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(root);
+    return () => ro.disconnect();
+  }, [measure, containerRef]);
+
+  return { connectorLines, measure };
+}
