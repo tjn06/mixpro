@@ -71,3 +71,31 @@ export function enforceBucketLimitOnChange(
 
   return clampMixValuesToBucketMax(next, recipe, bucket, sandType);
 }
+
+/** Whether halving (÷2) is allowed — total mix weight must be above zero. */
+export function canHalveMix(values: number[]): boolean {
+  return values[0] > 0;
+}
+
+/** Whether doubling (×2) would reach the full scaled total without bucket clamping. */
+export function canDoubleMix(
+  values: number[],
+  recipe: BlendingRecipe,
+  bucket: BucketSelection,
+  sandType: SandType,
+): boolean {
+  const total = values[0];
+  if (total <= 0) return false;
+
+  const idealTotal = Math.round(total * 2);
+  if (idealTotal <= total) return false;
+
+  const next = enforceBucketLimitOnChange(
+    applyRecipeChange(recipe, "TOTAL", idealTotal),
+    values,
+    recipe,
+    bucket,
+    sandType,
+  );
+  return next[0] >= idealTotal;
+}

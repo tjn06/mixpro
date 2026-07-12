@@ -7,7 +7,7 @@ import {
   type BucketSelection,
 } from "./components/mixer/MixBucket";
 import { reconcileBucketSelection, maxMixLitersForBucket, isBucketAtMaxFill, type BucketSize } from "./domain/bucket/types";
-import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues } from "./domain/bucket/limits";
+import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues, canHalveMix, canDoubleMix } from "./domain/bucket/limits";
 import { estimateMixVolume, type SandType } from "./domain/mix/volume";
 import { LongPressProgressProvider } from "./components/shared/LongPressProgressContext";
 import {
@@ -692,6 +692,12 @@ export function BatchMixer({
   const recommendedTotalGrams = useMemo(
     () => initialMixValues(activeRecipe, recipeBinderSum(activeRecipe, initialBinderSum))[0],
     [activeRecipe, initialBinderSum],
+  );
+
+  const canHalveMixAction = canHalveMix(values);
+  const canDoubleMixAction = useMemo(
+    () => canDoubleMix(values, activeRecipe, bucketSelection, sandType),
+    [values, activeRecipe, bucketSelection, sandType],
   );
 
   const handleRecipeChange = useCallback(
@@ -1449,8 +1455,8 @@ export function BatchMixer({
               />
             </div>
             <div className="flex" style={{ height: "var(--bottom-sub-row-h)", gap: "var(--action-row-gap)" }}>
-              <LongPressButton label="÷2" confirmAction="HALVE MIX" onLongPress={() => scaleMix(0.5)} className="flex-1 h-full" labelSize="var(--text-action-md)" compact />
-              <LongPressButton label="×2" confirmAction="DOUBLE MIX" onLongPress={() => scaleMix(2)} className="flex-1 h-full" labelSize="var(--text-action-md)" compact />
+              <LongPressButton label="÷2" confirmAction="HALVE MIX" onLongPress={() => scaleMix(0.5)} disabled={!canHalveMixAction || isLocked} className="flex-1 h-full" labelSize="var(--text-action-md)" compact />
+              <LongPressButton label="×2" confirmAction="DOUBLE MIX" onLongPress={() => scaleMix(2)} disabled={!canDoubleMixAction || isLocked} className="flex-1 h-full" labelSize="var(--text-action-md)" compact />
             </div>
           </div>
         </div>
