@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
-import { SaveIcon, RenameIcon, CloseIcon } from "../shared/ActionIcons";
+import { CloseIcon, SaveIcon, SaveNewIcon } from "../shared/ActionIcons";
 import { savedMixDisplayName } from "../../saved-mixes/display";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import {
@@ -22,8 +22,6 @@ const SHEET_MARGIN_TOP = 6;
 const SHEET_RADIUS = 28;
 const SHEET_PAD_X = 20;
 const INPUT_H = 40;
-/** Apple-ish rhythm: 20pt section gaps, 8pt label-to-control. */
-const CONTENT_TOP = 20;
 const SECTION_GAP = 20;
 const LABEL_GAP = 8;
 
@@ -50,37 +48,6 @@ type SaveMixNameSheetProps =
       existingMix?: never;
     };
 
-function SaveStrategyButton({
-  label,
-  selected,
-  onClick,
-}: {
-  label: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onClick}
-      className="flex-1 min-w-0 rounded-xl uppercase transition-all duration-200 active:scale-[0.98]"
-      style={{
-        height: 40,
-        background: selected ? s.sheetBtnBgActive : c.entitySurfaceIdle,
-        border: selected ? b.inputActive : b.sheetBtn,
-        color: selected ? c.title : c.actionSecondaryLabel,
-        fontSize: "var(--text-ui-xs)",
-        fontWeight: 600,
-        letterSpacing: "0.1em",
-        cursor: "pointer",
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
 export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
   const { open, onOpenChange, onConfirm, mode } = props;
   const recipeName = mode === "save" ? props.recipeName : props.mix.recipeName;
@@ -88,27 +55,16 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
   const hasExistingMix = Boolean(existingMix);
   const existingDisplayName = existingMix ? savedMixDisplayName(existingMix) : "";
 
-  const [strategy, setStrategy] = useState<SaveMixStrategy>("update");
   const [name, setName] = useState(recipeName);
 
   useEffect(() => {
     if (!open) return;
-    setStrategy("update");
     setName(
       hasExistingMix && existingMix
         ? savedMixDisplayName(existingMix)
         : recipeName,
     );
   }, [open, recipeName, hasExistingMix, existingMix]);
-
-  useEffect(() => {
-    if (!open || mode !== "save" || !hasExistingMix) return;
-    setName(
-      strategy === "update" && existingMix
-        ? savedMixDisplayName(existingMix)
-        : recipeName,
-    );
-  }, [open, mode, strategy, hasExistingMix, existingMix, recipeName]);
 
   if (!open) return null;
 
@@ -119,21 +75,63 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
         ? `Update “${existingDisplayName}” or save as a new mix`
         : "Optional label — recipe name is kept either way"
       : "Clear custom label to show the recipe name again";
-  const confirmLabel =
-    mode === "save"
-      ? strategy === "update" && hasExistingMix
-        ? "Update mix"
-        : "Save mix"
-      : "Rename";
 
-  const handleConfirm = () => {
+  const handleSave = () => {
     if (mode === "save") {
-      onConfirm(name, hasExistingMix ? strategy : "new");
+      onConfirm(name, hasExistingMix ? "update" : "new");
     } else {
       onConfirm(name);
     }
     onOpenChange(false);
   };
+
+  const handleSaveNew = () => {
+    onConfirm(name, "new");
+    onOpenChange(false);
+  };
+
+  const footerButtons =
+    mode === "rename"
+      ? [
+          {
+            key: "close",
+            label: "Close",
+            icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
+            onClick: () => onOpenChange(false),
+          },
+          {
+            key: "confirm",
+            label: "Save mix",
+            icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
+            onClick: handleSave,
+            variant: "primary" as const,
+          },
+        ]
+      : [
+          {
+            key: "close",
+            label: "Close",
+            icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
+            onClick: () => onOpenChange(false),
+          },
+          ...(hasExistingMix
+            ? [
+                {
+                  key: "save-new",
+                  label: "Save as new mix",
+                  icon: <SaveNewIcon size={SHEET_FOOTER_ICON_SIZE} />,
+                  onClick: handleSaveNew,
+                },
+              ]
+            : []),
+          {
+            key: "save",
+            label: "Save mix",
+            icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
+            onClick: handleSave,
+            variant: "primary" as const,
+          },
+        ];
 
   return (
     <div
@@ -181,121 +179,81 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
           <p style={{ ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" }}>
             {subtitle}
           </p>
+          <div
+            style={{
+              marginTop: SECTION_GAP,
+              maxWidth: 360,
+              width: "100%",
+            }}
+          >
+            <p
+              style={{
+                ...SHEET_FIELD_LABEL,
+                marginBottom: LABEL_GAP,
+                textAlign: "center",
+              }}
+            >
+              Recipe
+            </p>
+            <p
+              className="truncate"
+              style={{
+                fontFamily: "'Outfit', sans-serif",
+                fontSize: "var(--text-recipe-meta-value)",
+                fontWeight: 600,
+                letterSpacing: "0.04em",
+                color: c.title,
+                textAlign: "center",
+              }}
+            >
+              {recipeName}
+            </p>
+          </div>
         </header>
 
         <div
           className="flex-1 min-h-0 flex flex-col"
-          style={{ paddingLeft: SHEET_PAD_X, paddingRight: SHEET_PAD_X }}
+          style={{
+            paddingLeft: SHEET_PAD_X,
+            paddingRight: SHEET_PAD_X,
+            paddingBottom: 12,
+          }}
         >
-          <div className="shrink-0" style={{ paddingTop: CONTENT_TOP }}>
-            <div style={{ maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>
-              <p
-                style={{
-                  ...SHEET_FIELD_LABEL,
-                  marginBottom: LABEL_GAP,
-                  textAlign: "center",
-                }}
-              >
-                Recipe
-              </p>
-              <p
-                className="truncate"
-                style={{
-                  fontFamily: "'Outfit', sans-serif",
-                  fontSize: "var(--text-recipe-meta-value)",
-                  fontWeight: 600,
-                  letterSpacing: "0.04em",
-                  color: c.title,
-                  textAlign: "center",
-                }}
-              >
-                {recipeName}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex-1 min-h-0" aria-hidden />
-
-          <div className="shrink-0" style={{ paddingBottom: 12 }}>
-            <div
+          <div
+            className="mt-auto"
+            style={{
+              maxWidth: 360,
+              marginLeft: "auto",
+              marginRight: "auto",
+              width: "100%",
+            }}
+          >
+            <label
+              htmlFor="save-mix-name-input"
               style={{
-                maxWidth: 360,
-                marginLeft: "auto",
-                marginRight: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: SECTION_GAP,
+                ...SHEET_FIELD_LABEL,
+                marginBottom: LABEL_GAP,
+                textAlign: "center",
+                display: "block",
               }}
             >
-              {mode === "save" && hasExistingMix ? (
-                <div
-                  role="radiogroup"
-                  aria-label="Save option"
-                  className="flex min-w-0"
-                  style={{ gap: 8 }}
-                >
-                  <SaveStrategyButton
-                    label="Update"
-                    selected={strategy === "update"}
-                    onClick={() => setStrategy("update")}
-                  />
-                  <SaveStrategyButton
-                    label="Save new"
-                    selected={strategy === "new"}
-                    onClick={() => setStrategy("new")}
-                  />
-                </div>
-              ) : null}
-
-              <div>
-                <label
-                  htmlFor="save-mix-name-input"
-                  style={{
-                    ...SHEET_FIELD_LABEL,
-                    marginBottom: LABEL_GAP,
-                    textAlign: "center",
-                  }}
-                >
-                  Display name
-                </label>
-                <input
-                  id="save-mix-name-input"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  maxLength={64}
-                  autoComplete="off"
-                  spellCheck={false}
-                  className={SHEET_FIELD_INPUT_CLASS}
-                  style={sheetFieldInputStyle({ height: INPUT_H, textAlign: "center" })}
-                />
-              </div>
-            </div>
+              Display name
+            </label>
+            <input
+              id="save-mix-name-input"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={64}
+              autoComplete="off"
+              spellCheck={false}
+              className={SHEET_FIELD_INPUT_CLASS}
+              style={sheetFieldInputStyle({ height: INPUT_H, textAlign: "center" })}
+            />
           </div>
         </div>
 
-        <SheetFooter
-          buttons={[
-            {
-              key: "close",
-              label: "Close",
-              icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
-              onClick: () => onOpenChange(false),
-            },
-            {
-              key: "confirm",
-              label: confirmLabel,
-              icon:
-                mode === "save" ? (
-                  <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />
-                ) : (
-                  <RenameIcon size={SHEET_FOOTER_ICON_SIZE} />
-                ),
-              onClick: handleConfirm,
-              variant: "primary",
-            },
-          ]}
-        />
+        <SheetFooter buttons={footerButtons} />
       </div>
     </div>
   );
