@@ -531,6 +531,9 @@
   --totals-header-cell-pad-x: 4px;
   --totals-section-title-pad-x: 4px;
   --totals-step-font-size: 15px;
+  /** Formula row operators (+ / =) — separate from table caption type. */
+  --totals-op-sep-font-size: clamp(18px, min(5.13cqi, 2.62cqh), 20px);
+  --totals-op-sep-h: clamp(20px, min(5.64cqi, 2.88cqh), 22px);
 }
 
 .batch-totals-screen .batch-totals-card-header-btn svg {
@@ -548,6 +551,8 @@
   --totals-header-cell-pad-x: 6px;
   --totals-section-title-pad-x: 6px;
   --totals-step-font-size: 17px;
+  --totals-op-sep-font-size: clamp(18px, min(4.6cqi, 2.35cqh), 20px);
+  --totals-op-sep-h: clamp(20px, min(5.13cqi, 2.62cqh), 22px);
 }
 
 /** ≤764px + >4 batch rows — compact card headers and formula separators. */
@@ -558,13 +563,13 @@
   --totals-header-icon-btn: 24px;
   --totals-header-icon-size: 14px;
   --totals-step-font-size: 13px;
-  --totals-header-action-gap: 6px;
-  --totals-header-cell-pad-x: 0;
+  --totals-header-action-gap: 10px;
+  --totals-header-cell-pad-x: 4px;
   --totals-section-title-pad-x: 4px;
   --totals-mult-value-size: var(--text-totals-caption);
   --totals-multiplier-row-gap: 8px;
-  --totals-op-sep-font-size: var(--text-totals-caption);
-  --totals-op-sep-h: 16px;
+  --totals-op-sep-font-size: clamp(15px, min(4.1cqi, 2.09cqh), 17px);
+  --totals-op-sep-h: clamp(18px, min(4.6cqi, 2.35cqh), 20px);
 }
 
 @container app (max-height: 764px) {
@@ -576,13 +581,13 @@
     --totals-header-icon-btn: 24px;
     --totals-header-icon-size: 14px;
     --totals-step-font-size: 13px;
-    --totals-header-action-gap: 6px;
-    --totals-header-cell-pad-x: 0;
+    --totals-header-action-gap: 10px;
+    --totals-header-cell-pad-x: 4px;
     --totals-section-title-pad-x: 4px;
     --totals-mult-value-size: var(--text-totals-caption);
     --totals-multiplier-row-gap: 8px;
-    --totals-op-sep-font-size: var(--text-totals-caption);
-    --totals-op-sep-h: 16px;
+    --totals-op-sep-font-size: clamp(15px, min(4.1cqi, 2.09cqh), 17px);
+    --totals-op-sep-h: clamp(18px, min(4.6cqi, 2.35cqh), 20px);
   }
 }
 
