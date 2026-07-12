@@ -51,6 +51,7 @@ import {
   cardReadoutValueStyle,
   entityCardChrome,
   CARD_CHROME_TRANSITION,
+  RECIPE_RATIO_BORDER_COLOR,
 } from "./presentation/entityCardStyles";
 import { theme } from "../theme";
 import {
@@ -149,7 +150,6 @@ function swipeZoneStripe(even: boolean): string {
 
 /** Locked recipe ratio cards (read-only, above mix cards). */
 const RECIPE_RATIO_BG = s.transparent;
-const RECIPE_RATIO_BORDER_COLOR = b.recipeRatio;
 const RECIPE_CONTAINER_PX = "4px 0";
 /** High-contrast readouts on dark recipe cards — not pure white. */
 const RECIPE_VALUE_COLOR = c.recipeValue;

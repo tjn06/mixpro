@@ -29,6 +29,8 @@ export const themeColors = {
 
   /** Surfaces (solid) */
   entitySurfaceIdle: "#0d0d1c",
+  /** Neutral entity card / connector chrome when not selected */
+  entityBorderIdle: "rgba(255,255,255,0.14)",
   swipeSurfaceBase: "#09091a",
   inputSurface: "#10101e",
   holdingSurface: "#10101e",

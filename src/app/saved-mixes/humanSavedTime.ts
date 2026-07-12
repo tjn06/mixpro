@@ -1,13 +1,13 @@
-import {
-  differenceInCalendarDays,
-  differenceInMinutes,
-  format,
-  isSameMonth,
-} from "date-fns";
-import { enGB } from "date-fns/locale/en-GB";
-import { sv } from "date-fns/locale/sv";
+import { differenceInMinutes } from "date-fns";
 import type { AppLanguage } from "../i18n/language";
 import { APP_LANGUAGE } from "../i18n/language";
+import {
+  APP_TIME_ZONE,
+  formatZonedDate,
+  zonedCalendarDayDiff,
+  zonedParts,
+  zonedSameMonth,
+} from "../i18n/locale";
 
 type DayPartKey =
   | "earlyMorning"
@@ -40,6 +40,16 @@ const SAVED_TIME_COPY = {
       lateEvening: "sent ikväll",
       night: "i natt",
     },
+    /** Weekday comments — no same-day "i morse" / "i eftermiddags" phrasing. */
+    pastDayParts: {
+      earlyMorning: "tidig morgon",
+      morning: "morgon",
+      beforeLunch: "innan lunch",
+      afternoon: "eftermiddag",
+      evening: "kväll",
+      lateEvening: "sen kväll",
+      night: "natt",
+    },
     yesterdayParts: {
       morning: "igår morse",
       beforeLunch: "igår innan lunch",
@@ -67,6 +77,16 @@ const SAVED_TIME_COPY = {
       lateEvening: "late this evening",
       night: "tonight",
     },
+    /** Weekday comments — no same-day "this …" phrasing. */
+    pastDayParts: {
+      earlyMorning: "early morning",
+      morning: "morning",
+      beforeLunch: "before lunch",
+      afternoon: "afternoon",
+      evening: "evening",
+      lateEvening: "late evening",
+      night: "night",
+    },
     yesterdayParts: {
       morning: "yesterday morning",
       beforeLunch: "yesterday before lunch",
@@ -77,30 +97,31 @@ const SAVED_TIME_COPY = {
   },
 } as const;
 
-const DATE_FNS_LOCALE = {
-  sv,
-  en: enGB,
-} as const;
-
-function dateFnsLocale(language: AppLanguage) {
-  return DATE_FNS_LOCALE[language];
-}
-
 function formatExactTime(date: Date, language: AppLanguage): string {
-  return format(date, "HH:mm", { locale: dateFnsLocale(language) });
+  return formatZonedDate(date, language, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 function formatExactDate(date: Date, language: AppLanguage): string {
-  return format(date, "d MMMM yyyy", { locale: dateFnsLocale(language) });
+  return formatZonedDate(date, language, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function formatExactDateWithoutYear(date: Date, language: AppLanguage): string {
-  return format(date, "d MMMM", { locale: dateFnsLocale(language) });
+  return formatZonedDate(date, language, {
+    day: "numeric",
+    month: "long",
+  });
 }
 
-function getDayPartKey(date: Date): DayPartKey {
-  const hour = date.getHours();
-  const minute = date.getMinutes();
+function getDayPartKey(date: Date, timeZone: string = APP_TIME_ZONE): DayPartKey {
+  const { hour, minute } = zonedParts(date, timeZone);
   const time = hour + minute / 60;
 
   if (time >= 5 && time < 8) return "earlyMorning";
@@ -112,8 +133,8 @@ function getDayPartKey(date: Date): DayPartKey {
   return "night";
 }
 
-function getYesterdayKey(date: Date): YesterdayKey {
-  const hour = date.getHours();
+function getYesterdayKey(date: Date, timeZone: string = APP_TIME_ZONE): YesterdayKey {
+  const { hour } = zonedParts(date, timeZone);
 
   if (hour >= 5 && hour < 11) return "morning";
   if (hour >= 11 && hour < 13) return "beforeLunch";
@@ -123,7 +144,7 @@ function getYesterdayKey(date: Date): YesterdayKey {
 }
 
 function weekdayLabel(date: Date, language: AppLanguage): string {
-  const name = format(date, "EEEE", { locale: dateFnsLocale(language) });
+  const name = formatZonedDate(date, language, { weekday: "long" });
   if (language === "sv") {
     const lower = name.toLowerCase();
     return lower.endsWith("dag") ? `${lower}s` : lower;
@@ -133,6 +154,10 @@ function weekdayLabel(date: Date, language: AppLanguage): string {
 
 function dayPartLabel(date: Date, language: AppLanguage): string {
   return SAVED_TIME_COPY[language].dayParts[getDayPartKey(date)];
+}
+
+function pastDayPartLabel(date: Date, language: AppLanguage): string {
+  return SAVED_TIME_COPY[language].pastDayParts[getDayPartKey(date)];
 }
 
 function yesterdayPartLabel(date: Date, language: AppLanguage): string {
@@ -156,7 +181,7 @@ function formatCardTimestamp(
   language: AppLanguage,
 ): string {
   const exactTime = formatExactTime(savedAt, language);
-  const dateLabel = isSameMonth(savedAt, now)
+  const dateLabel = zonedSameMonth(savedAt, now)
     ? formatExactDateWithoutYear(savedAt, language)
     : formatExactDate(savedAt, language);
   return `${dateLabel} · ${exactTime}`;
@@ -169,7 +194,7 @@ function formatCardComment(
 ): string | null {
   const copy = SAVED_TIME_COPY[language];
   const minutesAgo = differenceInMinutes(now, savedAt);
-  const daysAgo = differenceInCalendarDays(now, savedAt);
+  const daysAgo = zonedCalendarDayDiff(now, savedAt);
 
   if (daysAgo >= 7) return null;
 
@@ -179,7 +204,7 @@ function formatCardComment(
   if (daysAgo === 0) return dayPartLabel(savedAt, language);
   if (daysAgo === 1) return yesterdayPartLabel(savedAt, language);
   if (daysAgo < 7) {
-    return `${weekdayLabel(savedAt, language)} ${dayPartLabel(savedAt, language)}`;
+    return `${weekdayLabel(savedAt, language)} ${pastDayPartLabel(savedAt, language)}`;
   }
 
   return null;
@@ -197,7 +222,7 @@ function capitalizeFirst(text: string, language: AppLanguage): string {
 }
 
 /**
- * Human-first saved timestamp. Uses the device local timezone via Date.
+ * Human-first saved timestamp. Day boundaries use Europe/Stockholm; copy follows APP_LANGUAGE.
  * Store `savedAt` as ISO UTC; pass parsed Date instances here.
  */
 export function getHumanSavedTime(
@@ -226,6 +251,7 @@ function collectStaticSavedTimePhrases(): string[] {
     const copy = SAVED_TIME_COPY[language];
     phrases.push(copy.justNow, copy.momentsAgo);
     phrases.push(...Object.values(copy.dayParts));
+    phrases.push(...Object.values(copy.pastDayParts));
     phrases.push(...Object.values(copy.yesterdayParts));
   }
   return phrases;
@@ -254,10 +280,12 @@ export function getSavedMixTimeSearchText(
       exactDate,
       exactTime,
     );
-    chunks.push(format(savedAt, "EEEE", { locale: dateFnsLocale(language) }));
-    chunks.push(format(savedAt, "MMMM", { locale: dateFnsLocale(language) }));
-    chunks.push(format(savedAt, "d MMMM", { locale: dateFnsLocale(language) }));
-    chunks.push(format(savedAt, "d MMMM yyyy", { locale: dateFnsLocale(language) }));
+    chunks.push(formatZonedDate(savedAt, language, { weekday: "long" }));
+    chunks.push(formatZonedDate(savedAt, language, { month: "long" }));
+    chunks.push(formatZonedDate(savedAt, language, { day: "numeric", month: "long" }));
+    chunks.push(
+      formatZonedDate(savedAt, language, { day: "numeric", month: "long", year: "numeric" }),
+    );
     if (language === "sv") {
       chunks.push(weekdayLabel(savedAt, language));
     }

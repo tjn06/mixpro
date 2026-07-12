@@ -10,8 +10,8 @@ export const CARD_VALUE_INACTIVE = theme.colors.cardValueInactive;
 export const CARD_UNIT_INACTIVE = theme.colors.cardUnitInactive;
 /** @deprecated Prefer theme.colors.* — kept for existing imports. */
 export const ENTITY_SURFACE_IDLE = theme.colors.entitySurfaceIdle;
-/** @deprecated Prefer theme.borders.* — kept for existing imports. */
-export const RECIPE_RATIO_BORDER_COLOR = theme.borders.recipeRatio;
+/** @deprecated Prefer theme.colors.entityBorderIdle — kept for existing imports. */
+export const RECIPE_RATIO_BORDER_COLOR = theme.colors.entityBorderIdle;
 
 export const CARD_CHROME_TRANSITION = theme.chrome.cardChromeTransition;
 

@@ -1,8 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import {
-  isFormFieldFocused,
-  readStableShellHeightPx,
-} from "../layout/applyStableViewportHeight";
+import { isKeyboardLikelyOpen } from "../layout/applyStableViewportHeight";
 
 function readAppRefHeightPx(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue("--app-ref-h").trim();
@@ -20,14 +17,13 @@ export function useAppShellCompact(): boolean {
     if (!shell) return;
 
     const sync = () => {
-      if (isFormFieldFocused()) {
+      if (isKeyboardLikelyOpen()) {
         setCompact(lastCompactRef.current);
         return;
       }
 
       const refH = readAppRefHeightPx();
-      const stableH = readStableShellHeightPx();
-      const h = stableH ?? shell.getBoundingClientRect().height;
+      const h = shell.getBoundingClientRect().height;
       const next = h <= refH;
       lastCompactRef.current = next;
       setCompact(next);
@@ -36,10 +32,14 @@ export function useAppShellCompact(): boolean {
     sync();
     const ro = new ResizeObserver(sync);
     ro.observe(shell);
+    window.addEventListener("resize", sync);
+    window.visualViewport?.addEventListener("resize", sync);
     window.addEventListener("focusin", sync);
     window.addEventListener("focusout", sync);
     return () => {
       ro.disconnect();
+      window.removeEventListener("resize", sync);
+      window.visualViewport?.removeEventListener("resize", sync);
       window.removeEventListener("focusin", sync);
       window.removeEventListener("focusout", sync);
     };
