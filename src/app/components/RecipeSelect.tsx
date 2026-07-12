@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import type { BlendingRecipe } from "../recipeTypes";
 import { recipeMenuLabel } from "../recipeTypes";
 import { HEADER_NAV_LONG_PRESS_MS, LongPressProgress, useLongPress } from "./LongPressButton";
-import { RecipeZoneMeta, RecipeZoneMetaValue } from "./RecipeZoneMeta";
+import { RecipeHeaderSubline, RecipeHeaderSublineValue } from "./RecipeZoneMeta";
 
 const DROPDOWN_MENU_BG = "#3a3a4c";
 const DROPDOWN_MENU_BORDER = "rgba(255,255,255,0.1)";
@@ -198,28 +198,26 @@ export function RecipeSelect({
   ) : null;
 
   return (
-    <RecipeZoneMeta muted={muted} className="relative overflow-hidden">
-      <div className="w-full min-w-0 flex flex-col items-center py-1">
-        {selectable ? (
-          <>
-            <button
-              ref={triggerRef}
-              type="button"
-              aria-haspopup="listbox"
-              aria-expanded={open}
-              aria-label={`${recipeName}. Tap to change recipe.`}
-              className="inline-flex items-center justify-center gap-1 max-w-full min-w-0 touch-manipulation bg-transparent border-none p-0 cursor-pointer"
-              onClick={() => setOpen((o) => !o)}
-            >
-              <RecipeZoneMetaValue muted={muted}>{recipeName}</RecipeZoneMetaValue>
-              <ChevronDown open={open} />
-            </button>
-            {menu}
-          </>
-        ) : (
-          <RecipeZoneMetaValue muted={muted}>{recipeName}</RecipeZoneMetaValue>
-        )}
-      </div>
-    </RecipeZoneMeta>
+    <RecipeHeaderSubline className="relative overflow-hidden">
+      {selectable ? (
+        <>
+          <button
+            ref={triggerRef}
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            aria-label={`${recipeName}. Tap to change recipe.`}
+            className="inline-flex items-center justify-center gap-1 max-w-full min-w-0 touch-manipulation bg-transparent border-none p-0 cursor-pointer"
+            onClick={() => setOpen((o) => !o)}
+          >
+            <RecipeHeaderSublineValue muted={muted}>{recipeName}</RecipeHeaderSublineValue>
+            <ChevronDown open={open} />
+          </button>
+          {menu}
+        </>
+      ) : (
+        <RecipeHeaderSublineValue muted={muted}>{recipeName}</RecipeHeaderSublineValue>
+      )}
+    </RecipeHeaderSubline>
   );
 }

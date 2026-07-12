@@ -76,3 +76,37 @@ export function RecipeZoneMetaValue({
     </span>
   );
 }
+
+/** Recipe name row nested under the app header bar. */
+export function RecipeHeaderSubline({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`app-header__subline w-full min-w-0 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+export function RecipeHeaderSublineValue({
+  children,
+  muted = false,
+  className = "",
+}: {
+  children: ReactNode;
+  muted?: boolean;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`app-header__subline-label truncate max-w-full text-center ${className}`}
+      style={{ color: muted ? RECIPE_VALUE_COLOR_MUTED : undefined }}
+    >
+      {children}
+    </span>
+  );
+}

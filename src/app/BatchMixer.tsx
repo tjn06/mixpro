@@ -28,6 +28,7 @@ import {
   recipeIngredientIndexes,
 } from "./recipe";
 import { RecipeSelect } from "./components/RecipeSelect";
+import { RecipeHeaderSubline, RecipeHeaderSublineValue } from "./components/RecipeZoneMeta";
 import { RecBatchPanel, LockIcon } from "./components/RecBatchPanel";
 import { LockedSaveOverlay } from "./components/LockedSaveOverlay";
 import { LockedUnlockOverlay } from "./components/LockedUnlockOverlay";
@@ -1180,22 +1181,29 @@ export function BatchMixer({
       ))}
 
       {screen === "totals" ? (
-        <>
-          <AppHeader
-            isLocked={isLocked}
-            onBack={handleBack}
-          />
-          <BatchTotalsScreen
-            recipe={activeRecipe}
-            values={values}
-            complementValues={complementValues}
-            entityIndexes={ingredientIndexes}
-            multiplier={batchMultiplier}
-            onMultiplierChange={setBatchMultiplier}
-            onComplementChange={setComplementValues}
-            sandType={sandType}
-          />
-        </>
+        <div className="flex-1 min-h-0 flex flex-col overflow-x-hidden">
+          <div className="recipe-context-gradient">
+            <AppHeader
+              isLocked={isLocked}
+              onBack={handleBack}
+              subline={
+                <RecipeHeaderSubline>
+                  <RecipeHeaderSublineValue>{recipeMenuLabel(activeRecipe)}</RecipeHeaderSublineValue>
+                </RecipeHeaderSubline>
+              }
+            />
+            <BatchTotalsScreen
+              recipe={activeRecipe}
+              values={values}
+              complementValues={complementValues}
+              entityIndexes={ingredientIndexes}
+              multiplier={batchMultiplier}
+              onMultiplierChange={setBatchMultiplier}
+              onComplementChange={setComplementValues}
+              sandType={sandType}
+            />
+          </div>
+        </div>
       ) : (
       <>
       <div className="flex-1 min-h-0 flex flex-col overflow-x-hidden">
@@ -1203,6 +1211,16 @@ export function BatchMixer({
           <AppHeader
             isLocked={isLocked}
             onForward={handleForward}
+            subline={
+              <div className={isLocked ? "pointer-events-none" : "pointer-events-auto"}>
+                <RecipeSelect
+                  recipes={recipes}
+                  value={activeRecipe}
+                  onChange={handleRecipeChange}
+                  disabled={isLocked}
+                />
+              </div>
+            }
           />
           <div
             className="shrink-0 app-gutter-x flex flex-col"
@@ -1216,14 +1234,6 @@ export function BatchMixer({
                 gap: "var(--recipe-meta-gap)",
               }}
             >
-              <div className={isLocked ? "pointer-events-none" : "pointer-events-auto"}>
-                <RecipeSelect
-                  recipes={recipes}
-                  value={activeRecipe}
-                  onChange={handleRecipeChange}
-                  disabled={isLocked}
-                />
-              </div>
               <div className="flex items-stretch pointer-events-none">
                 {ingredientIndexes.map((pi, i) => {
                   const p = PARAMS[pi];

@@ -66,7 +66,7 @@
 .recipe-context-gradient::before {
   content: "";
   position: absolute;
-  top: var(--header-h);
+  top: var(--header-base-h);
   left: 0;
   right: 0;
   bottom: 0;
@@ -87,6 +87,10 @@
   z-index: 1;
 }
 
+.app-header-chrome {
+  flex-shrink: 0;
+}
+
 .app-header {
   box-sizing: border-box;
   flex-shrink: 0;
@@ -94,6 +98,35 @@
   padding: var(--header-pad-top) var(--header-inset-x) var(--header-pad-bottom);
   background: #0a0a14;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-header-sub {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--header-subline-h);
+  padding: var(--header-subline-py) var(--header-inset-x);
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.app-header__subline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+}
+
+.app-header__subline-label {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-recipe-meta-value);
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: #9898b4;
+  line-height: 1.15;
 }
 
 .app-header__row {
@@ -119,7 +152,14 @@
     --header-row-gap: clamp(6px, 1.8cqi, 8px);
     --header-pad-bottom: 4px;
     --header-pad-top: max(4px, var(--safe-top));
-    --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
+    --header-subline-h: 24px;
+    --header-subline-py: 4px;
+    --header-base-h: calc(
+      var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px
+    );
+    --header-h: calc(
+      var(--header-base-h) + var(--header-subline-h) + 2 * var(--header-subline-py)
+    );
 
     --section-gap: 12px;
     --recipe-zone-pt: 12px;
@@ -217,6 +257,16 @@
       --recipe-id-sublabel-gap: clamp(8px, 1.05cqh, 11px);
       --recipe-meta-name-gap: clamp(8px, 1.05cqh, 11px);
     }
+    .batch-totals-screen {
+      --totals-card-header-py: clamp(4px, 0.65cqh, 6px);
+      --totals-card-header-px: clamp(8px, 1.05cqh, 10px);
+      --totals-header-icon-btn: clamp(36px, 5.24cqh, 40px);
+      --totals-header-icon-size: clamp(17px, 2.09cqh, 18px);
+      --totals-header-action-gap: clamp(8px, 1.05cqh, 10px);
+      --totals-header-cell-pad-x: clamp(4px, 0.65cqh, 6px);
+      --totals-section-title-pad-x: clamp(4px, 0.65cqh, 6px);
+      --totals-step-font-size: clamp(15px, 1.96cqh, 17px);
+    }
   }
 
   @container app (max-height: 764px) {
@@ -229,7 +279,14 @@
       --header-bar-h: clamp(36px, 5.24cqh, 40px);
       --header-row-gap: clamp(4px, 1.05cqh, 8px);
       --header-pad-bottom: clamp(2px, 0.52cqh, 4px);
-      --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
+      --header-subline-h: clamp(20px, 3.14cqh, 24px);
+      --header-subline-py: clamp(3px, 0.52cqh, 4px);
+      --header-base-h: calc(
+        var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px
+      );
+      --header-h: calc(
+        var(--header-base-h) + var(--header-subline-h) + 2 * var(--header-subline-py)
+      );
 
       --section-gap: clamp(8px, 1.57cqh, 12px);
       --recipe-zone-pt: clamp(6px, 1.57cqh, 12px);
@@ -328,7 +385,14 @@
     --header-row-gap: clamp(6px, 1.8vw, 8px);
     --header-pad-bottom: 4px;
     --header-pad-top: max(4px, var(--safe-top));
-    --header-h: calc(var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px);
+    --header-subline-h: 24px;
+    --header-subline-py: 4px;
+    --header-base-h: calc(
+      var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px
+    );
+    --header-h: calc(
+      var(--header-base-h) + var(--header-subline-h) + 2 * var(--header-subline-py)
+    );
 
     --section-gap: 12px;
     --recipe-zone-pt: 12px;
@@ -419,6 +483,17 @@
       --recipe-id-sublabel-gap: clamp(8px, 1.05dvh, 11px);
       --recipe-meta-name-gap: clamp(8px, 1.05dvh, 11px);
     }
+
+    .batch-totals-screen {
+      --totals-card-header-py: clamp(4px, 0.65dvh, 6px);
+      --totals-card-header-px: clamp(8px, 1.05dvh, 10px);
+      --totals-header-icon-btn: clamp(36px, 5.24dvh, 40px);
+      --totals-header-icon-size: clamp(17px, 2.09dvh, 18px);
+      --totals-header-action-gap: clamp(8px, 1.05dvh, 10px);
+      --totals-header-cell-pad-x: clamp(4px, 0.65dvh, 6px);
+      --totals-section-title-pad-x: clamp(4px, 0.65dvh, 6px);
+      --totals-step-font-size: clamp(15px, 1.96dvh, 17px);
+    }
   }
 
   @media (max-height: 764px) {
@@ -443,4 +518,34 @@
       --text-totals-hero: clamp(28px, min(8.72vw, 4.45dvh), 34px);
     }
   }
+}
+
+/* Totals screen — slightly smaller sum column type in tables */
+.batch-totals-screen {
+  --text-totals-sum: var(--text-totals-mult);
+  --totals-card-header-py: 2px;
+  --totals-card-header-px: 6px;
+  --totals-header-icon-btn: 32px;
+  --totals-header-icon-size: 16px;
+  --totals-header-action-gap: 8px;
+  --totals-header-cell-pad-x: 4px;
+  --totals-section-title-pad-x: 4px;
+  --totals-step-font-size: 15px;
+}
+
+.batch-totals-screen .batch-totals-card-header-btn svg {
+  width: var(--totals-header-icon-size);
+  height: var(--totals-header-icon-size);
+}
+
+/** Shell height > 764px — applied via useAppShellCompact (container queries alone were unreliable). */
+.batch-totals-screen--tall {
+  --totals-card-header-py: 6px;
+  --totals-card-header-px: 10px;
+  --totals-header-icon-btn: 40px;
+  --totals-header-icon-size: 18px;
+  --totals-header-action-gap: 10px;
+  --totals-header-cell-pad-x: 6px;
+  --totals-section-title-pad-x: 6px;
+  --totals-step-font-size: 17px;
 }

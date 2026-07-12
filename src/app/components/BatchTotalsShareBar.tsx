@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { BlendingRecipe } from "../recipeTypes";
 import {
   batchReportCommentPlaceholder,
@@ -11,17 +11,30 @@ import {
   openMailWithReport,
   openSmsWithReport,
 } from "../batchTotalsShare";
-import { CopyIcon, MailIcon, MessageIcon, SavedIcon } from "./ActionIcons";
+import { useAppShellCompact } from "../hooks/useAppShellCompact";
+import { CopyIcon, MailIcon, MessageIcon, RenameIcon, SavedIcon } from "./ActionIcons";
 
 const PANEL_BORDER = "1.5px solid rgba(255,255,255,0.14)";
-const MUTED = "#8888a8";
 const TITLE_COLOR = "#c0c0e0";
+const OUTSIDE_DIM = "rgba(5, 5, 16, 0.42)";
+const SHEET_MARGIN_X = 16;
+const SHEET_MARGIN_BOTTOM = 16;
+const SHEET_RADIUS = 28;
+const SHEET_PAD_X = 20;
+const SHEET_PAD_Y = 20;
+const DONE_H = 44;
+
+const COMMENT_DONE_LABELS = {
+  sv: "Klar",
+  en: "Done",
+} as const;
 
 const SHARE_LABELS = {
   sv: { copy: "Kopiera", copied: "Kopierad", mail: "E-post", text: "SMS" },
   en: { copy: "Copy", copied: "Copied", mail: "Mail", text: "Text" },
 } as const;
 
+/* Hidden for now — uncomment ReportLanguageToggle + JSX below to re-enable SWE/ENG.
 function ReportLanguageToggle({
   language,
   onChange,
@@ -36,11 +49,11 @@ function ReportLanguageToggle({
 
   return (
     <div
-      className="flex items-center justify-center gap-1 rounded-full"
+      className="flex items-center justify-center gap-0.5 rounded-full shrink-0"
       role="group"
       aria-label="Report language"
       style={{
-        padding: 3,
+        padding: 2,
         background: "rgba(255,255,255,0.04)",
         border: PANEL_BORDER,
       }}
@@ -56,7 +69,7 @@ function ReportLanguageToggle({
             className="rounded-full transition-colors duration-150"
             style={{
               minWidth: 44,
-              height: 24,
+              height: 32,
               padding: "0 10px",
               fontSize: "var(--text-share-xs)",
               fontWeight: 700,
@@ -74,8 +87,127 @@ function ReportLanguageToggle({
     </div>
   );
 }
+*/
 
-function ShareButton({
+function CommentInput({
+  value,
+  onChange,
+  placeholder,
+  inputRef,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  placeholder: string;
+  inputRef?: RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      aria-label={placeholder}
+      className="flex-1 min-w-0 rounded-xl outline-none w-full"
+      style={{
+        boxSizing: "border-box",
+        background: "rgba(255,255,255,0.04)",
+        border: PANEL_BORDER,
+        padding: "10px 12px",
+        color: TITLE_COLOR,
+        fontSize: "var(--text-share-sm)",
+        fontFamily: "'Outfit', sans-serif",
+        fontWeight: 500,
+        letterSpacing: "0.03em",
+        height: 40,
+      }}
+    />
+  );
+}
+
+function BatchTotalsCommentSheet({
+  open,
+  onOpenChange,
+  value,
+  onChange,
+  placeholder,
+  doneLabel,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  value: string;
+  onChange: (next: string) => void;
+  placeholder: string;
+  doneLabel: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const id = window.requestAnimationFrame(() => inputRef.current?.focus());
+    return () => window.cancelAnimationFrame(id);
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="absolute inset-0 flex flex-col justify-end pointer-events-auto"
+      style={{ zIndex: 36 }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={placeholder}
+    >
+      <button
+        type="button"
+        aria-label="Close"
+        className="mixer-input-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
+        onClick={() => onOpenChange(false)}
+        style={{ backgroundColor: OUTSIDE_DIM }}
+      />
+      <div
+        className="mixer-input-sheet-panel relative flex flex-col min-w-0 overflow-hidden"
+        style={{
+          marginLeft: SHEET_MARGIN_X,
+          marginRight: SHEET_MARGIN_X,
+          marginBottom: SHEET_MARGIN_BOTTOM,
+          borderRadius: SHEET_RADIUS,
+          border: PANEL_BORDER,
+          background: "#0d0d1c",
+          padding: `${SHEET_PAD_Y}px ${SHEET_PAD_X}px`,
+          gap: 12,
+        }}
+      >
+        <CommentInput
+          inputRef={inputRef}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+        />
+        <button
+          type="button"
+          onClick={() => onOpenChange(false)}
+          className="w-full rounded-xl transition-colors duration-150"
+          style={{
+            height: DONE_H,
+            background: "rgba(255,255,255,0.08)",
+            border: PANEL_BORDER,
+            color: TITLE_COLOR,
+            fontSize: "var(--text-share-sm)",
+            fontFamily: "'Outfit', sans-serif",
+            fontWeight: 600,
+            letterSpacing: "0.06em",
+            cursor: "pointer",
+          }}
+        >
+          {doneLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ShareIconButton({
   label,
   onClick,
   icon,
@@ -91,27 +223,16 @@ function ShareButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl transition-colors duration-150 active:scale-[0.98]"
+      className="relative flex flex-col items-center justify-center overflow-hidden touch-none transition-colors duration-150 rounded-xl flex-1 h-full min-w-0"
       style={{
-        height: 44,
-        minWidth: 0,
-        background: active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
-        border: PANEL_BORDER,
-        color: active ? TITLE_COLOR : MUTED,
         cursor: "pointer",
+        background: active ? "rgba(255,255,255,0.08)" : "#0d0d1c",
+        border: `1.5px solid rgba(255,255,255,${active ? 0.22 : 0.12})`,
+        color: active ? "#9090b8" : "#8888a8",
+        minHeight: 32,
       }}
     >
       {icon}
-      <span
-        style={{
-          fontSize: "var(--text-share-xs)",
-          fontWeight: 600,
-          letterSpacing: "0.06em",
-          lineHeight: 1,
-        }}
-      >
-        {label}
-      </span>
     </button>
   );
 }
@@ -131,11 +252,20 @@ export function BatchTotalsShareBar({
   entityIndexes,
   multiplier,
 }: BatchTotalsShareBarProps) {
+  const shellCompact = useAppShellCompact();
   const [copied, setCopied] = useState(false);
-  const [language, setLanguage] = useState<BatchReportLanguage>("sv");
+  const [commentSheetOpen, setCommentSheetOpen] = useState(false);
+  const language: BatchReportLanguage = "sv";
+  // const [language, setLanguage] = useState<BatchReportLanguage>("sv");
   const [comment, setComment] = useState("");
   const labels = SHARE_LABELS[language];
   const commentPlaceholder = batchReportCommentPlaceholder(language);
+  const commentDoneLabel = COMMENT_DONE_LABELS[language];
+  const hasComment = comment.trim().length > 0;
+
+  useEffect(() => {
+    if (!shellCompact) setCommentSheetOpen(false);
+  }, [shellCompact]);
 
   const reportText = useMemo(
     () =>
@@ -172,45 +302,51 @@ export function BatchTotalsShareBar({
   }, [reportText]);
 
   return (
-    <div
-      className="shrink-0 app-gutter-x flex flex-col items-stretch min-w-0"
-      style={{ paddingTop: 12, paddingBottom: 20, gap: 10 }}
-    >
-      <div className="flex items-center gap-2 min-w-0 w-full">
-        <input
-          type="text"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder={commentPlaceholder}
-          aria-label={commentPlaceholder}
-          className="flex-1 min-w-0 rounded-xl outline-none"
-          style={{
-            boxSizing: "border-box",
-            background: "rgba(255,255,255,0.04)",
-            border: PANEL_BORDER,
-            padding: "10px 12px",
-            color: TITLE_COLOR,
-            fontSize: "var(--text-share-sm)",
-            fontFamily: "'Outfit', sans-serif",
-            fontWeight: 500,
-            letterSpacing: "0.03em",
-            height: 36,
-          }}
-        />
-        <div className="shrink-0">
-          <ReportLanguageToggle language={language} onChange={setLanguage} />
+    <>
+      <div className="flex flex-col items-stretch min-w-0 w-full" style={{ gap: "var(--action-row-gap)" }}>
+        {!shellCompact ? (
+          <div className="flex items-center gap-2 min-w-0 w-full">
+            <CommentInput
+              value={comment}
+              onChange={setComment}
+              placeholder={commentPlaceholder}
+            />
+            {/* <ReportLanguageToggle language={language} onChange={setLanguage} /> */}
+          </div>
+        ) : null}
+        <div
+          className="flex min-w-0 w-full"
+          style={{ gap: "var(--action-row-gap)", height: "var(--action-row-h)" }}
+        >
+          {shellCompact ? (
+            <ShareIconButton
+              label={commentPlaceholder}
+              onClick={() => setCommentSheetOpen(true)}
+              icon={<RenameIcon />}
+              active={hasComment}
+            />
+          ) : null}
+          <ShareIconButton
+            label={copied ? labels.copied : labels.copy}
+            onClick={handleCopy}
+            icon={copied ? <SavedIcon /> : <CopyIcon />}
+            active={copied}
+          />
+          <ShareIconButton label={labels.mail} onClick={handleMail} icon={<MailIcon />} />
+          <ShareIconButton label={labels.text} onClick={handleSms} icon={<MessageIcon />} />
         </div>
       </div>
-      <div className="flex gap-2 min-w-0 w-full">
-        <ShareButton
-          label={copied ? labels.copied : labels.copy}
-          onClick={handleCopy}
-          icon={copied ? <SavedIcon size={16} /> : <CopyIcon size={16} />}
-          active={copied}
+
+      {shellCompact ? (
+        <BatchTotalsCommentSheet
+          open={commentSheetOpen}
+          onOpenChange={setCommentSheetOpen}
+          value={comment}
+          onChange={setComment}
+          placeholder={commentPlaceholder}
+          doneLabel={commentDoneLabel}
         />
-        <ShareButton label={labels.mail} onClick={handleMail} icon={<MailIcon size={16} />} />
-        <ShareButton label={labels.text} onClick={handleSms} icon={<MessageIcon size={16} />} />
-      </div>
-    </div>
+      ) : null}
+    </>
   );
 }

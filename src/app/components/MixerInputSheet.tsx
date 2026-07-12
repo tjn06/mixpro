@@ -50,8 +50,8 @@ function CloseIcon() {
 export function MixerInputSheet({
   open,
   onOpenChange,
-  title = "Complement",
-  subtitle = "One extra batch — added on top of your batches",
+  title = "Extra batch",
+  subtitle = "One custom batch — added on top of your batches",
   recipe,
   values,
   entityIndexes,

@@ -76,7 +76,7 @@ export function buildBatchTotalsReportText(
       language === "sv"
         ? `${multiplier} ${multiplier === 1 ? "batch" : "batcher"}`
         : `${multiplier} ${multiplier === 1 ? "batch" : "batches"}`;
-    const complementLabel = language === "sv" ? "komplement" : "complement";
+    const complementLabel = language === "sv" ? "extra batch" : "extra batch";
     lines.push(`${batchLabel} + ${complementLabel}`, "");
   }
 
