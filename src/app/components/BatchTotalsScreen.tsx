@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect, useEffect, type CSSProperties, type ReactNode } from "react";
+import { useState, useEffect, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { formatMixAmount, MIX_PARAMS } from "../mixEntities";
 import type { BlendingRecipe } from "../recipeTypes";
@@ -334,35 +334,6 @@ function BatchTotalsSummaryBar({
   totalGrams: number;
 }) {
   const totalParam = MIX_PARAMS[0];
-  const batchColRef = useRef<HTMLDivElement>(null);
-  const [shortExtraLabel, setShortExtraLabel] = useState(false);
-
-  useLayoutEffect(() => {
-    if (!hasExtraBatch) {
-      setShortExtraLabel(false);
-      return;
-    }
-
-    setShortExtraLabel(false);
-  }, [hasExtraBatch, multiplier]);
-
-  useLayoutEffect(() => {
-    if (!hasExtraBatch) return;
-
-    const node = batchColRef.current;
-    if (!node) return;
-
-    const measure = () => {
-      setShortExtraLabel((prev) => prev || node.scrollWidth > node.clientWidth);
-    };
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(node);
-    return () => ro.disconnect();
-  }, [hasExtraBatch, multiplier, shortExtraLabel]);
-
-  const extraBatchLabel = shortExtraLabel ? "EX. BCH" : "Extra batch";
 
   return (
     <div className="shrink-0 min-w-0 w-full">
@@ -379,7 +350,6 @@ function BatchTotalsSummaryBar({
           style={{ gridTemplateColumns: SUMMARY_COLS }}
         >
           <div
-            ref={batchColRef}
             className="min-w-0 flex items-center flex-nowrap"
             style={{ ...cellItemStyle({ borderRight: "none" }), gap: "4px 6px" }}
           >
@@ -390,9 +360,9 @@ function BatchTotalsSummaryBar({
                 <SummaryPlus />
                 <span
                   style={sectionTitleStyle(EXTRA_BATCH_ACCENT)}
-                  title={shortExtraLabel ? "Extra batch" : undefined}
+                  title="Extra batch"
                 >
-                  {extraBatchLabel}
+                  EX. BCH
                 </span>
                 <MultCell value={1} />
               </>
@@ -857,7 +827,7 @@ export function BatchTotalsScreen({
         className="shrink-0 app-gutter-x flex flex-col min-w-0 w-full"
         style={{
           gap: 8,
-          paddingBottom: "max(12px, var(--safe-bottom))",
+          paddingBottom: "var(--space-4)",
         }}
       >
         <BatchTotalsSummaryBar
