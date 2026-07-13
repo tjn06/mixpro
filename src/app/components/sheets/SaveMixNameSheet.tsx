@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
 import { CloseIcon, SaveIcon, SaveNewIcon } from "../shared/ActionIcons";
-import { savedMixDisplayName } from "../../saved-mixes/display";
 import {
   appendRecentSkipped,
   createMetaNameRegistryFromMixes,
@@ -21,6 +20,9 @@ import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
 import { theme } from "../../../theme";
 
 const { colors: c, borders: b, surfaces: s } = theme;
+
+/** Warm warning — distinct from error red (bucketLimit). */
+const SHEET_WARN = "#c9a058";
 
 /** Match LoadSavedMixesSheet chrome. */
 const HEADER_HEIGHT_FRAC = "32%";
@@ -84,7 +86,6 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
   const recipeName = mode === "save" ? props.recipeName : props.mix.recipeName;
   const existingMix = mode === "save" ? props.existingMix ?? null : props.mix;
   const hasExistingMix = mode === "save" && Boolean(existingMix);
-  const existingDisplayName = existingMix ? savedMixDisplayName(existingMix) : "";
   const resolvedExcludeMixId =
     excludeMixId ?? (mode === "rename" ? props.mix.id : existingMix?.id);
 
@@ -128,9 +129,12 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
   const subtitle =
     mode === "save"
       ? hasExistingMix
-        ? `Update “${existingDisplayName}” or save as a new mix`
-        : "Custom label only — cannot match a recipe name"
+        ? "Update this mix, or save a new copy."
+        : "Optional display name — must not match a recipe or admin label"
       : "Clear the field to show the recipe name again";
+  const subtitleStyle = hasExistingMix
+    ? { ...SHEET_SUBTITLE, maxWidth: 300, textAlign: "center" as const, color: SHEET_WARN }
+    : { ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" as const };
 
   const handleSave = () => {
     if (!canConfirm) return;
@@ -142,13 +146,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
     onOpenChange(false);
   };
 
-  const handleSaveNew = () => {
-    if (!canSaveNew) return;
-    onConfirm(name, "new");
-    onOpenChange(false);
-  };
-
-  const handleGenerate = () => {
+  const handleGenerate = (registry = registryForEdit) => {
     const nextRecentSkipped = appendRecentSkipped(recentSkipped, name);
     const nextVariation = nameVariation + 1;
 
@@ -158,13 +156,23 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
       generateMixMetaName(
         batchNameInput,
         nextVariation,
-        registryForEdit,
+        registry,
         nextRecentSkipped,
       ),
     );
   };
 
-  const activeError = nameError ?? (hasExistingMix ? saveNewError : null);
+  const handleSaveNew = () => {
+    if (!canConfirm) return;
+    if (!canSaveNew) {
+      handleGenerate(registryForNew);
+      return;
+    }
+    onConfirm(name, "new");
+    onOpenChange(false);
+  };
+
+  const activeError = nameError;
 
   const footerButtons =
     mode === "rename"
@@ -180,7 +188,6 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
             label: "Save mix",
             icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: handleSave,
-            variant: "primary" as const,
             disabled: !canConfirm,
           },
         ]
@@ -196,18 +203,19 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                 {
                   key: "save-new",
                   label: "Save as new mix",
+                  tooltip: "Save as new",
                   icon: <SaveNewIcon size={SHEET_FOOTER_ICON_SIZE} />,
                   onClick: handleSaveNew,
-                  disabled: !canSaveNew,
+                  disabled: !canConfirm,
                 },
               ]
             : []),
           {
             key: "save",
             label: "Save mix",
+            tooltip: hasExistingMix ? "Update" : undefined,
             icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: handleSave,
-            variant: "primary" as const,
             disabled: !canConfirm,
           },
         ];
@@ -255,9 +263,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
           <h2 id="save-mix-name-title" style={SHEET_TITLE}>
             {title}
           </h2>
-          <p style={{ ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" }}>
-            {subtitle}
-          </p>
+          <p style={subtitleStyle}>{subtitle}</p>
           <div
             style={{
               marginTop: SECTION_GAP,
@@ -291,7 +297,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
         </header>
 
         <div
-          className="flex-1 min-h-0 flex flex-col"
+          className="flex-1 min-h-0 flex flex-col justify-center"
           style={{
             paddingLeft: SHEET_PAD_X,
             paddingRight: SHEET_PAD_X,
@@ -299,7 +305,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
           }}
         >
           <div
-            className="mt-auto"
+            className="w-full"
             style={{
               maxWidth: 360,
               marginLeft: "auto",
@@ -338,7 +344,9 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
             />
             <button
               type="button"
-              onClick={handleGenerate}
+              onClick={() =>
+                handleGenerate(hasExistingMix ? registryForNew : registryForEdit)
+              }
               className="w-full rounded-xl transition-all duration-200 active:scale-[0.98]"
               style={{
                 marginTop: LABEL_GAP,

@@ -17,6 +17,7 @@ import {
   UserRoundCheck,
   UserRound,
   ShieldCheck,
+  SavePlus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -41,30 +42,7 @@ function createActionIcon(Icon: LucideIcon) {
 
 export const SaveIcon = createActionIcon(Save);
 
-/** Save-as-new — Lucide save-plus paths (not in lucide-react 0.487). */
-export function SaveNewIcon({ size = DEFAULT_ICON_SIZE }: { size?: number }) {
-  const props = actionIconProps(size);
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={props.size}
-      height={props.size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={props.strokeWidth}
-      strokeLinecap={props.strokeLinecap}
-      strokeLinejoin={props.strokeLinejoin}
-      aria-hidden={props["aria-hidden"]}
-    >
-      <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-      <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
-      <path d="M7 3v4a1 1 0 0 0 1 1h7" />
-      <path d="M18 12h4" />
-      <path d="M20 10v4" />
-    </svg>
-  );
-}
+export const SaveNewIcon = createActionIcon(SavePlus);
 
 export const SavedIcon = createActionIcon(Check);
 

@@ -8,6 +8,7 @@ export const SHEET_FOOTER_PAD_X = "max(20px, var(--safe-left), var(--safe-right)
 export const SHEET_FOOTER_BTN_H = 44;
 const SHEET_FOOTER_GAP = 8;
 const SHEET_FOOTER_ICON = 18;
+const TOOLTIP_LINE_H = 7;
 
 export interface SheetFooterButton {
   key: string;
@@ -17,34 +18,73 @@ export interface SheetFooterButton {
   variant?: "primary" | "secondary";
   accentColor?: string;
   disabled?: boolean;
+  /** Short label floated above the button — does not affect layout. */
+  tooltip?: string;
 }
 
 interface SheetFooterProps {
   buttons: SheetFooterButton[];
 }
 
+function SheetFooterTooltip({ label }: { label: string }) {
+  return (
+    <div
+      className="absolute left-1/2 flex flex-col items-center pointer-events-none"
+      style={{
+        bottom: "100%",
+        transform: "translateX(-50%)",
+        marginBottom: 4,
+        zIndex: 1,
+      }}
+      aria-hidden
+    >
+      <span
+        style={{
+          fontFamily: "'Outfit', sans-serif",
+          fontSize: "var(--text-ui-xs)",
+          fontWeight: 600,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: c.muted,
+          whiteSpace: "nowrap",
+          lineHeight: 1.1,
+        }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          display: "block",
+          width: 1,
+          height: TOOLTIP_LINE_H,
+          marginTop: 4,
+          background: "rgba(255,255,255,0.22)",
+          borderRadius: 1,
+        }}
+      />
+    </div>
+  );
+}
+
 function SheetIconButton({
   label,
   icon,
   onClick,
-  variant = "secondary",
   accentColor,
   disabled = false,
 }: SheetFooterButton) {
-  const isPrimary = variant === "primary";
-
   return (
     <button
       type="button"
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className="flex-1 min-w-0 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-[0.98]"
+      className="w-full min-w-0 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-[0.98]"
       style={{
         height: SHEET_FOOTER_BTN_H,
-        background: isPrimary ? s.sheetBtnBgActive : c.entitySurfaceIdle,
+        background: c.entitySurfaceIdle,
         border: b.sheetBtn,
-        color: accentColor ?? (isPrimary ? c.title : c.actionSecondaryLabel),
+        color: accentColor ?? c.title,
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.42 : 1,
       }}
@@ -73,7 +113,10 @@ export function SheetFooter({ buttons }: SheetFooterProps) {
       }}
     >
       {buttons.map((btn) => (
-        <SheetIconButton key={btn.key} {...btn} />
+        <div key={btn.key} className="relative flex flex-1 min-w-0 justify-center">
+          {btn.tooltip ? <SheetFooterTooltip label={btn.tooltip} /> : null}
+          <SheetIconButton {...btn} />
+        </div>
       ))}
     </footer>
   );
