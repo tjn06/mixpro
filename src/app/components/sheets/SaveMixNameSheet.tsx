@@ -1,7 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
 import { CloseIcon, SaveIcon, SaveNewIcon } from "../shared/ActionIcons";
 import { savedMixDisplayName } from "../../saved-mixes/display";
+import {
+  appendRecentSkipped,
+  createMetaNameRegistryFromMixes,
+  generateMixMetaName,
+  validateMetaName,
+} from "../../saved-mixes/metaName";
+import type { BatchNameInput } from "../../batch-names";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import {
   SHEET_FIELD_INPUT_CLASS,
@@ -22,12 +29,20 @@ const SHEET_MARGIN_TOP = 6;
 const SHEET_RADIUS = 28;
 const SHEET_PAD_X = 20;
 const INPUT_H = 40;
+const GENERATE_BTN_H = 36;
 const SECTION_GAP = 20;
 const LABEL_GAP = 8;
 
 export type SaveMixStrategy = "update" | "new";
 
-type SaveMixNameSheetProps =
+type SaveMixNameSheetCommonProps = {
+  savedMixes?: readonly SavedMixSnapshot[];
+  /** Skip this mix's meta name when checking collisions (update/rename). */
+  excludeMixId?: string;
+};
+
+type SaveMixNameSheetProps = SaveMixNameSheetCommonProps &
+  (
   | {
       mode: "save";
       open: boolean;
@@ -35,6 +50,7 @@ type SaveMixNameSheetProps =
       recipeName: string;
       /** When set, user can update this snapshot or save as a new mix. */
       existingMix?: SavedMixSnapshot | null;
+      batchNameInput: BatchNameInput;
       onConfirm: (metaName?: string, strategy?: SaveMixStrategy) => void;
       mix?: never;
     }
@@ -43,28 +59,68 @@ type SaveMixNameSheetProps =
       open: boolean;
       onOpenChange: (open: boolean) => void;
       mix: SavedMixSnapshot;
+      batchNameInput: BatchNameInput;
       onConfirm: (metaName?: string) => void;
       recipeName?: never;
       existingMix?: never;
-    };
+    }
+  );
+
+function initialDisplayName(
+  mode: SaveMixNameSheetProps["mode"],
+  existingMix: SavedMixSnapshot | null,
+): string {
+  if (mode === "rename" && existingMix) {
+    return existingMix.metaName?.trim() ?? "";
+  }
+  if (existingMix?.metaName?.trim()) {
+    return existingMix.metaName.trim();
+  }
+  return "";
+}
 
 export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
-  const { open, onOpenChange, onConfirm, mode } = props;
+  const { open, onOpenChange, onConfirm, mode, savedMixes = [], excludeMixId } = props;
   const recipeName = mode === "save" ? props.recipeName : props.mix.recipeName;
-  const existingMix = mode === "save" ? props.existingMix ?? null : null;
-  const hasExistingMix = Boolean(existingMix);
+  const existingMix = mode === "save" ? props.existingMix ?? null : props.mix;
+  const hasExistingMix = mode === "save" && Boolean(existingMix);
   const existingDisplayName = existingMix ? savedMixDisplayName(existingMix) : "";
+  const resolvedExcludeMixId =
+    excludeMixId ?? (mode === "rename" ? props.mix.id : existingMix?.id);
 
-  const [name, setName] = useState(recipeName);
+  const [name, setName] = useState("");
+  const [nameVariation, setNameVariation] = useState(0);
+  const [recentSkipped, setRecentSkipped] = useState<string[]>([]);
+
+  const registryForEdit = useMemo(
+    () => createMetaNameRegistryFromMixes(savedMixes, resolvedExcludeMixId),
+    [savedMixes, resolvedExcludeMixId],
+  );
+  const registryForNew = useMemo(
+    () => createMetaNameRegistryFromMixes(savedMixes),
+    [savedMixes],
+  );
+
+  const nameError = useMemo(() => validateMetaName(name, registryForEdit), [name, registryForEdit]);
+  const saveNewError = useMemo(
+    () => (hasExistingMix ? validateMetaName(name, registryForNew) : null),
+    [hasExistingMix, name, registryForNew],
+  );
+  const canConfirm = nameError === null;
+  const canSaveNew = saveNewError === null;
+  const batchNameInput = props.batchNameInput;
 
   useEffect(() => {
     if (!open) return;
-    setName(
-      hasExistingMix && existingMix
-        ? savedMixDisplayName(existingMix)
-        : recipeName,
-    );
-  }, [open, recipeName, hasExistingMix, existingMix]);
+    const initial = initialDisplayName(mode, existingMix);
+    if (initial) {
+      setName(initial);
+    } else {
+      setName(generateMixMetaName(batchNameInput, 0, registryForEdit));
+    }
+    setNameVariation(0);
+    setRecentSkipped([]);
+  }, [open, mode, existingMix?.id, batchNameInput, registryForEdit]);
 
   if (!open) return null;
 
@@ -73,10 +129,11 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
     mode === "save"
       ? hasExistingMix
         ? `Update “${existingDisplayName}” or save as a new mix`
-        : "Optional label — recipe name is kept either way"
-      : "Clear custom label to show the recipe name again";
+        : "Custom label only — cannot match a recipe name"
+      : "Clear the field to show the recipe name again";
 
   const handleSave = () => {
+    if (!canConfirm) return;
     if (mode === "save") {
       onConfirm(name, hasExistingMix ? "update" : "new");
     } else {
@@ -86,9 +143,28 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
   };
 
   const handleSaveNew = () => {
+    if (!canSaveNew) return;
     onConfirm(name, "new");
     onOpenChange(false);
   };
+
+  const handleGenerate = () => {
+    const nextRecentSkipped = appendRecentSkipped(recentSkipped, name);
+    const nextVariation = nameVariation + 1;
+
+    setRecentSkipped(nextRecentSkipped);
+    setNameVariation(nextVariation);
+    setName(
+      generateMixMetaName(
+        batchNameInput,
+        nextVariation,
+        registryForEdit,
+        nextRecentSkipped,
+      ),
+    );
+  };
+
+  const activeError = nameError ?? (hasExistingMix ? saveNewError : null);
 
   const footerButtons =
     mode === "rename"
@@ -105,6 +181,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
             icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: handleSave,
             variant: "primary" as const,
+            disabled: !canConfirm,
           },
         ]
       : [
@@ -121,6 +198,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                   label: "Save as new mix",
                   icon: <SaveNewIcon size={SHEET_FOOTER_ICON_SIZE} />,
                   onClick: handleSaveNew,
+                  disabled: !canSaveNew,
                 },
               ]
             : []),
@@ -130,6 +208,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
             icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: handleSave,
             variant: "primary" as const,
+            disabled: !canConfirm,
           },
         ];
 
@@ -247,9 +326,54 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
               maxLength={64}
               autoComplete="off"
               spellCheck={false}
+              placeholder="e.g. Morning Little Mix"
+              aria-invalid={activeError != null}
+              aria-describedby={activeError ? "save-mix-name-error" : undefined}
               className={SHEET_FIELD_INPUT_CLASS}
-              style={sheetFieldInputStyle({ height: INPUT_H, textAlign: "center" })}
+              style={sheetFieldInputStyle({
+                height: INPUT_H,
+                textAlign: "center",
+                border: activeError ? `1px solid ${c.bucketLimit}` : undefined,
+              })}
             />
+            <button
+              type="button"
+              onClick={handleGenerate}
+              className="w-full rounded-xl transition-all duration-200 active:scale-[0.98]"
+              style={{
+                marginTop: LABEL_GAP,
+                height: GENERATE_BTN_H,
+                background: c.entitySurfaceIdle,
+                border: b.sheetBtn,
+                color: c.actionSecondaryLabel,
+                fontFamily: "'Outfit', sans-serif",
+                fontSize: "var(--text-ui-sm)",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              Generate name
+            </button>
+            {activeError && (
+              <p
+                id="save-mix-name-error"
+                role="alert"
+                style={{
+                  marginTop: LABEL_GAP,
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: "var(--text-ui-xs)",
+                  fontWeight: 500,
+                  letterSpacing: "0.03em",
+                  lineHeight: 1.35,
+                  color: c.bucketLimit,
+                  textAlign: "center",
+                }}
+              >
+                {activeError}
+              </p>
+            )}
           </div>
         </div>
 

@@ -1,0 +1,41 @@
+{
+  "prefixes": [
+    "Chef's",
+    "House",
+    "Kitchen",
+    "Daily",
+    "Today's",
+    "Signature",
+    "Seasonal"
+  ],
+  "selections": [
+    "Selection",
+    "Special",
+    "Blend",
+    "Recipe",
+    "Creation",
+    "Offering",
+    "Plate"
+  ],
+  "descriptors": [
+    "House Blend",
+    "Daily Special",
+    "Chef's Choice",
+    "Kitchen Standard",
+    "Today's Special",
+    "House Favorite",
+    "Menu Special"
+  ],
+  "templates": [
+    "{prefix} {time.adjective} Selection",
+    "{prefix} {dominantPart} Blend",
+    "House {dominantPart} Blend",
+    "The Daily {batchNoun}",
+    "{dominantPart} à la {weekday}",
+    "Chef's {weekday} {batchNoun}",
+    "{descriptor}",
+    "{prefix} {batchNoun}",
+    "The {time.adjective} Special",
+    "{recipe.lead} House Blend"
+  ]
+}

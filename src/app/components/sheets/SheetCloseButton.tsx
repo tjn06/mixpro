@@ -16,6 +16,7 @@ export interface SheetFooterButton {
   onClick: () => void;
   variant?: "primary" | "secondary";
   accentColor?: string;
+  disabled?: boolean;
 }
 
 interface SheetFooterProps {
@@ -28,6 +29,7 @@ function SheetIconButton({
   onClick,
   variant = "secondary",
   accentColor,
+  disabled = false,
 }: SheetFooterButton) {
   const isPrimary = variant === "primary";
 
@@ -36,13 +38,15 @@ function SheetIconButton({
       type="button"
       aria-label={label}
       onClick={onClick}
+      disabled={disabled}
       className="flex-1 min-w-0 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-[0.98]"
       style={{
         height: SHEET_FOOTER_BTN_H,
         background: isPrimary ? s.sheetBtnBgActive : c.entitySurfaceIdle,
         border: b.sheetBtn,
         color: accentColor ?? (isPrimary ? c.title : c.actionSecondaryLabel),
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.42 : 1,
       }}
     >
       <span

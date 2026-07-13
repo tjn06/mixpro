@@ -1,0 +1,227 @@
+{
+  "size": {
+    "tiny": {
+      "adjectives": ["Little", "Tiny", "Pocket", "Mini"],
+      "nouns": ["Wonder", "Measure", "Pour", "Edition"],
+      "phrases": ["Small Batch, Big Plans", "Tiny but Mighty", "Pocket Pour"],
+      "templates": [
+        "The {size.adjective} {size.noun}",
+        "{size.adjective} but Mighty",
+        "The {size.adjective} {batchNoun}"
+      ],
+      "styleBoost": { "contextual": 1.4, "playful": 1.2 }
+    },
+    "small": {
+      "adjectives": ["Small", "Compact", "Light", "Quick"],
+      "nouns": ["Batch", "Pour", "Measure", "Run"],
+      "templates": [
+        "The {size.adjective} {batchNoun}",
+        "{size.adjective} {dominantPart} {batchNoun}"
+      ],
+      "styleBoost": { "contextual": 1.2 }
+    },
+    "medium": {
+      "adjectives": ["Balanced", "Classic", "Steady", "Standard"],
+      "nouns": ["Batch", "Blend", "Measure", "Mix"],
+      "templates": [
+        "The {rec.adjective} {batchNoun}",
+        "{size.adjective} {batchNoun}"
+      ],
+      "styleBoost": { "contextual": 1.1, "craft": 1.1 }
+    },
+    "large": {
+      "adjectives": ["Big", "Mighty", "Heavy", "Grand"],
+      "nouns": ["Pour", "Batch", "Measure", "Blend"],
+      "phrases": ["Heavy Hitter", "Big Bucket Energy"],
+      "templates": [
+        "The {size.adjective} {time.adjective} Pour",
+        "{size.adjective} {batchNoun}"
+      ],
+      "styleBoost": { "contextual": 1.3, "playful": 1.1 }
+    },
+    "huge": {
+      "adjectives": ["Giant", "Massive", "Titan", "Monumental"],
+      "nouns": ["Pour", "Batch", "Measure", "Blend"],
+      "phrases": ["No Room Left", "Filled to the Top"],
+      "templates": [
+        "The {size.adjective} {batchNoun}",
+        "{size.adjective} {dominantPart} {batchNoun}"
+      ],
+      "styleBoost": { "contextual": 1.4, "playful": 1.2 }
+    }
+  },
+  "timeOfDay": {
+    "early": {
+      "adjectives": ["Early", "Bright Start", "First Light", "Sunrise"],
+      "nouns": ["Mix", "Batch", "Pour", "Measure"],
+      "phrases": ["Before Coffee", "First Light Batch", "Bright Start"],
+      "templates": [
+        "The {time.adjective} {size.adjective} {batchNoun}",
+        "{time.adjective} {batchNoun}"
+      ],
+      "styleBoost": { "contextual": 1.5 }
+    },
+    "morning": {
+      "adjectives": ["Morning", "Fresh Start", "Daybreak", "First Pour"],
+      "nouns": ["Mix", "Batch", "Blend", "Measure"],
+      "templates": [
+        "The {time.adjective} {batchNoun}",
+        "{time.adjective} {dominantPart} {batchNoun}"
+      ],
+      "styleBoost": { "contextual": 1.2 }
+    },
+    "midday": {
+      "adjectives": ["Midday", "Lunch Break", "Noon", "Halfway There"],
+      "nouns": ["Mix", "Pour", "Measure", "Batch"],
+      "phrases": ["Lunch Break Mix", "Halfway There", "Midday Measure", "Noon Pour"],
+      "styleBoost": { "contextual": 1.3, "playful": 1.2 }
+    },
+    "afternoon": {
+      "adjectives": ["Afternoon", "Steady", "Day Shift", "Second Wind"],
+      "nouns": ["Mix", "Batch", "Pour", "Blend"],
+      "templates": ["{time.adjective} {batchNoun}"],
+      "styleBoost": { "contextual": 1.1 }
+    },
+    "evening": {
+      "adjectives": ["Evening", "Sunset", "Last Light", "Home Stretch"],
+      "nouns": ["Pour", "Blend", "Mix", "Batch"],
+      "templates": [
+        "The {rec.adjective} {time.adjective} Pour",
+        "{time.adjective} {batchNoun}"
+      ],
+      "styleBoost": { "contextual": 1.3, "craft": 1.1 }
+    },
+    "night": {
+      "adjectives": ["Night Owl", "Late Shift", "Moonlight", "After Hours"],
+      "nouns": ["Blend", "Mix", "Pour", "Batch"],
+      "phrases": ["Night Owl", "Midnight Blend", "After Hours"],
+      "templates": [
+        "{time.adjective} {dominantPart} Reserve",
+        "The {time.adjective} {batchNoun}"
+      ],
+      "styleBoost": { "contextual": 1.2, "craft": 1.3, "playful": 1.1 }
+    }
+  },
+  "fill": {
+    "light": {
+      "templates": ["{fill.adjective} {batchNoun}", "{leading} {fill.phrase}{trailing}"],
+      "styleBoost": { "contextual": 1.1 }
+    },
+    "quarter": {
+      "templates": ["{fill.phrase}", "The {fill.adjective} {batchNoun}"],
+      "styleBoost": { "contextual": 1.15 }
+    },
+    "half": {
+      "templates": ["{fill.phrase}", "{fill.adjective} {batchNoun}"],
+      "styleBoost": { "contextual": 1.2 }
+    },
+    "three-quarter": {
+      "templates": ["{fill.phrase}", "The {fill.adjective} {batchNoun}"],
+      "styleBoost": { "contextual": 1.25 }
+    },
+    "nearly-full": {
+      "templates": ["{fill.phrase}", "Almost {fill.adjective}", "{leading} {fill.phrase}{trailing}"],
+      "styleBoost": { "contextual": 1.4 }
+    },
+    "full": {
+      "templates": ["{fill.phrase}", "The {fill.adjective} {batchNoun}", "{leading} {fill.phrase}{trailing}"],
+      "specialChance": 0.25,
+      "styleBoost": { "contextual": 1.3, "playful": 1.2 }
+    },
+    "overflow": {
+      "templates": ["{fill.phrase}", "The {fill.adjective} {batchNoun}"],
+      "specialChance": 0.3,
+      "styleBoost": { "playful": 1.4, "contextual": 1.2 }
+    }
+  },
+  "recommendation": {
+    "under": {
+      "adjectives": ["Easy Going", "Light", "Gentle"],
+      "phrases": ["Room to Spare", "Light Work", "Easy Does It"],
+      "templates": ["{rec.adjective} {batchNoun}"],
+      "styleBoost": { "playful": 1.1 }
+    },
+    "close": {
+      "adjectives": ["Just Right", "Perfect", "On Target"],
+      "phrases": ["Just Right", "Perfect Measure", "On Target", "Probably Enough"],
+      "templates": ["{rec.phrase} {batchNoun}", "{rec.adjective} {batchNoun}"],
+      "styleBoost": { "contextual": 1.2, "playful": 1.2 }
+    },
+    "over": {
+      "adjectives": ["Heavy", "Bold", "Extra"],
+      "phrases": ["Heavy Hitter", "Big Pour", "Extra Measure"],
+      "templates": ["The {rec.adjective} {time.adjective} Pour", "{rec.adjective} {batchNoun}"],
+      "styleBoost": { "contextual": 1.3, "playful": 1.1 }
+    }
+  },
+  "compound": {
+    "fridayLateShift": {
+      "phrases": [
+        "Friday Finish",
+        "The Final Friday Pour",
+        "Weekend Loading",
+        "Friday Home Stretch"
+      ],
+      "specialChance": 0.75,
+      "styleBoost": { "playful": 2.0, "contextual": 1.5 }
+    },
+    "lateShift": {
+      "phrases": [
+        "Time to Go Home",
+        "One More and Done",
+        "The Closing Pour",
+        "Last Batch Standing",
+        "One More Pour",
+        "The Home Stretch",
+        "Closing Time Mix"
+      ],
+      "specialChance": 0.65,
+      "styleBoost": { "playful": 2.0, "contextual": 1.3 }
+    },
+    "deepNight": {
+      "phrases": [
+        "Night Owl",
+        "Moonlight Mix",
+        "After Hours",
+        "Midnight Blend",
+        "Late Night Pour"
+      ],
+      "specialChance": 0.55,
+      "styleBoost": { "craft": 1.4, "playful": 1.2 }
+    },
+    "earlyMorning": {
+      "phrases": [
+        "The Early Little Mix",
+        "First Light Batch",
+        "Before Coffee",
+        "Bright Start"
+      ],
+      "specialChance": 0.5,
+      "styleBoost": { "contextual": 1.6 }
+    },
+    "lateNight": {
+      "phrases": [
+        "Night Owl",
+        "Evening Pour",
+        "Sunset Blend",
+        "Last Light Mix"
+      ],
+      "specialChance": 0.45,
+      "styleBoost": { "craft": 1.2, "contextual": 1.2 }
+    },
+    "weekend": {
+      "phrases": [
+        "Weekend Pour",
+        "Saturday Special",
+        "Sunday Blend",
+        "Weekend Warrior"
+      ],
+      "specialChance": 0.4,
+      "styleBoost": { "playful": 1.5, "contextual": 1.2 }
+    },
+    "weekdayNamed": {
+      "templates": ["{weekday} Pour", "{weekday} Mix", "{weekday} Measure", "{weekday} Finish"]
+    }
+  },
+  "batchNouns": ["Batch", "Mix", "Pour", "Blend", "Measure"]
+}

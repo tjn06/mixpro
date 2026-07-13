@@ -39,6 +39,7 @@ import { LockedSaveOverlay } from "./components/mixer/LockedSaveOverlay";
 import { LockedUnlockOverlay } from "./components/mixer/LockedUnlockOverlay";
 import { LoadSavedMixesSheet } from "./components/sheets/LoadSavedMixesSheet";
 import { SaveMixNameSheet } from "./components/sheets/SaveMixNameSheet";
+import { batchNameInputFromMixer } from "./batch-names";
 import type { SavedMixSnapshot } from "./saved-mixes/types";
 import { UndoIcon } from "./components/shared/ActionIcons";
 import type { BlendingRecipe } from "./domain/recipe/types";
@@ -625,7 +626,7 @@ export function BatchMixer({
   const [saveFlash, setSaveFlash]   = useState(false);
   const [loadPickerOpen, setLoadPickerOpen] = useState(false);
   const [saveNameSheetOpen, setSaveNameSheetOpen] = useState(false);
-  const [loadedSavedMix, setLoadedSavedMix] = useState<SavedMixSnapshot | null>(null);
+  const [loadedSavedMixId, setLoadedSavedMixId] = useState<string | null>(null);
   const [screen, setScreen] = useState<MixerScreen>("mixer");
   const [batchMultiplier, setBatchMultiplier] = useState(1);
   const [complementValues, setComplementValues] = useState(() => emptyComplementValues());
@@ -706,21 +707,62 @@ export function BatchMixer({
     [values, activeRecipe, bucketSelection, sandType],
   );
 
+  const saveMix = useSavedMixesStore((s) => s.saveMix);
+  const updateMix = useSavedMixesStore((s) => s.updateMix);
+  const savedMixes = useSavedMixesStore((s) => s.mixes);
+  const canLoad = savedMixes.length > 0;
+
+  /** Live snapshot from persist store — stays in sync after rename/delete/update. */
+  const loadedSavedMix = useMemo(
+    () =>
+      loadedSavedMixId
+        ? savedMixes.find((mix) => mix.id === loadedSavedMixId) ?? null
+        : null,
+    [savedMixes, loadedSavedMixId],
+  );
+
+  useEffect(() => {
+    if (loadedSavedMixId && !loadedSavedMix) {
+      setLoadedSavedMixId(null);
+    }
+  }, [loadedSavedMixId, loadedSavedMix]);
+
+  const saveBatchNameInput = useMemo(
+    () =>
+      batchNameInputFromMixer({
+        recipeName: recipeMenuLabel(activeRecipe),
+        recipe: activeRecipe,
+        totalGrams: values[0] ?? 0,
+        recommendedTotalGrams,
+        bucketSelection,
+        mixVolumeLiters: mixVolume.estimatedLiters,
+        id: loadedSavedMixId ?? undefined,
+      }),
+    [
+      activeRecipe,
+      values,
+      recommendedTotalGrams,
+      bucketSelection,
+      mixVolume.estimatedLiters,
+      loadedSavedMixId,
+    ],
+  );
+
   const handleRecipeChange = useCallback(
     (next: BlendingRecipe) => {
       if (next.id === activeRecipe.id) {
-        if (!loadedSavedMix) return;
-        setLoadedSavedMix(null);
+        if (!loadedSavedMixId) return;
+        setLoadedSavedMixId(null);
         setValues(initialMixValues(next, recipeBinderSum(next, initialBinderSum)));
         setActive(0);
         return;
       }
-      setLoadedSavedMix(null);
+      setLoadedSavedMixId(null);
       setActiveRecipe(next);
       setValues(initialMixValues(next, recipeBinderSum(next, initialBinderSum)));
       setActive(0);
     },
-    [activeRecipe.id, initialBinderSum, loadedSavedMix],
+    [activeRecipe.id, initialBinderSum, loadedSavedMixId],
   );
 
   useEffect(() => {
@@ -775,10 +817,6 @@ export function BatchMixer({
     setValues(prev);
     setCanUndo(stack.length > 0);
   }, []);
-
-  const saveMix = useSavedMixesStore((s) => s.saveMix);
-  const updateMix = useSavedMixesStore((s) => s.updateMix);
-  const canLoad = useSavedMixesStore((s) => s.mixes.length > 0);
 
   /** Bucket bordered panel height follows rec. batch + save/load column — never taller. */
   useLayoutEffect(() => {
@@ -869,11 +907,10 @@ export function BatchMixer({
       };
 
       if (strategy === "update" && loadedSavedMix) {
-        const updated = updateMix(loadedSavedMix.id, input);
-        if (updated) setLoadedSavedMix(updated);
+        updateMix(loadedSavedMix.id, input);
       } else {
         const saved = saveMix(input);
-        setLoadedSavedMix(saved);
+        setLoadedSavedMixId(saved.id);
       }
 
       setSaveFlash(true);
@@ -900,7 +937,7 @@ export function BatchMixer({
       const loaded = gramsFromSnapshot(mix.values);
       setValues(clampMixValuesToBucketMax(loaded, recipe, mix.bucketSelection, sandType));
       setActive(0);
-      setLoadedSavedMix(mix);
+      setLoadedSavedMixId(mix.id);
     },
     [pushUndo, recipes, sandType],
   );
@@ -1580,6 +1617,8 @@ export function BatchMixer({
           onOpenChange={setSaveNameSheetOpen}
           recipeName={recipeMenuLabel(activeRecipe)}
           existingMix={loadedSavedMix}
+          savedMixes={savedMixes}
+          batchNameInput={saveBatchNameInput}
           onConfirm={handleSaveConfirm}
         />
 

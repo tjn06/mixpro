@@ -1,0 +1,13 @@
+{
+  "leading": ["The", "Our", "A", "Today's"],
+  "trailing": [
+    "",
+    " Batch",
+    " Blend",
+    " Edition",
+    " Reserve",
+    " No. {batchNumber}",
+    " — Vol. {batchNumber}",
+    " — {batchNumber}"
+  ]
+}

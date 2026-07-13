@@ -14,6 +14,7 @@ import { useSavedMixesStore } from "../../saved-mixes/store";
 import { savedMixDisplayName } from "../../saved-mixes/display";
 import { getHumanSavedTime, getSavedMixTimeSearchText } from "../../saved-mixes/humanSavedTime";
 import { useTickingNow } from "../../hooks/useTickingNow";
+import { batchNameInputFromSavedMix } from "../../batch-names";
 import { SaveMixNameSheet } from "./SaveMixNameSheet";
 import {
   SHEET_FIELD_INPUT_CLASS,
@@ -656,6 +657,8 @@ export function LoadSavedMixesSheet({
             if (!next) setRenameMix(null);
           }}
           mix={renameMix}
+          savedMixes={mixes}
+          batchNameInput={batchNameInputFromSavedMix(renameMix)}
           onConfirm={(metaName) => updateMixMetaName(renameMix.id, metaName)}
         />
       )}
