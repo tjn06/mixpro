@@ -64,6 +64,12 @@ const hcSurfaces = {
   app: primitiveInk[900],
   longPressAction: "#44444e",
   longPressActionActive: "#50505a",
+  longPressLabelIdle: hcText.primary,
+  longPressLabelHolding: hcText.primary,
+  longPressLabelDisabled: hcText.muted,
+  longPressProgress: hcText.secondary,
+  longPressBeamTrack: alphaWhite(0.18),
+  longPressFill: alphaWhite(0.1),
 } as const;
 
 /** Semantic + component + legacy CSS var overrides for high-contrast mode. */
@@ -98,6 +104,12 @@ export function getHighContrastCssEntries(): [string, string][] {
     [componentCssVarNames.surfaceButtonActiveSolid, hcSurfaces.buttonActiveSolid],
     [componentCssVarNames.surfaceLongPress, hcSurfaces.longPressAction],
     [componentCssVarNames.surfaceLongPressActive, hcSurfaces.longPressActionActive],
+    [componentCssVarNames.longPressLabelIdle, hcSurfaces.longPressLabelIdle],
+    [componentCssVarNames.longPressLabelHolding, hcSurfaces.longPressLabelHolding],
+    [componentCssVarNames.longPressLabelDisabled, hcSurfaces.longPressLabelDisabled],
+    [componentCssVarNames.longPressProgress, hcSurfaces.longPressProgress],
+    [componentCssVarNames.longPressBeamTrack, hcSurfaces.longPressBeamTrack],
+    [componentCssVarNames.longPressFill, hcSurfaces.longPressFill],
     [componentCssVarNames.surfaceInput, hcSurfaces.input],
     [componentCssVarNames.surfaceApp, hcSurfaces.app],
   ];

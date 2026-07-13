@@ -73,6 +73,12 @@ const hcSurfaces = {
   tooltipLine: alphaBlack(0.24),
   longPressAction: alphaBlack(0.14),
   longPressActionActive: alphaBlack(0.18),
+  longPressLabelIdle: hcText.primary,
+  longPressLabelHolding: hcText.primary,
+  longPressLabelDisabled: hcText.muted,
+  longPressProgress: hcText.secondary,
+  longPressBeamTrack: alphaBlack(0.16),
+  longPressFill: alphaBlack(0.08),
 } as const;
 
 const hcLegacyColors: Record<ThemeColorKey, string> = {
@@ -156,6 +162,12 @@ export function getLightHighContrastCssEntries(): [string, string][] {
     [componentCssVarNames.surfaceButtonActiveSolid, hcSurfaces.buttonActiveSolid],
     [componentCssVarNames.surfaceLongPress, hcSurfaces.longPressAction],
     [componentCssVarNames.surfaceLongPressActive, hcSurfaces.longPressActionActive],
+    [componentCssVarNames.longPressLabelIdle, hcSurfaces.longPressLabelIdle],
+    [componentCssVarNames.longPressLabelHolding, hcSurfaces.longPressLabelHolding],
+    [componentCssVarNames.longPressLabelDisabled, hcSurfaces.longPressLabelDisabled],
+    [componentCssVarNames.longPressProgress, hcSurfaces.longPressProgress],
+    [componentCssVarNames.longPressBeamTrack, hcSurfaces.longPressBeamTrack],
+    [componentCssVarNames.longPressFill, hcSurfaces.longPressFill],
     [componentCssVarNames.surfaceInput, hcSurfaces.input],
     [componentCssVarNames.surfaceApp, hcSurfaces.app],
   ];

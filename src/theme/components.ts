@@ -112,6 +112,7 @@ export const componentTokens = {
     surfaceRaised: semanticColors.surface.raised,
     surfaceHolding: semanticColors.surface.input,
     opacityDisabledHeader: 0.35,
+    opacityDisabledSheet: 0.58,
     borderWidthHeader: 1,
     borderWidthSheet: 1.5,
     borderAlpha: {

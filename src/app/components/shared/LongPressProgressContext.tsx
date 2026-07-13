@@ -6,9 +6,9 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
-import { componentTokens } from "../../ui/tokens";
+import { cv } from "../../ui/tokens";
 
-export const DEFAULT_LONG_PRESS_PROGRESS_COLOR = componentTokens.longPress.progress;
+export const DEFAULT_LONG_PRESS_PROGRESS_COLOR = cv.longPress.progress;
 
 /** Fixed slot under header — always reserved so long-press UI never shifts layout. */
 export const HEADER_CONFIRM_SLOT_H = 30;
@@ -86,7 +86,7 @@ export function LongPressHeaderBar() {
           style={{
             height: 2,
             borderRadius: 1,
-            background: componentTokens.longPress.beamTrack,
+            background: cv.longPress.beamTrack,
             overflow: "hidden",
           }}
         >

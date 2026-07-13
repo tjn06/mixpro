@@ -41,7 +41,6 @@ export const HEADER_NAV_LONG_PRESS_MS = 1000;
 const MOVE_THRESHOLD = 10;
 const LEFT_PROGRESS_W = 3;
 const PROGRESS_INSET = 5;
-const DEFAULT_PROGRESS_COLOR = lp.progress;
 
 type HoldBox = { top: number; left: number; width: number; height: number };
 
@@ -136,7 +135,7 @@ export function LongPressProgress({
   inset?: number;
 }) {
   if (progress <= 0) return null;
-  const barColor = accentColor ?? DEFAULT_PROGRESS_COLOR;
+  const barColor = accentColor ?? cv.longPress.progress;
   return (
     <>
       <div
@@ -157,7 +156,7 @@ export function LongPressProgress({
         className="absolute inset-x-0 bottom-0 pointer-events-none"
         style={{
           height: `${progress * 100}%`,
-          background: accentColor ? `${accentColor}14` : lp.fill,
+          background: accentColor ? `${accentColor}14` : cv.longPress.fill,
         }}
       />
     </>
@@ -231,18 +230,14 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
         : borderAlpha.secondaryIdle;
 
   const idleLabel = disabled
-    ? cv.state.disabled
+    ? cv.longPress.labelDisabled
     : holding
       ? isHeader
-        ? cv.text.primary
-        : cv.text.secondary
+        ? cv.longPress.labelHolding
+        : cv.longPress.labelHolding
       : isHeader
         ? cv.headerIconButton.color
-        : variant === "primary"
-          ? cv.text.muted
-          : compact
-            ? cv.text.muted
-            : cv.text.muted;
+        : cv.longPress.labelIdle;
 
   const lit = active || holding;
   const beamEngaged = progressVariant === "beam" && progress > 0;
@@ -355,6 +350,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
         border: borderStyle,
         color: isHeader ? (lit ? cv.headerIconButton.colorActive : cv.headerIconButton.color) : undefined,
         minHeight: isHeader ? 0 : compact ? 0 : 32,
+        ...(disabled && !isHeader ? { opacity: lp.opacityDisabledSheet } : {}),
         ...(isHeader
           ? {
               width: 40,

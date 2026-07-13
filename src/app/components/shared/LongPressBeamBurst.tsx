@@ -1,8 +1,7 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { componentTokens } from "../../ui/tokens";
+import { cv } from "../../ui/tokens";
 
-const lp = componentTokens.longPress;
 const FALLBACK_RADIUS = 14;
 /** Fixed side beams — below holding buttons (see BUTTON_OVER_BEAM_Z). */
 export const BEAM_Z = 18;
@@ -99,7 +98,7 @@ function SideBar({
       className="pointer-events-none fixed overflow-hidden"
       style={{ left, top: layout.top, width: barW, height: h, zIndex: BEAM_Z }}
     >
-      <div className="absolute inset-0" style={{ background: lp.beamTrack }} />
+      <div className="absolute inset-0" style={{ background: cv.longPress.beamTrack }} />
       {fillW > 0 && (
         <div
           className="absolute inset-0"
@@ -137,7 +136,7 @@ export function LongPressBeamBurst({
   edgeContainerRef?: RefObject<HTMLElement | null>;
 }) {
   const [layout, setLayout] = useState<Layout | null>(null);
-  const color = accentColor ?? lp.progress;
+  const color = accentColor ?? cv.longPress.progress;
 
   useLayoutEffect(() => {
     if (progress <= 0) {

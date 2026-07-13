@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { ColorScheme, ContrastLevel, ThemeAppearance } from "../../theme/appearance";
+import { applyThemeAppearance } from "../../theme/applyThemeAppearance";
 import {
   DEFAULT_APPEARANCE,
   migratePersistedSettings,
@@ -17,15 +18,34 @@ interface SettingsState extends ThemeAppearance {
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...DEFAULT_APPEARANCE,
-      setColorScheme: (colorScheme) => set({ colorScheme }),
-      setContrast: (contrast) => set({ contrast }),
-      setAppearance: (appearance) => set(appearance),
+      setColorScheme: (colorScheme) => {
+        set({ colorScheme });
+        if (typeof document !== "undefined") {
+          applyThemeAppearance(document.documentElement, { ...get(), colorScheme });
+        }
+      },
+      setContrast: (contrast) => {
+        set({ contrast });
+        if (typeof document !== "undefined") {
+          applyThemeAppearance(document.documentElement, { ...get(), contrast });
+        }
+      },
+      setAppearance: (appearance) => {
+        set(appearance);
+        if (typeof document !== "undefined") {
+          applyThemeAppearance(document.documentElement, appearance);
+        }
+      },
       toggleHighContrast: () =>
-        set((state) => ({
-          contrast: state.contrast === "high" ? "default" : "high",
-        })),
+        set((state) => {
+          const contrast = state.contrast === "high" ? "default" : "high";
+          if (typeof document !== "undefined") {
+            applyThemeAppearance(document.documentElement, { colorScheme: state.colorScheme, contrast });
+          }
+          return { contrast };
+        }),
     }),
     {
       name: SETTINGS_STORAGE_KEY,

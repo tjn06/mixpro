@@ -57,8 +57,14 @@ const lightSurfaces = {
   dropdown: paper[700],
   swipe: paper[800],
   inputSolid: paper[700],
-  longPressAction: "#b0b0b8",
-  longPressActionActive: "#a0a0a8",
+  longPressAction: "#c4c4cc",
+  longPressActionActive: "#b4b4bc",
+  longPressLabelIdle: lightText.secondary,
+  longPressLabelHolding: lightText.primary,
+  longPressLabelDisabled: lightText.muted,
+  longPressProgress: lightText.secondary,
+  longPressBeamTrack: alphaBlack(0.12),
+  longPressFill: alphaBlack(0.06),
 } as const;
 
 const lightLegacyColors: Record<ThemeColorKey, string> = {
@@ -142,6 +148,12 @@ export function getFullLightThemeEntries(): [string, string][] {
     [componentCssVarNames.surfaceButtonActiveSolid, lightSurfaces.buttonActiveSolid],
     [componentCssVarNames.surfaceLongPress, lightSurfaces.longPressAction],
     [componentCssVarNames.surfaceLongPressActive, lightSurfaces.longPressActionActive],
+    [componentCssVarNames.longPressLabelIdle, lightSurfaces.longPressLabelIdle],
+    [componentCssVarNames.longPressLabelHolding, lightSurfaces.longPressLabelHolding],
+    [componentCssVarNames.longPressLabelDisabled, lightSurfaces.longPressLabelDisabled],
+    [componentCssVarNames.longPressProgress, lightSurfaces.longPressProgress],
+    [componentCssVarNames.longPressBeamTrack, lightSurfaces.longPressBeamTrack],
+    [componentCssVarNames.longPressFill, lightSurfaces.longPressFill],
     [componentCssVarNames.surfaceInput, lightSurfaces.input],
     [componentCssVarNames.surfaceApp, lightSurfaces.app],
   ];
