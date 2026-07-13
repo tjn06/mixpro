@@ -1,14 +1,14 @@
 import type { CSSProperties } from "react";
-import { theme } from "../../theme";
+import { cv } from "../ui/tokens";
 
 /** Shared panel chrome — bucket + rec. batch columns. */
-export const FEATURE_PANEL_BG = theme.surfaces.transparent;
-export const FEATURE_PANEL_BORDER = theme.borders.panel;
+export const FEATURE_PANEL_BG = "transparent";
+export const FEATURE_PANEL_BORDER = cv.border.panel;
 
-export const FEATURE_TITLE_COLOR = theme.colors.muted;
-export const FEATURE_TITLE_COLOR_MUTED = theme.colors.mutedDim;
-export const FEATURE_VALUE_COLOR = theme.colors.value;
-export const FEATURE_VALUE_COLOR_MUTED = theme.colors.recipeValueMuted;
+export const FEATURE_TITLE_COLOR = cv.text.muted;
+export const FEATURE_TITLE_COLOR_MUTED = cv.text.dimmed;
+export const FEATURE_VALUE_COLOR = cv.text.secondary;
+export const FEATURE_VALUE_COLOR_MUTED = cv.text.muted;
 
 export const FEATURE_TITLE_STYLE: CSSProperties = {
   fontSize: "var(--text-feature-title)",

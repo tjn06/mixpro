@@ -2,9 +2,9 @@ import { useId, type ReactNode } from "react";
 import { BASE_CONFIG_DISPLAY_NAME, savedMixDisplayName } from "../../saved-mixes/display";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import { BaseConfigIcon, ConfigNameIcon } from "../shared/ActionIcons";
-import { theme } from "../../../theme";
+import { componentTokens } from "../../ui/tokens";
 
-const { colors: c } = theme;
+const meta = componentTokens.recipeMeta;
 
 export function RecipeZoneMeta({
   label,
@@ -40,7 +40,7 @@ export function RecipeZoneMeta({
             fontSize: "var(--text-recipe-meta-label)",
             letterSpacing: "0.12em",
             fontWeight: 700,
-            color: muted ? c.recipeIdMuted : c.recipeId,
+            color: muted ? meta.idMuted : meta.id,
             lineHeight: 1.1,
           }}
         >
@@ -69,7 +69,7 @@ export function RecipeZoneMetaValue({
         fontSize: "var(--text-recipe-select)",
         letterSpacing: "0.04em",
         fontWeight: 600,
-        color: muted ? c.recipeValueMuted : c.recipeValue,
+        color: muted ? meta.valueMuted : meta.value,
         lineHeight: 1.15,
       }}
     >
@@ -123,7 +123,7 @@ export function RecipeHeaderSublineValue({
   return (
     <span
       className={`app-header__subline-label truncate max-w-full text-center ${className}`}
-      style={{ color: muted ? c.recipeValueMuted : undefined }}
+      style={{ color: muted ? meta.valueMuted : undefined }}
     >
       {children}
     </span>

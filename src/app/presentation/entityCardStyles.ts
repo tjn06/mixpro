@@ -1,30 +1,32 @@
 import type { CSSProperties } from "react";
-import { theme } from "../../theme";
+import { themeColorVar } from "../../theme/cssVars";
+import { componentTokens } from "../../theme/components";
+import type { ColorScheme } from "../../theme/appearance";
+import { entityLitValueColor } from "./entityAccent";
+import { cv } from "../ui/tokens";
+
+const chrome = componentTokens.chrome;
 
 export const CARD_NAME_WEIGHT = 700;
 export const CARD_UNIT_WEIGHT = 600;
 
-/** @deprecated Prefer theme.colors.* — kept for existing imports. */
-export const CARD_VALUE_INACTIVE = theme.colors.cardValueInactive;
-/** @deprecated Prefer theme.colors.* — kept for existing imports. */
-export const CARD_UNIT_INACTIVE = theme.colors.cardUnitInactive;
-/** @deprecated Prefer theme.colors.* — kept for existing imports. */
-export const ENTITY_SURFACE_IDLE = theme.colors.entitySurfaceIdle;
-/** @deprecated Prefer theme.colors.entityBorderIdle — kept for existing imports. */
-export const RECIPE_RATIO_BORDER_COLOR = theme.colors.entityBorderIdle;
+export const CARD_VALUE_INACTIVE = themeColorVar("cardValueInactive");
+export const CARD_UNIT_INACTIVE = themeColorVar("cardUnitInactive");
+export const ENTITY_SURFACE_IDLE = themeColorVar("entitySurfaceIdle");
+export const RECIPE_RATIO_BORDER_COLOR = themeColorVar("entityBorderIdle");
 
-export const CARD_CHROME_TRANSITION = theme.chrome.cardChromeTransition;
+export const CARD_CHROME_TRANSITION = componentTokens.entityCard.transition;
 
 function entityCardShadow(color: string): string {
   return `0 0 14px ${color}55, 0 0 6px ${color}40`;
 }
 
 function entityActiveRing(color: string): string {
-  return `0 0 0 0.5px ${color}${theme.chrome.entityBorderActiveSuffix}`;
+  return `0 0 0 0.5px ${color}${chrome.entityBorderActiveSuffix}`;
 }
 
 function entitySurfaceLit(color: string): string {
-  return `color-mix(in srgb, ${color} ${theme.chrome.entityTintLitPct}%, ${ENTITY_SURFACE_IDLE})`;
+  return `color-mix(in srgb, ${color} ${chrome.entityTintLitPct}%, ${ENTITY_SURFACE_IDLE})`;
 }
 
 export function entityCardChrome(
@@ -32,8 +34,8 @@ export function entityCardChrome(
   lit: boolean,
 ): { border: string; boxShadow: string; background: string } {
   const border = lit
-    ? `${theme.chrome.entityBorderWidth} solid ${color}${theme.chrome.entityBorderActiveSuffix}`
-    : `${theme.chrome.entityBorderWidth} solid ${RECIPE_RATIO_BORDER_COLOR}`;
+    ? `${chrome.entityBorderWidth} solid ${color}${chrome.entityBorderActiveSuffix}`
+    : `${chrome.entityBorderWidth} solid ${RECIPE_RATIO_BORDER_COLOR}`;
   if (!lit) {
     return { border, boxShadow: "none", background: ENTITY_SURFACE_IDLE };
   }
@@ -44,7 +46,21 @@ export function entityCardChrome(
   };
 }
 
-export function entityCardReadoutStyle(nameColor: string, lit: boolean): {
+export function entityValueColor(lit: boolean, scheme: ColorScheme): string {
+  if (lit) return entityLitValueColor(scheme);
+  return CARD_VALUE_INACTIVE;
+}
+
+export function entityUnitColor(lit: boolean, scheme: ColorScheme): string {
+  if (lit) return scheme === "light" ? cv.text.secondary : CARD_UNIT_INACTIVE;
+  return CARD_UNIT_INACTIVE;
+}
+
+export function entityCardReadoutStyle(
+  nameColor: string,
+  lit: boolean,
+  scheme: ColorScheme = "dark",
+): {
   nameColor: string;
   valueColor: string;
   unitColor: string;
@@ -52,8 +68,8 @@ export function entityCardReadoutStyle(nameColor: string, lit: boolean): {
 } {
   return {
     nameColor,
-    valueColor: lit ? theme.colors.white : CARD_VALUE_INACTIVE,
-    unitColor: CARD_UNIT_INACTIVE,
+    valueColor: entityValueColor(lit, scheme),
+    unitColor: entityUnitColor(lit, scheme),
     barOpacity: lit ? 1 : 0.4,
   };
 }

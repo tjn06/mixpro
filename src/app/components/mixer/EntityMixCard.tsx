@@ -7,6 +7,8 @@ import {
   entityCardChrome,
   entityCardReadoutStyle,
 } from "../../presentation/entityCardStyles";
+import { entityAccentColor } from "../../presentation/entityAccent";
+import { useSettingsStore } from "../../settings/store";
 
 export interface EntityMixCardProps {
   id: string;
@@ -37,8 +39,10 @@ export function EntityMixCard({
   className = "",
   style,
 }: EntityMixCardProps) {
-  const chrome = entityCardChrome(color, lit);
-  const readout = entityCardReadoutStyle(color, lit);
+  const colorScheme = useSettingsStore((s) => s.colorScheme);
+  const accent = entityAccentColor(id, colorScheme);
+  const chrome = entityCardChrome(accent, lit);
+  const readout = entityCardReadoutStyle(accent, lit, colorScheme);
 
   const metaStyle: CSSProperties = {
     fontSize: emphasized ? "var(--text-recipe-sublabel)" : "calc(var(--text-recipe-unit) - 1px)",
@@ -119,10 +123,10 @@ export function EntityMixCard({
           width: 22,
           height: 3,
           borderRadius: 2,
-          background: color,
+          background: accent,
           opacity: readout.barOpacity,
           marginBottom: "var(--entity-card-bar-mb)",
-          boxShadow: lit ? `0 0 6px ${color}` : "none",
+          boxShadow: lit ? `0 0 6px ${accent}` : "none",
         }}
       />
       <div className="flex flex-col items-center min-w-0">

@@ -5,21 +5,26 @@ import type { BlendingRecipe } from "../../domain/recipe/types";
 import { getEntityMetaLabel, hasComplementAmounts, emptyComplementValues } from "../../domain/recipe/calc";
 import { batchIngredientTotalGrams } from "../../domain/batch-totals/totals";
 import { BatchTotalsShareBar } from "./BatchTotalsShareBar";
-import { CARD_NAME_WEIGHT } from "../../presentation/entityCardStyles";
+import {
+  CARD_NAME_WEIGHT,
+  entityValueColor,
+} from "../../presentation/entityCardStyles";
+import { entityAccentColor } from "../../presentation/entityAccent";
 import { MixerInputSheet } from "../sheets/MixerInputSheet";
 import { DeleteIcon, RenameIcon, ResetIcon } from "../shared/ActionIcons";
 import type { SandType } from "../../domain/mix/volume";
 import { useAppShellCompact } from "../../hooks/useAppShellCompact";
+import { useSettingsStore } from "../../settings/store";
+import type { ColorScheme } from "../../../theme/appearance";
+import { cv } from "../../ui/tokens";
 
-import { theme } from "../../../theme";
+const bt = cv.batchTotals;
 
-const { colors: c, borders: b, surfaces: s } = theme;
-
-const TABLE_BORDER = b.table;
+const TABLE_BORDER = bt.tableBorder;
 
 const SECTION_HEADER: CSSProperties = {
   fontSize: "var(--text-totals-caption)",
-  color: c.muted,
+  color: cv.text.muted,
   letterSpacing: "0.14em",
   fontWeight: 500,
   opacity: 0.85,
@@ -39,7 +44,7 @@ const TH_TEXT: CSSProperties = {
   fontSize: "var(--text-totals-table)",
   letterSpacing: "0.1em",
   fontWeight: 600,
-  color: c.muted,
+  color: cv.text.muted,
   textTransform: "uppercase",
   lineHeight: 1.15,
 };
@@ -48,7 +53,7 @@ const MULT_TEXT: CSSProperties = {
   ...TABLE_TEXT,
   fontSize: "var(--text-totals-caption)",
   fontWeight: 600,
-  color: c.muted,
+  color: cv.text.muted,
   letterSpacing: "0.04em",
 };
 
@@ -99,7 +104,7 @@ function thCellTotalStyle(bg: string, extra?: CSSProperties): CSSProperties {
 function cardHeaderStyle(variant: "batches" | "extra" = "batches"): CSSProperties {
   return {
     padding: "var(--totals-card-header-py) var(--totals-card-header-px)",
-    background: variant === "extra" ? s.extraCardHeaderBg : s.cardHeaderBg,
+    background: variant === "extra" ? bt.extraCardHeaderBackground : bt.cardHeaderBackground,
     borderBottom: TABLE_BORDER,
     minHeight: "var(--totals-card-header-min-h, var(--totals-header-icon-btn))",
   };
@@ -111,9 +116,9 @@ function cardRoundBtnStyle(disabled?: boolean, color?: string): CSSProperties {
     height: "var(--totals-header-icon-btn)",
     minHeight: 0,
     borderRadius: "calc(var(--totals-header-icon-btn) / 2)",
-    background: s.cardHeaderBtnBg,
-    border: b.cardHeaderBtn,
-    color: disabled ? c.muted : color ?? c.muted,
+    background: bt.cardHeaderBtnBackground,
+    border: bt.cardHeaderBtnBorder,
+    color: disabled ? cv.text.muted : color ?? cv.text.muted,
     opacity: disabled ? 0.35 : 1,
     cursor: disabled ? "default" : "pointer",
     padding: 0,
@@ -172,14 +177,25 @@ function StepButton({
   );
 }
 
-function AmountCell({ grams, isKg }: { grams: number; isKg: boolean }) {
+function AmountCell({
+  grams,
+  isKg,
+  colorScheme,
+}: {
+  grams: number;
+  isKg: boolean;
+  colorScheme: ColorScheme;
+}) {
   const unit = isKg ? "kg" : "g";
   return (
-    <span className="tabular-nums whitespace-nowrap">
+    <span
+      className="tabular-nums whitespace-nowrap"
+      style={{ color: entityValueColor(true, colorScheme) }}
+    >
       {formatMixAmount(grams, isKg)}
       <span
         style={{
-          color: c.muted,
+          color: cv.text.muted,
           fontWeight: 500,
           marginLeft: 3,
           fontSize: "var(--text-totals-unit)",
@@ -203,7 +219,7 @@ const ITEM_META_STYLE: CSSProperties = {
   fontSize: "calc(var(--text-recipe-unit) - 1px)",
   letterSpacing: "0.03em",
   fontWeight: 600,
-  color: c.muted,
+  color: cv.text.muted,
   lineHeight: 1.2,
   textTransform: "capitalize",
 };
@@ -249,7 +265,7 @@ function PerBatchRow({ grams, isKg }: { grams: number; isKg: boolean }) {
       style={{
         ...TABLE_TEXT,
         fontSize: "var(--text-totals-caption)",
-        color: c.muted,
+        color: cv.text.muted,
         marginTop: 3,
         opacity: 0.72,
         lineHeight: 1.15,
@@ -276,7 +292,7 @@ function TableOpSeparator({ symbol }: { symbol: "+" | "=" }) {
           fontFamily: "'Outfit', sans-serif",
           fontSize: "var(--totals-op-sep-font-size, 20px)",
           fontWeight: 400,
-          color: c.title,
+          color: cv.text.primary,
           letterSpacing: "-0.02em",
           lineHeight: 1,
         }}
@@ -304,7 +320,7 @@ function SummaryPlus() {
         fontFamily: "'Outfit', sans-serif",
         fontSize: "var(--totals-mult-value-size, 20px)",
         fontWeight: 400,
-        color: c.title,
+        color: cv.text.primary,
         letterSpacing: "-0.02em",
         lineHeight: 1,
       }}
@@ -319,21 +335,24 @@ function BatchTotalsSummaryBar({
   multiplier,
   hasExtraBatch,
   totalGrams,
+  colorScheme,
 }: {
   multiplier: number;
   hasExtraBatch: boolean;
   totalGrams: number;
+  colorScheme: ColorScheme;
 }) {
   const totalParam = MIX_PARAMS[0];
+  const amountColor = entityValueColor(true, colorScheme);
 
   return (
     <div className="shrink-0 min-w-0 w-full">
       <div
         className="w-full min-w-0 rounded-xl overflow-hidden"
         style={{
-          border: b.batchesCard,
-          background: s.batchesCardBg,
-          boxShadow: s.insetHighlight,
+          border: bt.batchesCardBorder,
+          background: bt.batchesCardBackground,
+          boxShadow: bt.insetHighlight,
         }}
       >
         <div
@@ -350,7 +369,7 @@ function BatchTotalsSummaryBar({
               <>
                 <SummaryPlus />
                 <span
-                  style={sectionTitleStyle(c.extraBatchAccent)}
+                  style={sectionTitleStyle(cv.extraBatch.accent)}
                   title="Extra batch"
                 >
                   EX. BCH
@@ -364,7 +383,7 @@ function BatchTotalsSummaryBar({
             style={cellTotalStyle({
               ...TABLE_TEXT,
               fontSize: "var(--text-totals-sum)",
-              color: c.value,
+              color: amountColor,
               fontWeight: 700,
               lineHeight: 1.1,
             })}
@@ -375,13 +394,13 @@ function BatchTotalsSummaryBar({
                 fontSize: "var(--text-card-name)",
                 letterSpacing: "0.18em",
                 fontWeight: CARD_NAME_WEIGHT,
-                color: totalParam.color,
+                color: entityAccentColor(totalParam.id, colorScheme),
                 lineHeight: 1.15,
               }}
             >
               {totalParam.id}
             </span>
-            <AmountCell grams={totalGrams} isKg={totalParam.isKg} />
+            <AmountCell grams={totalGrams} isKg={totalParam.isKg} colorScheme={colorScheme} />
           </div>
         </div>
       </div>
@@ -393,7 +412,7 @@ function IconHeaderButton({
   label,
   onClick,
   disabled,
-  color = c.muted,
+  color = cv.text.muted,
   children,
 }: {
   label: string;
@@ -426,6 +445,8 @@ export function BatchTotalsScreen({
   onComplementChange,
   sandType,
 }: BatchTotalsScreenProps) {
+  const colorScheme = useSettingsStore((s) => s.colorScheme);
+  const amountColor = entityValueColor(true, colorScheme);
   const shellCompact = useAppShellCompact();
   const [extraBatchSheetOpen, setExtraBatchSheetOpen] = useState(false);
   const [sheetPortal, setSheetPortal] = useState<HTMLElement | null>(null);
@@ -462,7 +483,7 @@ export function BatchTotalsScreen({
           <div className="flex min-h-full flex-col">
             <div
               className="w-full min-w-0 shrink-0 rounded-xl overflow-hidden"
-              style={{ border: b.batchesCard }}
+              style={{ border: bt.batchesCardBorder }}
             >
             <div
               className="shrink-0 grid items-center min-w-0 w-full"
@@ -493,7 +514,7 @@ export function BatchTotalsScreen({
                       fontFamily: "'Outfit', sans-serif",
                       fontSize: "var(--totals-mult-value-size, 20px)",
                       fontWeight: 400,
-                      color: c.title,
+                      color: cv.text.primary,
                       letterSpacing: "-0.02em",
                       lineHeight: 1,
                       margin: 0,
@@ -523,8 +544,8 @@ export function BatchTotalsScreen({
 
             <div
               style={{
-                background: s.batchesCardBg,
-                boxShadow: s.insetHighlight,
+                background: bt.batchesCardBackground,
+                boxShadow: bt.insetHighlight,
               }}
             >
             <table
@@ -538,13 +559,13 @@ export function BatchTotalsScreen({
             </colgroup>
             <thead>
               <tr style={{ borderBottom: TABLE_BORDER }}>
-                <th scope="col" className="text-left" style={thCellItemStyle(s.tableThBg, TH_TEXT)}>
+                <th scope="col" className="text-left" style={thCellItemStyle(bt.cardHeaderBackground, TH_TEXT)}>
                   Item
                 </th>
-                <th scope="col" className="text-center" style={thCellMultStyle(s.tableThBg, TH_TEXT)}>
+                <th scope="col" className="text-center" style={thCellMultStyle(bt.cardHeaderBackground, TH_TEXT)}>
                   ×
                 </th>
-                <th scope="col" className="text-right" style={thCellTotalStyle(s.tableThBg, TH_TEXT)}>
+                <th scope="col" className="text-right" style={thCellTotalStyle(bt.cardHeaderBackground, TH_TEXT)}>
                   Total
                 </th>
               </tr>
@@ -563,7 +584,11 @@ export function BatchTotalsScreen({
                       style={cellItemStyle()}
                     >
                       <div className="min-w-0">
-                        <ItemNameWithMeta id={p.id} color={p.color} metaLabel={metaLabel} />
+                        <ItemNameWithMeta
+                          id={p.id}
+                          color={entityAccentColor(p.id, colorScheme)}
+                          metaLabel={metaLabel}
+                        />
                         <PerBatchRow grams={values[pi]} isKg={p.isKg} />
                       </div>
                     </th>
@@ -578,12 +603,16 @@ export function BatchTotalsScreen({
                       style={cellTotalStyle({
                         ...TABLE_TEXT,
                         fontSize: "var(--text-totals-sum)",
-                        color: c.value,
+                        color: amountColor,
                         fontWeight: 600,
                         lineHeight: 1.1,
                       })}
                     >
-                      <AmountCell grams={batchTotalGrams} isKg={p.isKg} />
+                      <AmountCell
+                        grams={batchTotalGrams}
+                        isKg={p.isKg}
+                        colorScheme={colorScheme}
+                      />
                     </td>
                   </tr>
                 );
@@ -608,7 +637,7 @@ export function BatchTotalsScreen({
                             fontSize: "var(--text-card-name)",
                             letterSpacing: "0.18em",
                             fontWeight: CARD_NAME_WEIGHT,
-                            color: p.color,
+                            color: entityAccentColor(p.id, colorScheme),
                             lineHeight: 1.15,
                           }}
                         >
@@ -625,12 +654,16 @@ export function BatchTotalsScreen({
                       style={cellTotalStyle({
                         ...TABLE_TEXT,
                         fontSize: "var(--text-totals-sum)",
-                        color: c.value,
+                        color: amountColor,
                         fontWeight: 700,
                         lineHeight: 1.1,
                       })}
                     >
-                      <AmountCell grams={batchTotalGrams} isKg={p.isKg} />
+                      <AmountCell
+                        grams={batchTotalGrams}
+                        isKg={p.isKg}
+                        colorScheme={colorScheme}
+                      />
                     </td>
                   </tr>
                 );
@@ -646,8 +679,8 @@ export function BatchTotalsScreen({
             <div
               className="w-full min-w-0 shrink-0 rounded-xl overflow-hidden"
               style={{
-                background: hasExtraBatch ? undefined : s.emptyCardBg,
-                border: hasExtraBatch ? b.extraBatch : b.extraBatchDashed,
+                background: hasExtraBatch ? undefined : bt.emptyCardBackground,
+                border: hasExtraBatch ? bt.extraBatchBorder : bt.extraBatchDashedBorder,
               }}
             >
             {hasExtraBatch ? (
@@ -656,7 +689,7 @@ export function BatchTotalsScreen({
                   className="flex items-center justify-between gap-2 min-w-0 w-full"
                   style={cardHeaderStyle("extra")}
                 >
-                  <p style={sectionTitleStyle(c.extraBatchAccent)}>Extra batch</p>
+                  <p style={sectionTitleStyle(cv.extraBatch.accent)}>Extra batch</p>
                   <div
                     className="flex items-center shrink-0"
                     style={{ gap: "var(--totals-header-action-gap)", padding: "0 var(--totals-header-cell-pad-x)" }}
@@ -664,20 +697,20 @@ export function BatchTotalsScreen({
                     <IconHeaderButton
                       label="Edit extra batch"
                       onClick={() => setExtraBatchSheetOpen(true)}
-                      color={c.extraBatchAccent}
+                      color={cv.extraBatch.accent}
                     >
                       <RenameIcon size={HEADER_ICON_SIZE} />
                     </IconHeaderButton>
                     <IconHeaderButton
                       label="Remove extra batch"
                       onClick={handleRemoveExtraBatch}
-                      color={c.muted}
+                      color={cv.text.muted}
                     >
                       <DeleteIcon size={HEADER_ICON_SIZE} />
                     </IconHeaderButton>
                   </div>
                 </div>
-                <div style={{ background: s.extraBatchBg }}>
+                <div style={{ background: bt.extraBatchBackground }}>
                 <table
                   className="w-full min-w-0 border-collapse"
                   style={{ tableLayout: "fixed" }}
@@ -689,13 +722,13 @@ export function BatchTotalsScreen({
                   </colgroup>
                   <thead>
                     <tr style={{ borderBottom: TABLE_BORDER }}>
-                      <th scope="col" className="text-left" style={thCellItemStyle(s.extraTableThBg, TH_TEXT)}>
+                      <th scope="col" className="text-left" style={thCellItemStyle(bt.extraTableThBackground, TH_TEXT)}>
                         Item
                       </th>
-                      <th scope="col" className="text-center" style={thCellMultStyle(s.extraTableThBg, TH_TEXT)}>
+                      <th scope="col" className="text-center" style={thCellMultStyle(bt.extraTableThBackground, TH_TEXT)}>
                         ×
                       </th>
-                      <th scope="col" className="text-right" style={thCellTotalStyle(s.extraTableThBg, TH_TEXT)}>
+                      <th scope="col" className="text-right" style={thCellTotalStyle(bt.extraTableThBackground, TH_TEXT)}>
                         Total
                       </th>
                     </tr>
@@ -713,7 +746,11 @@ export function BatchTotalsScreen({
                             style={cellItemStyle()}
                           >
                             <div className="min-w-0">
-                              <ItemNameWithMeta id={p.id} color={p.color} metaLabel={metaLabel} />
+                              <ItemNameWithMeta
+                          id={p.id}
+                          color={entityAccentColor(p.id, colorScheme)}
+                          metaLabel={metaLabel}
+                        />
                               <PerBatchRow grams={complementValues[pi]} isKg={p.isKg} />
                             </div>
                           </th>
@@ -725,12 +762,16 @@ export function BatchTotalsScreen({
                             style={cellTotalStyle({
                               ...TABLE_TEXT,
                               fontSize: "var(--text-totals-sum)",
-                              color: c.value,
+                              color: amountColor,
                               fontWeight: 600,
                               lineHeight: 1.1,
                             })}
                           >
-                            <AmountCell grams={complementValues[pi]} isKg={p.isKg} />
+                            <AmountCell
+                              grams={complementValues[pi]}
+                              isKg={p.isKg}
+                              colorScheme={colorScheme}
+                            />
                           </td>
                         </tr>
                       );
@@ -753,7 +794,7 @@ export function BatchTotalsScreen({
                                   fontSize: "var(--text-card-name)",
                                   letterSpacing: "0.18em",
                                   fontWeight: CARD_NAME_WEIGHT,
-                                  color: p.color,
+                                  color: entityAccentColor(p.id, colorScheme),
                                   lineHeight: 1.15,
                                 }}
                               >
@@ -770,12 +811,16 @@ export function BatchTotalsScreen({
                             style={cellTotalStyle({
                               ...TABLE_TEXT,
                               fontSize: "var(--text-totals-sum)",
-                              color: c.value,
+                              color: amountColor,
                               fontWeight: 700,
                               lineHeight: 1.1,
                             })}
                           >
-                            <AmountCell grams={complementValues[pi]} isKg={p.isKg} />
+                            <AmountCell
+                              grams={complementValues[pi]}
+                              isKg={p.isKg}
+                              colorScheme={colorScheme}
+                            />
                           </td>
                         </tr>
                       );
@@ -798,7 +843,7 @@ export function BatchTotalsScreen({
                   fontSize: "var(--text-totals-table)",
                   letterSpacing: "0.12em",
                   fontWeight: 600,
-                  color: c.extraBatchAccent,
+                  color: cv.extraBatch.accent,
                   lineHeight: 1.3,
                   opacity: 0.9,
                 }}
@@ -825,6 +870,7 @@ export function BatchTotalsScreen({
           multiplier={multiplier}
           hasExtraBatch={hasExtraBatch}
           totalGrams={grandTotalGrams}
+          colorScheme={colorScheme}
         />
 
         <BatchTotalsShareBar

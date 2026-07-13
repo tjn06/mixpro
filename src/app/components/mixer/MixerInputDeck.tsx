@@ -3,8 +3,6 @@ import type { ReactNode } from "react";
 import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "../../domain/mix/entities";
 import {
   CARD_CHROME_TRANSITION,
-  CARD_UNIT_INACTIVE,
-  CARD_VALUE_INACTIVE,
   ENTITY_SURFACE_IDLE,
   entityCardChrome,
 } from "../../presentation/entityCardStyles";
@@ -12,6 +10,7 @@ import {
   MIXER_DRAG_FOCUS_Z,
   MIXER_ENTITY_BORDER_ACTIVE,
   MIXER_ENTITY_BORDER_W,
+  MIXER_SWIPE_COLUMN_BORDER,
   MIXER_SWIPE_STEP_IDLE,
   MIXER_SWIPE_SURFACE_BASE,
   MIXER_SWIPE_ZONES,
@@ -33,9 +32,9 @@ import {
   MixerCardReadout,
   MixerSwipeChevronStack,
 } from "./MixerSwipeParts";
-import { theme } from "../../../theme";
-
-const { colors: c, borders: b } = theme;
+import { entityAccentColor } from "../../presentation/entityAccent";
+import { entityValueColor, entityUnitColor } from "../../presentation/entityCardStyles";
+import { useSettingsStore } from "../../settings/store";
 
 function entitySurfaceLit(color: string): string {
   return `color-mix(in srgb, ${color} 8%, ${ENTITY_SURFACE_IDLE})`;
@@ -69,6 +68,8 @@ export function MixerInputDeck({
   footer,
   className = "",
 }: MixerInputDeckProps) {
+  const colorScheme = useSettingsStore((s) => s.colorScheme);
+
   const {
     swipeAreaRef,
     activeZone,
@@ -90,7 +91,10 @@ export function MixerInputDeck({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const getParamColor = useCallback((pi: number) => PARAMS[pi].color, []);
+  const getParamColor = useCallback(
+    (pi: number) => entityAccentColor(PARAMS[pi].id, colorScheme),
+    [colorScheme],
+  );
   const { connectorLines } = useMixerCardConnectors({
     containerRef,
     cardRefs,
@@ -103,7 +107,7 @@ export function MixerInputDeck({
   });
 
   const activeParam = PARAMS[active];
-  const col = activeParam.color;
+  const col = entityAccentColor(activeParam.id, colorScheme);
 
   return (
     <div
@@ -122,9 +126,10 @@ export function MixerInputDeck({
       <div className="flex min-w-0" style={{ gap: "var(--section-gap)" }}>
         {entityIndexes.map((pi) => {
           const p = PARAMS[pi];
+          const accent = entityAccentColor(p.id, colorScheme);
           const isAct = active === pi;
           const cardLit = isAct && !disabled;
-          const chrome = entityCardChrome(p.color, cardLit);
+          const chrome = entityCardChrome(accent, cardLit);
           const cardBump = dragBlocked && isAct && !disabled;
 
           return (
@@ -140,7 +145,7 @@ export function MixerInputDeck({
               style={{
                 paddingTop: "var(--entity-card-pt)",
                 paddingBottom: "var(--entity-card-pb)",
-                background: cardLit ? entitySurfaceLit(p.color) : ENTITY_SURFACE_IDLE,
+                background: cardLit ? entitySurfaceLit(accent) : ENTITY_SURFACE_IDLE,
                 border: chrome.border,
                 boxShadow: chrome.boxShadow,
                 transition: CARD_CHROME_TRANSITION,
@@ -158,10 +163,10 @@ export function MixerInputDeck({
                   width: 22,
                   height: 3,
                   borderRadius: 2,
-                  background: p.color,
+                  background: accent,
                   opacity: cardLit ? 1 : 0.4,
                   marginBottom: "var(--entity-card-bar-mb)",
-                  boxShadow: cardLit ? `0 0 6px ${p.color}` : "none",
+                  boxShadow: cardLit ? `0 0 6px ${accent}` : "none",
                 }}
               />
               <MixerCardReadout
@@ -169,9 +174,9 @@ export function MixerInputDeck({
                 value={fmt(values[pi], p.isKg)}
                 unit={p.isKg ? "kg" : "g"}
                 centered
-                nameColor={p.color}
-                valueColor={cardLit ? c.white : CARD_VALUE_INACTIVE}
-                unitColor={CARD_UNIT_INACTIVE}
+                nameColor={accent}
+                valueColor={entityValueColor(cardLit, colorScheme)}
+                unitColor={entityUnitColor(cardLit, colorScheme)}
               />
             </button>
           );
@@ -224,7 +229,7 @@ export function MixerInputDeck({
                     : mixerSwipeZoneStripe(zi % 2 === 0),
                   borderRight:
                     zi < MIXER_SWIPE_ZONES.length - 1
-                      ? b.swipeColumn
+                      ? MIXER_SWIPE_COLUMN_BORDER
                       : "none",
                   padding: "10px 4px",
                 }}

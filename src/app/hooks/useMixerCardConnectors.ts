@@ -10,10 +10,10 @@ import {
   MIXER_DRAG_FOCUS_Z,
   MIXER_CARD_CONNECTOR_Z,
 } from "../presentation/mixerSwipeConfig";
-import { theme } from "../../theme";
+import { componentTokens } from "../ui/tokens";
 import type { CSSProperties } from "react";
 
-const { chrome: ch } = theme;
+const ch = componentTokens.chrome;
 
 export type CardConnector = {
   x: number;

@@ -1,6 +1,6 @@
 /**
  * Minimal global base styles.
- * App chrome colors live in src/theme/*.ts (injected as --ui-* on :root).
+ * Tokens injected at runtime via applyWebThemeColors() (--ui-*, --semantic-*, --component-*).
  */
 :root {
   --font-size: 16px;
@@ -13,7 +13,7 @@
 
   body {
     margin: 0;
-    background: var(--ui-app-bg, #07070f);
-    color: var(--ui-value, #e2e2f0);
+    background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+    color: var(--semantic-text-secondary, var(--ui-value, #3c3c52));
   }
 }

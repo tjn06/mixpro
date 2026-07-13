@@ -18,14 +18,18 @@ import { batchNameInputFromSavedMix } from "../../batch-names";
 import { SaveMixNameSheet } from "./SaveMixNameSheet";
 import {
   SHEET_FIELD_INPUT_CLASS,
+  SHEET_OVERLAY_LIGHT_CLASS,
+  SHEET_PANEL_CLASS,
+  SHEET_LIST_ROW_CLASS,
   SHEET_SUBTITLE,
   SHEET_TITLE,
   sheetFieldInputStyle,
 } from "./sheetChrome";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
-import { theme } from "../../../theme";
+import { cv } from "../../ui/tokens";
 
-const { colors: c, borders: b, surfaces: s } = theme;
+const strip = cv.loadSheetStrip;
+const list = cv.loadSheetList;
 
 /** Title block — slightly higher than before. */
 const HEADER_HEIGHT_FRAC = "32%";
@@ -47,13 +51,8 @@ const SWIPE_PANEL_CLOSED_W = 52;
 const SWIPE_PANEL_OPEN_W = 104;
 
 /** Solid strip fills — opaque so actions stay visible on the frosted card. */
-const STRIP_PANEL_BG = c.entitySurfaceIdle;
-const STRIP_BTN_NEUTRAL = c.inputSurface;
-const STRIP_BTN_MORE_OPEN = "#1c1c34";
-const STRIP_BTN_RENAME = "#222240";
-const STRIP_BTN_DELETE = "#3a1824";
-const STRIP_BTN_OPEN = "#18182c";
-const STRIP_DIVIDER = "1px solid rgba(255,255,255,0.14)";
+const STRIP_PANEL_BG = strip.panelBackground;
+const STRIP_DIVIDER = strip.divider;
 
 const CARD_GRID: CSSProperties = {
   display: "grid",
@@ -90,23 +89,23 @@ const LIST_TITLE: CSSProperties = {
   ...LIST_TEXT,
   fontFamily: "'Outfit', sans-serif",
   fontWeight: 600,
-  color: c.title,
+  color: list.title,
 };
 const LIST_MUTED: CSSProperties = {
   ...LIST_TEXT,
-  color: c.muted,
+  color: list.muted,
 };
 const LIST_VALUE: CSSProperties = {
   ...LIST_TEXT,
   fontWeight: 600,
-  color: c.value,
+  color: list.value,
 };
 const LIST_TIMESTAMP: CSSProperties = {
   fontSize: "var(--text-ui-xs)",
   fontWeight: 500,
   letterSpacing: "0.03em",
   lineHeight: 1.25,
-  color: c.mutedDimmer,
+  color: list.timestamp,
   fontVariantNumeric: "tabular-nums",
 };
 
@@ -141,8 +140,8 @@ function ScrollFade({
         height: FADE_H,
         ...(isTop ? { top: 0 } : { bottom: 0 }),
         background: isTop
-          ? `linear-gradient(to bottom, ${s.loadSheetPanel} 0%, transparent 100%)`
-          : `linear-gradient(to top, ${s.loadSheetPanel} 0%, transparent 100%)`,
+          ? `linear-gradient(to bottom, ${cv.sheetPanel.fadeBackground} 0%, transparent 100%)`
+          : `linear-gradient(to top, ${cv.sheetPanel.fadeBackground} 0%, transparent 100%)`,
       }}
     />
   );
@@ -165,27 +164,27 @@ function SavedMixSwipeStrip({
     ...stripCellBase,
     borderRight: STRIP_DIVIDER,
     borderBottom: STRIP_DIVIDER,
-    color: open ? c.title : c.muted,
-    background: open ? STRIP_BTN_MORE_OPEN : STRIP_BTN_NEUTRAL,
+    color: open ? strip.renameColor : strip.mutedColor,
+    background: open ? strip.moreOpen : strip.neutral,
   };
   const cellR1C2: CSSProperties = {
     ...stripCellBase,
     borderRight: "none",
     borderBottom: STRIP_DIVIDER,
-    background: STRIP_BTN_DELETE,
-    color: c.bucketLimit,
+    background: strip.delete,
+    color: strip.deleteColor,
   };
   const cellR2C1: CSSProperties = {
     ...stripCellBase,
     borderRight: open ? STRIP_DIVIDER : "none",
     borderBottom: "none",
-    background: STRIP_BTN_OPEN,
-    color: c.titleMuted,
+    background: strip.open,
+    color: strip.openColor,
   };
   const cellR2C2: CSSProperties = {
     ...stripCellBase,
-    background: STRIP_BTN_RENAME,
-    color: c.title,
+    background: strip.rename,
+    color: strip.renameColor,
   };
 
   return (
@@ -273,11 +272,7 @@ function SavedMixRow({
 
   return (
     <article
-      className="rounded-2xl min-w-0 overflow-hidden relative"
-      style={{
-        background: s.loadSheetRow,
-        border: b.panel,
-      }}
+      className={`${SHEET_LIST_ROW_CLASS} rounded-2xl min-w-0 overflow-hidden relative`}
     >
       <div className="min-w-0" style={CARD_GRID}>
         <p className="truncate min-w-0" style={{ ...LIST_TITLE, gridColumn: 1 }}>
@@ -298,7 +293,7 @@ function SavedMixRow({
           className="min-w-0 truncate tabular-nums"
           style={{
             ...LIST_MUTED,
-            color: c.mutedDimmer,
+            color: list.timestamp,
             gridColumn: "1 / -1",
           }}
         >
@@ -515,22 +510,18 @@ export function LoadSavedMixesSheet({
         <button
           type="button"
           aria-label="Close saved mixes"
-          className="load-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
+          className={`${SHEET_OVERLAY_LIGHT_CLASS} absolute inset-0 border-0 p-0 cursor-default`}
           onClick={() => onOpenChange(false)}
-          style={{ backgroundColor: s.outsideDimLight }}
         />
 
         <div
-          className="load-sheet-panel relative flex flex-col min-h-0 flex-1 overflow-hidden"
+          className={`${SHEET_PANEL_CLASS} relative flex flex-col min-h-0 flex-1 overflow-hidden`}
           style={{
             marginLeft: SHEET_MARGIN_X,
             marginRight: SHEET_MARGIN_X,
             marginTop: SHEET_MARGIN_TOP,
             marginBottom: "var(--app-sheet-margin-bottom)",
             borderRadius: SHEET_RADIUS,
-            border: b.panel,
-            boxShadow: s.shadowSheet,
-            background: s.loadSheetPanel,
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -589,11 +580,7 @@ export function LoadSavedMixesSheet({
                 >
                 {filteredMixes.length === 0 ? (
                   <div
-                    className="rounded-2xl flex flex-col items-center justify-center text-center px-6 py-12"
-                    style={{
-                      background: s.loadSheetRow,
-                      border: b.panel,
-                    }}
+                    className={`${SHEET_LIST_ROW_CLASS} rounded-2xl flex flex-col items-center justify-center text-center px-6 py-12`}
                   >
                     <p style={{ ...LIST_MUTED, letterSpacing: "0.04em", lineHeight: 1.45 }}>
                       {mixes.length === 0 ? "Save a mix from the mixer to see it here." : "No matches."}

@@ -1,0 +1,202 @@
+/**
+ * Component token utility classes — consume --component-* / --semantic-* vars.
+ * Values injected at runtime via applyWebThemeColors().
+ */
+
+/* ── Sheet chrome ─────────────────────────────────────────────────────────── */
+
+.sheet-panel-chrome {
+  border: var(--component-sheet-panel-border);
+  background: var(--component-sheet-panel-bg);
+  box-shadow: var(--component-sheet-panel-shadow);
+}
+
+.sheet-panel-overlay-light {
+  background-color: var(--component-sheet-panel-overlay-light);
+}
+
+.sheet-panel-overlay-medium {
+  background-color: var(--component-sheet-panel-overlay-medium);
+}
+
+.sheet-list-row {
+  background: var(--component-sheet-panel-list-row-bg);
+  border: var(--component-sheet-panel-list-row-border);
+}
+
+.sheet-title {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-recipe-select);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--semantic-text-primary);
+  line-height: 1.15;
+  margin: 0;
+}
+
+.sheet-subtitle {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-md);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--semantic-text-secondary);
+  line-height: 1.4;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.sheet-field-label {
+  display: block;
+  font-size: var(--text-recipe-meta-label);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+  line-height: 1.1;
+}
+
+.sheet-footer-chrome {
+  background: var(--component-sheet-panel-bg);
+}
+
+.sheet-footer-btn {
+  background: var(--component-sheet-footer-btn-bg);
+  border: var(--component-sheet-footer-btn-border);
+  color: var(--component-sheet-footer-btn-color);
+}
+
+.sheet-footer-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sheet-footer-tooltip-label {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--component-sheet-footer-tooltip-color);
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.sheet-footer-tooltip-line {
+  display: block;
+  width: 1px;
+  background: var(--component-sheet-footer-tooltip-line);
+  border-radius: 1px;
+}
+
+.sheet-action-btn {
+  background: var(--component-sheet-footer-btn-bg);
+  border: var(--component-sheet-footer-btn-border);
+  color: var(--component-sheet-footer-btn-color);
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* ── Header icon buttons ──────────────────────────────────────────────────── */
+
+.header-icon-btn {
+  background: var(--component-header-icon-btn-bg);
+  border: var(--component-header-icon-btn-border);
+  color: var(--component-header-icon-btn-color);
+}
+
+.header-icon-btn--active {
+  background: var(--component-header-icon-btn-bg-active);
+  border: var(--component-header-icon-btn-border-active);
+  color: var(--component-header-icon-btn-color-active);
+}
+
+.header-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ── Share bar ────────────────────────────────────────────────────────────── */
+
+.share-icon-btn {
+  background: var(--component-share-icon-idle-bg);
+  border: var(--component-share-icon-idle-border);
+  color: var(--component-share-icon-idle-color);
+}
+
+.share-icon-btn--active {
+  background: var(--component-share-icon-active-bg);
+  border: var(--component-share-icon-active-border);
+  color: var(--component-share-icon-active-color);
+}
+
+/* ── Settings toggle switch ───────────────────────────────────────────────── */
+
+.settings-toggle {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  border: var(--semantic-border-default);
+  background: var(--semantic-surface-input);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.settings-toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--semantic-text-muted);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.settings-toggle[data-active]::after {
+  transform: translateX(20px);
+  background: var(--semantic-text-primary);
+}
+
+.settings-toggle[data-active] {
+  background: var(--semantic-surface-button);
+  border-color: var(--semantic-border-strong);
+}
+
+/* ── Settings color scheme segment ────────────────────────────────────────── */
+
+.settings-scheme-segment {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  border: var(--semantic-border-default);
+  background: var(--semantic-surface-input);
+}
+
+.settings-scheme-segment__btn {
+  min-width: 52px;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--semantic-text-muted);
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.settings-scheme-segment__btn[data-active] {
+  background: var(--semantic-surface-button);
+  color: var(--semantic-text-primary);
+}

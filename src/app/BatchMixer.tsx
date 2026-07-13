@@ -39,6 +39,11 @@ import { LockedSaveOverlay } from "./components/mixer/LockedSaveOverlay";
 import { LockedUnlockOverlay } from "./components/mixer/LockedUnlockOverlay";
 import { LoadSavedMixesSheet } from "./components/sheets/LoadSavedMixesSheet";
 import { SaveMixNameSheet } from "./components/sheets/SaveMixNameSheet";
+import { SettingsSheet } from "./components/sheets/SettingsSheet";
+import { useThemeAppearanceSync } from "./hooks/useThemeAppearanceSync";
+import { useSettingsStore } from "./settings/store";
+import type { ColorScheme } from "../theme/appearance";
+import { entityAccentColor } from "./presentation/entityAccent";
 import { batchNameInputFromMixer } from "./batch-names";
 import type { SavedMixSnapshot } from "./saved-mixes/types";
 import { UndoIcon } from "./components/shared/ActionIcons";
@@ -49,8 +54,6 @@ import { BatchTotalsScreen } from "./components/batch-totals/BatchTotalsScreen";
 import {
   CARD_NAME_WEIGHT,
   CARD_UNIT_WEIGHT,
-  CARD_VALUE_INACTIVE,
-  CARD_UNIT_INACTIVE,
   ENTITY_SURFACE_IDLE,
   cardReadoutNameStyle,
   cardReadoutUnitStyle,
@@ -58,14 +61,25 @@ import {
   entityCardChrome,
   CARD_CHROME_TRANSITION,
   RECIPE_RATIO_BORDER_COLOR,
+  entityValueColor,
+  entityUnitColor,
 } from "./presentation/entityCardStyles";
-import { theme } from "../theme";
 import {
   mixerEntityActiveRing,
   mixerEntityCardShadow,
+  MIXER_OVERLAY_HINT,
+  MIXER_SWIPE_ARROW_IDLE,
+  MIXER_SWIPE_COLUMN_BORDER,
+  MIXER_SWIPE_STEP_IDLE,
+  MIXER_SWIPE_STRIPE_INVERSE,
+  MIXER_SWIPE_SURFACE_BASE,
 } from "./presentation/mixerSwipeConfig";
 
-const { colors: c, borders: b, surfaces: s, chrome: ch } = theme;
+import { componentTokens, cv } from "./ui/tokens";
+
+const swipe = componentTokens.mixerSwipe;
+const meta = componentTokens.recipeMeta;
+const ch = componentTokens.chrome;
 
 // All values stored internally in grams — index order: TOTAL, A, B, TIX, SAND
 // PARAMS imported from mixEntities.ts
@@ -110,14 +124,14 @@ const SWIPE_STEPS_PER_DRAG = 10;
 const SWIPE_DRAG_MARGIN_PX = 24;
 const SWIPE_MAX_DY_PER_FRAME = 48;
 /** Idle swipe affordances — brighter so vertical drag reads before touch. */
-const SWIPE_ARROW_IDLE = c.swipeArrowIdle;
-const SWIPE_STEP_IDLE = c.swipeStepIdle;
-const DRAG_OVERLAY_Z    = 4;
+const SWIPE_ARROW_IDLE = MIXER_SWIPE_ARROW_IDLE;
+const SWIPE_STEP_IDLE = MIXER_SWIPE_STEP_IDLE;
 const CARD_CONNECTOR_Z  = 3;
 const DRAG_FOCUS_Z      = 5;
+const DRAG_OVERLAY_Z    = 4;
 const DRAG_OVERLAY_HIDE_MS = 320;
 const DRAG_BLOCKED_MS = 120;
-const BUCKET_LIMIT_COLOR = c.bucketLimit;
+const BUCKET_LIMIT_COLOR = swipe.limitColor;
 const BUCKET_LIMIT_VIBRATE_MS = [10, 28, 10] as const;
 const LOCK_PANEL_Z      = 6;
 const LOCK_SHIELD_Z     = 5;
@@ -132,7 +146,7 @@ const LOCK_FADE_TRANSITION = `opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
 const LOCK_TEXT_TRANSITION = `font-size ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, margin-top ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, width ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, opacity ${LOCK_EXPAND_MS}ms ${LOCK_EASE}`;
 
 /** Opaque entity surfaces — kept subtle so white readouts stay crisp. */
-const SWIPE_SURFACE_BASE = c.swipeSurfaceBase;
+const SWIPE_SURFACE_BASE = MIXER_SWIPE_SURFACE_BASE;
 const ENTITY_TINT_LIT_PCT = ch.entityTintLitPct;
 const SWIPE_ZONE_ACTIVE_PCT = ch.swipeZoneActivePct;
 const SWIPE_STRIPE_A_PCT = ch.swipeStripeAPct;
@@ -151,19 +165,19 @@ function swipeZoneActive(color: string): string {
 }
 
 function swipeZoneStripe(even: boolean): string {
-  return surfaceTint(c.white, even ? SWIPE_STRIPE_A_PCT : SWIPE_STRIPE_B_PCT, SWIPE_SURFACE_BASE);
+  return surfaceTint(MIXER_SWIPE_STRIPE_INVERSE, even ? SWIPE_STRIPE_A_PCT : SWIPE_STRIPE_B_PCT, SWIPE_SURFACE_BASE);
 }
 
 /** Locked recipe ratio cards (read-only, above mix cards). */
-const RECIPE_RATIO_BG = s.transparent;
-const RECIPE_CONTAINER_PX = "4px 0";
+const RECIPE_RATIO_BG = swipe.recipeRatioBackground;
 /** High-contrast readouts on dark recipe cards — not pure white. */
-const RECIPE_VALUE_COLOR = c.recipeValue;
-const RECIPE_VALUE_COLOR_MUTED = c.recipeValueMuted;
-const RECIPE_ID_COLOR = c.recipeId;
-const RECIPE_ID_COLOR_MUTED = c.recipeIdMuted;
-const RECIPE_UNIT_COLOR = c.recipeUnit;
-const RECIPE_COLON_COLOR = c.recipeColon;
+const RECIPE_VALUE_COLOR = meta.value;
+const RECIPE_VALUE_COLOR_MUTED = meta.valueMuted;
+const RECIPE_ID_COLOR = meta.id;
+const RECIPE_ID_COLOR_MUTED = meta.idMuted;
+const RECIPE_UNIT_COLOR = meta.unit;
+const RECIPE_COLON_COLOR = meta.colon;
+const RECIPE_CONTAINER_PX = "4px 0";
 
 function RecipeRatioGapSeparator() {
   return (
@@ -460,6 +474,8 @@ type MixerScreen = "mixer" | "totals";
 const TotalTile = forwardRef<HTMLButtonElement, {
   valueKg: string;
   color: string;
+  colorScheme: ColorScheme;
+  entityId: string;
   isActive: boolean;
   expanded?: boolean;
   limitFlash?: boolean;
@@ -470,6 +486,8 @@ const TotalTile = forwardRef<HTMLButtonElement, {
 }>(function TotalTile({
   valueKg,
   color,
+  colorScheme,
+  entityId,
   isActive: cardLit,
   expanded = false,
   limitFlash = false,
@@ -488,7 +506,8 @@ const TotalTile = forwardRef<HTMLButtonElement, {
     ...style,
   };
   const nameColor = color;
-  const valueColor = cardLit ? c.white : CARD_VALUE_INACTIVE;
+  const valueColor = entityValueColor(cardLit, colorScheme);
+  const unitColor = entityUnitColor(cardLit, colorScheme);
   const barOpacity = cardLit ? 1 : 0.4;
 
   if (expanded) {
@@ -536,7 +555,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
         </span>
         <span style={{
           fontSize: "var(--text-lock-unit)",
-          color: CARD_UNIT_INACTIVE,
+          color: unitColor,
           letterSpacing: "0.08em",
           fontWeight: CARD_UNIT_WEIGHT,
           marginTop: "var(--lock-unit-mt)",
@@ -577,7 +596,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
           unit="kg"
           nameColor={nameColor}
           valueColor={valueColor}
-          unitColor={CARD_UNIT_INACTIVE}
+          unitColor={unitColor}
         />
       </div>
     </button>
@@ -626,6 +645,7 @@ export function BatchMixer({
   const [saveFlash, setSaveFlash]   = useState(false);
   const [loadPickerOpen, setLoadPickerOpen] = useState(false);
   const [saveNameSheetOpen, setSaveNameSheetOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [loadedSavedMixId, setLoadedSavedMixId] = useState<string | null>(null);
   const [screen, setScreen] = useState<MixerScreen>("mixer");
   const [batchMultiplier, setBatchMultiplier] = useState(1);
@@ -702,6 +722,8 @@ export function BatchMixer({
   );
 
   const canHalveMixAction = canHalveMix(values);
+  useThemeAppearanceSync();
+  const colorScheme = useSettingsStore((s) => s.colorScheme);
   const canDoubleMixAction = useMemo(
     () => canDoubleMix(values, activeRecipe, bucketSelection, sandType),
     [values, activeRecipe, bucketSelection, sandType],
@@ -994,7 +1016,7 @@ export function BatchMixer({
       const y1 = cardR.bottom - rootR.top;
       const y2 = swipeR.top - rootR.top;
       if (y2 <= y1) continue;
-      lines.push({ x, y1, y2, color: PARAMS[pi].color, active: active === pi });
+      lines.push({ x, y1, y2, color: entityAccentColor(PARAMS[pi].id, colorScheme), active: active === pi });
     }
 
     const totalEl = totalTileRef.current;
@@ -1004,12 +1026,12 @@ export function BatchMixer({
       const y1 = swipeR.bottom - rootR.top;
       const y2 = totalR.top - rootR.top;
       if (y2 > y1) {
-        lines.push({ x, y1, y2, color: PARAMS[0].color, active: active === 0 });
+        lines.push({ x, y1, y2, color: entityAccentColor(PARAMS[0].id, colorScheme), active: active === 0 });
       }
     }
 
     setConnectorLines(lines);
-  }, [active, ingredientIndexes, isLocked]);
+  }, [active, ingredientIndexes, isLocked, colorScheme]);
 
   useLayoutEffect(() => {
     measureCardConnectors();
@@ -1189,7 +1211,7 @@ export function BatchMixer({
   }, [endSwipe]);
 
   const activeParam = PARAMS[active];
-  const col  = activeParam.color;
+  const col = entityAccentColor(activeParam.id, colorScheme);
 
   return (
     <div className="mobile-shell">
@@ -1201,7 +1223,7 @@ export function BatchMixer({
           data-beam-canvas
           className="app-frame relative flex flex-col overflow-hidden select-none"
           style={{
-            background: c.appBackground,
+            background: cv.app.background,
             fontFamily: "'DM Mono', monospace",
           }}
         >
@@ -1233,6 +1255,8 @@ export function BatchMixer({
             <AppHeader
               isLocked={isLocked}
               onBack={handleBack}
+              onSettingsClick={() => setSettingsOpen(true)}
+              settingsActive={settingsOpen}
               subline={
                 <RecipeHeaderSublineStack>
                   <RecipeHeaderSubline>
@@ -1263,6 +1287,8 @@ export function BatchMixer({
           <AppHeader
             isLocked={isLocked}
             onForward={handleForward}
+            onSettingsClick={() => setSettingsOpen(true)}
+            settingsActive={settingsOpen}
             subline={
               <div className={isLocked && !loadedSavedMix ? "pointer-events-none" : "pointer-events-auto"}>
                 <RecipeHeaderSublineStack>
@@ -1383,9 +1409,10 @@ export function BatchMixer({
           <div ref={ingredientCardsRef} className="flex" style={{ gap: "var(--section-gap)" }}>
             {ingredientIndexes.map((pi) => {
               const p       = PARAMS[pi];
+              const accent  = entityAccentColor(p.id, colorScheme);
               const isAct   = active === pi;
               const cardLit = isLocked || isAct;
-              const chrome  = entityCardChrome(p.color, cardLit);
+              const chrome  = entityCardChrome(accent, cardLit);
               const cardBump = dragBlocked && isAct && !isLocked;
               return (
                 <button
@@ -1396,7 +1423,7 @@ export function BatchMixer({
                   style={{
                     paddingTop: "var(--entity-card-pt)",
                     paddingBottom: "var(--entity-card-pb)",
-                    background: cardLit ? entitySurfaceLit(p.color) : ENTITY_SURFACE_IDLE,
+                    background: cardLit ? entitySurfaceLit(accent) : ENTITY_SURFACE_IDLE,
                     border: chrome.border,
                     boxShadow: chrome.boxShadow,
                     transition: CARD_CHROME_TRANSITION,
@@ -1411,19 +1438,19 @@ export function BatchMixer({
                     width: 22,
                     height: 3,
                     borderRadius: 2,
-                    background: p.color,
+                    background: accent,
                     opacity: cardLit ? 1 : 0.4,
                     marginBottom: "var(--entity-card-bar-mb)",
-                    boxShadow: cardLit ? `0 0 6px ${p.color}` : "none",
+                    boxShadow: cardLit ? `0 0 6px ${accent}` : "none",
                   }} />
                   <CardReadout
                     name={p.id}
                     value={fmt(values[pi], p.isKg)}
                     unit={p.isKg ? "kg" : "g"}
                     centered
-                    nameColor={p.color}
-                    valueColor={cardLit ? c.white : CARD_VALUE_INACTIVE}
-                    unitColor={CARD_UNIT_INACTIVE}
+                    nameColor={accent}
+                    valueColor={entityValueColor(cardLit, colorScheme)}
+                    unitColor={entityUnitColor(cardLit, colorScheme)}
                   />
                 </button>
               );
@@ -1475,7 +1502,7 @@ export function BatchMixer({
                   flex: zone.weight,
                   zIndex: 1,
                   background: isColAct ? swipeZoneActive(col) : swipeZoneStripe(zi % 2 === 0),
-                  borderRight: zi < ZONES.length - 1 ? b.swipeColumn : "none",
+                  borderRight: zi < ZONES.length - 1 ? MIXER_SWIPE_COLUMN_BORDER : "none",
                   padding: "10px 4px",
                 }}
               >
@@ -1537,7 +1564,9 @@ export function BatchMixer({
 
       <TotalTile
         ref={totalTileRef}
-        color={totalParam.color}
+        color={col}
+        colorScheme={colorScheme}
+        entityId={totalParam.id}
         valueKg={fmt(values[0], totalParam.isKg)}
         isActive={isTotalAct || isLocked}
         expanded={isLocked}
@@ -1597,12 +1626,20 @@ export function BatchMixer({
           className="absolute inset-0"
           style={{
             zIndex: DRAG_OVERLAY_Z,
-            background: `color-mix(in srgb, ${col} 10%, ${s.overlayHint} 90%)`,
             pointerEvents: "auto",
             transition: "opacity 0.15s ease",
           }}
           aria-hidden
-        />
+        >
+          <div
+            className="absolute inset-0"
+            style={{ background: MIXER_OVERLAY_HINT }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{ background: col, opacity: 0.1 }}
+          />
+        </div>
       )}
 
         <LoadSavedMixesSheet
@@ -1621,6 +1658,8 @@ export function BatchMixer({
           batchNameInput={saveBatchNameInput}
           onConfirm={handleSaveConfirm}
         />
+
+        <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
 
         </div>
         </div>

@@ -1,9 +1,9 @@
 import React, { forwardRef, useRef, useState, useCallback, createContext, useContext, type CSSProperties, type PointerEvent, type RefObject, type ReactNode } from "react";
 import { useLongPressProgressReporter } from "./LongPressProgressContext";
 import { BEAM_Z, LongPressBeamBurst } from "./LongPressBeamBurst";
-import { theme } from "../../../theme";
+import { componentTokens, cv } from "../../ui/tokens";
 
-const { colors: c, surfaces: s } = theme;
+const lp = componentTokens.longPress;
 
 const BUTTON_OVER_BEAM_Z = BEAM_Z + 8;
 
@@ -38,13 +38,7 @@ export const HEADER_NAV_LONG_PRESS_MS = 1000;
 const MOVE_THRESHOLD = 10;
 const LEFT_PROGRESS_W = 3;
 const PROGRESS_INSET = 5;
-const DEFAULT_PROGRESS_COLOR = c.progress;
-
-const ACTION_PRIMARY_LABEL = c.actionPrimaryLabel;
-const ACTION_SECONDARY_LABEL = c.actionSecondaryLabel;
-const ACTION_COMPACT_LABEL = c.actionCompactLabel;
-const ACTION_DISABLED_LABEL = c.actionDisabledLabel;
-const ACTION_HOLDING_LABEL = c.actionHoldingLabel;
+const DEFAULT_PROGRESS_COLOR = lp.progress;
 
 export type UseLongPressOptions = {
   accentColor?: string;
@@ -158,7 +152,7 @@ export function LongPressProgress({
         className="absolute inset-x-0 bottom-0 pointer-events-none"
         style={{
           height: `${progress * 100}%`,
-          background: accentColor ? `${accentColor}14` : s.longPressFill,
+          background: accentColor ? `${accentColor}14` : lp.fill,
         }}
       />
     </>
@@ -221,51 +215,58 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
     useLongPress(onLongPress, disabled, { accentColor, confirmAction, durationMs });
 
   const isHeader = variant === "header";
+  const borderAlpha = lp.borderAlpha;
 
   const idleBorder = disabled
-    ? 0.07
+    ? borderAlpha.disabled
     : isHeader
-      ? 0.07
+      ? borderAlpha.headerIdle
       : variant === "primary"
-        ? 0.12
-        : 0.10;
+        ? borderAlpha.primaryIdle
+        : borderAlpha.secondaryIdle;
 
   const idleLabel = disabled
-    ? ACTION_DISABLED_LABEL
+    ? cv.state.disabled
     : holding
       ? isHeader
-        ? c.title
-        : ACTION_HOLDING_LABEL
+        ? cv.text.primary
+        : cv.text.secondary
       : isHeader
-        ? c.muted
+        ? cv.headerIconButton.color
         : variant === "primary"
-          ? ACTION_PRIMARY_LABEL
+          ? cv.text.muted
           : compact
-            ? ACTION_COMPACT_LABEL
-            : ACTION_SECONDARY_LABEL;
+            ? cv.text.muted
+            : cv.text.muted;
 
   const lit = active || holding;
 
   const idleBackground = isHeader
-    ? active
-      ? s.headerBtnBgActive
-      : s.headerBtnBg
+    ? active || holding
+      ? cv.headerIconButton.backgroundActive
+      : cv.headerIconButton.background
     : active
-      ? s.sheetBtnBgActive
-      : c.entitySurfaceIdle;
+      ? cv.surface.buttonActive
+      : cv.surface.raised;
 
-  const holdingBackground = c.holdingSurface;
+  const holdingBackground = cv.surface.input;
 
-  const borderWidth = isHeader ? 1 : 1.5;
-  const borderAlpha = holding
-    ? isHeader
-      ? 0.28
-      : 0.14
-    : lit
-      ? isHeader
-        ? 0.28
-        : 0.22
-      : idleBorder;
+  const borderWidth = isHeader ? lp.borderWidthHeader : lp.borderWidthSheet;
+  const borderStyle = isHeader
+    ? lit
+      ? cv.headerIconButton.borderActive
+      : cv.headerIconButton.border
+    : `${borderWidth}px solid rgba(var(--ui-long-press-border-rgb), ${
+        holding
+          ? isHeader
+            ? borderAlpha.holdingHeader
+            : borderAlpha.holdingSheet
+          : lit
+            ? isHeader
+              ? borderAlpha.litHeader
+              : borderAlpha.litSheet
+            : idleBorder
+      })`;
 
   return (
     <>
@@ -283,14 +284,15 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
       disabled={disabled}
       aria-label={label}
       className={`relative flex flex-col items-center justify-center overflow-hidden touch-none transition-colors duration-150 ${
-        isHeader ? "rounded-full shrink-0" : "rounded-xl"
+        isHeader ? "header-icon-btn rounded-full shrink-0" : "rounded-xl"
       } ${className}`}
       style={{
         cursor: disabled ? "default" : "pointer",
         background: holding ? holdingBackground : idleBackground,
-        border: `${borderWidth}px solid rgba(255,255,255,${borderAlpha})`,
+        border: borderStyle,
+        color: isHeader ? (lit ? cv.headerIconButton.colorActive : cv.headerIconButton.color) : undefined,
         minHeight: isHeader ? 0 : compact ? 0 : 32,
-        ...(isHeader ? { width: 40, height: 40, opacity: disabled ? 0.35 : 1 } : {}),
+        ...(isHeader ? { width: 40, height: 40, opacity: disabled ? lp.opacityDisabledHeader : 1 } : {}),
         ...(progressVariant === "beam" && holding
           ? { position: "relative" as const, zIndex: BUTTON_OVER_BEAM_Z, isolation: "isolate" as const }
           : {}),

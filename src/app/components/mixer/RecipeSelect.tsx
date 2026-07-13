@@ -4,9 +4,9 @@ import type { BlendingRecipe } from "../../domain/recipe/types";
 import { recipeMenuLabel } from "../../domain/recipe/types";
 import { HEADER_NAV_LONG_PRESS_MS, LongPressProgress, useLongPress } from "../shared/LongPressButton";
 import { RecipeHeaderRecipeRow, RecipeHeaderSubline } from "./RecipeZoneMeta";
-import { theme } from "../../../theme";
+import { componentTokens } from "../../ui/tokens";
 
-const { colors: c, surfaces: s } = theme;
+const dd = componentTokens.dropdown;
 const DROPDOWN_MENU_MIN_W = 200;
 
 function ChevronDown({ open }: { open: boolean }) {
@@ -79,12 +79,12 @@ function RecipeOptionRow({
         fontSize: "var(--text-ui-md)",
         fontWeight: current ? 600 : 500,
         letterSpacing: "0.04em",
-        color: current && !selectable ? c.dropdownMenuTextMuted : c.dropdownMenuText,
+        color: current && !selectable ? dd.menuTextMuted : dd.menuText,
         background: holding
-          ? c.inputSurface
+          ? dd.inputSurface
           : current && !selectable
-            ? s.dropdownMenuActiveBg
-            : c.dropdownMenuBg,
+            ? dd.menuActiveBackground
+            : dd.menuBackground,
         padding: "10px 14px",
         cursor: selectable ? "pointer" : "default",
         whiteSpace: "nowrap",
@@ -178,9 +178,9 @@ export function RecipeSelect({
           width: "max-content",
           minWidth: menuLayout.minWidth,
           maxWidth: 280,
-          background: c.dropdownMenuBg,
-          border: `1px solid ${s.dropdownMenuBorderColor}`,
-          boxShadow: s.shadowDropdown,
+          background: dd.menuBackground,
+          border: dd.menuBorder,
+          boxShadow: dd.menuShadow,
         }}
       >
         {recipes.map((recipe) => {

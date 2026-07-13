@@ -11,18 +11,16 @@ import type { BatchNameInput } from "../../batch-names";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import {
   SHEET_FIELD_INPUT_CLASS,
+  SHEET_FIELD_INPUT_ERROR_CLASS,
   SHEET_FIELD_LABEL,
+  SHEET_OVERLAY_LIGHT_CLASS,
+  SHEET_PANEL_CLASS,
   SHEET_SUBTITLE,
   SHEET_TITLE,
   sheetFieldInputStyle,
 } from "./sheetChrome";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
-import { theme } from "../../../theme";
-
-const { colors: c, borders: b, surfaces: s } = theme;
-
-/** Warm warning — distinct from error red (bucketLimit). */
-const SHEET_WARN = "#c9a058";
+import { cv } from "../../ui/tokens";
 
 /** Match LoadSavedMixesSheet chrome. */
 const HEADER_HEIGHT_FRAC = "32%";
@@ -133,7 +131,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
         : "Optional display name — must not match a recipe or admin label"
       : "Clear the field to show the recipe name again";
   const subtitleStyle = hasExistingMix
-    ? { ...SHEET_SUBTITLE, maxWidth: 300, textAlign: "center" as const, color: SHEET_WARN }
+    ? { ...SHEET_SUBTITLE, maxWidth: 300, textAlign: "center" as const, color: cv.state.warn }
     : { ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" as const };
 
   const handleSave = () => {
@@ -231,22 +229,18 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
       <button
         type="button"
         aria-label="Close"
-        className="load-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
+        className={`${SHEET_OVERLAY_LIGHT_CLASS} absolute inset-0 border-0 p-0 cursor-default`}
         onClick={() => onOpenChange(false)}
-        style={{ backgroundColor: s.outsideDimLight }}
       />
 
       <div
-        className="load-sheet-panel relative flex flex-col min-h-0 flex-1 overflow-hidden"
+        className={`${SHEET_PANEL_CLASS} relative flex flex-col min-h-0 flex-1 overflow-hidden`}
         style={{
           marginLeft: SHEET_MARGIN_X,
           marginRight: SHEET_MARGIN_X,
           marginTop: SHEET_MARGIN_TOP,
           marginBottom: "var(--app-sheet-margin-bottom)",
           borderRadius: SHEET_RADIUS,
-          border: b.panel,
-          boxShadow: s.shadowSheet,
-          background: s.loadSheetPanel,
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -287,7 +281,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                 fontSize: "var(--text-recipe-meta-value)",
                 fontWeight: 600,
                 letterSpacing: "0.04em",
-                color: c.title,
+                color: cv.text.primary,
                 textAlign: "center",
               }}
             >
@@ -335,11 +329,10 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
               placeholder="e.g. Morning Little Mix"
               aria-invalid={activeError != null}
               aria-describedby={activeError ? "save-mix-name-error" : undefined}
-              className={SHEET_FIELD_INPUT_CLASS}
+              className={`${SHEET_FIELD_INPUT_CLASS}${activeError ? ` ${SHEET_FIELD_INPUT_ERROR_CLASS}` : ""}`}
               style={sheetFieldInputStyle({
                 height: INPUT_H,
                 textAlign: "center",
-                border: activeError ? `1px solid ${c.bucketLimit}` : undefined,
               })}
             />
             <button
@@ -347,13 +340,10 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
               onClick={() =>
                 handleGenerate(hasExistingMix ? registryForNew : registryForEdit)
               }
-              className="w-full rounded-xl transition-all duration-200 active:scale-[0.98]"
+              className="sheet-action-btn w-full rounded-xl transition-all duration-200 active:scale-[0.98]"
               style={{
                 marginTop: LABEL_GAP,
                 height: GENERATE_BTN_H,
-                background: c.entitySurfaceIdle,
-                border: b.sheetBtn,
-                color: c.actionSecondaryLabel,
                 fontFamily: "'Outfit', sans-serif",
                 fontSize: "var(--text-ui-sm)",
                 fontWeight: 600,
@@ -375,7 +365,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
                   fontWeight: 500,
                   letterSpacing: "0.03em",
                   lineHeight: 1.35,
-                  color: c.bucketLimit,
+                  color: cv.state.error,
                   textAlign: "center",
                 }}
               >

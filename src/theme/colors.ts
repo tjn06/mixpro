@@ -1,73 +1,76 @@
+import { alphaWhite } from "./primitives";
+import { semanticColors, semanticSurfaces } from "./semantic";
+
 /**
- * UI chrome colors — source of truth for web + future React Native.
- * Entity ingredient colors stay in mixEntities.ts (domain data).
+ * Legacy color keys — alias semantic tokens for backward compatibility.
+ * Prefer semantic.* or componentTokens.* in new code.
  */
 export const themeColors = {
   /** App frame / body */
-  appBackground: "#07070f",
-  shellBackground: "#030308",
-  headerBackground: "#0a0a14",
+  appBackground: semanticColors.surface.app,
+  shellBackground: semanticColors.surface.shell,
+  headerBackground: semanticColors.surface.header,
 
   /** Primary text hierarchy */
-  title: "#c0c0e0",
-  titleMuted: "#9898b4",
-  muted: "#8888a8",
-  mutedDim: "#686878",
-  mutedDimmer: "#686880",
-  value: "#c4c4dc",
-  white: "#ffffff",
+  title: semanticColors.text.primary,
+  titleMuted: semanticColors.text.secondary,
+  muted: semanticColors.text.muted,
+  mutedDim: semanticColors.text.dimmed,
+  mutedDimmer: semanticColors.text.dimmed,
+  value: semanticColors.text.secondary,
+  white: semanticColors.text.inverse,
 
   /** Secondary / accent text */
-  secondary: "#a0a0c0",
-  secondaryMuted: "#a8a8c4",
-  actionPrimaryLabel: "#8888a8",
-  actionSecondaryLabel: "#707090",
-  actionCompactLabel: "#747494",
-  actionDisabledLabel: "#404058",
-  actionHoldingLabel: "#9090b8",
-  headerSubline: "#a8a8c4",
+  secondary: semanticColors.text.secondary,
+  secondaryMuted: semanticColors.text.muted,
+  actionPrimaryLabel: semanticColors.text.muted,
+  actionSecondaryLabel: semanticColors.icon.muted,
+  actionCompactLabel: semanticColors.text.muted,
+  actionDisabledLabel: semanticColors.state.disabled,
+  actionHoldingLabel: semanticColors.text.secondary,
+  headerSubline: semanticColors.text.muted,
 
   /** Surfaces (solid) */
-  entitySurfaceIdle: "#0d0d1c",
-  /** Neutral entity card / connector chrome when not selected */
-  entityBorderIdle: "rgba(255,255,255,0.14)",
-  swipeSurfaceBase: "#09091a",
-  inputSurface: "#10101e",
-  holdingSurface: "#10101e",
-  dropdownMenuBg: "#3a3a4c",
+  entitySurfaceIdle: semanticColors.surface.raised,
+  entityBorderIdle: alphaWhite(0.22),
+  swipeSurfaceBase: semanticColors.surface.swipe,
+  inputSurface: semanticColors.surface.input,
+  holdingSurface: semanticColors.surface.input,
+  dropdownMenuBg: semanticColors.surface.dropdown,
 
   /** Card readouts */
-  cardValueInactive: "#9a9ab4",
-  cardUnitInactive: "#787898",
+  cardValueInactive: semanticColors.text.secondary,
+  cardUnitInactive: semanticColors.text.muted,
 
   /** Recipe block */
-  recipeId: "#8888a8",
-  recipeIdMuted: "#686878",
-  recipeValue: "#c4c4dc",
-  recipeValueMuted: "#9898b4",
-  recipeUnit: "#707088",
-  recipeColon: "#484860",
+  recipeId: semanticColors.text.muted,
+  recipeIdMuted: semanticColors.text.dimmed,
+  recipeValue: semanticColors.text.secondary,
+  recipeValueMuted: semanticColors.text.muted,
+  recipeUnit: semanticColors.text.muted,
+  recipeColon: semanticColors.text.dimmed,
 
   /** Bucket / fill */
-  fill: "#9090b8",
-  fillMuted: "#686880",
-  bucketLimit: "#c95868",
-  bucketFillFull: "#c95868",
-  bucketFillFullMuted: "#8a4558",
-  fillOutline: "rgba(255,255,255,0.32)",
+  fill: semanticColors.text.secondary,
+  fillMuted: semanticColors.text.dimmed,
+  bucketLimit: semanticColors.state.error,
+  bucketFillFull: semanticColors.state.error,
+  bucketFillFullMuted: semanticColors.state.errorMuted,
+  fillOutline: alphaWhite(0.36),
+  fillEmpty: semanticSurfaces.bucketFillEmpty,
 
   /** Swipe zone */
-  swipeArrowIdle: "#585878",
-  swipeStepIdle: "#424260",
+  swipeArrowIdle: semanticColors.text.muted,
+  swipeStepIdle: semanticColors.text.dimmed,
 
   /** Dropdown menus */
-  dropdownMenuText: "#b8b8d0",
-  dropdownMenuTextMuted: "#686878",
-  dropdownMenuLockedLabel: "#787898",
+  dropdownMenuText: semanticColors.text.secondary,
+  dropdownMenuTextMuted: semanticColors.text.dimmed,
+  dropdownMenuLockedLabel: semanticColors.text.muted,
 
   /** Semantic accents */
-  extraBatchAccent: "#9b8cff",
-  progress: "#9090b8",
+  extraBatchAccent: semanticColors.state.accent,
+  progress: semanticColors.text.secondary,
 } as const;
 
 export type ThemeColorKey = keyof typeof themeColors;

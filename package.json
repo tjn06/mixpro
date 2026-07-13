@@ -7,7 +7,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "preview": "vite preview --base /mixpro/"
+    "preview": "vite preview --base /mixpro/",
+    "lint:tokens": "node scripts/check-theme-tokens.mjs"
   },
   "dependencies": {
     "date-fns": "3.6.0",

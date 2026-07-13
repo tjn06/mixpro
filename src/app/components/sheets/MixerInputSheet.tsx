@@ -5,11 +5,9 @@ import type { SandType } from "../../domain/mix/volume";
 import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
 import { SavedIcon, CloseIcon } from "../shared/ActionIcons";
 import { MixerInputDeck } from "../mixer/MixerInputDeck";
-import { SHEET_SUBTITLE, SHEET_TITLE } from "./sheetChrome";
+import { SHEET_SUBTITLE, SHEET_TITLE, SHEET_OVERLAY_LIGHT_CLASS, SHEET_PANEL_CLASS } from "./sheetChrome";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
-import { theme } from "../../../theme";
-
-const { colors: c, borders: b, surfaces: s } = theme;
+import { cv } from "../../ui/tokens";
 
 /** Match LoadSavedMixesSheet / SaveMixNameSheet chrome. */
 const HEADER_HEIGHT_FRAC = "32%";
@@ -72,22 +70,18 @@ export function MixerInputSheet({
       <button
         type="button"
         aria-label="Close"
-        className="load-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
+        className={`${SHEET_OVERLAY_LIGHT_CLASS} absolute inset-0 border-0 p-0 cursor-default`}
         onClick={() => onOpenChange(false)}
-        style={{ backgroundColor: s.outsideDimLight }}
       />
 
       <div
-        className="load-sheet-panel relative flex flex-col min-h-0 flex-1 overflow-hidden"
+        className={`${SHEET_PANEL_CLASS} relative flex flex-col min-h-0 flex-1 overflow-hidden`}
         style={{
           marginLeft: SHEET_MARGIN_X,
           marginRight: SHEET_MARGIN_X,
           marginTop: SHEET_MARGIN_TOP,
           marginBottom: "var(--app-sheet-margin-bottom)",
           borderRadius: SHEET_RADIUS,
-          border: b.panel,
-          boxShadow: s.shadowSheet,
-          background: s.loadSheetPanel,
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -153,7 +147,7 @@ export function MixerInputSheet({
               icon: <SavedIcon size={SHEET_FOOTER_ICON_SIZE} />,
               onClick: handleApply,
               variant: "primary",
-              accentColor: c.extraBatchAccent,
+              accentColor: cv.extraBatch.accent,
             },
           ]}
         />

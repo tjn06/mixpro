@@ -28,9 +28,10 @@ import {
   BUCKET_VALUE_STYLE,
 } from "../../presentation/featureReadout";
 import { FeatureReadoutStack } from "./FeatureReadoutStack";
-import { theme } from "../../../theme";
+import { themeColorVar } from "../../../theme/cssVars";
+import { componentTokens } from "../../ui/tokens";
 
-const { colors: c, surfaces: s } = theme;
+const dd = componentTokens.dropdown;
 
 export {
   DEFAULT_BUCKET_SELECTION,
@@ -296,11 +297,11 @@ function BucketSvg({
 
   const fillColor = bucketFull
     ? muted
-      ? c.bucketFillFullMuted
-      : c.bucketFillFull
+      ? themeColorVar("bucketFillFullMuted")
+      : themeColorVar("bucketFillFull")
     : muted
-      ? c.fillMuted
-      : c.fill;
+      ? themeColorVar("fillMuted")
+      : themeColorVar("fill");
   const showFill = fillRatio > 0.008;
 
   return (
@@ -330,8 +331,8 @@ function BucketSvg({
 
       <path
         d={BODY_PATH}
-        fill={s.bucketFillEmpty}
-        stroke={c.fillOutline}
+        fill={themeColorVar("fillEmpty")}
+        stroke={themeColorVar("fillOutline")}
         strokeLinejoin="round"
         strokeLinecap="round"
         strokeWidth={strokeWidthPx(STROKE_PX.body, renderW)}
@@ -406,15 +407,15 @@ function BucketSelectOptionRow({
         fontSize: "var(--text-ui-md)",
         fontWeight: active ? 600 : 500,
         letterSpacing: "0.04em",
-        color: c.dropdownMenuText,
+        color: dd.menuText,
         background: locked
           ? holding
-            ? c.inputSurface
+            ? dd.inputSurface
             : active
-              ? s.dropdownMenuActiveBg
+              ? dd.menuActiveBackground
               : "transparent"
           : active
-            ? s.dropdownMenuActiveBg
+            ? dd.menuActiveBackground
             : "transparent",
         padding: "10px 14px",
         cursor: locked ? "default" : "pointer",
@@ -426,7 +427,7 @@ function BucketSelectOptionRow({
       }}
     >
       {locked && <LongPressProgress progress={progress} inset={10} />}
-      <span style={{ color: locked ? c.dropdownMenuLockedLabel : c.dropdownMenuText }}>
+      <span style={{ color: locked ? dd.menuLockedLabel : dd.menuText }}>
         {label}
       </span>
       {locked && (
@@ -435,7 +436,7 @@ function BucketSelectOptionRow({
             fontSize: "var(--text-ui-sm)",
             fontWeight: 600,
             letterSpacing: "0.1em",
-            color: holding ? c.title : c.dropdownMenuText,
+            color: holding ? componentTokens.text.primary : dd.menuText,
             flexShrink: 0,
             transition: "color 0.15s ease",
           }}
@@ -525,9 +526,9 @@ function BucketSelectDropdown({
           width: "max-content",
           minWidth: menuLayout.minWidth,
           maxWidth: 280,
-          background: c.dropdownMenuBg,
-          border: `1px solid ${s.dropdownMenuBorderColor}`,
-          boxShadow: s.shadowDropdown,
+          background: dd.menuBackground,
+          border: dd.menuBorder,
+          boxShadow: dd.menuShadow,
         }}
       >
         {options.map((option) => {

@@ -1,8 +1,8 @@
 import React, { type ReactNode } from "react";
 import { LongPressButton } from "./LongPressButton";
-import { theme } from "../../../theme";
+import { componentTokens, cv } from "../../ui/tokens";
 
-const { colors: c, borders: b, surfaces: s } = theme;
+const headerBtn = componentTokens.headerIconButton;
 
 /** Sheet / overlay top offset — keep in sync with `--header-h` in app-layout.css. */
 export const APP_HEADER_HEIGHT = "var(--header-h)";
@@ -16,6 +16,8 @@ interface AppHeaderProps {
   isLocked?: boolean;
   onBack?: () => void;
   onForward?: () => void;
+  onSettingsClick?: () => void;
+  settingsActive?: boolean;
   /** Recipe name / selector — rendered in the subheader strip below the header bar. */
   subline?: ReactNode;
 }
@@ -40,14 +42,13 @@ function HeaderIconButton({
       aria-disabled={disabled || undefined}
       disabled={disabled}
       onClick={onClick}
-      className="flex items-center justify-center rounded-full transition-colors duration-150 shrink-0"
+      className={`header-icon-btn flex items-center justify-center rounded-full transition-colors duration-150 shrink-0${
+        active ? " header-icon-btn--active" : ""
+      }`}
       style={{
         width: 40,
         height: 40,
-        background: active ? s.headerBtnBgActive : s.headerBtnBg,
-        border: active ? b.headerBtnActive : b.headerBtn,
-        color: active ? c.title : c.muted,
-        opacity: disabled ? 0.35 : 1,
+        opacity: disabled ? headerBtn.opacityDisabled : 1,
         cursor: disabled ? "default" : "pointer",
       }}
     >
@@ -61,6 +62,8 @@ export function AppHeader({
   isLocked = false,
   onBack,
   onForward,
+  onSettingsClick,
+  settingsActive = false,
   subline,
 }: AppHeaderProps) {
   return (
@@ -70,6 +73,7 @@ export function AppHeader({
           <LongPressButton
             label="Back"
             confirmAction="GO BACK"
+            variant="header"
             onLongPress={onBack ?? (() => {})}
             disabled={isLocked || !onBack}
             className={ROUND_NAV_BTN_CLASS}
@@ -81,7 +85,12 @@ export function AppHeader({
             }
           />
 
-          <HeaderIconButton label="Settings" disabled>
+          <HeaderIconButton
+            label="Settings"
+            onClick={onSettingsClick}
+            active={settingsActive}
+            disabled={!onSettingsClick}
+          >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -94,7 +103,7 @@ export function AppHeader({
               fontFamily: "'Outfit', sans-serif",
               fontSize: "var(--text-header-title)",
               fontWeight: 600,
-              color: c.title,
+              color: cv.text.primary,
               letterSpacing: "0.06em",
               lineHeight: 1.2,
             }}
@@ -112,6 +121,7 @@ export function AppHeader({
           <LongPressButton
             label="Forward"
             confirmAction="GO FORWARD"
+            variant="header"
             onLongPress={onForward ?? (() => {})}
             disabled={isLocked || !onForward}
             className={ROUND_NAV_BTN_CLASS}

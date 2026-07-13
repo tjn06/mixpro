@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { theme } from "../../../theme";
+import { componentTokens } from "../../ui/tokens";
 
-const { colors: c, borders: b, surfaces: s } = theme;
+const footer = componentTokens.sheetFooterButton;
 
 export const SHEET_FOOTER_H = 64;
 export const SHEET_FOOTER_PAD_X = "max(20px, var(--safe-left), var(--safe-right))";
-export const SHEET_FOOTER_BTN_H = 44;
+export const SHEET_FOOTER_BTN_H = footer.height;
 const SHEET_FOOTER_GAP = 8;
 const SHEET_FOOTER_ICON = 18;
 const TOOLTIP_LINE_H = 7;
@@ -38,29 +38,10 @@ function SheetFooterTooltip({ label }: { label: string }) {
       }}
       aria-hidden
     >
+      <span className="sheet-footer-tooltip-label">{label}</span>
       <span
-        style={{
-          fontFamily: "'Outfit', sans-serif",
-          fontSize: "var(--text-ui-xs)",
-          fontWeight: 600,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: c.muted,
-          whiteSpace: "nowrap",
-          lineHeight: 1.1,
-        }}
-      >
-        {label}
-      </span>
-      <span
-        style={{
-          display: "block",
-          width: 1,
-          height: TOOLTIP_LINE_H,
-          marginTop: 4,
-          background: "rgba(255,255,255,0.22)",
-          borderRadius: 1,
-        }}
+        className="sheet-footer-tooltip-line"
+        style={{ height: TOOLTIP_LINE_H, marginTop: 4 }}
       />
     </div>
   );
@@ -79,14 +60,11 @@ function SheetIconButton({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className="w-full min-w-0 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-[0.98]"
+      className="sheet-footer-btn w-full min-w-0 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-[0.98]"
       style={{
         height: SHEET_FOOTER_BTN_H,
-        background: c.entitySurfaceIdle,
-        border: b.sheetBtn,
-        color: accentColor ?? c.title,
+        color: accentColor,
         cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.42 : 1,
       }}
     >
       <span
@@ -103,13 +81,12 @@ function SheetIconButton({
 export function SheetFooter({ buttons }: SheetFooterProps) {
   return (
     <footer
-      className="shrink-0 flex items-center relative z-[11]"
+      className="sheet-footer-chrome shrink-0 flex items-center relative z-[11]"
       style={{
         height: SHEET_FOOTER_H,
         paddingLeft: SHEET_FOOTER_PAD_X,
         paddingRight: SHEET_FOOTER_PAD_X,
         gap: SHEET_FOOTER_GAP,
-        background: s.loadSheetPanel,
       }}
     >
       {buttons.map((btn) => (

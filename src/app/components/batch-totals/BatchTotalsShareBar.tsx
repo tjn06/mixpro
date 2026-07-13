@@ -15,16 +15,16 @@ import { useAppShellCompact } from "../../hooks/useAppShellCompact";
 import { CopyIcon, MailIcon, MessageIcon, RenameIcon, SavedIcon } from "../shared/ActionIcons";
 import {
   SHEET_FIELD_INPUT_CLASS,
+  SHEET_OVERLAY_MEDIUM_CLASS,
   sheetFieldInputStyle,
 } from "../sheets/sheetChrome";
-import { theme } from "../../../theme";
+import { cv } from "../../ui/tokens";
 
-const { colors: c, borders: b, surfaces: s } = theme;
+const share = cv.shareBar;
 const SHEET_MARGIN_X = "var(--app-sheet-margin-x)";
 const SHEET_RADIUS = 28;
 const SHEET_PAD_X = 20;
 const SHEET_PAD_Y = 20;
-const DONE_H = 44;
 
 const COMMENT_DONE_LABELS = {
   sv: "Klar",
@@ -56,8 +56,8 @@ function ReportLanguageToggle({
       aria-label="Report language"
       style={{
         padding: 2,
-        background: s.shareTabGroupBg,
-        border: b.panel,
+        background: share.tabGroupBackground,
+        border: share.panelBorder,
       }}
     >
       {options.map(({ id, label }) => {
@@ -152,9 +152,8 @@ function BatchTotalsCommentSheet({
       <button
         type="button"
         aria-label="Close"
-        className="mixer-input-sheet-dim absolute inset-0 border-0 p-0 cursor-default"
+        className={`${SHEET_OVERLAY_MEDIUM_CLASS} absolute inset-0 border-0 p-0 cursor-default`}
         onClick={() => onOpenChange(false)}
-        style={{ backgroundColor: s.outsideDimMedium }}
       />
       <div
         className="mixer-input-sheet-panel relative flex flex-col min-w-0 overflow-hidden"
@@ -163,8 +162,8 @@ function BatchTotalsCommentSheet({
           marginRight: SHEET_MARGIN_X,
           marginBottom: "var(--app-sheet-margin-bottom)",
           borderRadius: SHEET_RADIUS,
-          border: b.panel,
-          background: c.entitySurfaceIdle,
+          border: share.panelBorder,
+          background: share.panelBackground,
           padding: `${SHEET_PAD_Y}px ${SHEET_PAD_X}px`,
           gap: 12,
         }}
@@ -180,10 +179,10 @@ function BatchTotalsCommentSheet({
           onClick={() => onOpenChange(false)}
           className="w-full rounded-xl transition-colors duration-150"
           style={{
-            height: DONE_H,
-            background: s.shareSubmitBg,
-            border: b.panel,
-            color: c.title,
+            height: share.doneHeight,
+            background: share.submitBackground,
+            border: share.submitBorder,
+            color: share.submitColor,
             fontSize: "var(--text-share-sm)",
             fontFamily: "'Outfit', sans-serif",
             fontWeight: 600,
@@ -214,12 +213,11 @@ function ShareIconButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="relative flex flex-col items-center justify-center overflow-hidden touch-none transition-colors duration-150 rounded-xl flex-1 h-full min-w-0"
+      className={`share-icon-btn relative flex flex-col items-center justify-center overflow-hidden touch-none transition-colors duration-150 rounded-xl flex-1 h-full min-w-0${
+        active ? " share-icon-btn--active" : ""
+      }`}
       style={{
         cursor: "pointer",
-        background: active ? s.shareSubmitBg : c.entitySurfaceIdle,
-        border: active ? b.sharePanelActive : b.sharePanelIdle,
-        color: active ? c.fill : c.muted,
         minHeight: 32,
       }}
     >

@@ -1,5 +1,6 @@
 import type { ThemeColorKey } from "./colors";
 import { themeColors } from "./colors";
+import { semanticBorders, semanticColors, semanticSurfaces } from "./semantic";
 
 /** Maps theme color keys → CSS custom property names on :root / .app-frame. */
 export const themeColorCssVars: Record<ThemeColorKey, string> = {
@@ -22,6 +23,7 @@ export const themeColorCssVars: Record<ThemeColorKey, string> = {
   actionHoldingLabel: "--ui-action-holding-label",
   headerSubline: "--ui-header-subline",
   entitySurfaceIdle: "--ui-entity-surface-idle",
+  entityBorderIdle: "--ui-entity-border-idle",
   swipeSurfaceBase: "--ui-swipe-surface-base",
   inputSurface: "--ui-input-surface",
   holdingSurface: "--ui-holding-surface",
@@ -40,6 +42,7 @@ export const themeColorCssVars: Record<ThemeColorKey, string> = {
   bucketFillFull: "--ui-bucket-fill-full",
   bucketFillFullMuted: "--ui-bucket-fill-full-muted",
   fillOutline: "--ui-fill-outline",
+  fillEmpty: "--ui-fill-empty",
   swipeArrowIdle: "--ui-swipe-arrow-idle",
   swipeStepIdle: "--ui-swipe-step-idle",
   dropdownMenuText: "--ui-dropdown-menu-text",
@@ -48,6 +51,24 @@ export const themeColorCssVars: Record<ThemeColorKey, string> = {
   extraBatchAccent: "--ui-extra-batch-accent",
   progress: "--ui-progress",
 };
+
+/** Semantic tokens → CSS custom properties. */
+export const semanticCssVars = {
+  textPrimary: "--semantic-text-primary",
+  textSecondary: "--semantic-text-secondary",
+  textMuted: "--semantic-text-muted",
+  textDimmed: "--semantic-text-dimmed",
+  iconPrimary: "--semantic-icon-primary",
+  iconMuted: "--semantic-icon-muted",
+  stateWarn: "--semantic-state-warn",
+  stateError: "--semantic-state-error",
+  borderDefault: "--semantic-border-default",
+  borderStrong: "--semantic-border-strong",
+  borderSubtle: "--semantic-border-subtle",
+  surfaceRaised: "--semantic-surface-raised",
+  surfaceButton: "--semantic-surface-button",
+  surfaceInput: "--semantic-surface-input",
+} as const;
 
 export function themeColorVar(key: ThemeColorKey): string {
   return `var(${themeColorCssVars[key]})`;
@@ -59,4 +80,23 @@ export function getThemeColorCssEntries(): [string, string][] {
     themeColorCssVars[key],
     themeColors[key],
   ]);
+}
+
+export function getSemanticCssEntries(): [string, string][] {
+  return [
+    [semanticCssVars.textPrimary, semanticColors.text.primary],
+    [semanticCssVars.textSecondary, semanticColors.text.secondary],
+    [semanticCssVars.textMuted, semanticColors.text.muted],
+    [semanticCssVars.textDimmed, semanticColors.text.dimmed],
+    [semanticCssVars.iconPrimary, semanticColors.icon.primary],
+    [semanticCssVars.iconMuted, semanticColors.icon.muted],
+    [semanticCssVars.stateWarn, semanticColors.state.warn],
+    [semanticCssVars.stateError, semanticColors.state.error],
+    [semanticCssVars.borderDefault, semanticBorders.default],
+    [semanticCssVars.borderStrong, semanticBorders.strong],
+    [semanticCssVars.borderSubtle, semanticBorders.subtle],
+    [semanticCssVars.surfaceRaised, semanticSurfaces.raised],
+    [semanticCssVars.surfaceButton, semanticSurfaces.button],
+    [semanticCssVars.surfaceInput, semanticSurfaces.input],
+  ];
 }

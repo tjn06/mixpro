@@ -1,0 +1,207 @@
+import { componentCssVarNames } from "./componentCssVars";
+import { themeColorCssVars } from "./cssVars";
+import type { ThemeColorKey } from "./colors";
+import {
+  alphaBlack,
+  borderSolidBlack,
+  primitiveInkText,
+  primitivePaper,
+  primitiveSemanticLight,
+} from "./primitives";
+import { getLightBatchTotalsCssEntries } from "./batchTotalsCssVars";
+import { getLightMixerChromeEntries } from "./mixerCssVars";
+
+const ink = primitiveInkText;
+const paper = primitivePaper;
+const sem = primitiveSemanticLight;
+
+const lightText = {
+  primary: ink[80],
+  secondary: ink[60],
+  muted: ink[50],
+  dimmed: ink[20],
+  inverse: ink[100],
+} as const;
+
+const lightBorders = {
+  subtle: borderSolidBlack(0.08),
+  default: borderSolidBlack(0.12, "1.5px"),
+  strong: borderSolidBlack(0.18, "1.5px"),
+  panel: borderSolidBlack(0.14, "1.5px"),
+  input: borderSolidBlack(0.1),
+  sheetButton: borderSolidBlack(0.14, "1.5px"),
+  headerButton: borderSolidBlack(0.08),
+  headerButtonActive: borderSolidBlack(0.16),
+} as const;
+
+const lightSurfaces = {
+  raised: paper[650],
+  button: alphaBlack(0.06),
+  buttonActive: alphaBlack(0.1),
+  input: alphaBlack(0.04),
+  headerButton: alphaBlack(0.05),
+  headerButtonActive: alphaBlack(0.08),
+  app: paper[900],
+  shell: paper[950],
+  header: paper[850],
+  headerSub: paper[800],
+  loadSheetPanel: "rgba(244, 244, 248, 0.88)",
+  loadSheetRow: "rgba(244, 244, 248, 0.94)",
+  outsideDimLight: "rgba(0, 0, 0, 0.18)",
+  outsideDimMedium: "rgba(0, 0, 0, 0.28)",
+  tooltipLine: alphaBlack(0.16),
+  dropdown: paper[700],
+  swipe: paper[800],
+  inputSolid: paper[700],
+} as const;
+
+const lightStrip = {
+  neutral: paper[700],
+  moreOpen: paper[550],
+  rename: paper[500],
+  delete: paper[400],
+  open: paper[600],
+} as const;
+
+const lightLegacyColors: Record<ThemeColorKey, string> = {
+  appBackground: lightSurfaces.app,
+  shellBackground: lightSurfaces.shell,
+  headerBackground: lightSurfaces.header,
+  title: lightText.primary,
+  titleMuted: lightText.secondary,
+  muted: lightText.muted,
+  mutedDim: lightText.dimmed,
+  mutedDimmer: lightText.dimmed,
+  value: lightText.secondary,
+  white: lightText.inverse,
+  secondary: lightText.secondary,
+  secondaryMuted: lightText.muted,
+  actionPrimaryLabel: lightText.muted,
+  actionSecondaryLabel: lightText.muted,
+  actionCompactLabel: lightText.muted,
+  actionDisabledLabel: ink[10],
+  actionHoldingLabel: lightText.secondary,
+  headerSubline: lightText.muted,
+  entitySurfaceIdle: lightSurfaces.raised,
+  entityBorderIdle: alphaBlack(0.14),
+  swipeSurfaceBase: lightSurfaces.swipe,
+  inputSurface: lightSurfaces.inputSolid,
+  holdingSurface: lightSurfaces.inputSolid,
+  dropdownMenuBg: lightSurfaces.dropdown,
+  cardValueInactive: lightText.secondary,
+  cardUnitInactive: lightText.muted,
+  recipeId: lightText.muted,
+  recipeIdMuted: lightText.dimmed,
+  recipeValue: lightText.secondary,
+  recipeValueMuted: lightText.muted,
+  recipeUnit: lightText.muted,
+  recipeColon: lightText.dimmed,
+  fill: lightText.secondary,
+  fillMuted: lightText.dimmed,
+  bucketLimit: sem.error,
+  bucketFillFull: sem.error,
+  bucketFillFullMuted: sem.errorMuted,
+  fillOutline: alphaBlack(0.2),
+  fillEmpty: alphaBlack(0.04),
+  swipeArrowIdle: lightText.muted,
+  swipeStepIdle: lightText.dimmed,
+  dropdownMenuText: lightText.secondary,
+  dropdownMenuTextMuted: lightText.dimmed,
+  dropdownMenuLockedLabel: lightText.muted,
+  extraBatchAccent: sem.accent,
+  progress: lightText.secondary,
+};
+
+const fieldInputBorderError = `1.5px solid ${sem.error}`;
+
+/** All light-mode CSS var entries — mirrors dark default + component layers. */
+export function getFullLightThemeEntries(): [string, string][] {
+  const semantic: [string, string][] = [
+    [componentCssVarNames.textPrimary, lightText.primary],
+    [componentCssVarNames.textSecondary, lightText.secondary],
+    [componentCssVarNames.textMuted, lightText.muted],
+    [componentCssVarNames.textDimmed, lightText.dimmed],
+    [componentCssVarNames.textInverse, lightText.inverse],
+    [componentCssVarNames.iconPrimary, lightText.primary],
+    [componentCssVarNames.iconMuted, lightText.muted],
+    [componentCssVarNames.stateWarn, sem.warn],
+    [componentCssVarNames.stateError, sem.error],
+    [componentCssVarNames.stateErrorMuted, sem.errorMuted],
+    [componentCssVarNames.stateAccent, sem.accent],
+    [componentCssVarNames.stateDisabled, ink[10]],
+    [componentCssVarNames.borderDefault, lightBorders.default],
+    [componentCssVarNames.borderStrong, lightBorders.strong],
+    [componentCssVarNames.borderSubtle, lightBorders.subtle],
+    [componentCssVarNames.borderPanel, lightBorders.panel],
+    [componentCssVarNames.borderInput, lightBorders.input],
+    [componentCssVarNames.borderSheetButton, lightBorders.sheetButton],
+    [componentCssVarNames.borderHeaderButton, lightBorders.headerButton],
+    [componentCssVarNames.borderHeaderButtonActive, lightBorders.headerButtonActive],
+    [componentCssVarNames.surfaceRaised, lightSurfaces.raised],
+    [componentCssVarNames.surfaceButton, lightSurfaces.button],
+    [componentCssVarNames.surfaceButtonActive, lightSurfaces.buttonActive],
+    [componentCssVarNames.surfaceInput, lightSurfaces.input],
+    [componentCssVarNames.surfaceApp, lightSurfaces.app],
+  ];
+
+  const component: [string, string][] = [
+    [componentCssVarNames.sheetPanelBorder, lightBorders.panel],
+    [componentCssVarNames.sheetPanelBg, lightSurfaces.loadSheetPanel],
+    [componentCssVarNames.sheetPanelShadow, "0 20px 56px rgba(0, 0, 0, 0.12)"],
+    [componentCssVarNames.sheetPanelOverlayLight, lightSurfaces.outsideDimLight],
+    [componentCssVarNames.sheetPanelOverlayMedium, lightSurfaces.outsideDimMedium],
+    [componentCssVarNames.sheetPanelListRowBg, lightSurfaces.loadSheetRow],
+    [componentCssVarNames.sheetPanelListRowBorder, lightBorders.panel],
+    [componentCssVarNames.sheetPanelFadeBg, lightSurfaces.loadSheetPanel],
+    [componentCssVarNames.sheetFooterBtnBg, lightSurfaces.button],
+    [componentCssVarNames.sheetFooterBtnBorder, lightBorders.sheetButton],
+    [componentCssVarNames.sheetFooterBtnColor, lightText.primary],
+    [componentCssVarNames.sheetFooterTooltipColor, lightText.secondary],
+    [componentCssVarNames.sheetFooterTooltipLine, lightSurfaces.tooltipLine],
+    [componentCssVarNames.fieldInputBg, lightSurfaces.input],
+    [componentCssVarNames.fieldInputBorder, lightBorders.input],
+    [componentCssVarNames.fieldInputBorderError, fieldInputBorderError],
+    [componentCssVarNames.fieldInputColor, lightText.primary],
+    [componentCssVarNames.headerIconBtnBg, lightSurfaces.headerButton],
+    [componentCssVarNames.headerIconBtnBgActive, lightSurfaces.headerButtonActive],
+    [componentCssVarNames.headerIconBtnBorder, lightBorders.headerButton],
+    [componentCssVarNames.headerIconBtnBorderActive, lightBorders.headerButtonActive],
+    [componentCssVarNames.headerIconBtnColor, lightText.muted],
+    [componentCssVarNames.headerIconBtnColorActive, lightText.primary],
+    [componentCssVarNames.shareIconIdleBg, lightSurfaces.raised],
+    [componentCssVarNames.shareIconActiveBg, lightSurfaces.button],
+    [componentCssVarNames.shareIconIdleBorder, lightBorders.default],
+    [componentCssVarNames.shareIconActiveBorder, lightBorders.strong],
+    [componentCssVarNames.shareIconIdleColor, lightText.muted],
+    [componentCssVarNames.shareIconActiveColor, lightText.secondary],
+    [componentCssVarNames.stripPanelBg, lightSurfaces.raised],
+    [componentCssVarNames.stripNeutral, lightStrip.neutral],
+    [componentCssVarNames.stripMoreOpen, lightStrip.moreOpen],
+    [componentCssVarNames.stripRename, lightStrip.rename],
+    [componentCssVarNames.stripDelete, lightStrip.delete],
+    [componentCssVarNames.stripOpen, lightStrip.open],
+    [componentCssVarNames.stripDivider, lightBorders.default],
+    [componentCssVarNames.stripDeleteColor, sem.error],
+    [componentCssVarNames.stripOpenColor, lightText.secondary],
+    [componentCssVarNames.stripRenameColor, lightText.primary],
+    [componentCssVarNames.stripMutedColor, lightText.muted],
+  ];
+
+  const legacy: [string, string][] = (Object.keys(lightLegacyColors) as ThemeColorKey[]).map(
+    (key) => [themeColorCssVars[key], lightLegacyColors[key]],
+  );
+
+  const chrome: [string, string][] = [
+    ["--ui-border-header", lightBorders.subtle],
+    ["--ui-border-header-sub", lightBorders.subtle],
+    ["--ui-header-sub-bg", lightSurfaces.headerSub],
+    ["--ui-header-sub-inset", "inset 0 1px 0 rgba(0, 0, 0, 0.06)"],
+    ["--ui-outside-dim-blur", "12px"],
+    ["--ui-outside-dim-saturate", "1.02"],
+    ["--ui-sheet-panel-blur", "20px"],
+    ["--ui-sheet-panel-saturate", "1.02"],
+    ...getLightMixerChromeEntries(),
+  ];
+
+  return [...semantic, ...component, ...legacy, ...getLightBatchTotalsCssEntries(), ...chrome];
+}
