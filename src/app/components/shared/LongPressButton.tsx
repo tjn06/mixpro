@@ -129,29 +129,33 @@ export function LongPressProgress({
   progress,
   accentColor,
   inset = PROGRESS_INSET,
+  leftBar = true,
 }: {
   progress: number;
   accentColor?: string;
   inset?: number;
+  leftBar?: boolean;
 }) {
   if (progress <= 0) return null;
   const barColor = accentColor ?? cv.longPress.progress;
   return (
     <>
-      <div
-        className="absolute pointer-events-none"
-        style={{ left: inset, top: 6, bottom: 6, width: LEFT_PROGRESS_W }}
-      >
+      {leftBar ? (
         <div
-          className="absolute inset-x-0 bottom-0"
-          style={{
-            height: `${progress * 100}%`,
-            borderRadius: 2,
-            background: barColor,
-            boxShadow: `0 0 6px ${barColor}88`,
-          }}
-        />
-      </div>
+          className="absolute pointer-events-none"
+          style={{ left: inset, top: 6, bottom: 6, width: LEFT_PROGRESS_W }}
+        >
+          <div
+            className="absolute inset-x-0 bottom-0"
+            style={{
+              height: `${progress * 100}%`,
+              borderRadius: 2,
+              background: barColor,
+              boxShadow: `0 0 6px ${barColor}88`,
+            }}
+          />
+        </div>
+      ) : null}
       <div
         className="absolute inset-x-0 bottom-0 pointer-events-none"
         style={{
@@ -176,8 +180,8 @@ interface LongPressButtonProps {
   /** Icon + title + optional description, for large locked overlays. */
   stacked?: boolean;
   variant?: "primary" | "secondary" | "header";
-  /** fill = in-button bars; beam = side loading bars to app edge (default) */
-  progressVariant?: "fill" | "beam";
+  /** fill = in-button bars; beam = side loading bars to app edge (default); water = bottom fill only */
+  progressVariant?: "fill" | "beam" | "water";
   edgeContainerRef?: RefObject<HTMLElement | null>;
   className?: string;
   style?: CSSProperties;
@@ -241,6 +245,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
 
   const lit = active || holding;
   const beamEngaged = progressVariant === "beam" && progress > 0;
+  const waterEngaged = progressVariant === "water" && progress > 0;
   const [holdBox, setHoldBox] = useState<HoldBox | null>(null);
   const holdBoxRef = useRef<HoldBox | null>(null);
   const liftBox = holdBox ?? holdBoxRef.current;
@@ -350,7 +355,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
         border: borderStyle,
         color: isHeader ? (lit ? cv.headerIconButton.colorActive : cv.headerIconButton.color) : undefined,
         minHeight: isHeader ? 0 : compact ? 0 : 32,
-        ...(disabled && !isHeader ? { opacity: lp.opacityDisabledSheet } : {}),
+        ...(disabled && !isHeader ? { opacity: cv.longPress.disabledOpacity } : {}),
         ...(isHeader
           ? {
               width: 40,
@@ -377,9 +382,11 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
     >
-      {progressVariant === "fill" && (
+      {progressVariant === "fill" ? (
         <LongPressProgress progress={progress} accentColor={accentColor} />
-      )}
+      ) : progressVariant === "water" ? (
+        <LongPressProgress progress={progress} accentColor={accentColor} leftBar={false} />
+      ) : null}
       {stacked ? (
         <span
           className="relative z-[1] flex items-center text-left"

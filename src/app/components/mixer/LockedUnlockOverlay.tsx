@@ -5,7 +5,6 @@ import {
   crossfadeLayerStyles,
   LOCKED_ACTION_ICON_SIZE,
   PRIMARY_BORDER,
-  TRANSPARENT_BTN,
 } from "../shared/lockedActionCrossfade";
 import { localRect, unlockExpandedRect, type Rect } from "../shared/lockedOverlayMeasure";
 
@@ -166,12 +165,12 @@ export function LockedUnlockOverlay({
           confirmAction="UNLOCK"
           onLongPress={onUnlock}
           variant="primary"
+          progressVariant="water"
           stacked
           labelSize="var(--text-ui-sm)"
           descriptionSize={10}
           icon={<LockIcon locked size={LOCKED_ACTION_ICON_SIZE} />}
           className="w-full h-full"
-          style={TRANSPARENT_BTN}
         />
       </div>
       <div style={{ ...crossfadeLayerStyles(expanded, expandEase, false), pointerEvents: "none" }}>
@@ -180,9 +179,9 @@ export function LockedUnlockOverlay({
           confirmAction="LOCK SCREEN"
           onLongPress={() => {}}
           variant="primary"
+          progressVariant="water"
           icon={<LockIcon locked={false} />}
           className="w-full h-full"
-          style={TRANSPARENT_BTN}
         />
       </div>
     </div>

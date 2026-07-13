@@ -1259,12 +1259,12 @@ export function BatchMixer({
               settingsActive={settingsOpen}
               subline={
                 <RecipeHeaderSublineStack>
+                  <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
                   <RecipeHeaderSubline>
                     <RecipeHeaderRecipeRow muted={isLocked}>
                       {recipeMenuLabel(activeRecipe)}
                     </RecipeHeaderRecipeRow>
                   </RecipeHeaderSubline>
-                  <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
                 </RecipeHeaderSublineStack>
               }
             />
@@ -1292,6 +1292,7 @@ export function BatchMixer({
             subline={
               <div className={isLocked && !loadedSavedMix ? "pointer-events-none" : "pointer-events-auto"}>
                 <RecipeHeaderSublineStack>
+                  <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
                   <RecipeSelect
                     recipes={recipes}
                     value={activeRecipe}
@@ -1299,8 +1300,10 @@ export function BatchMixer({
                     disabled={isLocked && !loadedSavedMix}
                     muted={isLocked && !loadedSavedMix}
                     allowReselectCurrent={loadedSavedMix != null}
+                    savedMixes={savedMixes}
+                    loadedSavedMixId={loadedSavedMixId}
+                    onSavedMixSelect={handleSavedMixSelect}
                   />
-                  <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
                 </RecipeHeaderSublineStack>
               </div>
             }

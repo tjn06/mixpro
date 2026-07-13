@@ -163,6 +163,15 @@
   );
 }
 
+.app-header-sub-stack > .app-header__subline {
+  min-height: var(--header-subline-h);
+  box-sizing: border-box;
+}
+
+.app-header__mixname-slot {
+  flex-shrink: 0;
+}
+
 .app-header__subline {
   display: flex;
   align-items: center;
@@ -360,6 +369,28 @@
     --recipe-id-sublabel-gap: 8px;
     --recipe-meta-name-gap: 8px;
 
+    /* Airy picker rhythm: head→cards < between sections (both scale with recipe tokens). */
+    --recipe-picker-head-to-cards: calc(var(--recipe-id-sublabel-gap) + var(--recipe-meta-gap));
+    --recipe-picker-section-gap: calc(
+      var(--recipe-picker-head-to-cards) + var(--section-gap) + var(--recipe-meta-gap)
+    );
+    --recipe-picker-card-gap: calc(var(--recipe-meta-gap) + var(--recipe-label-gap));
+    --recipe-picker-card-pad-y: calc(var(--space-1) + var(--recipe-label-gap));
+    --recipe-picker-card-pad-x: var(--space-2);
+    --recipe-picker-card-inner-gap: var(--recipe-meta-gap);
+    --recipe-picker-card-radius: 10px;
+    --recipe-picker-scroll-pad-bottom: var(--space-4);
+    --recipe-picker-card-h: calc(
+      var(--recipe-picker-card-pad-y) * 2 + var(--recipe-picker-card-inner-gap) + 2.25rem
+    );
+    --recipe-picker-icon-size: 12px;
+    --recipe-picker-connector-w: var(--space-3);
+    --recipe-picker-saves-col: 42%;
+    --recipe-picker-connector-weight: 1.5px;
+    --recipe-picker-connector-color: var(--component-sheet-footer-tooltip-line);
+    --recipe-picker-save-gap: var(--space-1);
+    --recipe-picker-save-pad-y: var(--space-1);
+
     --bottom-sub-row-h: 38px;
     --bottom-row-gap: 8px;
     --bottom-action-h: calc(var(--bottom-sub-row-h) * 2 + var(--bottom-row-gap));
@@ -490,6 +521,28 @@
       --recipe-id-sublabel-gap: clamp(5px, 1.05cqh, 8px);
       --recipe-meta-name-gap: clamp(5px, 1.05cqh, 8px);
 
+      --recipe-picker-head-to-cards: calc(var(--recipe-id-sublabel-gap) + var(--recipe-meta-gap));
+      --recipe-picker-section-gap: calc(
+        var(--recipe-picker-head-to-cards) + var(--section-gap) + var(--recipe-meta-gap)
+      );
+      --recipe-picker-card-gap: calc(var(--recipe-meta-gap) + var(--recipe-label-gap));
+      --recipe-picker-card-pad-y: calc(var(--space-1) + var(--recipe-label-gap));
+      --recipe-picker-card-pad-x: var(--space-2);
+      --recipe-picker-card-inner-gap: var(--recipe-meta-gap);
+      --recipe-picker-card-radius: clamp(8px, 1.3cqh, 10px);
+      --recipe-picker-scroll-pad-bottom: var(--space-4);
+      --recipe-picker-card-h: calc(
+        var(--recipe-picker-card-pad-y) * 2 + var(--recipe-picker-card-inner-gap) +
+          clamp(1.9rem, 5.5cqh, 2.25rem)
+      );
+      --recipe-picker-icon-size: clamp(10px, 1.4cqh, 12px);
+      --recipe-picker-connector-w: clamp(10px, 1.6cqh, 12px);
+      --recipe-picker-saves-col: 42%;
+      --recipe-picker-connector-weight: 1.5px;
+      --recipe-picker-connector-color: var(--component-sheet-footer-tooltip-line);
+      --recipe-picker-save-gap: var(--space-1);
+      --recipe-picker-save-pad-y: var(--space-1);
+
       --bottom-sub-row-h: clamp(32px, 4.97cqh, 38px);
       --bottom-row-gap: clamp(6px, 1.05cqh, 8px);
       --bottom-action-h: calc(var(--bottom-sub-row-h) * 2 + var(--bottom-row-gap));
@@ -597,6 +650,27 @@
     --recipe-label-gap: 2px;
     --recipe-id-sublabel-gap: 8px;
     --recipe-meta-name-gap: 8px;
+    /* Airy picker rhythm: head→cards < between sections (both scale with recipe tokens). */
+    --recipe-picker-head-to-cards: calc(var(--recipe-id-sublabel-gap) + var(--recipe-meta-gap));
+    --recipe-picker-section-gap: calc(
+      var(--recipe-picker-head-to-cards) + var(--section-gap) + var(--recipe-meta-gap)
+    );
+    --recipe-picker-card-gap: calc(var(--recipe-meta-gap) + var(--recipe-label-gap));
+    --recipe-picker-card-pad-y: calc(var(--space-1) + var(--recipe-label-gap));
+    --recipe-picker-card-pad-x: var(--space-2);
+    --recipe-picker-card-inner-gap: var(--recipe-meta-gap);
+    --recipe-picker-card-radius: 10px;
+    --recipe-picker-scroll-pad-bottom: var(--space-4);
+    --recipe-picker-card-h: calc(
+      var(--recipe-picker-card-pad-y) * 2 + var(--recipe-picker-card-inner-gap) + 2.25rem
+    );
+    --recipe-picker-icon-size: 12px;
+    --recipe-picker-connector-w: var(--space-3);
+    --recipe-picker-saves-col: 42%;
+    --recipe-picker-connector-weight: 1.5px;
+    --recipe-picker-connector-color: var(--component-sheet-footer-tooltip-line);
+    --recipe-picker-save-gap: var(--space-1);
+    --recipe-picker-save-pad-y: var(--space-1);
     --bottom-sub-row-h: 38px;
     --bottom-row-gap: 8px;
     --bottom-action-h: calc(var(--bottom-sub-row-h) * 2 + var(--bottom-row-gap));
@@ -673,6 +747,21 @@
       --recipe-row-gap: clamp(5px, 0.65dvh, 7px);
       --recipe-id-sublabel-gap: clamp(8px, 1.05dvh, 11px);
       --recipe-meta-name-gap: clamp(8px, 1.05dvh, 11px);
+      --recipe-picker-head-to-cards: calc(var(--recipe-id-sublabel-gap) + var(--recipe-meta-gap));
+      --recipe-picker-section-gap: calc(
+        var(--recipe-picker-head-to-cards) + var(--section-gap) + var(--recipe-meta-gap)
+      );
+      --recipe-picker-card-h: calc(
+        var(--recipe-picker-card-pad-y) * 2 + var(--recipe-picker-card-inner-gap) +
+          clamp(1.9rem, 5.5dvh, 2.25rem)
+      );
+      --recipe-picker-icon-size: clamp(10px, 1.4dvh, 12px);
+      --recipe-picker-connector-w: clamp(10px, 1.6dvh, 12px);
+      --recipe-picker-saves-col: 42%;
+      --recipe-picker-connector-weight: 1.5px;
+      --recipe-picker-connector-color: var(--component-sheet-footer-tooltip-line);
+      --recipe-picker-save-gap: var(--space-1);
+      --recipe-picker-save-pad-y: var(--space-1);
     }
 
     .batch-totals-screen:not(.batch-totals-screen--compact-summary) {

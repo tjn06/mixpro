@@ -5,7 +5,6 @@ import {
   crossfadeLayerStyles,
   LOCKED_ACTION_ICON_SIZE,
   PRIMARY_BORDER,
-  TRANSPARENT_BTN,
 } from "../shared/lockedActionCrossfade";
 import { localRect, saveCoverTargetRect, type Rect } from "../shared/lockedOverlayMeasure";
 
@@ -194,12 +193,12 @@ export function LockedSaveOverlay({
           confirmAction="SAVE MIX"
           onLongPress={onSave}
           variant="primary"
+          progressVariant="water"
           stacked
           labelSize="var(--text-ui-sm)"
           descriptionSize={10}
           icon={saveIcon}
           className="w-full h-full"
-          style={TRANSPARENT_BTN}
         />
       </div>
       <div style={crossfadeLayerStyles(expanded, expandEase, false)}>
@@ -208,9 +207,9 @@ export function LockedSaveOverlay({
           confirmAction="SAVE MIX"
           onLongPress={onSave}
           variant="primary"
+          progressVariant="water"
           icon={compactIcon}
           className="w-full h-full"
-          style={TRANSPARENT_BTN}
         />
       </div>
     </div>

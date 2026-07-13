@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from "react";
-import { BASE_CONFIG_DISPLAY_NAME, savedMixDisplayName } from "../../saved-mixes/display";
+import { savedMixDisplayName } from "../../saved-mixes/display";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
-import { BaseConfigIcon, ConfigNameIcon } from "../shared/ActionIcons";
+import { ConfigNameIcon } from "../shared/ActionIcons";
 import { componentTokens } from "../../ui/tokens";
 
 const meta = componentTokens.recipeMeta;
@@ -82,18 +82,23 @@ export function RecipeZoneMetaValue({
 export function RecipeHeaderSubline({
   children,
   className = "",
+  "aria-hidden": ariaHidden,
 }: {
   children: ReactNode;
   className?: string;
+  "aria-hidden"?: boolean;
 }) {
   return (
-    <div className={`app-header__subline w-full min-w-0 ${className}`}>
+    <div
+      className={`app-header__subline w-full min-w-0 ${className}`.trim()}
+      aria-hidden={ariaHidden}
+    >
       {children}
     </div>
   );
 }
 
-/** Two-line header sub strip — recipe select + context label (e.g. saved meta / locked recipe). */
+/** Two-line header sub strip — mixname slot + recipe row (recipe sits above ratio cards). */
 export function RecipeHeaderSublineStack({
   children,
   className = "",
@@ -130,7 +135,7 @@ export function RecipeHeaderSublineValue({
   );
 }
 
-/** Row 1 — recipe label + name (primary header context). */
+/** Row 2 — recipe label + name (sits directly above ratio cards). */
 export function RecipeHeaderRecipeRow({
   children,
   muted = false,
@@ -154,38 +159,34 @@ export function RecipeHeaderRecipeRow({
   );
 }
 
-/** Row 2 — config name label + value (+ optional icon). */
-function RecipeHeaderConfigNameRow({
+/** Row 1 — saved mix label + name (reserved slot; visible only when a save is loaded). */
+function RecipeHeaderMixnameRow({
   displayName,
   muted = false,
-  variant,
 }: {
   displayName: string;
   muted?: boolean;
-  variant: "user" | "admin";
 }) {
-  const Icon = variant === "user" ? ConfigNameIcon : BaseConfigIcon;
-
   return (
     <div
-      className={`app-header__config-name-row app-header__config-name-row--${variant}${
+      className={`app-header__config-name-row app-header__config-name-row--user${
         muted ? " app-header__config-name-row--muted" : ""
       }`}
-      aria-label={`Config name: ${displayName}`}
+      aria-label={`Mix name: ${displayName}`}
     >
-      <span className="app-header__config-name-label">Config name</span>
+      <span className="app-header__config-name-label">Mixname</span>
       <span className="app-header__config-name-sep" aria-hidden>
         :
       </span>
       <span className="app-header__config-name-value">{displayName}</span>
       <span className="app-header__config-name-icon" aria-hidden>
-        <Icon size={12} />
+        <ConfigNameIcon size={12} />
       </span>
     </div>
   );
 }
 
-/** Second header row — loaded save config name, or built-in base config. */
+/** Top header row — saved mix name when loaded; empty placeholder keeps stack height stable. */
 export function RecipeHeaderMixContext({
   loadedSavedMix,
   muted = false,
@@ -193,17 +194,16 @@ export function RecipeHeaderMixContext({
   loadedSavedMix: SavedMixSnapshot | null;
   muted?: boolean;
 }) {
-  const displayName = loadedSavedMix
-    ? savedMixDisplayName(loadedSavedMix)
-    : BASE_CONFIG_DISPLAY_NAME;
+  const displayName = loadedSavedMix ? savedMixDisplayName(loadedSavedMix) : null;
 
   return (
-    <RecipeHeaderSubline>
-      <RecipeHeaderConfigNameRow
-        displayName={displayName}
-        muted={muted}
-        variant={loadedSavedMix ? "user" : "admin"}
-      />
+    <RecipeHeaderSubline
+      className="app-header__mixname-slot"
+      aria-hidden={displayName == null}
+    >
+      {displayName ? (
+        <RecipeHeaderMixnameRow displayName={displayName} muted={muted} />
+      ) : null}
     </RecipeHeaderSubline>
   );
 }
