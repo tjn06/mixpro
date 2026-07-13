@@ -1,4 +1,5 @@
-import React, { forwardRef, useRef, useState, useCallback, createContext, useContext, type CSSProperties, type PointerEvent, type RefObject, type ReactNode } from "react";
+import React, { forwardRef, useRef, useState, useCallback, useLayoutEffect, createContext, useContext, type CSSProperties, type PointerEvent, type RefObject, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { useLongPressProgressReporter } from "./LongPressProgressContext";
 import { BEAM_Z, LongPressBeamBurst } from "./LongPressBeamBurst";
 import { componentTokens, cv } from "../../ui/tokens";
@@ -6,8 +7,10 @@ import { componentTokens, cv } from "../../ui/tokens";
 const lp = componentTokens.longPress;
 
 const BUTTON_OVER_BEAM_Z = BEAM_Z + 8;
+/** Header nav — portaled to body above side beams (BEAM_Z on document.body). */
+const HEADER_OVER_BEAM_Z = 50;
 
-export { BUTTON_OVER_BEAM_Z };
+export { BUTTON_OVER_BEAM_Z, HEADER_OVER_BEAM_Z };
 
 const LongPressEdgeContext = createContext<RefObject<HTMLElement | null> | null>(null);
 
@@ -39,6 +42,8 @@ const MOVE_THRESHOLD = 10;
 const LEFT_PROGRESS_W = 3;
 const PROGRESS_INSET = 5;
 const DEFAULT_PROGRESS_COLOR = lp.progress;
+
+type HoldBox = { top: number; left: number; width: number; height: number };
 
 export type UseLongPressOptions = {
   accentColor?: string;
@@ -240,16 +245,83 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
             : cv.text.muted;
 
   const lit = active || holding;
+  const beamEngaged = progressVariant === "beam" && progress > 0;
+  const [holdBox, setHoldBox] = useState<HoldBox | null>(null);
+  const holdBoxRef = useRef<HoldBox | null>(null);
+  const liftBox = holdBox ?? holdBoxRef.current;
+  /** Header: lift on pointer-down (before beam paints). Body: lift when beam is active. */
+  const anchorActive =
+    progressVariant === "beam" && liftBox != null && (isHeader || beamEngaged);
+  const liftZIndex = isHeader ? HEADER_OVER_BEAM_Z : BUTTON_OVER_BEAM_Z;
+  const headerBeamHold = isHeader && progressVariant === "beam" && liftBox != null;
+  const lifted = anchorActive && liftBox != null;
 
-  const idleBackground = isHeader
-    ? active || holding
+  const captureHoldBox = useCallback(() => {
+    const el = buttonRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const box = { top: r.top, left: r.left, width: r.width, height: r.height };
+    holdBoxRef.current = box;
+    setHoldBox(box);
+  }, []);
+
+  const clearHoldBox = useCallback(() => {
+    holdBoxRef.current = null;
+    setHoldBox(null);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!liftBox || (!beamEngaged && !headerBeamHold)) return;
+
+    const measure = () => {
+      const el = buttonRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const box = { top: r.top, left: r.left, width: r.width, height: r.height };
+      holdBoxRef.current = box;
+      setHoldBox(box);
+    };
+
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [beamEngaged, headerBeamHold, liftBox]);
+
+  const handlePointerDown = useCallback((e: PointerEvent<HTMLButtonElement>) => {
+    if (progressVariant === "beam") {
+      flushSync(() => captureHoldBox());
+    }
+    onPointerDown(e);
+  }, [progressVariant, captureHoldBox, onPointerDown]);
+
+  const handlePointerUp = useCallback((e: PointerEvent<HTMLButtonElement>) => {
+    onPointerUp(e);
+    clearHoldBox();
+  }, [onPointerUp, clearHoldBox]);
+
+  const handlePointerCancel = useCallback((e: PointerEvent<HTMLButtonElement>) => {
+    onPointerCancel(e);
+    clearHoldBox();
+  }, [onPointerCancel, clearHoldBox]);
+
+  const sheetBackground = (() => {
+    if (holding && !beamEngaged) return cv.action.longPressHolding;
+    if (active || holding) return cv.action.longPressActive;
+    return cv.action.longPressIdle;
+  })();
+
+  const headerBackground = (() => {
+    if (headerBeamHold) return cv.headerIconButton.backgroundActiveSolid;
+    return active || holding
       ? cv.headerIconButton.backgroundActive
-      : cv.headerIconButton.background
-    : active
-      ? cv.surface.buttonActive
-      : cv.surface.raised;
+      : cv.headerIconButton.background;
+  })();
 
-  const holdingBackground = cv.surface.input;
+  const idleBackground = isHeader ? headerBackground : sheetBackground;
 
   const borderWidth = isHeader ? lp.borderWidthHeader : lp.borderWidthSheet;
   const borderStyle = isHeader
@@ -268,16 +340,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
             : idleBorder
       })`;
 
-  return (
-    <>
-      {progressVariant === "beam" && (
-        <LongPressBeamBurst
-          progress={progress}
-          anchorRef={buttonRef}
-          accentColor={accentColor}
-          edgeContainerRef={beamEdgeRef}
-        />
-      )}
+  const renderPressButton = () => (
     <button
       ref={setButtonRef}
       type="button"
@@ -285,23 +348,38 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
       aria-label={label}
       className={`relative flex flex-col items-center justify-center overflow-hidden touch-none transition-colors duration-150 ${
         isHeader ? "header-icon-btn rounded-full shrink-0" : "rounded-xl"
-      } ${className}`}
+      }${headerBeamHold ? " header-icon-btn--beam-holding" : ""}${anchorActive ? "" : ` ${className}`}`}
       style={{
         cursor: disabled ? "default" : "pointer",
-        background: holding ? holdingBackground : idleBackground,
+        background: idleBackground,
         border: borderStyle,
         color: isHeader ? (lit ? cv.headerIconButton.colorActive : cv.headerIconButton.color) : undefined,
         minHeight: isHeader ? 0 : compact ? 0 : 32,
-        ...(isHeader ? { width: 40, height: 40, opacity: disabled ? lp.opacityDisabledHeader : 1 } : {}),
-        ...(progressVariant === "beam" && holding
-          ? { position: "relative" as const, zIndex: BUTTON_OVER_BEAM_Z, isolation: "isolate" as const }
+        ...(isHeader
+          ? {
+              width: 40,
+              height: 40,
+              opacity: disabled ? lp.opacityDisabledHeader : 1,
+            }
+          : {}),
+        ...(lifted
+          ? {
+              position: "fixed" as const,
+              top: liftBox!.top,
+              left: liftBox!.left,
+              width: liftBox!.width,
+              height: liftBox!.height,
+              margin: 0,
+              zIndex: liftZIndex,
+              isolation: "isolate" as const,
+            }
           : {}),
         ...style,
       }}
-      onPointerDown={onPointerDown}
+      onPointerDown={handlePointerDown}
       onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
     >
       {progressVariant === "fill" && (
         <LongPressProgress progress={progress} accentColor={accentColor} />
@@ -364,16 +442,49 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
         <span
           className="uppercase"
           style={{
-          position: "relative", zIndex: 1,
-          fontSize: labelSize, letterSpacing: compact ? "0.08em" : "0.12em", fontWeight: 600,
-          color: idleLabel,
-          lineHeight: 1,
-          transition: "color 0.15s ease",
-        }}>
+            position: "relative",
+            zIndex: 1,
+            fontSize: labelSize,
+            letterSpacing: compact ? "0.08em" : "0.12em",
+            fontWeight: 600,
+            color: idleLabel,
+            lineHeight: 1,
+            transition: "color 0.15s ease",
+          }}
+        >
           {label}
         </span>
       )}
     </button>
+  );
+
+  return (
+    <>
+      {progressVariant === "beam" && (
+        <LongPressBeamBurst
+          progress={progress}
+          anchorRef={buttonRef}
+          accentColor={accentColor}
+          edgeContainerRef={beamEdgeRef}
+        />
+      )}
+      <span
+        className={lifted && !isHeader ? className : undefined}
+        style={
+          lifted && !isHeader
+            ? {
+                width: liftBox!.width,
+                height: liftBox!.height,
+                minWidth: liftBox!.width,
+                minHeight: liftBox!.height,
+                display: "block",
+                flexShrink: 0,
+              }
+            : { display: "contents" }
+        }
+      >
+        {renderPressButton()}
+      </span>
     </>
   );
 });

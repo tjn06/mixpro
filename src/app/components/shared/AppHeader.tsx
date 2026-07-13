@@ -8,7 +8,7 @@ const headerBtn = componentTokens.headerIconButton;
 export const APP_HEADER_HEIGHT = "var(--header-h)";
 
 const ROUND_NAV_BTN_CLASS = "shrink-0";
-/** Half of 40×40 — visually round; avoids 9999px radius breaking beam underlap math. */
+/** Half of 40×40 — visually round; matches beam underlap corner math. */
 const ROUND_NAV_BTN_STYLE = { width: 40, height: 40, minHeight: 0, borderRadius: 20 };
 
 interface AppHeaderProps {
@@ -70,20 +70,22 @@ export function AppHeader({
     <div className="app-header-chrome shrink-0">
       <header className="app-header">
         <div className="app-header__row">
-          <LongPressButton
-            label="Back"
-            confirmAction="GO BACK"
-            variant="header"
-            onLongPress={onBack ?? (() => {})}
-            disabled={isLocked || !onBack}
-            className={ROUND_NAV_BTN_CLASS}
-            style={ROUND_NAV_BTN_STYLE}
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            }
-          />
+          <div className="app-header__nav-slot">
+            <LongPressButton
+              label="Back"
+              confirmAction="GO BACK"
+              variant="header"
+              onLongPress={onBack ?? (() => {})}
+              disabled={isLocked || !onBack}
+              className={ROUND_NAV_BTN_CLASS}
+              style={ROUND_NAV_BTN_STYLE}
+              icon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              }
+            />
+          </div>
 
           <HeaderIconButton
             label="Settings"
@@ -118,20 +120,22 @@ export function AppHeader({
             </svg>
           </HeaderIconButton>
 
-          <LongPressButton
-            label="Forward"
-            confirmAction="GO FORWARD"
-            variant="header"
-            onLongPress={onForward ?? (() => {})}
-            disabled={isLocked || !onForward}
-            className={ROUND_NAV_BTN_CLASS}
-            style={ROUND_NAV_BTN_STYLE}
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            }
-          />
+          <div className="app-header__nav-slot">
+            <LongPressButton
+              label="Forward"
+              confirmAction="GO FORWARD"
+              variant="header"
+              onLongPress={onForward ?? (() => {})}
+              disabled={isLocked || !onForward}
+              className={ROUND_NAV_BTN_CLASS}
+              style={ROUND_NAV_BTN_STYLE}
+              icon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              }
+            />
+          </div>
         </div>
       </header>
       {subline ? <div className="app-header-sub">{subline}</div> : null}

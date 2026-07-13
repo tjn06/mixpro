@@ -4,7 +4,7 @@ export const themeChrome = {
   entityBorderActiveSuffix: "aa",
   cardChromeTransition:
     "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, transform 0.1s ease-out",
-  entityTintLitPct: 8,
+  entityTintLitPct: 12,
   swipeZoneActivePct: 3.5,
   swipeStripeAPct: 2,
   swipeStripeBPct: 0.8,

@@ -114,6 +114,13 @@
   color: var(--component-header-icon-btn-color-active);
 }
 
+/** Opaque fill while side beam is loading — blocks beam track showing through. */
+.header-icon-btn--beam-holding {
+  background: var(--component-header-icon-btn-bg-active-solid);
+  border: var(--component-header-icon-btn-border-active);
+  color: var(--component-header-icon-btn-color-active);
+}
+
 .header-icon-btn:disabled {
   opacity: 0.4;
   cursor: default;

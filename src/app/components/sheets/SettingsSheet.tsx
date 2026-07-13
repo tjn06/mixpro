@@ -95,8 +95,8 @@ function ContrastToggleRow() {
   const highContrast = contrast === "high";
 
   return (
-    <label
-      className="flex items-center justify-between gap-4 w-full cursor-pointer"
+    <div
+      className="flex items-center justify-between gap-4 w-full"
       style={{ minHeight: ROW_H }}
     >
       <span className="flex flex-col min-w-0" style={{ gap: 4 }}>
@@ -133,7 +133,7 @@ function ContrastToggleRow() {
         className="settings-toggle shrink-0"
         data-active={highContrast ? "" : undefined}
       />
-    </label>
+    </div>
   );
 }
 

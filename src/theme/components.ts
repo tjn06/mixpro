@@ -3,7 +3,6 @@ import { themeChrome } from "./chrome";
 import { themeBorders } from "./borders";
 import { themeSurfaces } from "./surfaces";
 import { semanticBorders, semanticColors, semanticSurfaces } from "./semantic";
-import { primitiveInk } from "./primitives";
 
 /**
  * Component-level tokens — the only color/border/surface API for app UI code.
@@ -27,6 +26,16 @@ export const componentTokens = {
     disabled: semanticColors.state.disabled,
   },
   chrome: themeChrome,
+  /** Shared idle fills — tap vs long-press families (shape/size may still differ). */
+  action: {
+    tapIdle: semanticSurfaces.button,
+    tapActive: semanticSurfaces.buttonActive,
+    tapSolid: semanticSurfaces.buttonSolid,
+    tapActiveSolid: semanticSurfaces.buttonActiveSolid,
+    longPressIdle: semanticSurfaces.longPressAction,
+    longPressActive: semanticSurfaces.longPressActionActive,
+    longPressHolding: semanticSurfaces.input,
+  },
   sheetFooterButton: {
     height: 44,
     background: semanticSurfaces.button,
@@ -41,6 +50,8 @@ export const componentTokens = {
   headerIconButton: {
     background: semanticSurfaces.headerButton,
     backgroundActive: semanticSurfaces.headerButtonActive,
+    backgroundSolid: semanticSurfaces.headerButtonSolid,
+    backgroundActiveSolid: semanticSurfaces.headerButtonActiveSolid,
     border: semanticBorders.headerButton,
     borderActive: semanticBorders.headerButtonActive,
     color: semanticColors.icon.muted,
@@ -65,12 +76,12 @@ export const componentTokens = {
     raisedBackground: semanticColors.surface.raised,
   },
   loadSheetStrip: {
-    panelBackground: semanticColors.surface.raised,
-    neutral: semanticColors.surface.input,
-    moreOpen: primitiveInk[550],
-    rename: primitiveInk[450],
-    delete: primitiveInk[400],
-    open: primitiveInk[600],
+    panelBackground: semanticSurfaces.buttonSolid,
+    neutral: semanticSurfaces.buttonSolid,
+    moreOpen: semanticSurfaces.buttonActiveSolid,
+    rename: semanticSurfaces.buttonSolid,
+    delete: semanticSurfaces.buttonSolid,
+    open: semanticSurfaces.buttonSolid,
     divider: semanticBorders.default,
     deleteColor: semanticColors.state.error,
     openColor: semanticColors.text.secondary,
@@ -115,7 +126,7 @@ export const componentTokens = {
     },
   },
   shareBar: {
-    iconIdleBackground: semanticColors.surface.raised,
+    iconIdleBackground: semanticSurfaces.button,
     iconActiveBackground: semanticSurfaces.button,
     iconIdleBorder: semanticBorders.default,
     iconActiveBorder: semanticBorders.strong,
@@ -136,7 +147,7 @@ export const componentTokens = {
     cardHeaderBackground: semanticSurfaces.cardHeader,
     extraCardHeaderBackground: themeSurfaces.extraCardHeaderBg,
     extraTableThBackground: themeSurfaces.extraTableThBg,
-    cardHeaderBtnBackground: semanticSurfaces.headerButton,
+    cardHeaderBtnBackground: semanticSurfaces.button,
     cardHeaderBtnBorder: semanticBorders.headerButton,
     cardRoundBtnDisabledOpacity: 0.35,
     batchesCardBorder: semanticBorders.default,

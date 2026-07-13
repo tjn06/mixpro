@@ -25,7 +25,7 @@ function entityActiveRing(color: string): string {
   return `0 0 0 0.5px ${color}${chrome.entityBorderActiveSuffix}`;
 }
 
-function entitySurfaceLit(color: string): string {
+export function entitySurfaceLit(color: string): string {
   return `color-mix(in srgb, ${color} ${chrome.entityTintLitPct}%, ${ENTITY_SURFACE_IDLE})`;
 }
 

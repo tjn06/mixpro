@@ -500,7 +500,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
   const tileStyle = {
     border: chrome.border,
     boxShadow: chrome.boxShadow,
-    background: cardLit ? entitySurfaceLit(color) : ENTITY_SURFACE_IDLE,
+    background: chrome.background,
     transition: `${CARD_CHROME_TRANSITION}, ${LOCK_TRANSITION}`,
     transform: cardBump ? "scale(1.035)" : undefined,
     ...style,
@@ -1423,7 +1423,7 @@ export function BatchMixer({
                   style={{
                     paddingTop: "var(--entity-card-pt)",
                     paddingBottom: "var(--entity-card-pb)",
-                    background: cardLit ? entitySurfaceLit(accent) : ENTITY_SURFACE_IDLE,
+                    background: chrome.background,
                     border: chrome.border,
                     boxShadow: chrome.boxShadow,
                     transition: CARD_CHROME_TRANSITION,

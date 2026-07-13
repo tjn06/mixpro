@@ -4,15 +4,16 @@ import { componentTokens } from "../../ui/tokens";
 
 const lp = componentTokens.longPress;
 const FALLBACK_RADIUS = 14;
-/** Above panel chrome inside the beam canvas; sheets use their own canvas at z≈31. */
-export const BEAM_Z = 20;
+/** Fixed side beams — below holding buttons (see BUTTON_OVER_BEAM_Z). */
+export const BEAM_Z = 18;
 
 type Layout = {
   top: number;
   height: number;
+  canvasLeft: number;
+  canvasRight: number;
   buttonLeft: number;
   buttonRight: number;
-  canvasWidth: number;
   underlapLeft: number;
   underlapRight: number;
 };
@@ -51,11 +52,12 @@ function measureLayout(anchor: HTMLElement, canvas: HTMLElement): Layout {
   );
 
   return {
-    top: a.top - c.top,
+    top: a.top,
     height: a.height,
-    buttonLeft: a.left - c.left,
-    buttonRight: a.right - c.left,
-    canvasWidth: canvas.clientWidth,
+    canvasLeft: c.left,
+    canvasRight: c.right,
+    buttonLeft: a.left,
+    buttonRight: a.right,
     underlapLeft: cornerLeft + borderX,
     underlapRight: cornerRight + borderX,
   };
@@ -74,12 +76,14 @@ function SideBar({
 }) {
   const h = layout.height;
   const span =
-    side === "left" ? layout.buttonLeft : layout.canvasWidth - layout.buttonRight;
+    side === "left"
+      ? layout.buttonLeft - layout.canvasLeft
+      : layout.canvasRight - layout.buttonRight;
   if (span <= 0 || h <= 0) return null;
 
   const underlap = side === "left" ? layout.underlapLeft : layout.underlapRight;
   const barW = span + underlap;
-  const left = side === "left" ? 0 : layout.buttonRight - underlap;
+  const left = side === "left" ? layout.canvasLeft : layout.buttonRight - underlap;
   /** Progress uses visible strip only (canvas edge → button edge). */
   const fillW = span * progress;
   const hidden = span - fillW;
@@ -92,7 +96,7 @@ function SideBar({
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute overflow-hidden"
+      className="pointer-events-none fixed overflow-hidden"
       style={{ left, top: layout.top, width: barW, height: h, zIndex: BEAM_Z }}
     >
       <div className="absolute inset-0" style={{ background: lp.beamTrack }} />
@@ -133,13 +137,11 @@ export function LongPressBeamBurst({
   edgeContainerRef?: RefObject<HTMLElement | null>;
 }) {
   const [layout, setLayout] = useState<Layout | null>(null);
-  const [portal, setPortal] = useState<HTMLElement | null>(null);
   const color = accentColor ?? lp.progress;
 
   useLayoutEffect(() => {
     if (progress <= 0) {
       setLayout(null);
-      setPortal(null);
       return;
     }
 
@@ -148,7 +150,6 @@ export function LongPressBeamBurst({
       if (!anchor) return;
       const canvas = resolveCanvas(anchor, edgeContainerRef);
       if (!canvas) return;
-      setPortal(canvas);
       setLayout(measureLayout(anchor, canvas));
     };
 
@@ -162,20 +163,22 @@ export function LongPressBeamBurst({
       if (canvas) ro.observe(canvas);
     }
     window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
 
     return () => {
       ro?.disconnect();
       window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
     };
   }, [progress, anchorRef, edgeContainerRef]);
 
-  if (progress <= 0 || !layout || !portal) return null;
+  if (progress <= 0 || !layout) return null;
 
   return createPortal(
-    <div className="pointer-events-none absolute inset-0" style={{ zIndex: BEAM_Z }} aria-hidden>
+    <>
       <SideBar side="left" layout={layout} progress={progress} color={color} />
       <SideBar side="right" layout={layout} progress={progress} color={color} />
-    </div>,
-    portal,
+    </>,
+    document.body,
   );
 }

@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "../../domain/mix/entities";
 import {
   CARD_CHROME_TRANSITION,
-  ENTITY_SURFACE_IDLE,
   entityCardChrome,
 } from "../../presentation/entityCardStyles";
 import {
@@ -35,10 +34,6 @@ import {
 import { entityAccentColor } from "../../presentation/entityAccent";
 import { entityValueColor, entityUnitColor } from "../../presentation/entityCardStyles";
 import { useSettingsStore } from "../../settings/store";
-
-function entitySurfaceLit(color: string): string {
-  return `color-mix(in srgb, ${color} 8%, ${ENTITY_SURFACE_IDLE})`;
-}
 
 export interface MixerInputDeckProps {
   recipe: BlendingRecipe;
@@ -142,11 +137,11 @@ export function MixerInputDeck({
               disabled={disabled}
               onClick={() => onActiveChange(pi)}
               className="flex-1 flex flex-col items-center rounded-xl relative overflow-hidden"
-              style={{
-                paddingTop: "var(--entity-card-pt)",
-                paddingBottom: "var(--entity-card-pb)",
-                background: cardLit ? entitySurfaceLit(accent) : ENTITY_SURFACE_IDLE,
-                border: chrome.border,
+                style={{
+                  paddingTop: "var(--entity-card-pt)",
+                  paddingBottom: "var(--entity-card-pb)",
+                  background: chrome.background,
+                  border: chrome.border,
                 boxShadow: chrome.boxShadow,
                 transition: CARD_CHROME_TRANSITION,
                 transform: cardBump ? "scale(1.035)" : undefined,

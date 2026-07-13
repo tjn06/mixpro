@@ -59,8 +59,13 @@ export const semanticSurfaces = {
   inputSubtle: alphaWhite(0.08),
   button: alphaWhite(0.12),
   buttonActive: alphaWhite(0.16),
+  /** Opaque tap fills — for overlays on scrolling/variable content (strip cells, beam hold). */
+  buttonSolid: "#32323e",
+  buttonActiveSolid: "#3a3a48",
   headerButton: alphaWhite(0.08),
   headerButtonActive: alphaWhite(0.14),
+  headerButtonSolid: "#1a1a24",
+  headerButtonActiveSolid: "#262632",
   cardHeader: alphaWhite(0.08),
   search: alphaWhite(0.1),
   sheetPanel: alphaWhite(0.06),
@@ -76,6 +81,9 @@ export const semanticSurfaces = {
   longPressTrack: alphaWhite(0.12),
   longPressFill: alphaWhite(0.06),
   longPressFillActive: alphaWhite(0.14),
+  /** Neutral gray long-press actions — distinct from tap overlay and bluish raised cards. */
+  longPressAction: "#2e2e34",
+  longPressActionActive: "#3a3a42",
   dropdownActive: alphaWhite(0.1),
   bucketFillEmpty: alphaWhite(0.04),
   batchesCard: alphaWhite(0.05),

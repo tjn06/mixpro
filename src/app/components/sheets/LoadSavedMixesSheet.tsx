@@ -50,7 +50,7 @@ const ACTION_ICON = 16;
 const SWIPE_PANEL_CLOSED_W = 52;
 const SWIPE_PANEL_OPEN_W = 104;
 
-/** Solid strip fills — opaque so actions stay visible on the frosted card. */
+/** Opaque tap-action strip — covers list text when expanded. */
 const STRIP_PANEL_BG = strip.panelBackground;
 const STRIP_DIVIDER = strip.divider;
 

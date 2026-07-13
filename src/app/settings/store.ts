@@ -30,6 +30,14 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: SETTINGS_STORAGE_KEY,
       version: SETTINGS_STORAGE_VERSION,
+      partialize: (state) => ({
+        colorScheme: state.colorScheme,
+        contrast: state.contrast,
+      }),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as ThemeAppearance),
+      }),
       migrate: (persistedState, version) =>
         migratePersistedSettings(persistedState, version),
     },

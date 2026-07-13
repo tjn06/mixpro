@@ -67,7 +67,6 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  isolation: isolate;
 }
 
 .recipe-context-gradient::before {
@@ -111,7 +110,7 @@
   );
 }
 
-.recipe-context-gradient > * {
+.recipe-context-gradient > *:not(.app-header-chrome) {
   position: relative;
   z-index: 1;
 }
@@ -120,6 +119,7 @@
   flex-shrink: 0;
   padding-top: var(--safe-top);
   background: var(--ui-header-bg, #ececf4);
+  position: relative;
 }
 
 .app-header {
@@ -310,6 +310,14 @@
   gap: var(--header-row-gap);
   height: var(--header-bar-h);
   min-height: var(--header-bar-h);
+}
+
+/** Reserved 40×40 slot — keeps layout when nav long-press lifts fixed above beams. */
+.app-header__nav-slot {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
 }
 
 /* ── Container-query tokens (preferred) ─────────────────────────────────── */
