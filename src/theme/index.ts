@@ -39,6 +39,13 @@ export {
 export { getHighContrastCssEntries } from "./highContrast";
 export { getFullLightThemeEntries } from "./lightTheme";
 export { getLightHighContrastCssEntries } from "./lightHighContrast";
+export {
+  lightDefaultPalette,
+  darkHighContrastPalette,
+  lightHighContrastPalette,
+} from "./themePalettes";
+export { buildThemeCssEntries, buildLegacyColorMap } from "./themePaletteBuilder";
+export type { ThemePalette } from "./themePaletteTypes";
 export { mixerCssVarNames, mixerVar, getDarkMixerChromeEntries, getLightMixerChromeEntries } from "./mixerCssVars";
 
 import { themeColors } from "./colors";
