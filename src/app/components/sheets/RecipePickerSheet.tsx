@@ -407,7 +407,7 @@ function RecipePickerCardDetail({
   const bucketSizeLabelId = `recipe-picker-bucket-size-${recipe.id}`;
 
   useEffect(() => {
-    setBucketOpen(false);
+    setBucketOpen(true);
   }, [recipe.id]);
 
   return (

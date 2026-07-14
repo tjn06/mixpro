@@ -52,7 +52,11 @@ export const DEFAULT_BUCKET_CAPACITY_LITERS = DEFAULT_BUCKET_SIZE;
 const DROPDOWN_MENU_MIN_W = 200;
 
 const BUCKET_SIZE_LABEL = "Bucket size";
-const NO_BUCKET_OPACITY = 0.38;
+
+function bucketSelectionLabel(selection: BucketSelection, context: "trigger" | "menu" = "trigger"): string {
+  if (selection === "none") return context === "menu" ? "∞" : "∞ L";
+  return `${selection} L`;
+}
 
 function BucketFeaturePanel({
   clipId,
@@ -118,11 +122,8 @@ function BucketFeaturePanel({
         </FeatureReadoutStack>
       </div>
       <div
-        className="pointer-events-none transition-opacity duration-200 shrink-0 w-full flex items-center justify-center bucket-svg-slot"
-        style={{
-          opacity: noBucket ? NO_BUCKET_OPACITY : 1,
-          marginTop: "var(--feature-content-gap)",
-        }}
+        className="pointer-events-none shrink-0 w-full flex items-center justify-center bucket-svg-slot"
+        style={{ marginTop: "var(--feature-content-gap)" }}
       >
         <BucketSvg
           clipId={clipId}
@@ -131,6 +132,7 @@ function BucketFeaturePanel({
           fillRatio={fillRatio}
           bucketFull={bucketFull}
           muted={muted}
+          infinite={noBucket}
         />
       </div>
     </div>
@@ -265,11 +267,6 @@ function flatFillPath(fillY: number, fillRx: number): string {
   ].join(" ");
 }
 
-function bucketSelectionLabel(selection: BucketSelection, context: "trigger" | "menu" = "trigger"): string {
-  if (selection === "none") return context === "menu" ? "-" : "∞ L";
-  return `${selection} L`;
-}
-
 function BucketSvg({
   clipId,
   fillY,
@@ -277,6 +274,7 @@ function BucketSvg({
   fillRatio,
   bucketFull,
   muted,
+  infinite = false,
 }: {
   clipId: string;
   fillY: number;
@@ -284,6 +282,7 @@ function BucketSvg({
   fillRatio: number;
   bucketFull: boolean;
   muted: boolean;
+  infinite?: boolean;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [renderW, setRenderW] = useState(95);
@@ -309,7 +308,12 @@ function BucketSvg({
     : muted
       ? themeColorVar("fillMuted")
       : themeColorVar("fill");
-  const showFill = fillRatio > 0.008;
+  const showFill = !infinite && fillRatio > 0.008;
+  const bodyStroke = strokeWidthPx(STROKE_PX.body, renderW);
+  const outlineColor = themeColorVar("fillOutline");
+  const dashLen = strokeWidthPx(5, renderW);
+  const gapLen = strokeWidthPx(4, renderW);
+  const infinityY = (BUCKET.topY + BUCKET.bottomY) / 2 + 16;
 
   return (
     <svg
@@ -338,12 +342,30 @@ function BucketSvg({
 
       <path
         d={BODY_PATH}
-        fill={themeColorVar("fillEmpty")}
-        stroke={themeColorVar("fillOutline")}
+        fill={infinite ? "transparent" : themeColorVar("fillEmpty")}
+        stroke={outlineColor}
         strokeLinejoin="round"
         strokeLinecap="round"
-        strokeWidth={strokeWidthPx(STROKE_PX.body, renderW)}
+        strokeWidth={bodyStroke}
+        strokeDasharray={infinite ? `${dashLen} ${gapLen}` : undefined}
+        strokeOpacity={infinite ? (muted ? 0.52 : 0.68) : 1}
       />
+
+      {infinite ? (
+        <text
+          x={BUCKET.centerX}
+          y={infinityY}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill={outlineColor}
+          fillOpacity={muted ? 0.74 : 0.94}
+          fontSize={152}
+          fontFamily="'Outfit', sans-serif"
+          fontWeight={600}
+        >
+          ∞
+        </text>
+      ) : null}
     </svg>
   );
 }
@@ -610,14 +632,14 @@ export function BucketMiniature({
   className?: string;
 }) {
   const clipId = useId();
-  const capacity: BucketSize =
-    bucketSelection === "none" ? DEFAULT_BUCKET_SIZE : bucketSelection;
-  const liters = bucketSelection === "none" ? 0 : fillLiters;
+  const noBucket = bucketSelection === "none";
+  const capacity: BucketSize = noBucket ? DEFAULT_BUCKET_SIZE : bucketSelection;
+  const liters = noBucket ? 0 : fillLiters;
   const fillPercent = displayFillPercent(liters, capacity);
-  const fillRatio = fillRatioForDisplay(liters, capacity);
+  const fillRatio = noBucket ? 0 : fillRatioForDisplay(liters, capacity);
   const { fillY, fillRx } = fillGeometryFromPercent(fillPercent);
   const bucketFull =
-    bucketSelection !== "none" && isBucketAtMaxFill(liters, bucketSelection);
+    !noBucket && isBucketAtMaxFill(liters, bucketSelection);
 
   return (
     <div className={className.trim()} aria-hidden>
@@ -628,6 +650,7 @@ export function BucketMiniature({
         fillRatio={fillRatio}
         bucketFull={bucketFull}
         muted={muted}
+        infinite={noBucket}
       />
     </div>
   );
@@ -691,7 +714,7 @@ export const MixBucket = forwardRef<HTMLDivElement, MixBucketProps>(function Mix
       ? bucketFull
         ? `Bucket full at ${RECOMMENDED_MAX_FILL_PERCENT}% of ${capacityLiters} liter bucket`
         : `Estimated ${displayPercent}% fill of ${capacityLiters} liter bucket`
-      : "No bucket selected";
+      : "Infinite, no bucket limit";
 
   const noBucket = !hasBucket;
 
