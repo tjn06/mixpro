@@ -20,6 +20,8 @@ import {
   SavePlus,
   Info,
   PanelTopClose,
+  PanelBottomOpen,
+  PanelBottomClose,
   type LucideIcon,
 } from "lucide-react";
 
@@ -87,5 +89,11 @@ export const CloseIcon = createActionIcon(X);
 
 /** Collapse / dismiss a bottom sheet or panel. */
 export const PanelTopCloseIcon = createActionIcon(PanelTopClose);
+
+/** Reveal a bottom actions panel. */
+export const PanelBottomOpenIcon = createActionIcon(PanelBottomOpen);
+
+/** Hide a bottom actions panel. */
+export const PanelBottomCloseIcon = createActionIcon(PanelBottomClose);
 
 export const InfoIcon = createActionIcon(Info);

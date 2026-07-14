@@ -1,4 +1,4 @@
-import { useState, useEffect, type CSSProperties, type ReactNode } from "react";
+import { useState, useEffect, useRef, useCallback, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
 import type { BlendingRecipe } from "../../domain/recipe/types";
@@ -130,6 +130,75 @@ const COL_MULT = "14%";
 const COL_TOTAL = "40%";
 const TABLE_COLS = `${COL_ITEM} ${COL_MULT} ${COL_TOTAL}`;
 const SUMMARY_COLS = "minmax(0, 1fr) auto";
+
+const PANEL_DRAG_THRESHOLD_PX = 16;
+const PANEL_TAP_SLOP_PX = 8;
+
+function BatchTotalsPanelGrabHandle({
+  expanded,
+  onExpand,
+  onCollapse,
+  onToggle,
+}: {
+  expanded: boolean;
+  onExpand: () => void;
+  onCollapse: () => void;
+  onToggle: () => void;
+}) {
+  const dragStartYRef = useRef<number | null>(null);
+
+  const handlePointerDown = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    dragStartYRef.current = event.clientY;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      const startY = dragStartYRef.current;
+      dragStartYRef.current = null;
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      if (startY == null) return;
+
+      const dy = event.clientY - startY;
+      if (Math.abs(dy) <= PANEL_TAP_SLOP_PX) {
+        onToggle();
+        return;
+      }
+      if (dy <= -PANEL_DRAG_THRESHOLD_PX) {
+        onExpand();
+        return;
+      }
+      if (dy >= PANEL_DRAG_THRESHOLD_PX) {
+        onCollapse();
+      }
+    },
+    [onCollapse, onExpand, onToggle],
+  );
+
+  const handlePointerCancel = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    dragStartYRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
+
+  return (
+    <button
+      type="button"
+      className="batch-totals-grab-handle touch-manipulation"
+      aria-expanded={expanded}
+      aria-controls="batch-totals-bottom-panel-details"
+      aria-label={expanded ? "Drag down to hide share actions" : "Drag up to show share actions"}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+    >
+      <span className="batch-totals-grab-handle__pill" aria-hidden />
+    </button>
+  );
+}
 
 export interface BatchTotalsScreenProps {
   recipe: BlendingRecipe;
@@ -449,6 +518,7 @@ export function BatchTotalsScreen({
   const amountColor = entityValueColor(true, colorScheme);
   const shellCompact = useAppShellCompact();
   const [extraBatchSheetOpen, setExtraBatchSheetOpen] = useState(false);
+  const [panelExpanded, setPanelExpanded] = useState(false);
   const [sheetPortal, setSheetPortal] = useState<HTMLElement | null>(null);
   const ingredientRows = entityIndexes.filter((i) => i !== 0);
   const batchTableRowCount = ingredientRows.length + 1;
@@ -472,7 +542,7 @@ export function BatchTotalsScreen({
 
   return (
     <div
-      className={`batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-x-hidden${compactSummary ? " batch-totals-screen--compact-summary" : !shellCompact ? " batch-totals-screen--tall" : ""}`}
+      className={`batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-x-hidden relative${compactSummary ? " batch-totals-screen--compact-summary" : !shellCompact ? " batch-totals-screen--tall" : ""}`}
       data-dense-table={denseTable ? "" : undefined}
     >
       <div
@@ -860,12 +930,22 @@ export function BatchTotalsScreen({
       </div>
 
       <div
-        className="shrink-0 app-gutter-x flex flex-col min-w-0 w-full"
+        id="batch-totals-bottom-panel"
+        className={`shrink-0 app-gutter-x flex flex-col min-w-0 w-full batch-totals-bottom-panel${
+          panelExpanded ? " batch-totals-bottom-panel--expanded" : ""
+        }`}
         style={{
           gap: 8,
           paddingBottom: "var(--app-bottom-inset)",
         }}
       >
+        <BatchTotalsPanelGrabHandle
+          expanded={panelExpanded}
+          onExpand={() => setPanelExpanded(true)}
+          onCollapse={() => setPanelExpanded(false)}
+          onToggle={() => setPanelExpanded((open) => !open)}
+        />
+
         <BatchTotalsSummaryBar
           multiplier={multiplier}
           hasExtraBatch={hasExtraBatch}
@@ -873,13 +953,21 @@ export function BatchTotalsScreen({
           colorScheme={colorScheme}
         />
 
-        <BatchTotalsShareBar
-          recipe={recipe}
-          values={values}
-          complementValues={complementValues}
-          entityIndexes={entityIndexes}
-          multiplier={multiplier}
-        />
+        <div
+          id="batch-totals-bottom-panel-details"
+          className="batch-totals-bottom-panel__details"
+          aria-hidden={!panelExpanded}
+        >
+          <div className="batch-totals-bottom-panel__details-inner">
+            <BatchTotalsShareBar
+              recipe={recipe}
+              values={values}
+              complementValues={complementValues}
+              entityIndexes={entityIndexes}
+              multiplier={multiplier}
+            />
+          </div>
+        </div>
       </div>
 
       {sheetPortal

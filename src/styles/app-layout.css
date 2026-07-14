@@ -880,3 +880,54 @@
   overflow-anchor: none;
 }
 
+.batch-totals-bottom-panel {
+  position: relative;
+  z-index: 3;
+}
+
+.batch-totals-grab-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  padding: 6px 0 2px;
+  border: none;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
+.batch-totals-grab-handle:active {
+  cursor: grabbing;
+}
+
+.batch-totals-grab-handle__pill {
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 24%, transparent);
+}
+
+.batch-totals-bottom-panel__details {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.batch-totals-bottom-panel--expanded .batch-totals-bottom-panel__details {
+  grid-template-rows: 1fr;
+}
+
+.batch-totals-bottom-panel__details-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .batch-totals-bottom-panel__details {
+    transition: none;
+  }
+}
+
