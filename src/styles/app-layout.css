@@ -891,6 +891,11 @@
   min-width: 0;
 }
 
+/** Totals screen only — sheet bg fills home-indicator zone; content stays inset via __sheet padding. */
+.batch-totals-screen .batch-totals-bottom-panel {
+  margin-bottom: calc(-1 * var(--safe-bottom));
+}
+
 .batch-totals-bottom-panel__sheet {
   width: 100%;
   background: var(--ui-header-bg);
