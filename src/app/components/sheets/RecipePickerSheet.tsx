@@ -24,7 +24,7 @@ import { getHumanSavedTime } from "../../saved-mixes/humanSavedTime";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import { useTickingNow } from "../../hooks/useTickingNow";
 import { BucketMiniature } from "../mixer/MixBucket";
-import { SavedIcon } from "../shared/ActionIcons";
+import { GoToIcon, SavedIcon } from "../shared/ActionIcons";
 import { SHEET_LIST_ROW_CLASS } from "./sheetChrome";
 
 type MenuPhase = "enter" | "idle" | "exit";
@@ -72,11 +72,15 @@ function ChevronUpIcon() {
   );
 }
 
-function ChevronRightIcon({ size = 14 }: { size?: number }) {
+function ChevronDownIcon({
+  open = false,
+  className = "recipe-picker-card__bucket-chevron",
+}: {
+  open?: boolean;
+  className?: string;
+}) {
   return (
     <svg
-      width={size}
-      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -84,8 +88,57 @@ function ChevronRightIcon({ size = 14 }: { size?: number }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
+      className={`${className}${open ? ` ${className}--open` : ""}`}
     >
-      <path d="M9 18l6-6-6-6" />
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+function HorizontalSwipeHintIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      className="recipe-picker-card__saves-wheel-hint-icon"
+    >
+      <path
+        d="M2 12h3.5"
+        stroke="currentColor"
+        strokeWidth="2.25"
+        strokeLinecap="round"
+        strokeOpacity="0.35"
+      />
+      <path
+        d="M4.75 12h4"
+        stroke="currentColor"
+        strokeWidth="2.25"
+        strokeLinecap="round"
+        strokeOpacity="0.62"
+      />
+      <path
+        d="M7.75 12h4.5"
+        stroke="currentColor"
+        strokeWidth="2.25"
+        strokeLinecap="round"
+        strokeOpacity="0.9"
+      />
+      <path
+        d="M12.75 12h6.75"
+        stroke="currentColor"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+      />
+      <circle cx="20.75" cy="12" r="2.85" fill="currentColor" />
+      <path
+        d="M12.25 12c0-2.35 1.65-4 4-4"
+        stroke="currentColor"
+        strokeWidth="2.25"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -111,12 +164,214 @@ function isRecipePickerDemoPlaceholder(recipe: BlendingRecipe): boolean {
   return recipe.id.startsWith("picker-demo-");
 }
 
+function savesForRecipe(
+  recipeId: string,
+  savedMixes: readonly SavedMixSnapshot[],
+): SavedMixSnapshot[] {
+  return [...savedMixes]
+    .filter((mix) => mix.recipeId === recipeId)
+    .sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+}
+
+function RecipePickerSavesWheel({
+  recipeSaves,
+  loadedSavedMixId,
+  now,
+  active,
+  onSavedMixSelect,
+}: {
+  recipeSaves: readonly SavedMixSnapshot[];
+  loadedSavedMixId: string | null;
+  now: Date;
+  active: boolean;
+  onSavedMixSelect?: (mix: SavedMixSnapshot) => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const hintRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const wasActiveRef = useRef(false);
+  const [hintIntro, setHintIntro] = useState(false);
+
+  const updateWheelStyles = useCallback(() => {
+    const scroller = scrollRef.current;
+    const wrap = wrapRef.current;
+    if (!scroller) return;
+
+    const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+    const hasOverflow = maxScroll > 4;
+    const atStart = scroller.scrollLeft <= 4;
+    const atEnd = scroller.scrollLeft >= maxScroll - 4;
+
+    wrap?.classList.toggle(
+      "recipe-picker-card__saves-wheel-wrap--overflow-end",
+      hasOverflow && !atEnd,
+    );
+    wrap?.classList.toggle(
+      "recipe-picker-card__saves-wheel-wrap--overflow-start",
+      hasOverflow && !atStart,
+    );
+
+    const focusEdge = scroller.scrollLeft + 8;
+
+    itemRefs.current.forEach((item) => {
+      if (!item) return;
+
+      const itemWidth = item.offsetWidth;
+      if (itemWidth <= 0) return;
+
+      const dist = item.offsetLeft - focusEdge;
+      const focused = dist >= -itemWidth * 0.25 && dist <= itemWidth * 0.35;
+
+      if (focused) {
+        item.style.transform = "scale(1)";
+        item.style.opacity = "1";
+      } else if (dist > 0) {
+        const t = Math.min(1, dist / Math.max(scroller.clientWidth * 0.65, itemWidth * 1.5));
+        const scale = 1 - t * 0.24;
+        const opacity = 1 - t * 0.58;
+        item.style.transform = `scale(${scale})`;
+        item.style.opacity = String(Math.max(0.38, opacity));
+      } else {
+        const t = Math.min(1, Math.abs(dist) / itemWidth);
+        item.style.transform = `scale(${1 - t * 0.12})`;
+        item.style.opacity = String(Math.max(0.22, 1 - t * 0.75));
+      }
+
+      item.classList.toggle("recipe-picker-card__saves-wheel-item--focused", focused);
+    });
+  }, []);
+
+  const scrollToIndex = useCallback((index: number, behavior: ScrollBehavior = "instant") => {
+    const scroller = scrollRef.current;
+    const item = itemRefs.current[index];
+    if (!scroller || !item) return;
+    const targetLeft = item.offsetLeft - 8;
+    scroller.scrollTo({ left: Math.max(0, targetLeft), behavior });
+    requestAnimationFrame(updateWheelStyles);
+  }, [updateWheelStyles]);
+
+  useLayoutEffect(() => {
+    if (!active) {
+      wasActiveRef.current = false;
+      setHintIntro(false);
+      return;
+    }
+
+    const isFirstOpen = !wasActiveRef.current;
+    wasActiveRef.current = true;
+
+    itemRefs.current = itemRefs.current.slice(0, recipeSaves.length);
+    const initialIndex = Math.max(
+      0,
+      recipeSaves.findIndex((mix) => mix.id === loadedSavedMixId),
+    );
+    scrollToIndex(initialIndex);
+
+    if (isFirstOpen) {
+      const scroller = scrollRef.current;
+      if (scroller && scroller.scrollWidth - scroller.clientWidth > 4) {
+        setHintIntro(true);
+      }
+    }
+  }, [active, recipeSaves, loadedSavedMixId, scrollToIndex]);
+
+  useEffect(() => {
+    if (!hintIntro) return;
+    const hint = hintRef.current;
+    if (!hint) return;
+
+    const onAnimationEnd = () => {
+      setHintIntro(false);
+    };
+
+    hint.addEventListener("animationend", onAnimationEnd);
+    return () => hint.removeEventListener("animationend", onAnimationEnd);
+  }, [hintIntro]);
+
+  useEffect(() => {
+    if (!active) return;
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateWheelStyles);
+    };
+
+    const onScrollEnd = () => {
+      updateWheelStyles();
+    };
+
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    scroller.addEventListener("scrollend", onScrollEnd);
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateWheelStyles();
+    });
+    resizeObserver.observe(scroller);
+
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      scroller.removeEventListener("scrollend", onScrollEnd);
+      resizeObserver.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [active, updateWheelStyles, recipeSaves.length]);
+
+  return (
+    <div ref={wrapRef} className="recipe-picker-card__saves-wheel-wrap">
+      <div
+        ref={scrollRef}
+        className="recipe-picker-card__saves-wheel"
+        role="list"
+        aria-label="Saved mixes"
+      >
+        <div className="recipe-picker-card__saves-wheel-track">
+          {recipeSaves.map((mix, index) => (
+            <div
+              key={mix.id}
+              ref={(el) => {
+                itemRefs.current[index] = el;
+              }}
+              className="recipe-picker-card__saves-wheel-item"
+            >
+              <RecipePickerSaveItem
+                mix={mix}
+                current={mix.id === loadedSavedMixId}
+                now={now}
+                compact
+                wheel
+                onSelect={() => onSavedMixSelect?.(mix)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div
+        ref={hintRef}
+        className={`recipe-picker-card__saves-wheel-hint${
+          hintIntro ? " recipe-picker-card__saves-wheel-hint--intro" : ""
+        }`}
+        aria-hidden
+      >
+        <HorizontalSwipeHintIcon size={15} />
+      </div>
+    </div>
+  );
+}
+
 function RecipePickerCardDetail({
   recipe,
   initialBinderSum,
   sandType,
   bucketSelection,
   onBucketChange,
+  savedMixes,
+  loadedSavedMixId,
+  now,
+  onSavedMixSelect,
   muted = false,
 }: {
   recipe: BlendingRecipe;
@@ -124,8 +379,17 @@ function RecipePickerCardDetail({
   sandType: SandType;
   bucketSelection: BucketSelection;
   onBucketChange: (selection: BucketSelection) => void;
+  savedMixes: readonly SavedMixSnapshot[];
+  loadedSavedMixId: string | null;
+  now: Date;
+  onSavedMixSelect?: (mix: SavedMixSnapshot) => void;
   muted?: boolean;
 }) {
+  const [bucketOpen, setBucketOpen] = useState(false);
+  const recipeSaves = useMemo(
+    () => savesForRecipe(recipe.id, savedMixes),
+    [recipe.id, savedMixes],
+  );
   const recipeSummaryParts = getRecipeSummaryParts(recipe);
   const { totalGrams: bucketRecommendedGrams, fillLiters: bucketRecommendedLiters } = useMemo(
     () => recommendedBatchForBucket(recipe, initialBinderSum, bucketSelection, sandType),
@@ -133,72 +397,135 @@ function RecipePickerCardDetail({
   );
   const bucketSizeLabelId = `recipe-picker-bucket-size-${recipe.id}`;
 
+  useEffect(() => {
+    setBucketOpen(false);
+  }, [recipe.id]);
+
   return (
-    <div className="recipe-picker-card__detail">
-      <div className="recipe-picker-card__detail-section recipe-picker-card__detail-meta">
-        <div className="recipe-picker-card__detail-row recipe-picker-card__detail-row--recipe">
-          <span className="recipe-picker-side-meta__label">Recipe</span>
-          <div className="recipe-picker-card__detail-recipe">
-            {recipeSummaryParts.ratio ? (
-              <span className="recipe-picker-side-meta__ratio">{recipeSummaryParts.ratio}</span>
-            ) : null}
-            {recipeSummaryParts.detail ? (
-              <span className="recipe-picker-card__detail-recipe-fill">
-                {recipeSummaryParts.detail}
-              </span>
-            ) : null}
+    <>
+      <div className="recipe-picker-card__detail">
+        <div className="recipe-picker-card__detail-section recipe-picker-card__detail-meta">
+          <div className="recipe-picker-card__detail-row recipe-picker-card__detail-row--recipe">
+            <span className="recipe-picker-side-meta__label">Recipe</span>
+            <div className="recipe-picker-card__detail-recipe">
+              {recipeSummaryParts.ratio ? (
+                <span className="recipe-picker-side-meta__ratio">{recipeSummaryParts.ratio}</span>
+              ) : null}
+              {recipeSummaryParts.detail ? (
+                <span className="recipe-picker-card__detail-recipe-fill">
+                  {recipeSummaryParts.detail}
+                </span>
+              ) : null}
+            </div>
+          </div>
+          <div className="recipe-picker-card__detail-row recipe-picker-card__detail-row--batch">
+            <span className="recipe-picker-side-meta__label">Rec. batch</span>
+            <span className="recipe-picker-side-meta__value recipe-picker-side-meta__value--strong">
+              {formatRecommendedBatch(bucketRecommendedGrams)}
+            </span>
           </div>
         </div>
-        <div className="recipe-picker-card__detail-row recipe-picker-card__detail-row--batch">
-          <span className="recipe-picker-side-meta__label">Rec. batch</span>
-          <span className="recipe-picker-side-meta__value recipe-picker-side-meta__value--strong">
-            {formatRecommendedBatch(bucketRecommendedGrams)}
-          </span>
-        </div>
-      </div>
-      <div className="recipe-picker-card__detail-section recipe-picker-card__detail-bucket">
-        <div className="recipe-picker-card-detail__bucket">
-          <p id={bucketSizeLabelId} className="recipe-picker-side-meta__label">
-            Bucket size
-          </p>
-          <div className="recipe-picker-card-detail__bucket-row">
-            <BucketMiniature
-              bucketSelection={bucketSelection}
-              fillLiters={bucketSelection === "none" ? 0 : bucketRecommendedLiters}
-              muted={muted}
-              className="recipe-picker-card-detail__mini"
-            />
-            <div
-              className="recipe-picker-card-detail__radios"
-              role="radiogroup"
-              aria-labelledby={bucketSizeLabelId}
+        <div className="recipe-picker-card__detail-section recipe-picker-card__detail-bucket">
+          <div
+            className={`recipe-picker-card-detail__bucket${
+              bucketOpen ? " recipe-picker-card-detail__bucket--open" : ""
+            }`}
+          >
+            <button
+              type="button"
+              className="recipe-picker-card-detail__bucket-toggle touch-manipulation"
+              aria-expanded={bucketOpen}
+              aria-controls={`recipe-picker-bucket-options-${recipe.id}`}
+              onClick={() => setBucketOpen((open) => !open)}
             >
-              {PICKER_BUCKET_OPTIONS.map((option) => {
-                const checked = bucketSelection === option;
-                return (
-                  <label
-                    key={String(option)}
-                    className={`recipe-picker-bucket-radio${
-                      checked ? " recipe-picker-bucket-radio--checked" : ""
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={`recipe-picker-bucket-size-${recipe.id}`}
-                      value={String(option)}
-                      checked={checked}
-                      aria-label={pickerBucketAriaLabel(option, checked)}
-                      onChange={() => onBucketChange(option)}
-                    />
-                    <span>{pickerBucketOptionLabel(option)}</span>
-                  </label>
-                );
-              })}
+              <span className="recipe-picker-card-detail__bucket-label-group">
+                <span id={bucketSizeLabelId} className="recipe-picker-side-meta__label">
+                  Bucket
+                </span>
+                <ChevronDownIcon open={bucketOpen} className="recipe-picker-card__bucket-chevron" />
+              </span>
+              {!bucketOpen ? (
+                <span className="recipe-picker-card-detail__bucket-selection recipe-picker-side-meta__value recipe-picker-side-meta__value--strong">
+                  {pickerBucketOptionLabel(bucketSelection)}
+                </span>
+              ) : null}
+            </button>
+            <div className="recipe-picker-card-detail__bucket-body">
+              {!bucketOpen ? (
+                <BucketMiniature
+                  bucketSelection={bucketSelection}
+                  fillLiters={bucketSelection === "none" ? 0 : bucketRecommendedLiters}
+                  muted={muted}
+                  className="recipe-picker-card-detail__mini recipe-picker-card-detail__mini--hero"
+                />
+              ) : (
+                <div
+                  id={`recipe-picker-bucket-options-${recipe.id}`}
+                  className="recipe-picker-card-detail__radios"
+                  role="radiogroup"
+                  aria-labelledby={bucketSizeLabelId}
+                >
+                  {PICKER_BUCKET_OPTIONS.map((option) => {
+                    const checked = bucketSelection === option;
+                    return (
+                      <label
+                        key={String(option)}
+                        className={`recipe-picker-bucket-radio${
+                          checked ? " recipe-picker-bucket-radio--checked" : ""
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`recipe-picker-bucket-size-${recipe.id}`}
+                          value={String(option)}
+                          checked={checked}
+                          aria-label={pickerBucketAriaLabel(option, checked)}
+                          onChange={() => {
+                            onBucketChange(option);
+                            setBucketOpen(false);
+                          }}
+                        />
+                        <span>{pickerBucketOptionLabel(option)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
+      <div className="recipe-picker-card__footer recipe-picker-card__saves-panel">
+        <div className="recipe-picker-card__saves-bar">
+          <div className="recipe-picker-card__saves-head">
+            <span className="recipe-picker-card__saves-label-group">
+              <span className="recipe-picker-side-meta__label">Latest saves</span>
+              {recipeSaves.length > 0 ? (
+                <span className="recipe-picker-card__saves-count">{recipeSaves.length}</span>
+              ) : null}
+            </span>
+          </div>
+          <div
+            id={`recipe-picker-saves-${recipe.id}`}
+            className="recipe-picker-card__saves-scroll"
+            role="region"
+            aria-label={`Saved mixes for ${recipeMenuLabel(recipe)}`}
+          >
+            {recipeSaves.length === 0 ? (
+              <p className="recipe-picker-card__saves-empty">No saved mixes for this recipe yet.</p>
+            ) : (
+              <RecipePickerSavesWheel
+                recipeSaves={recipeSaves}
+                loadedSavedMixId={loadedSavedMixId}
+                now={now}
+                active
+                onSavedMixSelect={onSavedMixSelect}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -213,6 +540,10 @@ function RecipePickerCard({
   bucketSelection,
   onBucketChange,
   muted,
+  savedMixes = [],
+  loadedSavedMixId = null,
+  now,
+  onSavedMixSelect,
   onPreview,
   onApply,
 }: {
@@ -226,6 +557,10 @@ function RecipePickerCard({
   bucketSelection: BucketSelection;
   onBucketChange?: (selection: BucketSelection) => void;
   muted?: boolean;
+  savedMixes?: readonly SavedMixSnapshot[];
+  loadedSavedMixId?: string | null;
+  now: Date;
+  onSavedMixSelect?: (mix: SavedMixSnapshot) => void;
   onPreview: () => void;
   onApply: () => void;
 }) {
@@ -268,7 +603,7 @@ function RecipePickerCard({
             onApply();
           }}
         >
-          <ChevronRightIcon />
+          <GoToIcon size={18} />
         </button>
       </div>
       {expanded && onBucketChange ? (
@@ -278,6 +613,10 @@ function RecipePickerCard({
           sandType={sandType}
           bucketSelection={bucketSelection}
           onBucketChange={onBucketChange}
+          savedMixes={savedMixes}
+          loadedSavedMixId={loadedSavedMixId}
+          now={now}
+          onSavedMixSelect={onSavedMixSelect}
           muted={muted}
         />
       ) : null}
@@ -289,11 +628,15 @@ function RecipePickerSaveItem({
   mix,
   current,
   now,
+  compact = false,
+  wheel = false,
   onSelect,
 }: {
   mix: SavedMixSnapshot;
   current: boolean;
   now: Date;
+  compact?: boolean;
+  wheel?: boolean;
   onSelect: () => void;
 }) {
   const name = savedMixDisplayName(mix);
@@ -303,6 +646,8 @@ function RecipePickerSaveItem({
     <button
       type="button"
       className={`${SHEET_LIST_ROW_CLASS} recipe-picker-latest-item touch-manipulation w-full text-left${
+        compact ? " recipe-picker-latest-item--compact" : ""
+      }${wheel ? " recipe-picker-latest-item--wheel" : ""}${
         current ? " recipe-picker-latest-item--current" : ""
       }`}
       aria-current={current || undefined}
@@ -310,7 +655,7 @@ function RecipePickerSaveItem({
     >
       <span className="recipe-picker-latest-item__name">{name}</span>
       <span className="recipe-picker-latest-item__meta">
-        {mix.recipeName} · {timestamp}
+        {compact ? timestamp : `${mix.recipeName} · ${timestamp}`}
       </span>
     </button>
   );
@@ -517,6 +862,13 @@ export function RecipePickerSheet({
                       bucketSelection={bucketSelection}
                       onBucketChange={onBucketChange}
                       muted={muted}
+                      savedMixes={savedMixes}
+                      loadedSavedMixId={loadedSavedMixId}
+                      now={now}
+                      onSavedMixSelect={(mix) => {
+                        onSavedMixSelect?.(mix);
+                        requestClose();
+                      }}
                       onPreview={() => setPreviewRecipe(recipe)}
                       onApply={() => {
                         if (placeholder) return;
