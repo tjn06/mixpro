@@ -32,6 +32,7 @@ import {
   RecipeHeaderSubline,
   RecipeHeaderSublineStack,
   RecipeHeaderMixContext,
+  RecipeEditMixnameRow,
 } from "./components/mixer/RecipeZoneMeta";
 import { RecBatchPanel, LockIcon } from "./components/mixer/RecBatchPanel";
 import { LockedSaveOverlay } from "./components/mixer/LockedSaveOverlay";
@@ -1068,7 +1069,6 @@ export function BatchMixer({
             subline={
               <div className={isLocked && !loadedSavedMix ? "pointer-events-none" : "pointer-events-auto"}>
                 <RecipeHeaderSublineStack>
-                  <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
                   <RecipeSelect
                     recipes={recipes}
                     value={activeRecipe}
@@ -1106,6 +1106,7 @@ export function BatchMixer({
             pointerEvents: isLocked ? "none" : "auto",
           }}
         >
+          <RecipeEditMixnameRow loadedSavedMix={loadedSavedMix} muted={isLocked} />
           <div
             ref={editRowRef}
             className="relative grid min-w-0"

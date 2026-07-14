@@ -172,6 +172,13 @@
   flex-shrink: 0;
 }
 
+.recipe-edit-zone__mixname {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
 .app-header__subline {
   display: flex;
   align-items: center;

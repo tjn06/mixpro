@@ -159,8 +159,8 @@ export function RecipeHeaderRecipeRow({
   );
 }
 
-/** Row 1 — saved mix label + name (reserved slot; visible only when a save is loaded). */
-function RecipeHeaderMixnameRow({
+/** Saved mix label + name — visible only when a save is loaded. */
+export function RecipeMixnameRow({
   displayName,
   muted = false,
 }: {
@@ -202,8 +202,26 @@ export function RecipeHeaderMixContext({
       aria-hidden={displayName == null}
     >
       {displayName ? (
-        <RecipeHeaderMixnameRow displayName={displayName} muted={muted} />
+        <RecipeMixnameRow displayName={displayName} muted={muted} />
       ) : null}
     </RecipeHeaderSubline>
+  );
+}
+
+/** Mix name above bucket / rec. batch controls in the editable mixer zone. */
+export function RecipeEditMixnameRow({
+  loadedSavedMix,
+  muted = false,
+}: {
+  loadedSavedMix: SavedMixSnapshot | null;
+  muted?: boolean;
+}) {
+  const displayName = loadedSavedMix ? savedMixDisplayName(loadedSavedMix) : null;
+  if (!displayName) return null;
+
+  return (
+    <div className="recipe-edit-zone__mixname w-full min-w-0">
+      <RecipeMixnameRow displayName={displayName} muted={muted} />
+    </div>
   );
 }
