@@ -686,10 +686,10 @@ export function BatchTotalsScreen({
       data-dense-table={denseTable ? "" : undefined}
     >
       <div
-        className="flex-1 min-h-0 min-w-0 app-gutter-x flex flex-col"
+        className="batch-totals-screen__main app-gutter-x flex flex-col"
         style={{ paddingTop: compactSummary ? 0 : "var(--recipe-zone-pt)" }}
       >
-        <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-x-auto overflow-y-auto overscroll-contain batch-totals-scroll-panel">
+        <div className="batch-totals-scroll-panel flex flex-col">
           <div className="flex min-h-full flex-col">
             <div
               className="w-full min-w-0 shrink-0 rounded-xl overflow-hidden"
