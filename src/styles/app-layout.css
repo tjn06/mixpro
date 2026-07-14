@@ -907,19 +907,99 @@
   display: none;
 }
 
-/** Sibling of recipe-context-gradient — inset matches mixer bottom deck (inside sheet, not below it). */
+.batch-totals-route {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.batch-totals-screen--panel-expanded .batch-totals-scroll-panel {
+  visibility: hidden;
+  overflow: hidden;
+  touch-action: none;
+  pointer-events: none;
+}
+
+.batch-totals-bottom-panel:not(.batch-totals-bottom-panel--share-revealing) .batch-totals-bottom-panel__actions {
+  height: 0 !important;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.batch-totals-bottom-panel__summary-wrap {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.batch-totals-bottom-panel__card-region {
+  flex-shrink: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__footer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__card-region {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.batch-totals-summary-bar--expanded {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.batch-totals-summary-bar--expanded .batch-totals-summary-bar__card {
+  flex: 1;
+  min-height: 0;
+}
+
+.batch-totals-summary-bar__source-scroll {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  padding: var(--space-2, 8px);
+}
+
+.batch-totals-summary-bar__source-scroll--readonly {
+  user-select: text;
+}
+
+.batch-totals-summary-bar__total--footer {
+  border-top: var(--semantic-border-default, 1px solid color-mix(in srgb, var(--semantic-text-primary) 8%, transparent));
+}
+
+/** Absolute bottom sheet — grows upward to header subline; footer stays pinned at bottom. */
 .batch-totals-bottom-panel {
   --batch-totals-panel-radius: 16px;
-  position: relative;
-  z-index: 3;
-  flex-shrink: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
   width: 100%;
   min-width: 0;
-  background: transparent;
+  pointer-events: none;
 }
 
 .batch-totals-bottom-panel__sheet {
+  pointer-events: auto;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   background: var(--ui-header-bg);
   border-top: var(--semantic-border-default, 1px solid color-mix(in srgb, var(--semantic-text-primary) 8%, transparent));
   border-radius: var(--batch-totals-panel-radius) var(--batch-totals-panel-radius) 0 0;
@@ -929,19 +1009,69 @@
 .batch-totals-bottom-panel__content {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  height: 100%;
+  min-height: 0;
   width: 100%;
+}
+
+.batch-totals-bottom-panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.batch-totals-bottom-panel__body-inner {
+  padding-block: var(--space-3, 12px);
+}
+
+.batch-totals-bottom-panel__footer {
+  flex-shrink: 0;
   min-width: 0;
   padding-bottom: var(--app-bottom-inset);
+  margin-top: auto;
 }
 
-.batch-totals-bottom-panel--expanded .batch-totals-bottom-panel__content,
-.batch-totals-bottom-panel--revealing .batch-totals-bottom-panel__content {
-  gap: 8px;
+.batch-totals-bottom-panel__actions {
+  padding-bottom: var(--space-2, 8px);
+  flex-shrink: 0;
+  min-height: 0;
 }
 
-.batch-totals-bottom-panel:not(.batch-totals-bottom-panel--revealing) .batch-totals-bottom-panel__details {
-  display: none;
+.batch-totals-bottom-panel__actions--live {
+  will-change: height;
+}
+
+.batch-totals-bottom-panel__actions-inner {
+  min-height: 0;
+}
+
+.batch-totals-bottom-panel__actions button,
+.batch-totals-bottom-panel__actions input,
+.batch-totals-bottom-panel__actions a {
+  touch-action: manipulation;
+  user-select: auto;
+  cursor: pointer;
+}
+
+.batch-totals-summary-bar__chevron {
+  touch-action: manipulation;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
+  color: var(--semantic-text-secondary, var(--ui-value, #3c3c52));
+}
+
+.batch-totals-bottom-panel--holding .batch-totals-bottom-panel__drag-zone {
+  cursor: grabbing;
 }
 
 .batch-totals-summary-bar__batch-rows,
@@ -977,11 +1107,11 @@
 .batch-totals-bottom-panel__drag-zone {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: calc(100% + 2 * max(var(--space-4, 16px), var(--safe-left), var(--safe-right)));
+  flex-shrink: 0;
+  width: 100%;
   min-width: 0;
-  margin-inline: calc(-1 * max(var(--space-4, 16px), var(--safe-left), var(--safe-right)));
-  padding-inline: max(var(--space-4, 16px), var(--safe-left), var(--safe-right));
+  margin-inline: 0;
+  padding-inline: 0;
   border-top-left-radius: var(--batch-totals-panel-radius);
   border-top-right-radius: var(--batch-totals-panel-radius);
   cursor: grab;
@@ -990,21 +1120,9 @@
   -webkit-user-select: none;
 }
 
-.batch-totals-bottom-panel--holding .batch-totals-bottom-panel__drag-zone {
-  cursor: grabbing;
-}
-
 .batch-totals-bottom-panel__drag-zone,
 .batch-totals-bottom-panel__drag-zone * {
   touch-action: none;
-}
-
-.batch-totals-bottom-panel__details button,
-.batch-totals-bottom-panel__details input,
-.batch-totals-bottom-panel__details a {
-  touch-action: manipulation;
-  user-select: auto;
-  cursor: pointer;
 }
 
 .batch-totals-grab-handle {
@@ -1034,21 +1152,16 @@
   background: color-mix(in srgb, var(--semantic-text-primary) 46%, transparent);
 }
 
-.batch-totals-bottom-panel__details {
-  overflow: hidden;
-  min-height: 0;
-}
-
 .batch-totals-bottom-panel__details--live {
-  will-change: max-height;
-}
-
-.batch-totals-bottom-panel__details-inner {
-  min-height: 0;
+  will-change: height;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .batch-totals-bottom-panel__details {
+  .batch-totals-bottom-panel__sheet {
+    transition: none !important;
+  }
+
+  .batch-totals-bottom-panel__actions {
     transition: none !important;
   }
 

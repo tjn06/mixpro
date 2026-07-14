@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, type CSSProperties, type ReactNode } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
 import type { BlendingRecipe } from "../../domain/recipe/types";
@@ -132,15 +132,16 @@ const TABLE_COLS = `${COL_ITEM} ${COL_MULT} ${COL_TOTAL}`;
 const SUMMARY_COLS = "minmax(0, 1fr) auto";
 
 const PANEL_DRAG_THRESHOLD_PX = 16;
-const PANEL_TAP_SLOP_PX = 8;
 const PANEL_DRAG_FOLLOW = 0.72;
-const PANEL_DETAILS_HEIGHT_FALLBACK = 140;
+const PANEL_COLLAPSED_HEIGHT_FALLBACK = 96;
+const PANEL_EXPANDED_HEIGHT_FALLBACK = 480;
+const PANEL_SHARE_HEIGHT_FALLBACK = 140;
 
-function shouldBlockPanelDrag(target: EventTarget | null): boolean {
+function shouldBlockHandleDrag(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
   return Boolean(
     target.closest(
-      ".batch-totals-bottom-panel__details button, .batch-totals-bottom-panel__details input, .batch-totals-bottom-panel__details a",
+      ".batch-totals-bottom-panel__actions button, .batch-totals-bottom-panel__actions input, .batch-totals-bottom-panel__actions a, .batch-totals-summary-bar__source-scroll button, .batch-totals-summary-bar__source-scroll input, .batch-totals-summary-bar__source-scroll a",
     ),
   );
 }
@@ -154,6 +155,8 @@ export function BatchTotalsBottomPanel({
   values,
   complementValues,
   entityIndexes,
+  sourceExpanded,
+  onSourceExpandedChange,
 }: {
   multiplier: number;
   hasExtraBatch: boolean;
@@ -163,46 +166,170 @@ export function BatchTotalsBottomPanel({
   values: number[];
   complementValues: number[];
   entityIndexes: number[];
+  sourceExpanded: boolean;
+  onSourceExpandedChange: (next: boolean) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [holding, setHolding] = useState(false);
-  const [detailsHeight, setDetailsHeight] = useState(PANEL_DETAILS_HEIGHT_FALLBACK);
+  const [collapsedHeight, setCollapsedHeight] = useState(PANEL_COLLAPSED_HEIGHT_FALLBACK);
+  const [maxExpandHeight, setMaxExpandHeight] = useState(PANEL_EXPANDED_HEIGHT_FALLBACK);
+  const [shareActionsHeight, setShareActionsHeight] = useState(PANEL_SHARE_HEIGHT_FALLBACK);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+  const actionsInnerRef = useRef<HTMLDivElement>(null);
+  const compactSummaryRef = useRef<HTMLDivElement>(null);
+  const lastCompactSummaryHeightRef = useRef(PANEL_COLLAPSED_HEIGHT_FALLBACK);
   const dragStartYRef = useRef<number | null>(null);
   const dragCleanupRef = useRef<(() => void) | null>(null);
-  const detailsInnerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => () => dragCleanupRef.current?.(), []);
 
   useLayoutEffect(() => {
-    const el = detailsInnerRef.current;
-    if (!el) return;
-    if (!expanded && !holding && dragOffset === 0) return;
+    const panel = panelRef.current;
+    const route = panel?.closest(".batch-totals-route");
+    if (!panel || !route) return;
 
     const measure = () => {
-      setDetailsHeight(el.scrollHeight || PANEL_DETAILS_HEIGHT_FALLBACK);
+      const headerChrome = route.querySelector(".app-header-chrome");
+      const headerBottom =
+        headerChrome instanceof HTMLElement
+          ? headerChrome.offsetTop + headerChrome.offsetHeight
+          : 0;
+      const routeTop = route.getBoundingClientRect().top;
+      const headerH = Math.max(0, headerBottom - routeTop);
+      const nextMax = Math.max(0, route.clientHeight - headerH);
+      setMaxExpandHeight(nextMax || PANEL_EXPANDED_HEIGHT_FALLBACK);
+
+      const handleH = handleRef.current?.offsetHeight ?? 0;
+      const footer = footerRef.current;
+      const compactH = compactSummaryRef.current?.offsetHeight ?? 0;
+      if (compactH > 0) {
+        lastCompactSummaryHeightRef.current = compactH;
+      }
+      const summaryH = compactH > 0 ? compactH : lastCompactSummaryHeightRef.current;
+      const footerStyles = footer ? getComputedStyle(footer) : null;
+      const footerPad = footerStyles
+        ? parseFloat(footerStyles.paddingBottom) || 0
+        : 0;
+      const nextCollapsed = handleH + summaryH + footerPad;
+      if (nextCollapsed > 0) {
+        setCollapsedHeight(nextCollapsed);
+      }
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(route);
+    if (handleRef.current) ro.observe(handleRef.current);
+    if (footerRef.current) ro.observe(footerRef.current);
+    if (compactSummaryRef.current) ro.observe(compactSummaryRef.current);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [sourceExpanded, shareOpen, multiplier, hasExtraBatch, recipe.id]);
+
+  useLayoutEffect(() => {
+    const el = actionsInnerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      setShareActionsHeight(el.scrollHeight || PANEL_SHARE_HEIGHT_FALLBACK);
     };
 
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [expanded, holding, dragOffset, multiplier, hasExtraBatch, recipe.id]);
+  }, [multiplier, hasExtraBatch, recipe.id]);
 
-  const isRevealing = expanded || holding || dragOffset !== 0;
+  useEffect(() => {
+    if (!sourceExpanded && !shareOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (sourceExpanded) onSourceExpandedChange(false);
+      else setShareOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [sourceExpanded, shareOpen, onSourceExpandedChange]);
 
-  const clampDragOffset = useCallback(
+  const shareStageHeight = collapsedHeight + shareActionsHeight;
+  const expandRange = Math.max(0, maxExpandHeight - shareStageHeight);
+
+  const clampHandleDragOffset = useCallback(
     (dy: number) => {
-      const max = detailsHeight * 0.92;
-      if (expanded) {
+      if (sourceExpanded) {
+        const max = expandRange * 0.92;
         return Math.min(max, Math.max(0, dy * PANEL_DRAG_FOLLOW));
       }
+      if (shareOpen) {
+        if (dy < 0) {
+          const max = expandRange * 0.92;
+          return Math.max(-max, dy * PANEL_DRAG_FOLLOW);
+        }
+        const max = shareActionsHeight * 0.92;
+        return Math.min(max, Math.max(0, dy * PANEL_DRAG_FOLLOW));
+      }
+      const max = shareActionsHeight * 0.92;
       return Math.max(-max, Math.min(0, dy * PANEL_DRAG_FOLLOW));
     },
-    [detailsHeight, expanded],
+    [expandRange, shareActionsHeight, shareOpen, sourceExpanded],
   );
 
-  const finishDrag = useCallback(
+  const shareVisibleHeight = (() => {
+    if (sourceExpanded) return shareActionsHeight;
+
+    if (shareOpen) {
+      if (holding || dragOffset !== 0) {
+        if (dragOffset > 0) {
+          return Math.max(0, shareActionsHeight - dragOffset);
+        }
+        return shareActionsHeight;
+      }
+      return shareActionsHeight;
+    }
+
+    if (holding || dragOffset !== 0) {
+      return Math.min(shareActionsHeight, Math.max(0, -dragOffset));
+    }
+    return 0;
+  })();
+
+  const resolvedSheetHeight = (() => {
+    if (sourceExpanded) {
+      if (holding || dragOffset !== 0) {
+        return Math.max(shareStageHeight, maxExpandHeight - dragOffset);
+      }
+      return maxExpandHeight;
+    }
+
+    if (shareOpen) {
+      if (holding || dragOffset !== 0) {
+        if (dragOffset < 0) {
+          const extra = Math.min(expandRange, -dragOffset);
+          return shareStageHeight + extra;
+        }
+        return collapsedHeight + Math.max(0, shareActionsHeight - dragOffset);
+      }
+      return shareStageHeight;
+    }
+
+    if (holding || dragOffset !== 0) {
+      return collapsedHeight + Math.min(shareActionsHeight, Math.max(0, -dragOffset));
+    }
+    return collapsedHeight;
+  })();
+
+  const isShareRevealing = shareVisibleHeight > 0 || holding;
+  const isTableRevealing =
+    sourceExpanded ||
+    (shareOpen && (holding || dragOffset !== 0) && dragOffset < 0);
+
+  const finishHandleDrag = useCallback(
     (clientY: number) => {
       const startY = dragStartYRef.current;
       dragStartYRef.current = null;
@@ -212,24 +339,35 @@ export function BatchTotalsBottomPanel({
       if (startY == null) return;
 
       const dy = clientY - startY;
-      if (Math.abs(dy) <= PANEL_TAP_SLOP_PX) {
-        setExpanded((open) => !open);
+
+      if (sourceExpanded) {
+        if (dy >= PANEL_DRAG_THRESHOLD_PX) {
+          onSourceExpandedChange(false);
+        }
         return;
       }
-      if (!expanded && dy <= -PANEL_DRAG_THRESHOLD_PX) {
-        setExpanded(true);
+
+      if (shareOpen) {
+        if (dy <= -PANEL_DRAG_THRESHOLD_PX) {
+          onSourceExpandedChange(true);
+          return;
+        }
+        if (dy >= PANEL_DRAG_THRESHOLD_PX) {
+          setShareOpen(false);
+        }
         return;
       }
-      if (expanded && dy >= PANEL_DRAG_THRESHOLD_PX) {
-        setExpanded(false);
+
+      if (dy <= -PANEL_DRAG_THRESHOLD_PX) {
+        setShareOpen(true);
       }
     },
-    [expanded],
+    [shareOpen, sourceExpanded, onSourceExpandedChange],
   );
 
-  const handleDragZonePointerDown = useCallback(
+  const handleDragPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (shouldBlockPanelDrag(event.target)) return;
+      if (shouldBlockHandleDrag(event.target)) return;
       if (event.button !== 0) return;
 
       event.preventDefault();
@@ -241,11 +379,11 @@ export function BatchTotalsBottomPanel({
       const onMove = (ev: PointerEvent) => {
         const startY = dragStartYRef.current;
         if (startY == null) return;
-        setDragOffset(clampDragOffset(ev.clientY - startY));
+        setDragOffset(clampHandleDragOffset(ev.clientY - startY));
       };
 
       const onEnd = (ev: PointerEvent) => {
-        finishDrag(ev.clientY);
+        finishHandleDrag(ev.clientY);
         cleanup();
       };
 
@@ -261,42 +399,46 @@ export function BatchTotalsBottomPanel({
       window.addEventListener("pointerup", onEnd);
       window.addEventListener("pointercancel", onEnd);
     },
-    [clampDragOffset, finishDrag],
+    [clampHandleDragOffset, finishHandleDrag],
   );
 
-  const previewHeight =
-    holding || dragOffset !== 0
-      ? expanded
-        ? Math.max(0, detailsHeight - dragOffset)
-        : Math.max(0, -dragOffset)
-      : expanded
-        ? detailsHeight
-        : 0;
+  const panelStageLabel = sourceExpanded
+    ? "Batch sources expanded — drag handle down to show share"
+    : shareOpen
+      ? "Share actions — drag handle up for sources, down to collapse"
+      : "Batch total — drag handle up for share actions";
 
   return (
     <div
+      ref={panelRef}
       id="batch-totals-bottom-panel"
       className={`batch-totals-bottom-panel${
-        expanded ? " batch-totals-bottom-panel--expanded" : ""
-      }${holding ? " batch-totals-bottom-panel--holding" : ""}${
-        isRevealing ? " batch-totals-bottom-panel--revealing" : ""
+        sourceExpanded ? " batch-totals-bottom-panel--source-expanded" : ""
+      }${isTableRevealing ? " batch-totals-bottom-panel--table-revealing" : ""}${
+        shareOpen ? " batch-totals-bottom-panel--share-open" : ""
+      }${isShareRevealing ? " batch-totals-bottom-panel--share-revealing" : ""}${
+        holding ? " batch-totals-bottom-panel--holding" : ""
       }`}
     >
-      <div className="batch-totals-bottom-panel__sheet">
+      <div
+        className="batch-totals-bottom-panel__sheet"
+        style={{
+          height: resolvedSheetHeight,
+          transition: holding
+            ? "none"
+            : "height 0.32s cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
+      >
         <div
-          className="batch-totals-bottom-panel__content app-gutter-x"
+          className="batch-totals-bottom-panel__content"
           role="region"
-          aria-expanded={expanded}
-          aria-controls="batch-totals-bottom-panel-details"
-          aria-label={
-            expanded
-              ? "Batch summary and share — drag down to collapse"
-              : "Batch summary — drag up for share actions"
-          }
+          aria-expanded={sourceExpanded}
+          aria-label={panelStageLabel}
         >
           <div
+            ref={handleRef}
             className="batch-totals-bottom-panel__drag-zone"
-            onPointerDown={handleDragZonePointerDown}
+            onPointerDown={handleDragPointerDown}
           >
             <div
               className={`batch-totals-grab-handle${holding ? " batch-totals-grab-handle--holding" : ""}`}
@@ -304,36 +446,52 @@ export function BatchTotalsBottomPanel({
             >
               <span className="batch-totals-grab-handle__pill" />
             </div>
-
-            <BatchTotalsSummaryBar
-              multiplier={multiplier}
-              hasExtraBatch={hasExtraBatch}
-              totalGrams={totalGrams}
-              colorScheme={colorScheme}
-            />
           </div>
 
           <div
-            id="batch-totals-bottom-panel-details"
-            className={`batch-totals-bottom-panel__details${
-              holding ? " batch-totals-bottom-panel__details--live" : ""
+            ref={footerRef}
+            className={`batch-totals-bottom-panel__footer shrink-0 min-h-0${
+              isTableRevealing ? " batch-totals-bottom-panel__footer--table-revealing" : ""
             }`}
-            aria-hidden={!expanded && !holding && dragOffset === 0}
-            style={{
-              maxHeight: previewHeight,
-              transition: holding
-                ? "none"
-                : "max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
-            }}
           >
-            <div ref={detailsInnerRef} className="batch-totals-bottom-panel__details-inner">
-              <BatchTotalsShareBar
+            <div className="batch-totals-bottom-panel__card-region app-gutter-x">
+              <BatchTotalsSummaryBar
+                multiplier={multiplier}
+                hasExtraBatch={hasExtraBatch}
+                totalGrams={totalGrams}
+                colorScheme={colorScheme}
                 recipe={recipe}
                 values={values}
                 complementValues={complementValues}
                 entityIndexes={entityIndexes}
-                multiplier={multiplier}
+                sourceExpanded={sourceExpanded}
+                isTableRevealing={isTableRevealing}
+                compactSummaryRef={compactSummaryRef}
               />
+            </div>
+
+            <div
+              className={`batch-totals-bottom-panel__actions app-gutter-x${
+                holding ? " batch-totals-bottom-panel__actions--live" : ""
+              }`}
+              aria-hidden={!isShareRevealing}
+              style={{
+                height: shareVisibleHeight,
+                overflow: "hidden",
+                transition: holding
+                  ? "none"
+                  : "height 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
+            >
+              <div ref={actionsInnerRef} className="batch-totals-bottom-panel__actions-inner">
+                <BatchTotalsShareBar
+                  recipe={recipe}
+                  values={values}
+                  complementValues={complementValues}
+                  entityIndexes={entityIndexes}
+                  multiplier={multiplier}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -351,6 +509,8 @@ export interface BatchTotalsScreenProps {
   onMultiplierChange: (next: number) => void;
   onComplementChange: (next: number[]) => void;
   sandType: SandType;
+  totalsPanelExpanded?: boolean;
+  onTotalsPanelExpandedChange?: (next: boolean) => void;
 }
 
 function StepButton({
@@ -523,78 +683,574 @@ function TableEqualsSeparator() {
   return <TableOpSeparator symbol="=" />;
 }
 
+const ENTITY_TOTAL_COL_ITEM = "56%";
+const ENTITY_TOTAL_COL_TOTAL = "44%";
+
+function BatchTotalsEntityTotalTable({
+  recipe,
+  values,
+  complementValues,
+  entityIndexes,
+  multiplier,
+  colorScheme,
+  hasExtraBatch,
+}: {
+  recipe: BlendingRecipe;
+  values: number[];
+  complementValues: number[];
+  entityIndexes: number[];
+  multiplier: number;
+  colorScheme: ColorScheme;
+  hasExtraBatch: boolean;
+}) {
+  const amountColor = entityValueColor(true, colorScheme);
+  const ingredientRows = entityIndexes.filter((i) => i !== 0);
+  const batchLabel = `${multiplier} ${multiplier === 1 ? "batch" : "batches"}`;
+
+  return (
+    <div className="min-w-0 w-full" aria-readonly>
+      {hasExtraBatch ? (
+        <p
+          className="shrink-0 min-w-0 truncate"
+          style={{
+            ...SECTION_HEADER,
+            margin: "0 0 8px",
+            padding: "0 2px",
+          }}
+        >
+          {batchLabel} + extra batch
+        </p>
+      ) : null}
+      <table className="w-full min-w-0 border-collapse" style={{ tableLayout: "fixed" }}>
+        <colgroup>
+          <col style={{ width: ENTITY_TOTAL_COL_ITEM }} />
+          <col style={{ width: ENTITY_TOTAL_COL_TOTAL }} />
+        </colgroup>
+        <thead>
+          <tr style={{ borderBottom: TABLE_BORDER }}>
+            <th scope="col" className="text-left" style={thCellItemStyle(bt.cardHeaderBackground, TH_TEXT)}>
+              Item
+            </th>
+            <th scope="col" className="text-right" style={thCellTotalStyle(bt.cardHeaderBackground, TH_TEXT)}>
+              Total
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {ingredientRows.map((pi) => {
+            const p = MIX_PARAMS[pi];
+            const metaLabel = getEntityMetaLabel(recipe, p.id);
+            const totalGrams = batchIngredientTotalGrams(values, complementValues, pi, multiplier);
+
+            return (
+              <tr key={p.id} style={{ borderBottom: TABLE_BORDER }}>
+                <th scope="row" className="text-left align-middle font-normal" style={cellItemStyle()}>
+                  <div className="min-w-0">
+                    <ItemNameWithMeta
+                      id={p.id}
+                      color={entityAccentColor(p.id, colorScheme)}
+                      metaLabel={metaLabel}
+                    />
+                  </div>
+                </th>
+                <td
+                  className="text-right align-middle tabular-nums whitespace-nowrap"
+                  style={cellTotalStyle({
+                    ...TABLE_TEXT,
+                    fontSize: "var(--text-totals-sum)",
+                    color: amountColor,
+                    fontWeight: 600,
+                    lineHeight: 1.1,
+                  })}
+                >
+                  <AmountCell grams={totalGrams} isKg={p.isKg} colorScheme={colorScheme} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function BatchTotalsSourceTables({
+  recipe,
+  values,
+  complementValues,
+  entityIndexes,
+  multiplier,
+  colorScheme,
+  hasExtraBatch,
+  onMultiplierChange,
+  onAddExtraBatch,
+  onEditExtraBatch,
+  onRemoveExtraBatch,
+}: {
+  recipe: BlendingRecipe;
+  values: number[];
+  complementValues: number[];
+  entityIndexes: number[];
+  multiplier: number;
+  colorScheme: ColorScheme;
+  hasExtraBatch: boolean;
+  onMultiplierChange: (next: number) => void;
+  onAddExtraBatch: () => void;
+  onEditExtraBatch: () => void;
+  onRemoveExtraBatch: () => void;
+}) {
+  const amountColor = entityValueColor(true, colorScheme);
+  const ingredientRows = entityIndexes.filter((i) => i !== 0);
+
+  const batchesHeader = (
+    <div
+      className="shrink-0 grid items-center min-w-0 w-full"
+      style={{
+        ...cardHeaderStyle("batches"),
+        gridTemplateColumns: TABLE_COLS,
+      }}
+    >
+      <p style={sectionTitleStyle()}>Batches</p>
+      <div
+        className="flex items-center justify-center"
+        style={{ padding: "0 2px", position: "relative" }}
+      >
+        <div
+          className="relative flex items-center justify-center"
+          style={{ minWidth: 36, height: "var(--totals-header-icon-btn)" }}
+        >
+          <StepButton
+            label="Decrease batch count"
+            onClick={() => onMultiplierChange(Math.max(1, multiplier - 1))}
+            disabled={multiplier <= 1}
+            className="absolute"
+            style={{ right: "100%", marginRight: "var(--totals-multiplier-row-gap, 12px)" }}
+          />
+          <p
+            className="tabular-nums text-center"
+            style={{
+              fontFamily: "'Outfit', sans-serif",
+              fontSize: "var(--totals-mult-value-size, 20px)",
+              fontWeight: 400,
+              color: cv.text.primary,
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
+              margin: 0,
+            }}
+          >
+            {multiplier}
+          </p>
+          <StepButton
+            label="Increase batch count"
+            onClick={() => onMultiplierChange(Math.min(999, multiplier + 1))}
+            disabled={multiplier >= 999}
+            className="absolute"
+            style={{ left: "100%", marginLeft: "var(--totals-multiplier-row-gap, 12px)" }}
+          />
+        </div>
+      </div>
+      <div className="flex items-center justify-end" style={{ padding: "0 var(--totals-header-cell-pad-x)" }}>
+        <IconHeaderButton
+          label="Reset batch count"
+          onClick={() => onMultiplierChange(1)}
+          disabled={multiplier <= 1}
+        >
+          <ResetIcon size={HEADER_ICON_SIZE} />
+        </IconHeaderButton>
+      </div>
+    </div>
+  );
+
+  const batchesBlock = (
+    <div
+      className="w-full min-w-0 shrink-0 rounded-xl overflow-hidden"
+      style={{ border: bt.batchesCardBorder }}
+    >
+      {batchesHeader}
+
+      <div
+        style={{
+          background: bt.batchesCardBackground,
+          boxShadow: bt.insetHighlight,
+        }}
+      >
+        <table className="w-full min-w-0 border-collapse" style={{ tableLayout: "fixed" }}>
+          <colgroup>
+            <col style={{ width: COL_ITEM }} />
+            <col style={{ width: COL_MULT }} />
+            <col style={{ width: COL_TOTAL }} />
+          </colgroup>
+          <thead>
+            <tr style={{ borderBottom: TABLE_BORDER }}>
+              <th scope="col" className="text-left" style={thCellItemStyle(bt.cardHeaderBackground, TH_TEXT)}>
+                Item
+              </th>
+              <th scope="col" className="text-center" style={thCellMultStyle(bt.cardHeaderBackground, TH_TEXT)}>
+                ×
+              </th>
+              <th scope="col" className="text-right" style={thCellTotalStyle(bt.cardHeaderBackground, TH_TEXT)}>
+                Total
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {ingredientRows.map((pi) => {
+              const p = MIX_PARAMS[pi];
+              const metaLabel = getEntityMetaLabel(recipe, p.id);
+              const batchTotalGrams = values[pi] * multiplier;
+
+              return (
+                <tr key={p.id} style={{ borderBottom: TABLE_BORDER }}>
+                  <th scope="row" className="text-left align-middle font-normal" style={cellItemStyle()}>
+                    <div className="min-w-0">
+                      <ItemNameWithMeta
+                        id={p.id}
+                        color={entityAccentColor(p.id, colorScheme)}
+                        metaLabel={metaLabel}
+                      />
+                      <PerBatchRow grams={values[pi]} isKg={p.isKg} />
+                    </div>
+                  </th>
+                  <td className="text-center align-middle" style={cellMultStyle()}>
+                    <MultCell value={multiplier} />
+                  </td>
+                  <td
+                    className="text-right align-middle tabular-nums whitespace-nowrap"
+                    style={cellTotalStyle({
+                      ...TABLE_TEXT,
+                      fontSize: "var(--text-totals-sum)",
+                      color: amountColor,
+                      fontWeight: 600,
+                      lineHeight: 1.1,
+                    })}
+                  >
+                    <AmountCell grams={batchTotalGrams} isKg={p.isKg} colorScheme={colorScheme} />
+                  </td>
+                </tr>
+              );
+            })}
+            {(() => {
+              const pi = 0;
+              const p = MIX_PARAMS[pi];
+              const batchTotalGrams = values[pi] * multiplier;
+
+              return (
+                <tr style={{ borderTop: TABLE_BORDER }}>
+                  <th scope="row" className="text-left align-middle font-normal" style={cellItemStyle()}>
+                    <div className="min-w-0">
+                      <span
+                        className="block truncate"
+                        style={{
+                          fontSize: "var(--text-card-name)",
+                          letterSpacing: "0.18em",
+                          fontWeight: CARD_NAME_WEIGHT,
+                          color: entityAccentColor(p.id, colorScheme),
+                          lineHeight: 1.15,
+                        }}
+                      >
+                        {p.id}
+                      </span>
+                      <PerBatchRow grams={values[pi]} isKg={p.isKg} />
+                    </div>
+                  </th>
+                  <td className="text-center align-middle" style={cellMultStyle()}>
+                    <MultCell value={multiplier} />
+                  </td>
+                  <td
+                    className="text-right align-middle tabular-nums whitespace-nowrap"
+                    style={cellTotalStyle({
+                      ...TABLE_TEXT,
+                      fontSize: "var(--text-totals-sum)",
+                      color: amountColor,
+                      fontWeight: 700,
+                      lineHeight: 1.1,
+                    })}
+                  >
+                    <AmountCell grams={batchTotalGrams} isKg={p.isKg} colorScheme={colorScheme} />
+                  </td>
+                </tr>
+              );
+            })()}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const extraBatchBlock = (
+    <div
+      className="w-full min-w-0 shrink-0 rounded-xl overflow-hidden"
+      style={{
+        background: hasExtraBatch ? undefined : bt.emptyCardBackground,
+        border: hasExtraBatch ? bt.extraBatchBorder : bt.extraBatchDashedBorder,
+      }}
+    >
+      {hasExtraBatch ? (
+        <>
+          <div className="flex items-center justify-between gap-2 min-w-0 w-full" style={cardHeaderStyle("extra")}>
+            <p style={sectionTitleStyle(cv.extraBatch.label)}>Extra batch</p>
+            <div
+              className="flex items-center shrink-0"
+              style={{ gap: "var(--totals-header-action-gap)", padding: "0 var(--totals-header-cell-pad-x)" }}
+            >
+              <IconHeaderButton label="Edit extra batch" onClick={onEditExtraBatch} color={cv.extraBatch.label}>
+                <RenameIcon size={HEADER_ICON_SIZE} />
+              </IconHeaderButton>
+              <IconHeaderButton label="Remove extra batch" onClick={onRemoveExtraBatch} color={cv.text.muted}>
+                <DeleteIcon size={HEADER_ICON_SIZE} />
+              </IconHeaderButton>
+            </div>
+          </div>
+          <div style={{ background: bt.extraBatchBackground }}>
+            <table className="w-full min-w-0 border-collapse" style={{ tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: COL_ITEM }} />
+                <col style={{ width: COL_MULT }} />
+                <col style={{ width: COL_TOTAL }} />
+              </colgroup>
+              <thead>
+                <tr style={{ borderBottom: TABLE_BORDER }}>
+                  <th scope="col" className="text-left" style={thCellItemStyle(bt.extraTableThBackground, TH_TEXT)}>
+                    Item
+                  </th>
+                  <th scope="col" className="text-center" style={thCellMultStyle(bt.extraTableThBackground, TH_TEXT)}>
+                    ×
+                  </th>
+                  <th scope="col" className="text-right" style={thCellTotalStyle(bt.extraTableThBackground, TH_TEXT)}>
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {ingredientRows.map((pi) => {
+                  const p = MIX_PARAMS[pi];
+                  const metaLabel = getEntityMetaLabel(recipe, p.id);
+
+                  return (
+                    <tr key={`extra-${p.id}`} style={{ borderBottom: TABLE_BORDER }}>
+                      <th scope="row" className="text-left align-middle font-normal" style={cellItemStyle()}>
+                        <div className="min-w-0">
+                          <ItemNameWithMeta
+                            id={p.id}
+                            color={entityAccentColor(p.id, colorScheme)}
+                            metaLabel={metaLabel}
+                          />
+                          <PerBatchRow grams={complementValues[pi]} isKg={p.isKg} />
+                        </div>
+                      </th>
+                      <td className="text-center align-middle" style={cellMultStyle()}>
+                        <MultCell value={1} />
+                      </td>
+                      <td
+                        className="text-right align-middle tabular-nums whitespace-nowrap"
+                        style={cellTotalStyle({
+                          ...TABLE_TEXT,
+                          fontSize: "var(--text-totals-sum)",
+                          color: amountColor,
+                          fontWeight: 600,
+                          lineHeight: 1.1,
+                        })}
+                      >
+                        <AmountCell grams={complementValues[pi]} isKg={p.isKg} colorScheme={colorScheme} />
+                      </td>
+                    </tr>
+                  );
+                })}
+                {(() => {
+                  const pi = 0;
+                  const p = MIX_PARAMS[pi];
+
+                  return (
+                    <tr style={{ borderTop: TABLE_BORDER }}>
+                      <th scope="row" className="text-left align-middle font-normal" style={cellItemStyle()}>
+                        <div className="min-w-0">
+                          <span
+                            className="block truncate"
+                            style={{
+                              fontSize: "var(--text-card-name)",
+                              letterSpacing: "0.18em",
+                              fontWeight: CARD_NAME_WEIGHT,
+                              color: entityAccentColor(p.id, colorScheme),
+                              lineHeight: 1.15,
+                            }}
+                          >
+                            {p.id}
+                          </span>
+                          <PerBatchRow grams={complementValues[pi]} isKg={p.isKg} />
+                        </div>
+                      </th>
+                      <td className="text-center align-middle" style={cellMultStyle()}>
+                        <MultCell value={1} />
+                      </td>
+                      <td
+                        className="text-right align-middle tabular-nums whitespace-nowrap"
+                        style={cellTotalStyle({
+                          ...TABLE_TEXT,
+                          fontSize: "var(--text-totals-sum)",
+                          color: amountColor,
+                          fontWeight: 700,
+                          lineHeight: 1.1,
+                        })}
+                      >
+                        <AmountCell grams={complementValues[pi]} isKg={p.isKg} colorScheme={colorScheme} />
+                      </td>
+                    </tr>
+                  );
+                })()}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={onAddExtraBatch}
+          className="w-full flex items-center justify-center text-center"
+          style={{
+            cursor: "pointer",
+            background: "transparent",
+            border: 0,
+            minHeight: "var(--action-row-h)",
+            padding: "0 10px",
+            fontSize: "var(--text-totals-table)",
+            letterSpacing: "0.12em",
+            fontWeight: 600,
+            color: cv.extraBatch.label,
+            lineHeight: 1.3,
+            opacity: 0.9,
+          }}
+        >
+          + Add extra batch
+        </button>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      {batchesBlock}
+      <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-evenly">
+        <TablePlusSeparator />
+        {extraBatchBlock}
+        <TableEqualsSeparator />
+      </div>
+    </>
+  );
+}
+
 function BatchTotalsSummaryBar({
   multiplier,
   hasExtraBatch,
   totalGrams,
   colorScheme,
+  recipe,
+  values,
+  complementValues,
+  entityIndexes,
+  sourceExpanded,
+  isTableRevealing,
+  compactSummaryRef,
 }: {
   multiplier: number;
   hasExtraBatch: boolean;
   totalGrams: number;
   colorScheme: ColorScheme;
+  recipe: BlendingRecipe;
+  values: number[];
+  complementValues: number[];
+  entityIndexes: number[];
+  sourceExpanded: boolean;
+  isTableRevealing: boolean;
+  compactSummaryRef: RefObject<HTMLDivElement | null>;
 }) {
   const totalParam = MIX_PARAMS[0];
   const amountColor = entityValueColor(true, colorScheme);
+  const showTable = sourceExpanded || isTableRevealing;
+
+  const totalRow = (
+    <div
+      className={`text-right min-w-0 flex items-center justify-end gap-2 shrink-0 batch-totals-summary-bar__total${
+        showTable ? " batch-totals-summary-bar__total--footer" : ""
+      }`}
+      style={{
+        ...TABLE_TEXT,
+        fontSize: "var(--text-totals-sum)",
+        color: amountColor,
+        fontWeight: 700,
+        lineHeight: 1.1,
+      }}
+    >
+      <span
+        className="truncate shrink-0"
+        style={{
+          fontSize: "var(--text-card-name)",
+          letterSpacing: "0.18em",
+          fontWeight: CARD_NAME_WEIGHT,
+          color: entityAccentColor(totalParam.id, colorScheme),
+          lineHeight: 1.15,
+        }}
+      >
+        {totalParam.id}
+      </span>
+      <AmountCell grams={totalGrams} isKg={totalParam.isKg} colorScheme={colorScheme} />
+    </div>
+  );
 
   return (
     <div
-      className={`shrink-0 min-w-0 w-full batch-totals-summary-bar${hasExtraBatch ? " batch-totals-summary-bar--with-extra" : ""}`}
+      className={`min-w-0 w-full batch-totals-summary-bar${
+        hasExtraBatch ? " batch-totals-summary-bar--with-extra" : ""
+      }${showTable ? " batch-totals-summary-bar--expanded" : ""}`}
     >
       <div
-        className="w-full min-w-0 rounded-xl overflow-hidden"
+        className="batch-totals-summary-bar__card w-full min-w-0 rounded-xl overflow-hidden flex flex-col min-h-0"
         style={{
           border: bt.batchesCardBorder,
           background: bt.batchesCardBackground,
           boxShadow: bt.insetHighlight,
         }}
       >
-        <div
-          className="grid items-center min-w-0 w-full batch-totals-summary-bar__grid"
-          style={{ gridTemplateColumns: SUMMARY_COLS }}
-        >
-          <div className="batch-totals-summary-bar__batch-rows min-w-0">
-            <div className="batch-totals-summary-bar__batch-row">
-              <span style={sectionTitleStyle()}>Batches</span>
-              <MultCell value={multiplier} />
-            </div>
-            {hasExtraBatch ? (
-              <div className="batch-totals-summary-bar__batch-row">
-                <span
-                  style={sectionTitleStyle(cv.extraBatch.label)}
-                  title="Extra batch"
-                >
-                  Extra batch
-                </span>
-                <MultCell value={1} />
-              </div>
-            ) : null}
-          </div>
-          <div
-            className="text-right min-w-0 flex items-baseline justify-end gap-2 shrink-0 batch-totals-summary-bar__total"
-            style={{
-              ...TABLE_TEXT,
-              fontSize: "var(--text-totals-sum)",
-              color: amountColor,
-              fontWeight: 700,
-              lineHeight: 1.1,
-            }}
-          >
-            <span
-              className="truncate shrink-0"
-              style={{
-                fontSize: "var(--text-card-name)",
-                letterSpacing: "0.18em",
-                fontWeight: CARD_NAME_WEIGHT,
-                color: entityAccentColor(totalParam.id, colorScheme),
-                lineHeight: 1.15,
-              }}
+        {showTable ? (
+          <>
+            <div
+              className="batch-totals-summary-bar__source-scroll batch-totals-summary-bar__source-scroll--readonly flex-1 min-h-0 overflow-y-auto overscroll-contain"
+              aria-label="Total consumption by entity"
             >
-              {totalParam.id}
-            </span>
-            <AmountCell grams={totalGrams} isKg={totalParam.isKg} colorScheme={colorScheme} />
+              <BatchTotalsEntityTotalTable
+                recipe={recipe}
+                values={values}
+                complementValues={complementValues}
+                entityIndexes={entityIndexes}
+                multiplier={multiplier}
+                colorScheme={colorScheme}
+                hasExtraBatch={hasExtraBatch}
+              />
+            </div>
+            {totalRow}
+          </>
+        ) : (
+          <div
+            ref={compactSummaryRef}
+            className="grid items-center min-w-0 w-full batch-totals-summary-bar__grid batch-totals-summary-bar__compact"
+            style={{ gridTemplateColumns: SUMMARY_COLS }}
+          >
+            <div className="batch-totals-summary-bar__batch-rows min-w-0">
+              <div className="batch-totals-summary-bar__batch-row">
+                <span style={sectionTitleStyle()}>Batches</span>
+                <MultCell value={multiplier} />
+              </div>
+              {hasExtraBatch ? (
+                <div className="batch-totals-summary-bar__batch-row">
+                  <span style={sectionTitleStyle(cv.extraBatch.label)} title="Extra batch">
+                    Extra batch
+                  </span>
+                  <MultCell value={1} />
+                </div>
+              ) : null}
+            </div>
+            {totalRow}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -636,9 +1292,10 @@ export function BatchTotalsScreen({
   onMultiplierChange,
   onComplementChange,
   sandType,
+  totalsPanelExpanded = false,
+  onTotalsPanelExpandedChange,
 }: BatchTotalsScreenProps) {
   const colorScheme = useSettingsStore((s) => s.colorScheme);
-  const amountColor = entityValueColor(true, colorScheme);
   const shellCompact = useAppShellCompact();
   const [extraBatchSheetOpen, setExtraBatchSheetOpen] = useState(false);
   const [sheetPortal, setSheetPortal] = useState<HTMLElement | null>(null);
@@ -664,7 +1321,7 @@ export function BatchTotalsScreen({
 
   return (
     <div
-      className={`batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden relative${compactSummary ? " batch-totals-screen--compact-summary" : !shellCompact ? " batch-totals-screen--tall" : ""}`}
+      className={`batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden relative${compactSummary ? " batch-totals-screen--compact-summary" : !shellCompact ? " batch-totals-screen--tall" : ""}${totalsPanelExpanded ? " batch-totals-screen--panel-expanded" : ""}`}
       data-dense-table={denseTable ? "" : undefined}
     >
       <div
@@ -673,383 +1330,35 @@ export function BatchTotalsScreen({
       >
         <div className="batch-totals-scroll-panel flex flex-col">
           <div className="flex min-h-full flex-col">
-            <div
-              className="w-full min-w-0 shrink-0 rounded-xl overflow-hidden"
-              style={{ border: bt.batchesCardBorder }}
-            >
-            <div
-              className="shrink-0 grid items-center min-w-0 w-full"
-              style={{
-                ...cardHeaderStyle("batches"),
-                gridTemplateColumns: TABLE_COLS,
-              }}
-            >
-              <p style={sectionTitleStyle()}>Batches</p>
-              <div
-                className="flex items-center justify-center"
-                style={{ padding: "0 2px", position: "relative" }}
-              >
-                <div
-                  className="relative flex items-center justify-center"
-                  style={{ minWidth: 36, height: "var(--totals-header-icon-btn)" }}
-                >
-                  <StepButton
-                    label="Decrease batch count"
-                    onClick={() => onMultiplierChange(Math.max(1, multiplier - 1))}
-                    disabled={multiplier <= 1}
-                    className="absolute"
-                    style={{ right: "100%", marginRight: "var(--totals-multiplier-row-gap, 12px)" }}
-                  />
-                  <p
-                    className="tabular-nums text-center"
-                    style={{
-                      fontFamily: "'Outfit', sans-serif",
-                      fontSize: "var(--totals-mult-value-size, 20px)",
-                      fontWeight: 400,
-                      color: cv.text.primary,
-                      letterSpacing: "-0.02em",
-                      lineHeight: 1,
-                      margin: 0,
-                    }}
-                  >
-                    {multiplier}
-                  </p>
-                  <StepButton
-                    label="Increase batch count"
-                    onClick={() => onMultiplierChange(Math.min(999, multiplier + 1))}
-                    disabled={multiplier >= 999}
-                    className="absolute"
-                    style={{ left: "100%", marginLeft: "var(--totals-multiplier-row-gap, 12px)" }}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-end" style={{ padding: "0 var(--totals-header-cell-pad-x)" }}>
-                <IconHeaderButton
-                  label="Reset batch count"
-                  onClick={() => onMultiplierChange(1)}
-                  disabled={multiplier <= 1}
-                >
-                  <ResetIcon size={HEADER_ICON_SIZE} />
-                </IconHeaderButton>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: bt.batchesCardBackground,
-                boxShadow: bt.insetHighlight,
-              }}
-            >
-            <table
-              className="w-full min-w-0 border-collapse"
-              style={{ tableLayout: "fixed" }}
-            >
-            <colgroup>
-              <col style={{ width: COL_ITEM }} />
-              <col style={{ width: COL_MULT }} />
-              <col style={{ width: COL_TOTAL }} />
-            </colgroup>
-            <thead>
-              <tr style={{ borderBottom: TABLE_BORDER }}>
-                <th scope="col" className="text-left" style={thCellItemStyle(bt.cardHeaderBackground, TH_TEXT)}>
-                  Item
-                </th>
-                <th scope="col" className="text-center" style={thCellMultStyle(bt.cardHeaderBackground, TH_TEXT)}>
-                  ×
-                </th>
-                <th scope="col" className="text-right" style={thCellTotalStyle(bt.cardHeaderBackground, TH_TEXT)}>
-                  Total
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {ingredientRows.map((pi) => {
-                const p = MIX_PARAMS[pi];
-                const metaLabel = getEntityMetaLabel(recipe, p.id);
-                const batchTotalGrams = values[pi] * multiplier;
-
-                return (
-                  <tr key={p.id} style={{ borderBottom: TABLE_BORDER }}>
-                    <th
-                      scope="row"
-                      className="text-left align-middle font-normal"
-                      style={cellItemStyle()}
-                    >
-                      <div className="min-w-0">
-                        <ItemNameWithMeta
-                          id={p.id}
-                          color={entityAccentColor(p.id, colorScheme)}
-                          metaLabel={metaLabel}
-                        />
-                        <PerBatchRow grams={values[pi]} isKg={p.isKg} />
-                      </div>
-                    </th>
-                    <td
-                      className="text-center align-middle"
-                      style={cellMultStyle()}
-                    >
-                      <MultCell value={multiplier} />
-                    </td>
-                    <td
-                      className="text-right align-middle tabular-nums whitespace-nowrap"
-                      style={cellTotalStyle({
-                        ...TABLE_TEXT,
-                        fontSize: "var(--text-totals-sum)",
-                        color: amountColor,
-                        fontWeight: 600,
-                        lineHeight: 1.1,
-                      })}
-                    >
-                      <AmountCell
-                        grams={batchTotalGrams}
-                        isKg={p.isKg}
-                        colorScheme={colorScheme}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {(() => {
-                const pi = 0;
-                const p = MIX_PARAMS[pi];
-                const batchTotalGrams = values[pi] * multiplier;
-
-                return (
-                  <tr style={{ borderTop: TABLE_BORDER }}>
-                    <th
-                      scope="row"
-                      className="text-left align-middle font-normal"
-                      style={cellItemStyle()}
-                    >
-                      <div className="min-w-0">
-                        <span
-                          className="block truncate"
-                          style={{
-                            fontSize: "var(--text-card-name)",
-                            letterSpacing: "0.18em",
-                            fontWeight: CARD_NAME_WEIGHT,
-                            color: entityAccentColor(p.id, colorScheme),
-                            lineHeight: 1.15,
-                          }}
-                        >
-                          {p.id}
-                        </span>
-                        <PerBatchRow grams={values[pi]} isKg={p.isKg} />
-                      </div>
-                    </th>
-                    <td className="text-center align-middle" style={cellMultStyle()}>
-                      <MultCell value={multiplier} />
-                    </td>
-                    <td
-                      className="text-right align-middle tabular-nums whitespace-nowrap"
-                      style={cellTotalStyle({
-                        ...TABLE_TEXT,
-                        fontSize: "var(--text-totals-sum)",
-                        color: amountColor,
-                        fontWeight: 700,
-                        lineHeight: 1.1,
-                      })}
-                    >
-                      <AmountCell
-                        grams={batchTotalGrams}
-                        isKg={p.isKg}
-                        colorScheme={colorScheme}
-                      />
-                    </td>
-                  </tr>
-                );
-              })()}
-            </tbody>
-            </table>
-            </div>
-          </div>
-
-          <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-evenly">
-            <TablePlusSeparator />
-
-            <div
-              className="w-full min-w-0 shrink-0 rounded-xl overflow-hidden"
-              style={{
-                background: hasExtraBatch ? undefined : bt.emptyCardBackground,
-                border: hasExtraBatch ? bt.extraBatchBorder : bt.extraBatchDashedBorder,
-              }}
-            >
-            {hasExtraBatch ? (
-              <>
-                <div
-                  className="flex items-center justify-between gap-2 min-w-0 w-full"
-                  style={cardHeaderStyle("extra")}
-                >
-                  <p style={sectionTitleStyle(cv.extraBatch.label)}>Extra batch</p>
-                  <div
-                    className="flex items-center shrink-0"
-                    style={{ gap: "var(--totals-header-action-gap)", padding: "0 var(--totals-header-cell-pad-x)" }}
-                  >
-                    <IconHeaderButton
-                      label="Edit extra batch"
-                      onClick={() => setExtraBatchSheetOpen(true)}
-                      color={cv.extraBatch.label}
-                    >
-                      <RenameIcon size={HEADER_ICON_SIZE} />
-                    </IconHeaderButton>
-                    <IconHeaderButton
-                      label="Remove extra batch"
-                      onClick={handleRemoveExtraBatch}
-                      color={cv.text.muted}
-                    >
-                      <DeleteIcon size={HEADER_ICON_SIZE} />
-                    </IconHeaderButton>
-                  </div>
-                </div>
-                <div style={{ background: bt.extraBatchBackground }}>
-                <table
-                  className="w-full min-w-0 border-collapse"
-                  style={{ tableLayout: "fixed" }}
-                >
-                  <colgroup>
-                    <col style={{ width: COL_ITEM }} />
-                    <col style={{ width: COL_MULT }} />
-                    <col style={{ width: COL_TOTAL }} />
-                  </colgroup>
-                  <thead>
-                    <tr style={{ borderBottom: TABLE_BORDER }}>
-                      <th scope="col" className="text-left" style={thCellItemStyle(bt.extraTableThBackground, TH_TEXT)}>
-                        Item
-                      </th>
-                      <th scope="col" className="text-center" style={thCellMultStyle(bt.extraTableThBackground, TH_TEXT)}>
-                        ×
-                      </th>
-                      <th scope="col" className="text-right" style={thCellTotalStyle(bt.extraTableThBackground, TH_TEXT)}>
-                        Total
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ingredientRows.map((pi) => {
-                      const p = MIX_PARAMS[pi];
-                      const metaLabel = getEntityMetaLabel(recipe, p.id);
-
-                      return (
-                        <tr key={`extra-${p.id}`} style={{ borderBottom: TABLE_BORDER }}>
-                          <th
-                            scope="row"
-                            className="text-left align-middle font-normal"
-                            style={cellItemStyle()}
-                          >
-                            <div className="min-w-0">
-                              <ItemNameWithMeta
-                          id={p.id}
-                          color={entityAccentColor(p.id, colorScheme)}
-                          metaLabel={metaLabel}
-                        />
-                              <PerBatchRow grams={complementValues[pi]} isKg={p.isKg} />
-                            </div>
-                          </th>
-                          <td className="text-center align-middle" style={cellMultStyle()}>
-                            <MultCell value={1} />
-                          </td>
-                          <td
-                            className="text-right align-middle tabular-nums whitespace-nowrap"
-                            style={cellTotalStyle({
-                              ...TABLE_TEXT,
-                              fontSize: "var(--text-totals-sum)",
-                              color: amountColor,
-                              fontWeight: 600,
-                              lineHeight: 1.1,
-                            })}
-                          >
-                            <AmountCell
-                              grams={complementValues[pi]}
-                              isKg={p.isKg}
-                              colorScheme={colorScheme}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {(() => {
-                      const pi = 0;
-                      const p = MIX_PARAMS[pi];
-
-                      return (
-                        <tr style={{ borderTop: TABLE_BORDER }}>
-                          <th
-                            scope="row"
-                            className="text-left align-middle font-normal"
-                            style={cellItemStyle()}
-                          >
-                            <div className="min-w-0">
-                              <span
-                                className="block truncate"
-                                style={{
-                                  fontSize: "var(--text-card-name)",
-                                  letterSpacing: "0.18em",
-                                  fontWeight: CARD_NAME_WEIGHT,
-                                  color: entityAccentColor(p.id, colorScheme),
-                                  lineHeight: 1.15,
-                                }}
-                              >
-                                {p.id}
-                              </span>
-                              <PerBatchRow grams={complementValues[pi]} isKg={p.isKg} />
-                            </div>
-                          </th>
-                          <td className="text-center align-middle" style={cellMultStyle()}>
-                            <MultCell value={1} />
-                          </td>
-                          <td
-                            className="text-right align-middle tabular-nums whitespace-nowrap"
-                            style={cellTotalStyle({
-                              ...TABLE_TEXT,
-                              fontSize: "var(--text-totals-sum)",
-                              color: amountColor,
-                              fontWeight: 700,
-                              lineHeight: 1.1,
-                            })}
-                          >
-                            <AmountCell
-                              grams={complementValues[pi]}
-                              isKg={p.isKg}
-                              colorScheme={colorScheme}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })()}
-                  </tbody>
-                </table>
-                </div>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setExtraBatchSheetOpen(true)}
-                className="w-full flex items-center justify-center text-center"
-                style={{
-                  cursor: "pointer",
-                  background: "transparent",
-                  border: 0,
-                  minHeight: "var(--action-row-h)",
-                  padding: "0 10px",
-                  fontSize: "var(--text-totals-table)",
-                  letterSpacing: "0.12em",
-                  fontWeight: 600,
-                  color: cv.extraBatch.label,
-                  lineHeight: 1.3,
-                  opacity: 0.9,
-                }}
-              >
-                + Add extra batch
-              </button>
-            )}
-            </div>
-
-            <TableEqualsSeparator />
-          </div>
+            <BatchTotalsSourceTables
+              recipe={recipe}
+              values={values}
+              complementValues={complementValues}
+              entityIndexes={entityIndexes}
+              multiplier={multiplier}
+              colorScheme={colorScheme}
+              hasExtraBatch={hasExtraBatch}
+              onMultiplierChange={onMultiplierChange}
+              onAddExtraBatch={() => setExtraBatchSheetOpen(true)}
+              onEditExtraBatch={() => setExtraBatchSheetOpen(true)}
+              onRemoveExtraBatch={handleRemoveExtraBatch}
+            />
           </div>
         </div>
       </div>
+
+      <BatchTotalsBottomPanel
+        multiplier={multiplier}
+        hasExtraBatch={hasExtraBatch}
+        totalGrams={grandTotalGrams}
+        colorScheme={colorScheme}
+        recipe={recipe}
+        values={values}
+        complementValues={complementValues}
+        entityIndexes={entityIndexes}
+        sourceExpanded={totalsPanelExpanded}
+        onSourceExpandedChange={onTotalsPanelExpandedChange ?? (() => {})}
+      />
 
       {sheetPortal
         ? createPortal(

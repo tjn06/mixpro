@@ -52,7 +52,6 @@ import type { BlendingRecipe } from "./domain/recipe/types";
 import { PRESET_RECIPES, recipeMenuLabel } from "./domain/recipe/types";
 import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "./domain/mix/entities";
 import {
-  BatchTotalsBottomPanel,
   BatchTotalsScreen,
 } from "./components/batch-totals/BatchTotalsScreen";
 import { batchIngredientTotalGrams } from "./domain/batch-totals/totals";
@@ -429,6 +428,7 @@ export function BatchMixer({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loadedSavedMixId, setLoadedSavedMixId] = useState<string | null>(null);
   const [screen, setScreen] = useState<MixerScreen>("mixer");
+  const [totalsPanelExpanded, setTotalsPanelExpanded] = useState(false);
   const [batchMultiplier, setBatchMultiplier] = useState(1);
   const [complementValues, setComplementValues] = useState(() => emptyComplementValues());
   const [dragFocus, setDragFocus]   = useState(false);
@@ -909,6 +909,7 @@ export function BatchMixer({
 
   const handleBack = useCallback(() => {
     setComplementValues(emptyComplementValues());
+    setTotalsPanelExpanded(false);
     setScreen("mixer");
   }, []);
 
@@ -1049,7 +1050,7 @@ export function BatchMixer({
       ))}
 
       {screen === "totals" ? (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="batch-totals-route flex-1 min-h-0 flex flex-col overflow-hidden">
           <div className="recipe-context-gradient flex-1 min-h-0 flex flex-col overflow-hidden">
             <AppHeader
               isLocked={isLocked}
@@ -1076,18 +1077,10 @@ export function BatchMixer({
               onMultiplierChange={setBatchMultiplier}
               onComplementChange={setComplementValues}
               sandType={sandType}
+              totalsPanelExpanded={totalsPanelExpanded}
+              onTotalsPanelExpandedChange={setTotalsPanelExpanded}
             />
           </div>
-          <BatchTotalsBottomPanel
-            multiplier={batchMultiplier}
-            hasExtraBatch={hasComplementAmounts(complementValues)}
-            totalGrams={batchIngredientTotalGrams(values, complementValues, 0, batchMultiplier)}
-            colorScheme={colorScheme}
-            recipe={activeRecipe}
-            values={values}
-            complementValues={complementValues}
-            entityIndexes={ingredientIndexes}
-          />
         </div>
       ) : (
       <>
