@@ -11,10 +11,10 @@ import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import {
   SHEET_FIELD_INPUT_CLASS,
   SHEET_FIELD_INPUT_ERROR_CLASS,
-  SHEET_FIELD_LABEL,
-  SHEET_SUBTITLE,
-  SHEET_TITLE,
-  SHEET_COVER_HEADER_STYLE,
+  SHEET_FIELD_LABEL_CLASS,
+  SHEET_SUBTITLE_CLASS,
+  SHEET_TITLE_CLASS,
+  SHEET_COVER_FORM_HEADER_STYLE,
   SHEET_COVER_FORM_SPACING,
   sheetFieldInputStyle,
 } from "./sheetChrome";
@@ -126,8 +126,35 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
         : "Optional display name — must not match a recipe or admin label"
       : "Clear the field to show the recipe name again";
   const subtitleStyle = hasExistingMix
-    ? { ...SHEET_SUBTITLE, marginTop: 8, maxWidth: 300, textAlign: "center" as const, color: cv.state.warn }
-    : { ...SHEET_SUBTITLE, marginTop: 8, maxWidth: 280, textAlign: "center" as const };
+    ? { maxWidth: 300, textAlign: "center" as const, color: cv.state.warn }
+    : { maxWidth: 280, textAlign: "center" as const };
+
+  const labelStyle = {
+    margin: 0,
+    textAlign: "center" as const,
+  };
+
+  const recipeValueStyle = {
+    fontFamily: "'Outfit', sans-serif",
+    fontSize: "var(--text-recipe-meta-value)",
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+    color: cv.text.primary,
+    lineHeight: 1.35,
+    margin: `${FORM.labelToControl}px 0 0`,
+    textAlign: "center" as const,
+  } as const;
+
+  const errorStyle = {
+    marginTop: FORM.fieldToMessage,
+    fontFamily: "'Outfit', sans-serif",
+    fontSize: "var(--text-ui-xs)",
+    fontWeight: 500,
+    letterSpacing: "0.03em",
+    lineHeight: 1.4,
+    color: cv.state.error,
+    textAlign: "center" as const,
+  } as const;
 
   const handleSave = () => {
     if (!canConfirm) return;
@@ -221,71 +248,49 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
     >
         <header
           className="shrink-0 flex flex-col items-center text-center"
-          style={SHEET_COVER_HEADER_STYLE}
+          style={SHEET_COVER_FORM_HEADER_STYLE}
         >
-          <h2 id="save-mix-name-title" style={SHEET_TITLE}>
+          <h2 id="save-mix-name-title" className={SHEET_TITLE_CLASS}>
             {title}
           </h2>
-          <p style={subtitleStyle}>{subtitle}</p>
-          <div
-            style={{
-              marginTop: FORM.headerToMeta,
-              maxWidth: 360,
-              width: "100%",
-            }}
-          >
-            <p
-              style={{
-                ...SHEET_FIELD_LABEL,
-                marginBottom: FORM.metaLabelToValue,
-                textAlign: "center",
-              }}
-            >
-              Recipe
-            </p>
-            <p
-              className="truncate"
-              style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: "var(--text-recipe-meta-value)",
-                fontWeight: 600,
-                letterSpacing: "0.04em",
-                color: cv.text.primary,
-                textAlign: "center",
-              }}
-            >
-              {recipeName}
-            </p>
-          </div>
+          <p className={SHEET_SUBTITLE_CLASS} style={subtitleStyle}>
+            {subtitle}
+          </p>
         </header>
 
         <div
-          className="flex-1 min-h-0 flex flex-col"
+          className="flex-1 min-h-0 flex flex-col overflow-y-auto overscroll-none"
           style={{
             paddingLeft: SHEET_PAD_X,
             paddingRight: SHEET_PAD_X,
           }}
         >
-          <div className="flex-1 min-h-0" aria-hidden />
+          <div
+            className="shrink-0 w-full max-w-[360px] mx-auto"
+            style={{ paddingTop: FORM.subtitleToSubinfo }}
+          >
+            <p className={SHEET_FIELD_LABEL_CLASS} style={labelStyle}>
+              Recipe
+            </p>
+            <p className="truncate min-w-0" style={recipeValueStyle}>
+              {recipeName}
+            </p>
+          </div>
 
           <div
-            className="shrink-0 w-full"
-            style={{
-              maxWidth: 360,
-              marginLeft: "auto",
-              marginRight: "auto",
-              width: "100%",
-              paddingBottom: FORM.formBottomInset,
-            }}
+            className="flex-1 min-h-0"
+            style={{ minHeight: FORM.thumbZoneMinGap }}
+            aria-hidden
+          />
+
+          <div
+            className="shrink-0 w-full max-w-[360px] mx-auto"
+            style={{ paddingBottom: FORM.formBottomInset }}
           >
             <label
               htmlFor="save-mix-name-input"
-              style={{
-                ...SHEET_FIELD_LABEL,
-                marginBottom: FORM.labelToField,
-                textAlign: "center",
-                display: "block",
-              }}
+              className={SHEET_FIELD_LABEL_CLASS}
+              style={{ ...labelStyle, display: "block" }}
             >
               Display name
             </label>
@@ -301,10 +306,10 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
               aria-invalid={activeError != null}
               aria-describedby={activeError ? "save-mix-name-error" : undefined}
               className={`${SHEET_FIELD_INPUT_CLASS}${activeError ? ` ${SHEET_FIELD_INPUT_ERROR_CLASS}` : ""}`}
-              style={sheetFieldInputStyle({
-                height: INPUT_H,
-                textAlign: "center",
-              })}
+              style={{
+                ...sheetFieldInputStyle({ height: INPUT_H, textAlign: "center" }),
+                marginTop: FORM.labelToControl,
+              }}
             />
             <button
               type="button"
@@ -313,7 +318,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
               }
               className="sheet-action-btn w-full rounded-xl transition-all duration-200 active:scale-[0.98]"
               style={{
-                marginTop: FORM.fieldToAction,
+                marginTop: FORM.controlToAction,
                 height: GENERATE_BTN_H,
                 fontFamily: "'Outfit', sans-serif",
                 fontSize: "var(--text-ui-sm)",
@@ -325,24 +330,11 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
             >
               Generate name
             </button>
-            {activeError && (
-              <p
-                id="save-mix-name-error"
-                role="alert"
-                style={{
-                  marginTop: FORM.fieldToMessage,
-                  fontFamily: "'Outfit', sans-serif",
-                  fontSize: "var(--text-ui-xs)",
-                  fontWeight: 500,
-                  letterSpacing: "0.03em",
-                  lineHeight: 1.35,
-                  color: cv.state.error,
-                  textAlign: "center",
-                }}
-              >
+            {activeError ? (
+              <p id="save-mix-name-error" role="alert" style={errorStyle}>
                 {activeError}
               </p>
-            )}
+            ) : null}
           </div>
         </div>
 

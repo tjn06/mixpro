@@ -5,6 +5,7 @@ import {
   SHEET_SUBTITLE,
   SHEET_TITLE,
   SHEET_COVER_HEADER_STYLE,
+  SHEET_COVER_FORM_SPACING,
 } from "./sheetChrome";
 import { AppFrameCoverSheet } from "./AppFrameCoverSheet";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
@@ -154,11 +155,12 @@ export function SettingsSheet({ open, onOpenChange }: SettingsSheetProps) {
       </header>
 
       <div
-        className="flex-1 min-h-0 flex flex-col justify-center"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-none"
         style={{
           paddingLeft: SHEET_PAD_X,
           paddingRight: SHEET_PAD_X,
-          paddingBottom: 16,
+          paddingTop: SHEET_COVER_FORM_SPACING.subtitleToSubinfo,
+          paddingBottom: SHEET_COVER_FORM_SPACING.formBottomInset,
         }}
       >
         <div

@@ -3,7 +3,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useCallback,
   type CSSProperties,
 } from "react";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
@@ -26,14 +25,13 @@ import {
   sheetFieldInputStyle,
 } from "./sheetChrome";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
+import { ScrollEdgeFadeOverlays, useScrollEdgeFades } from "./scrollEdgeFades";
 import { cv } from "../../ui/tokens";
 
 const strip = cv.loadSheetStrip;
 const list = cv.loadSheetList;
 
 const SEARCH_H = 40;
-
-const FADE_H = 36;
 
 /** Two-line compact card — action grid on the right; widens left over content when open. */
 const CARD_PAD_X = 14;
@@ -116,27 +114,6 @@ function formatTotalKg(grams: number): string {
 
 function mixDetailLine(mix: SavedMixSnapshot): string {
   return [mix.recipeName, bucketLabel(mix.bucketSelection)].join(" • ");
-}
-
-function ScrollFade({
-  edge,
-}: {
-  edge: "top" | "bottom";
-}) {
-  const isTop = edge === "top";
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-x-0 z-10"
-      style={{
-        height: FADE_H,
-        ...(isTop ? { top: 0 } : { bottom: 0 }),
-        background: isTop
-          ? "linear-gradient(to bottom, var(--ui-header-bg) 0%, transparent 100%)"
-          : "linear-gradient(to top, var(--ui-header-bg) 0%, transparent 100%)",
-      }}
-    />
-  );
 }
 
 function SavedMixSwipeStrip({
@@ -335,7 +312,6 @@ export function LoadSavedMixesSheet({
   const [query, setQuery] = useState("");
   const now = useTickingNow(open);
   const listRef = useRef<HTMLDivElement>(null);
-  const [listScroll, setListScroll] = useState({ fromTop: false, fromBottom: false });
 
   const sortedMixes = useMemo(() => sortMixesBySavedAt(mixes), [mixes]);
 
@@ -360,31 +336,7 @@ export function LoadSavedMixesSheet({
     });
   }, [sortedMixes, query, now]);
 
-  const syncListScroll = useCallback(() => {
-    const el = listRef.current;
-    if (!el) return;
-    setListScroll({
-      fromTop: el.scrollTop > 4,
-      fromBottom: el.scrollTop + el.clientHeight < el.scrollHeight - 4,
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!open) {
-      setListScroll({ fromTop: false, fromBottom: false });
-      return;
-    }
-    syncListScroll();
-    const el = listRef.current;
-    if (!el) return;
-    el.addEventListener("scroll", syncListScroll, { passive: true });
-    const ro = new ResizeObserver(syncListScroll);
-    ro.observe(el);
-    return () => {
-      el.removeEventListener("scroll", syncListScroll);
-      ro.disconnect();
-    };
-  }, [open, syncListScroll, filteredMixes.length]);
+  const listScroll = useScrollEdgeFades(listRef, open, filteredMixes.length);
 
   useEffect(() => {
     if (!open) setRenameMix(null);
@@ -437,7 +389,7 @@ export function LoadSavedMixesSheet({
             <p style={{ ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" }}>
               {subtitle}
             </p>
-            <div className="w-full" style={{ marginTop: SHEET_COVER_FORM_SPACING.headerToMeta }}>
+            <div className="w-full" style={{ marginTop: SHEET_COVER_FORM_SPACING.subtitleToSubinfo }}>
               <input
                 type="search"
                 value={query}
@@ -451,8 +403,10 @@ export function LoadSavedMixesSheet({
           </header>
 
           <div className="flex-1 min-h-0 relative flex flex-col">
-            {listScroll.fromTop ? <ScrollFade edge="top" /> : null}
-            {listScroll.fromBottom ? <ScrollFade edge="bottom" /> : null}
+            <ScrollEdgeFadeOverlays
+              fromTop={listScroll.fromTop}
+              fromBottom={listScroll.fromBottom}
+            />
 
             <div
               ref={listRef}

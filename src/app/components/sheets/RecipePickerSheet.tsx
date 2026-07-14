@@ -27,6 +27,7 @@ import { useTickingNow } from "../../hooks/useTickingNow";
 import { BucketMiniature } from "../mixer/MixBucket";
 import { GoToIcon, SavedIcon } from "../shared/ActionIcons";
 import { SHEET_LIST_ROW_CLASS } from "./sheetChrome";
+import { ScrollEdgeFadeOverlays, useScrollEdgeFades } from "./scrollEdgeFades";
 
 type MenuPhase = "enter" | "idle" | "exit";
 
@@ -730,6 +731,7 @@ export function RecipePickerSheet({
   const [portal, setPortal] = useState<HTMLElement | null>(null);
   const [anchorTop, setAnchorTop] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const exitTimerRef = useRef<number | null>(null);
   const openRef = useRef(open);
   openRef.current = open;
@@ -741,6 +743,12 @@ export function RecipePickerSheet({
     [recipes],
   );
   const showBucketDetail = onBucketChange != null;
+
+  const scrollEdges = useScrollEdgeFades(
+    scrollRef,
+    present && phase !== "exit",
+    `${previewRecipe.id}:${showBucketDetail}:${recentMixes.length}:${displayRecipes.length}`,
+  );
 
   const resolvePickerBucket = useCallback(
     (recipeId: string): BucketSelection => {
@@ -891,8 +899,16 @@ export function RecipePickerSheet({
         aria-label="Recipes, bucket, and saved mixes"
         onAnimationEnd={handleMenuAnimationEnd}
       >
-        <div className="recipe-picker-scroll app-gutter-x flex-1 min-h-0 overflow-y-auto overscroll-none">
-          <div className="recipe-picker-matrix">
+        <div className="flex-1 min-h-0 relative flex flex-col">
+          <ScrollEdgeFadeOverlays
+            fromTop={scrollEdges.fromTop}
+            fromBottom={scrollEdges.fromBottom}
+          />
+          <div
+            ref={scrollRef}
+            className="recipe-picker-scroll app-gutter-x flex-1 min-h-0 overflow-y-auto overscroll-none"
+          >
+            <div className="recipe-picker-matrix">
             <div className="recipe-picker-matrix__grid" role="listbox" aria-label="Recipes">
               {displayRecipes.map((recipe) => {
                 const selected = recipe.id === previewRecipe.id;
@@ -957,6 +973,7 @@ export function RecipePickerSheet({
               </section>
             ) : null}
           </div>
+        </div>
         </div>
         <button
           type="button"
