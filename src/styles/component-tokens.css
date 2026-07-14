@@ -59,6 +59,10 @@
   background: var(--component-sheet-panel-bg);
 }
 
+.app-frame-cover-sheet .sheet-footer-chrome {
+  background: transparent;
+}
+
 .sheet-footer-btn {
   background: var(--component-sheet-footer-btn-bg);
   border: var(--component-sheet-footer-btn-border);

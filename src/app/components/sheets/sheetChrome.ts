@@ -66,6 +66,16 @@ export function sheetFieldInputStyle(overrides?: CSSProperties): CSSProperties {
 }
 
 export const SHEET_PANEL_CLASS = "sheet-panel-chrome load-sheet-panel";
+/** Megamenu-style full-bleed cover below header subline. */
+export const APP_FRAME_COVER_SHEET_CLASS = "app-frame-cover-sheet";
+
+/** Compact header padding for app-frame cover sheets. */
+export const SHEET_COVER_HEADER_STYLE: CSSProperties = {
+  paddingLeft: 20,
+  paddingRight: 20,
+  paddingTop: 14,
+  paddingBottom: 10,
+};
 export const SHEET_OVERLAY_LIGHT_CLASS = "load-sheet-dim sheet-panel-overlay-light";
 export const SHEET_OVERLAY_MEDIUM_CLASS = "mixer-input-sheet-dim sheet-panel-overlay-medium";
 export const SHEET_LIST_ROW_CLASS = "sheet-list-row";

@@ -11,6 +11,7 @@ import {
 import { createPortal } from "react-dom";
 import {
   BUCKET_SIZES,
+  DEFAULT_BUCKET_SELECTION,
   type BucketSelection,
 } from "../../domain/bucket/types";
 import { recommendedBatchForBucket } from "../../domain/bucket/limits";
@@ -32,6 +33,14 @@ type MenuPhase = "enter" | "idle" | "exit";
 const EXIT_MS = 220;
 const LATEST_MIXES_LIMIT = 4;
 const PICKER_BUCKET_OPTIONS: BucketSelection[] = [...BUCKET_SIZES, "none"];
+
+function defaultPickerBucket(
+  recipeId: string,
+  appliedRecipeId: string,
+  appliedBucket: BucketSelection,
+): BucketSelection {
+  return recipeId === appliedRecipeId ? appliedBucket : DEFAULT_BUCKET_SELECTION;
+}
 
 function pickerBucketOptionLabel(option: BucketSelection): string {
   if (option === "none") return "∞";
@@ -444,53 +453,62 @@ function RecipePickerCardDetail({
                 </span>
                 <ChevronDownIcon open={bucketOpen} className="recipe-picker-card__bucket-chevron" />
               </span>
-              {!bucketOpen ? (
-                <span className="recipe-picker-card-detail__bucket-selection recipe-picker-side-meta__value recipe-picker-side-meta__value--strong">
-                  {pickerBucketOptionLabel(bucketSelection)}
-                </span>
-              ) : null}
+              <span
+                className="recipe-picker-card-detail__bucket-selection recipe-picker-side-meta__value recipe-picker-side-meta__value--strong"
+                aria-hidden={bucketOpen}
+              >
+                {pickerBucketOptionLabel(bucketSelection)}
+              </span>
             </button>
             <div className="recipe-picker-card-detail__bucket-body">
-              {!bucketOpen ? (
+              <div
+                className={`recipe-picker-card-detail__bucket-pane recipe-picker-card-detail__bucket-pane--mini${
+                  bucketOpen ? " recipe-picker-card-detail__bucket-pane--hidden" : ""
+                }`}
+                aria-hidden={bucketOpen}
+              >
                 <BucketMiniature
                   bucketSelection={bucketSelection}
                   fillLiters={bucketSelection === "none" ? 0 : bucketRecommendedLiters}
                   muted={muted}
                   className="recipe-picker-card-detail__mini recipe-picker-card-detail__mini--hero"
                 />
-              ) : (
-                <div
-                  id={`recipe-picker-bucket-options-${recipe.id}`}
-                  className="recipe-picker-card-detail__radios"
-                  role="radiogroup"
-                  aria-labelledby={bucketSizeLabelId}
-                >
-                  {PICKER_BUCKET_OPTIONS.map((option) => {
-                    const checked = bucketSelection === option;
-                    return (
-                      <label
-                        key={String(option)}
-                        className={`recipe-picker-bucket-radio${
-                          checked ? " recipe-picker-bucket-radio--checked" : ""
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name={`recipe-picker-bucket-size-${recipe.id}`}
-                          value={String(option)}
-                          checked={checked}
-                          aria-label={pickerBucketAriaLabel(option, checked)}
-                          onChange={() => {
-                            onBucketChange(option);
-                            setBucketOpen(false);
-                          }}
-                        />
-                        <span>{pickerBucketOptionLabel(option)}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
+              </div>
+              <div
+                id={`recipe-picker-bucket-options-${recipe.id}`}
+                className={`recipe-picker-card-detail__bucket-pane recipe-picker-card-detail__bucket-pane--options recipe-picker-card-detail__radios${
+                  bucketOpen ? "" : " recipe-picker-card-detail__bucket-pane--hidden"
+                }`}
+                role="radiogroup"
+                aria-labelledby={bucketSizeLabelId}
+                aria-hidden={!bucketOpen}
+              >
+                {PICKER_BUCKET_OPTIONS.map((option) => {
+                  const checked = bucketSelection === option;
+                  return (
+                    <label
+                      key={String(option)}
+                      className={`recipe-picker-bucket-radio${
+                        checked ? " recipe-picker-bucket-radio--checked" : ""
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`recipe-picker-bucket-size-${recipe.id}`}
+                        value={String(option)}
+                        checked={checked}
+                        tabIndex={bucketOpen ? 0 : -1}
+                        aria-label={pickerBucketAriaLabel(option, checked)}
+                        onChange={() => {
+                          onBucketChange(option);
+                          setBucketOpen(false);
+                        }}
+                      />
+                      <span>{pickerBucketOptionLabel(option)}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -675,6 +693,7 @@ export interface RecipePickerSheetProps {
   loadedSavedMixId?: string | null;
   onSavedMixSelect?: (mix: SavedMixSnapshot) => void;
   bucketSelection?: BucketSelection;
+  /** Called only when a recipe is applied — not while previewing in the menu. */
   onBucketChange?: (selection: BucketSelection) => void;
   initialBinderSum?: number;
   sandType?: SandType;
@@ -703,6 +722,11 @@ export function RecipePickerSheet({
   const [present, setPresent] = useState(false);
   const [phase, setPhase] = useState<MenuPhase>("idle");
   const [previewRecipe, setPreviewRecipe] = useState(value);
+  const [previewBucketOverrides, setPreviewBucketOverrides] = useState<
+    Partial<Record<string, BucketSelection>>
+  >({});
+  const previewRecipeRef = useRef(value);
+  previewRecipeRef.current = previewRecipe;
   const [portal, setPortal] = useState<HTMLElement | null>(null);
   const [anchorTop, setAnchorTop] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -717,6 +741,33 @@ export function RecipePickerSheet({
     [recipes],
   );
   const showBucketDetail = onBucketChange != null;
+
+  const resolvePickerBucket = useCallback(
+    (recipeId: string): BucketSelection => {
+      const override = previewBucketOverrides[recipeId];
+      if (override != null) return override;
+      return defaultPickerBucket(recipeId, value.id, bucketSelection);
+    },
+    [previewBucketOverrides, value.id, bucketSelection],
+  );
+
+  const handlePreviewRecipe = useCallback((recipe: BlendingRecipe) => {
+    setPreviewBucketOverrides((prev) => {
+      const previousId = previewRecipeRef.current.id;
+      if (previousId === recipe.id || !(previousId in prev)) return prev;
+      const next = { ...prev };
+      delete next[previousId];
+      return next;
+    });
+    setPreviewRecipe(recipe);
+  }, []);
+
+  const handlePreviewBucketChange = useCallback(
+    (recipeId: string, selection: BucketSelection) => {
+      setPreviewBucketOverrides((prev) => ({ ...prev, [recipeId]: selection }));
+    },
+    [],
+  );
 
   const requestClose = useCallback(() => {
     onOpenChange(false);
@@ -748,6 +799,7 @@ export function RecipePickerSheet({
   useEffect(() => {
     if (open) {
       setPreviewRecipe(value);
+      setPreviewBucketOverrides({});
       if (exitTimerRef.current != null) {
         window.clearTimeout(exitTimerRef.current);
         exitTimerRef.current = null;
@@ -842,9 +894,6 @@ export function RecipePickerSheet({
         <div className="recipe-picker-scroll app-gutter-x flex-1 min-h-0 overflow-y-auto overscroll-none">
           <div className="recipe-picker-matrix">
             <div className="recipe-picker-matrix__grid" role="listbox" aria-label="Recipes">
-              <h3 className="recipe-picker-matrix__head-label recipe-picker-matrix__head-slot">
-                Recipes
-              </h3>
               {displayRecipes.map((recipe) => {
                 const selected = recipe.id === previewRecipe.id;
                 const applied = recipe.id === value.id;
@@ -859,8 +908,12 @@ export function RecipePickerSheet({
                       showDetail={showBucketDetail}
                       initialBinderSum={initialBinderSum}
                       sandType={sandType}
-                      bucketSelection={bucketSelection}
-                      onBucketChange={onBucketChange}
+                      bucketSelection={resolvePickerBucket(recipe.id)}
+                      onBucketChange={
+                        onBucketChange
+                          ? (selection) => handlePreviewBucketChange(recipe.id, selection)
+                          : undefined
+                      }
                       muted={muted}
                       savedMixes={savedMixes}
                       loadedSavedMixId={loadedSavedMixId}
@@ -869,9 +922,10 @@ export function RecipePickerSheet({
                         onSavedMixSelect?.(mix);
                         requestClose();
                       }}
-                      onPreview={() => setPreviewRecipe(recipe)}
+                      onPreview={() => handlePreviewRecipe(recipe)}
                       onApply={() => {
                         if (placeholder) return;
+                        onBucketChange?.(resolvePickerBucket(recipe.id));
                         onChange(recipe);
                         requestClose();
                       }}

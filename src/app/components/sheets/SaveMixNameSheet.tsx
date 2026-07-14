@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
 import { CloseIcon, SaveIcon, SaveNewIcon } from "../shared/ActionIcons";
 import {
   appendRecentSkipped,
@@ -13,20 +12,16 @@ import {
   SHEET_FIELD_INPUT_CLASS,
   SHEET_FIELD_INPUT_ERROR_CLASS,
   SHEET_FIELD_LABEL,
-  SHEET_OVERLAY_LIGHT_CLASS,
-  SHEET_PANEL_CLASS,
   SHEET_SUBTITLE,
   SHEET_TITLE,
+  SHEET_COVER_HEADER_STYLE,
   sheetFieldInputStyle,
 } from "./sheetChrome";
+import { AppFrameCoverSheet } from "./AppFrameCoverSheet";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
 import { cv } from "../../ui/tokens";
 
 /** Match LoadSavedMixesSheet chrome. */
-const HEADER_HEIGHT_FRAC = "32%";
-const SHEET_MARGIN_X = "var(--app-sheet-margin-x)";
-const SHEET_MARGIN_TOP = 6;
-const SHEET_RADIUS = 28;
 const SHEET_PAD_X = 20;
 const INPUT_H = 40;
 const GENERATE_BTN_H = 36;
@@ -219,40 +214,14 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
         ];
 
   return (
-    <div
-      className="absolute inset-x-0 bottom-0 flex flex-col pointer-events-auto"
-      style={{ top: APP_HEADER_HEIGHT, zIndex: 31 }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="save-mix-name-title"
+    <AppFrameCoverSheet
+      open={open}
+      zIndex={31}
+      ariaLabelledBy="save-mix-name-title"
     >
-      <button
-        type="button"
-        aria-label="Close"
-        className={`${SHEET_OVERLAY_LIGHT_CLASS} absolute inset-0 border-0 p-0 cursor-default`}
-        onClick={() => onOpenChange(false)}
-      />
-
-      <div
-        className={`${SHEET_PANEL_CLASS} relative flex flex-col min-h-0 flex-1 overflow-hidden`}
-        style={{
-          marginLeft: SHEET_MARGIN_X,
-          marginRight: SHEET_MARGIN_X,
-          marginTop: SHEET_MARGIN_TOP,
-          marginBottom: "var(--app-sheet-margin-bottom)",
-          borderRadius: SHEET_RADIUS,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
         <header
-          className="shrink-0 flex flex-col items-center justify-end text-center"
-          style={{
-            height: HEADER_HEIGHT_FRAC,
-            minHeight: 108,
-            paddingLeft: SHEET_PAD_X,
-            paddingRight: SHEET_PAD_X,
-            paddingBottom: 10,
-          }}
+          className="shrink-0 flex flex-col items-center text-center"
+          style={SHEET_COVER_HEADER_STYLE}
         >
           <h2 id="save-mix-name-title" style={SHEET_TITLE}>
             {title}
@@ -376,7 +345,6 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
         </div>
 
         <SheetFooter buttons={footerButtons} />
-      </div>
-    </div>
+    </AppFrameCoverSheet>
   );
 }

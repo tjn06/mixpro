@@ -811,7 +811,7 @@ export function BatchMixer({
 
   useLayoutEffect(() => {
     measureCardConnectors();
-  }, [measureCardConnectors, values]);
+  }, [measureCardConnectors, values, swipeHeight, active]);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -1321,7 +1321,7 @@ export function BatchMixer({
 
       <TotalTile
         ref={totalTileRef}
-        color={col}
+        color={entityAccentColor(totalParam.id, colorScheme)}
         colorScheme={colorScheme}
         entityId={totalParam.id}
         valueKg={fmt(values[0], totalParam.isKg)}

@@ -1,6 +1,7 @@
 import React, { type RefObject } from "react";
 import { LongPressButton } from "../shared/LongPressButton";
 import { LoadIcon, SavedIcon, SaveIcon } from "../shared/ActionIcons";
+import { cv } from "../../ui/tokens";
 import {
   FEATURE_PANEL_BG,
   FEATURE_PANEL_BORDER,
@@ -135,22 +136,53 @@ export function RecBatchPanel({
           </span>
         </div>
 
-        <LongPressButton
-          ref={resetButtonRef}
-          label="RESET"
-          confirmAction="RESET"
-          onLongPress={onReset}
-          disabled={disabled}
-          labelSize="var(--text-ui-xs)"
-          className="w-full rounded-none"
+        <div
+          className="flex w-full min-w-0 shrink-0"
           style={{
             height: "var(--action-row-h)",
-            minHeight: 0,
-            borderRadius: 0,
-            border: "none",
             borderTop: FEATURE_PANEL_BORDER,
           }}
-        />
+        >
+          <button
+            type="button"
+            aria-label="Recommended batch info"
+            disabled={disabled}
+            className="relative flex shrink-0 items-center justify-center touch-none transition-colors duration-150"
+            style={{
+              width: "var(--action-row-h)",
+              height: "var(--action-row-h)",
+              minHeight: 0,
+              borderRadius: 0,
+              border: "none",
+              borderRight: FEATURE_PANEL_BORDER,
+              background: cv.action.longPressIdle,
+              cursor: disabled ? "default" : "pointer",
+              opacity: disabled ? cv.longPress.disabledOpacity : 1,
+              fontFamily: "'Outfit', sans-serif",
+              fontSize: "var(--text-ui-md)",
+              fontWeight: 700,
+              color: cv.longPress.labelIdle,
+              lineHeight: 1,
+            }}
+          >
+            !
+          </button>
+          <LongPressButton
+            ref={resetButtonRef}
+            label="RESET"
+            confirmAction="RESET"
+            onLongPress={onReset}
+            disabled={disabled}
+            labelSize="var(--text-ui-xs)"
+            className="flex-1 min-w-0 rounded-none"
+            style={{
+              height: "var(--action-row-h)",
+              minHeight: 0,
+              borderRadius: 0,
+              border: "none",
+            }}
+          />
+        </div>
       </div>
 
       <div

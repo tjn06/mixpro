@@ -1,12 +1,8 @@
 import {
-  useCallback,
   useEffect,
-  useLayoutEffect,
-  useRef,
   useState,
   type CSSProperties,
 } from "react";
-import { APP_HEADER_HEIGHT } from "../shared/AppHeader";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import type { BucketSelection } from "../../domain/bucket/types";
 import { CollapseActionsIcon, DeleteIcon, ExpandActionsIcon, GoToIcon, RenameIcon, CloseIcon } from "../shared/ActionIcons";
@@ -16,13 +12,13 @@ import { getHumanSavedTime, getSavedMixTimeSearchText } from "../../saved-mixes/
 import { useTickingNow } from "../../hooks/useTickingNow";
 import { batchNameInputFromSavedMix } from "../../batch-names";
 import { SaveMixNameSheet } from "./SaveMixNameSheet";
+import { AppFrameCoverSheet } from "./AppFrameCoverSheet";
 import {
   SHEET_FIELD_INPUT_CLASS,
-  SHEET_OVERLAY_LIGHT_CLASS,
-  SHEET_PANEL_CLASS,
   SHEET_LIST_ROW_CLASS,
   SHEET_SUBTITLE,
   SHEET_TITLE,
+  SHEET_COVER_HEADER_STYLE,
   sheetFieldInputStyle,
 } from "./sheetChrome";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
@@ -31,14 +27,7 @@ import { cv } from "../../ui/tokens";
 const strip = cv.loadSheetStrip;
 const list = cv.loadSheetList;
 
-/** Title block — slightly higher than before. */
-const HEADER_HEIGHT_FRAC = "32%";
 const SEARCH_H = 40;
-
-/** Clearance from scroll-area bottom to thumb stop line (above close footer). */
-const THUMB_BOTTOM_INSET = 20;
-/** Extra empty space below list so items can scroll into thumb reach. */
-const THUMB_PAD_MIN_FRAC = 0.48;
 
 const FADE_H = 36;
 
@@ -109,11 +98,6 @@ const LIST_TIMESTAMP: CSSProperties = {
   fontVariantNumeric: "tabular-nums",
 };
 
-const SHEET_MARGIN_X = "var(--app-sheet-margin-x)";
-const SHEET_MARGIN_TOP = 6;
-const SHEET_RADIUS = 28;
-const SHEET_PAD_X = 20;
-
 function bucketLabel(selection: BucketSelection): string {
   return selection === "none" ? "No bucket" : `${selection} L bucket`;
 }
@@ -140,8 +124,8 @@ function ScrollFade({
         height: FADE_H,
         ...(isTop ? { top: 0 } : { bottom: 0 }),
         background: isTop
-          ? `linear-gradient(to bottom, ${cv.sheetPanel.fadeBackground} 0%, transparent 100%)`
-          : `linear-gradient(to top, ${cv.sheetPanel.fadeBackground} 0%, transparent 100%)`,
+          ? "linear-gradient(to bottom, var(--ui-header-bg) 0%, transparent 100%)"
+          : "linear-gradient(to top, var(--ui-header-bg) 0%, transparent 100%)",
       }}
     />
   );
@@ -341,80 +325,7 @@ export function LoadSavedMixesSheet({
   const [renameMix, setRenameMix] = useState<SavedMixSnapshot | null>(null);
   const [moreMenuMixId, setMoreMenuMixId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [topSpacer, setTopSpacer] = useState(0);
-  const [thumbPad, setThumbPad] = useState(0);
-  const scrollBoundsRef = useRef({ min: 0, max: 0 });
   const now = useTickingNow(open);
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  const firstItemRef = useRef<HTMLLIElement>(null);
-  const lastItemRef = useRef<HTMLLIElement>(null);
-
-  const measureScrollBounds = useCallback(() => {
-    const scroll = scrollRef.current;
-    const first = firstItemRef.current;
-    const last = lastItemRef.current;
-    if (!scroll || !first || !last) return;
-
-    const ch = scroll.clientHeight;
-    if (ch <= 0) return;
-
-    const firstH = first.offsetHeight;
-    const stopY = ch - THUMB_BOTTOM_INSET;
-    const travel = Math.max(0, Math.ceil(stopY - firstH));
-
-    setTopSpacer(travel);
-    setThumbPad(Math.max(Math.round(ch * THUMB_PAD_MIN_FRAC), Math.ceil(ch * 0.35)));
-
-    requestAnimationFrame(() => {
-      const el = scrollRef.current;
-      const f = firstItemRef.current;
-      const l = lastItemRef.current;
-      if (!el || !f || !l) return;
-
-      const targetBottom = el.getBoundingClientRect().bottom - THUMB_BOTTOM_INSET;
-      const saved = el.scrollTop;
-      const naturalMax = Math.max(0, el.scrollHeight - el.clientHeight);
-
-      // scrollTop=0 → first row at thumb line; scrollTop=max → first at list top.
-      const maxForFirst = travel;
-      const maxForLast = (() => {
-        let lo = 0;
-        let hi = naturalMax;
-        let best = 0;
-        while (lo <= hi) {
-          const mid = Math.floor((lo + hi) / 2);
-          el.scrollTop = mid;
-          const bottom = l.getBoundingClientRect().bottom;
-          if (bottom <= targetBottom + 0.5) {
-            best = mid;
-            lo = mid + 1;
-          } else {
-            hi = mid - 1;
-          }
-        }
-        return best;
-      })();
-
-      const max = Math.min(naturalMax, Math.max(maxForFirst, maxForLast));
-
-      el.scrollTop = saved;
-      scrollBoundsRef.current = { min: 0, max };
-
-      if (saved < 0) el.scrollTop = 0;
-      else if (saved > max) el.scrollTop = max;
-    });
-  }, []);
-
-  const clampScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    const { min, max } = scrollBoundsRef.current;
-    if (el.scrollTop < min) el.scrollTop = min;
-    else if (el.scrollTop > max) el.scrollTop = max;
-  }, []);
 
   useEffect(() => {
     if (!open) setRenameMix(null);
@@ -427,30 +338,6 @@ export function LoadSavedMixesSheet({
   useEffect(() => {
     if (!open) setQuery("");
   }, [open]);
-
-  useLayoutEffect(() => {
-    if (!open) return;
-    measureScrollBounds();
-    const el = scrollRef.current;
-    const inner = innerRef.current;
-    if (!el) return;
-
-    const ro = new ResizeObserver(measureScrollBounds);
-    ro.observe(el);
-    if (inner) ro.observe(inner);
-    return () => ro.disconnect();
-  }, [open, mixes.length, query, measureScrollBounds]);
-
-  useLayoutEffect(() => {
-    if (!open || mixes.length === 0) return;
-    measureScrollBounds();
-    requestAnimationFrame(() => {
-      const el = scrollRef.current;
-      if (!el) return;
-      // Open with first card at top of the list (not at thumb line).
-      el.scrollTop = scrollBoundsRef.current.max;
-    });
-  }, [open, mixes.length, query, topSpacer, thumbPad, measureScrollBounds]);
 
   if (!open) return null;
 
@@ -497,43 +384,14 @@ export function LoadSavedMixesSheet({
 
   return (
     <>
-      <div
-        className="absolute inset-x-0 bottom-0 flex flex-col pointer-events-auto"
-        style={{
-          top: APP_HEADER_HEIGHT,
-          zIndex: 30,
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="load-saved-mixes-title"
+      <AppFrameCoverSheet
+        open={open}
+        zIndex={30}
+        ariaLabelledBy="load-saved-mixes-title"
       >
-        <button
-          type="button"
-          aria-label="Close saved mixes"
-          className={`${SHEET_OVERLAY_LIGHT_CLASS} absolute inset-0 border-0 p-0 cursor-default`}
-          onClick={() => onOpenChange(false)}
-        />
-
-        <div
-          className={`${SHEET_PANEL_CLASS} relative flex flex-col min-h-0 flex-1 overflow-hidden`}
-          style={{
-            marginLeft: SHEET_MARGIN_X,
-            marginRight: SHEET_MARGIN_X,
-            marginTop: SHEET_MARGIN_TOP,
-            marginBottom: "var(--app-sheet-margin-bottom)",
-            borderRadius: SHEET_RADIUS,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
           <header
-            className="shrink-0 flex flex-col items-center justify-end text-center"
-            style={{
-              height: HEADER_HEIGHT_FRAC,
-              minHeight: 108,
-              paddingLeft: SHEET_PAD_X,
-              paddingRight: SHEET_PAD_X,
-              paddingBottom: 10,
-            }}
+            className="shrink-0 flex flex-col items-center text-center"
+            style={SHEET_COVER_HEADER_STYLE}
           >
             <h2 id="load-saved-mixes-title" style={SHEET_TITLE}>
               Saved mixes
@@ -554,30 +412,12 @@ export function LoadSavedMixesSheet({
             </div>
           </header>
 
-          <div className="flex-1 min-h-0 relative">
+          <div className="flex-1 min-h-0 relative flex flex-col">
             <ScrollFade edge="top" />
             <ScrollFade edge="bottom" />
 
-            <div
-              ref={scrollRef}
-              className="saved-mixes-list h-full overflow-y-auto overscroll-none"
-              style={{
-                paddingLeft: SHEET_PAD_X,
-                paddingRight: SHEET_PAD_X,
-                WebkitOverflowScrolling: "touch",
-              }}
-              onScroll={clampScroll}
-            >
-              <div ref={innerRef}>
-                {topSpacer > 0 ? (
-                  <div aria-hidden style={{ height: topSpacer, flexShrink: 0 }} />
-                ) : null}
-                <div
-                  style={{
-                    paddingTop: 4,
-                    paddingBottom: thumbPad,
-                  }}
-                >
+            <div className="saved-mixes-list recipe-picker-scroll app-gutter-x flex-1 min-h-0 overflow-y-auto overscroll-none">
+              <div style={{ paddingTop: 4, paddingBottom: 8 }}>
                 {filteredMixes.length === 0 ? (
                   <div
                     className={`${SHEET_LIST_ROW_CLASS} rounded-2xl flex flex-col items-center justify-center text-center px-6 py-12`}
@@ -591,34 +431,23 @@ export function LoadSavedMixesSheet({
                     className="flex flex-col list-none m-0 p-0"
                     style={{ gap: CARD_GAP }}
                   >
-                    {filteredMixes.map((mix, index) => {
-                      const isFirst = index === 0;
-                      const isLast = index === filteredMixes.length - 1;
-                      return (
-                        <li
-                          key={mix.id}
-                          ref={(el) => {
-                            if (isFirst) firstItemRef.current = el;
-                            if (isLast) lastItemRef.current = el;
-                          }}
-                        >
-                          <SavedMixRow
-                            mix={mix}
-                            now={now}
-                            moreMenuOpen={moreMenuMixId === mix.id}
-                            onMoreMenuOpenChange={(next) =>
-                              setMoreMenuMixId(next ? mix.id : null)
-                            }
-                            onOpen={handleOpen}
-                            onDelete={handleDelete}
-                            onRename={handleRename}
-                          />
-                        </li>
-                      );
-                    })}
+                    {filteredMixes.map((mix) => (
+                      <li key={mix.id}>
+                        <SavedMixRow
+                          mix={mix}
+                          now={now}
+                          moreMenuOpen={moreMenuMixId === mix.id}
+                          onMoreMenuOpenChange={(next) =>
+                            setMoreMenuMixId(next ? mix.id : null)
+                          }
+                          onOpen={handleOpen}
+                          onDelete={handleDelete}
+                          onRename={handleRename}
+                        />
+                      </li>
+                    ))}
                   </ul>
                 )}
-                </div>
               </div>
             </div>
           </div>
@@ -633,8 +462,7 @@ export function LoadSavedMixesSheet({
               },
             ]}
           />
-        </div>
-      </div>
+      </AppFrameCoverSheet>
 
       {renameMix && (
         <SaveMixNameSheet
