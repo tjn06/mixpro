@@ -797,10 +797,6 @@
 /* Totals screen — slightly smaller sum column type in tables */
 .batch-totals-screen {
   --text-totals-sum: var(--text-totals-mult);
-  --batch-totals-panel-radius: 16px;
-  /** Interactive inset above home indicator when share panel is open. */
-  --batch-totals-panel-content-inset-bottom: max(var(--space-3, 12px), var(--safe-bottom));
-  --batch-totals-panel-shadow: 0 -6px 20px color-mix(in srgb, var(--semantic-text-primary) 4%, transparent);
   --totals-card-header-py: 2px;
   --totals-card-header-px: 6px;
   --totals-header-icon-btn: 32px;
@@ -812,14 +808,6 @@
   /** Formula row operators (+ / =) — separate from table caption type. */
   --totals-op-sep-font-size: clamp(18px, min(5.13cqi, 2.62cqh), 20px);
   --totals-op-sep-h: clamp(20px, min(5.64cqi, 2.88cqh), 22px);
-}
-
-[data-theme="light"] .batch-totals-screen {
-  --batch-totals-panel-shadow: 0 -4px 14px color-mix(in srgb, var(--semantic-text-primary) 3%, transparent);
-}
-
-[data-theme="dark"] .batch-totals-screen {
-  --batch-totals-panel-shadow: 0 -5px 18px color-mix(in srgb, var(--semantic-text-primary) 3.5%, transparent);
 }
 
 .batch-totals-screen .batch-totals-card-header-btn svg {
@@ -919,45 +907,83 @@
   display: none;
 }
 
+/** Sibling of recipe-context-gradient — inset matches mixer bottom deck (inside sheet, not below it). */
 .batch-totals-bottom-panel {
+  --batch-totals-panel-radius: 16px;
   position: relative;
   z-index: 3;
   flex-shrink: 0;
   width: 100%;
   min-width: 0;
-  /** Transparent home-indicator zone — sheet bg stops above; no structure bleed. */
-  margin-bottom: var(--safe-bottom);
+  background: transparent;
 }
 
 .batch-totals-bottom-panel__sheet {
   width: 100%;
   background: var(--ui-header-bg);
-  border-top: none;
+  border-top: var(--semantic-border-default, 1px solid color-mix(in srgb, var(--semantic-text-primary) 8%, transparent));
   border-radius: var(--batch-totals-panel-radius) var(--batch-totals-panel-radius) 0 0;
-  box-shadow: var(--batch-totals-panel-shadow);
   overflow: hidden;
 }
 
 .batch-totals-bottom-panel__content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   width: 100%;
   min-width: 0;
-  padding-bottom: var(--space-3, 12px);
+  padding-bottom: var(--app-bottom-inset);
 }
 
 .batch-totals-bottom-panel--expanded .batch-totals-bottom-panel__content,
 .batch-totals-bottom-panel--revealing .batch-totals-bottom-panel__content {
-  padding-bottom: var(--batch-totals-panel-content-inset-bottom);
+  gap: 8px;
+}
+
+.batch-totals-bottom-panel:not(.batch-totals-bottom-panel--revealing) .batch-totals-bottom-panel__details {
+  display: none;
+}
+
+.batch-totals-summary-bar__batch-rows,
+.batch-totals-summary-bar__total {
+  padding-block: 6px;
+  padding-inline: 12px;
+}
+
+.batch-totals-summary-bar--with-extra .batch-totals-summary-bar__batch-rows,
+.batch-totals-summary-bar--with-extra .batch-totals-summary-bar__total {
+  padding-block: 5px;
+}
+
+.batch-totals-summary-bar__batch-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.batch-totals-summary-bar__batch-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 4px 6px;
+  min-width: 0;
+}
+
+.batch-totals-summary-bar__grid {
+  align-items: center;
 }
 
 .batch-totals-bottom-panel__drag-zone {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 100%;
+  gap: 4px;
+  width: calc(100% + 2 * max(var(--space-4, 16px), var(--safe-left), var(--safe-right)));
   min-width: 0;
+  margin-inline: calc(-1 * max(var(--space-4, 16px), var(--safe-left), var(--safe-right)));
+  padding-inline: max(var(--space-4, 16px), var(--safe-left), var(--safe-right));
+  border-top-left-radius: var(--batch-totals-panel-radius);
+  border-top-right-radius: var(--batch-totals-panel-radius);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -987,7 +1013,7 @@
   justify-content: center;
   width: 100%;
   margin: 0;
-  padding: 10px 0 4px;
+  padding: 5px 0 0;
 }
 
 .batch-totals-grab-handle__pill {

@@ -145,7 +145,7 @@ function shouldBlockPanelDrag(target: EventTarget | null): boolean {
   );
 }
 
-function BatchTotalsBottomPanel({
+export function BatchTotalsBottomPanel({
   multiplier,
   hasExtraBatch,
   totalGrams,
@@ -177,6 +177,7 @@ function BatchTotalsBottomPanel({
   useLayoutEffect(() => {
     const el = detailsInnerRef.current;
     if (!el) return;
+    if (!expanded && !holding && dragOffset === 0) return;
 
     const measure = () => {
       setDetailsHeight(el.scrollHeight || PANEL_DETAILS_HEIGHT_FALLBACK);
@@ -186,7 +187,9 @@ function BatchTotalsBottomPanel({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [multiplier, hasExtraBatch, recipe.id]);
+  }, [expanded, holding, dragOffset, multiplier, hasExtraBatch, recipe.id]);
+
+  const isRevealing = expanded || holding || dragOffset !== 0;
 
   const clampDragOffset = useCallback(
     (dy: number) => {
@@ -260,8 +263,6 @@ function BatchTotalsBottomPanel({
     },
     [clampDragOffset, finishDrag],
   );
-
-  const isRevealing = expanded || holding || dragOffset !== 0;
 
   const previewHeight =
     holding || dragOffset !== 0
@@ -522,25 +523,6 @@ function TableEqualsSeparator() {
   return <TableOpSeparator symbol="=" />;
 }
 
-function SummaryPlus() {
-  return (
-    <span
-      className="tabular-nums shrink-0"
-      style={{
-        fontFamily: "'Outfit', sans-serif",
-        fontSize: "var(--totals-mult-value-size, 20px)",
-        fontWeight: 400,
-        color: cv.text.primary,
-        letterSpacing: "-0.02em",
-        lineHeight: 1,
-      }}
-      aria-hidden
-    >
-      +
-    </span>
-  );
-}
-
 function BatchTotalsSummaryBar({
   multiplier,
   hasExtraBatch,
@@ -556,7 +538,9 @@ function BatchTotalsSummaryBar({
   const amountColor = entityValueColor(true, colorScheme);
 
   return (
-    <div className="shrink-0 min-w-0 w-full batch-totals-summary-bar">
+    <div
+      className={`shrink-0 min-w-0 w-full batch-totals-summary-bar${hasExtraBatch ? " batch-totals-summary-bar--with-extra" : ""}`}
+    >
       <div
         className="w-full min-w-0 rounded-xl overflow-hidden"
         style={{
@@ -566,37 +550,35 @@ function BatchTotalsSummaryBar({
         }}
       >
         <div
-          className="grid items-center min-w-0 w-full"
+          className="grid items-center min-w-0 w-full batch-totals-summary-bar__grid"
           style={{ gridTemplateColumns: SUMMARY_COLS }}
         >
-          <div
-            className="min-w-0 flex items-center flex-nowrap"
-            style={{ ...cellItemStyle({ borderRight: "none" }), gap: "4px 6px" }}
-          >
-            <span style={sectionTitleStyle()}>Batches</span>
-            <MultCell value={multiplier} />
+          <div className="batch-totals-summary-bar__batch-rows min-w-0">
+            <div className="batch-totals-summary-bar__batch-row">
+              <span style={sectionTitleStyle()}>Batches</span>
+              <MultCell value={multiplier} />
+            </div>
             {hasExtraBatch ? (
-              <>
-                <SummaryPlus />
+              <div className="batch-totals-summary-bar__batch-row">
                 <span
                   style={sectionTitleStyle(cv.extraBatch.label)}
                   title="Extra batch"
                 >
-                  EX. BCH
+                  Extra batch
                 </span>
                 <MultCell value={1} />
-              </>
+              </div>
             ) : null}
           </div>
           <div
-            className="text-right min-w-0 flex items-baseline justify-end gap-2 shrink-0"
-            style={cellTotalStyle({
+            className="text-right min-w-0 flex items-baseline justify-end gap-2 shrink-0 batch-totals-summary-bar__total"
+            style={{
               ...TABLE_TEXT,
               fontSize: "var(--text-totals-sum)",
               color: amountColor,
               fontWeight: 700,
               lineHeight: 1.1,
-            })}
+            }}
           >
             <span
               className="truncate shrink-0"
@@ -1068,17 +1050,6 @@ export function BatchTotalsScreen({
           </div>
         </div>
       </div>
-
-      <BatchTotalsBottomPanel
-        multiplier={multiplier}
-        hasExtraBatch={hasExtraBatch}
-        totalGrams={grandTotalGrams}
-        colorScheme={colorScheme}
-        recipe={recipe}
-        values={values}
-        complementValues={complementValues}
-        entityIndexes={entityIndexes}
-      />
 
       {sheetPortal
         ? createPortal(

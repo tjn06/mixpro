@@ -20,6 +20,7 @@ import {
   driverIdFromIndex,
   initialMixValues,
   emptyComplementValues,
+  hasComplementAmounts,
   mixEpoxyGrams,
   mixSandGrams,
   recipeBinderSum,
@@ -50,7 +51,11 @@ import { UndoIcon } from "./components/shared/ActionIcons";
 import type { BlendingRecipe } from "./domain/recipe/types";
 import { PRESET_RECIPES, recipeMenuLabel } from "./domain/recipe/types";
 import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "./domain/mix/entities";
-import { BatchTotalsScreen } from "./components/batch-totals/BatchTotalsScreen";
+import {
+  BatchTotalsBottomPanel,
+  BatchTotalsScreen,
+} from "./components/batch-totals/BatchTotalsScreen";
+import { batchIngredientTotalGrams } from "./domain/batch-totals/totals";
 import {
   CARD_NAME_WEIGHT,
   CARD_UNIT_WEIGHT,
@@ -1045,7 +1050,7 @@ export function BatchMixer({
 
       {screen === "totals" ? (
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <div className="recipe-context-gradient">
+          <div className="recipe-context-gradient flex-1 min-h-0 flex flex-col overflow-hidden">
             <AppHeader
               isLocked={isLocked}
               onBack={handleBack}
@@ -1073,6 +1078,16 @@ export function BatchMixer({
               sandType={sandType}
             />
           </div>
+          <BatchTotalsBottomPanel
+            multiplier={batchMultiplier}
+            hasExtraBatch={hasComplementAmounts(complementValues)}
+            totalGrams={batchIngredientTotalGrams(values, complementValues, 0, batchMultiplier)}
+            colorScheme={colorScheme}
+            recipe={activeRecipe}
+            values={values}
+            complementValues={complementValues}
+            entityIndexes={ingredientIndexes}
+          />
         </div>
       ) : (
       <>
