@@ -590,6 +590,42 @@ function BucketSelectDropdown({
   );
 }
 
+/** Compact bucket SVG for recipe picker side panel. */
+export function BucketMiniature({
+  bucketSelection,
+  fillLiters,
+  muted = false,
+  className = "",
+}: {
+  bucketSelection: BucketSelection;
+  fillLiters: number;
+  muted?: boolean;
+  className?: string;
+}) {
+  const clipId = useId();
+  const capacity: BucketSize =
+    bucketSelection === "none" ? DEFAULT_BUCKET_SIZE : bucketSelection;
+  const liters = bucketSelection === "none" ? 0 : fillLiters;
+  const fillPercent = displayFillPercent(liters, capacity);
+  const fillRatio = fillRatioForDisplay(liters, capacity);
+  const { fillY, fillRx } = fillGeometryFromPercent(fillPercent);
+  const bucketFull =
+    bucketSelection !== "none" && isBucketAtMaxFill(liters, bucketSelection);
+
+  return (
+    <div className={className.trim()} aria-hidden>
+      <BucketSvg
+        clipId={clipId}
+        fillY={fillY}
+        fillRx={fillRx}
+        fillRatio={fillRatio}
+        bucketFull={bucketFull}
+        muted={muted}
+      />
+    </div>
+  );
+}
+
 export interface MixBucketProps {
   epoxyGrams: number;
   sandGrams: number;

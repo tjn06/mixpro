@@ -1,6 +1,8 @@
 import React, { useRef, useState } from "react";
+import type { BucketSelection } from "../../domain/bucket/types";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import { recipeMenuLabel } from "../../domain/recipe/types";
+import type { SandType } from "../../domain/mix/volume";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import { RecipePickerSheet } from "../sheets/RecipePickerSheet";
 import { RecipeHeaderRecipeRow, RecipeHeaderSubline } from "./RecipeZoneMeta";
@@ -36,6 +38,10 @@ export interface RecipeSelectProps {
   muted?: boolean;
   /** When set, the current recipe stays selectable (reset saved mix / reload defaults). */
   allowReselectCurrent?: boolean;
+  bucketSelection?: BucketSelection;
+  onBucketChange?: (selection: BucketSelection) => void;
+  initialBinderSum?: number;
+  sandType?: SandType;
   savedMixes?: readonly SavedMixSnapshot[];
   loadedSavedMixId?: string | null;
   onSavedMixSelect?: (mix: SavedMixSnapshot) => void;
@@ -48,6 +54,10 @@ export function RecipeSelect({
   disabled = false,
   muted = false,
   allowReselectCurrent = false,
+  bucketSelection,
+  onBucketChange,
+  initialBinderSum = 1000,
+  sandType = "medium",
   savedMixes = [],
   loadedSavedMixId = null,
   onSavedMixSelect,
@@ -91,6 +101,11 @@ export function RecipeSelect({
             value={value}
             onChange={onChange}
             allowReselectCurrent={allowReselectCurrent}
+            bucketSelection={bucketSelection}
+            onBucketChange={onBucketChange}
+            initialBinderSum={initialBinderSum}
+            sandType={sandType}
+            muted={muted}
             savedMixes={savedMixes}
             loadedSavedMixId={loadedSavedMixId}
             onSavedMixSelect={onSavedMixSelect}

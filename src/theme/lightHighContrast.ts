@@ -128,7 +128,7 @@ const hcLegacyColors: Record<ThemeColorKey, string> = {
   dropdownMenuText: hcText.secondary,
   dropdownMenuTextMuted: hcText.dimmed,
   dropdownMenuLockedLabel: hcText.muted,
-  extraBatchAccent: hcState.accent,
+  extraBatchAccent: hcText.secondary,
   progress: hcText.secondary,
 };
 
@@ -147,7 +147,9 @@ export function getLightHighContrastCssEntries(): [string, string][] {
     [componentCssVarNames.stateWarn, hcState.warn],
     [componentCssVarNames.stateError, hcState.error],
     [componentCssVarNames.stateErrorMuted, hcState.errorMuted],
-    [componentCssVarNames.stateAccent, hcState.accent],
+    [componentCssVarNames.stateAccent, hcText.secondary],
+    [componentCssVarNames.selectionBorder, hcBorders.strong],
+    [componentCssVarNames.selectionBg, hcSurfaces.buttonActive],
     [componentCssVarNames.stateDisabled, hcState.disabled],
     [componentCssVarNames.borderDefault, hcBorders.default],
     [componentCssVarNames.borderStrong, hcBorders.strong],

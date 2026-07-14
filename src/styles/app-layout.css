@@ -383,11 +383,7 @@
     --recipe-picker-card-h: calc(
       var(--recipe-picker-card-pad-y) * 2 + var(--recipe-picker-card-inner-gap) + 2.25rem
     );
-    --recipe-picker-icon-size: 12px;
-    --recipe-picker-connector-w: var(--space-3);
-    --recipe-picker-saves-col: 42%;
-    --recipe-picker-connector-weight: 1.5px;
-    --recipe-picker-connector-color: var(--component-sheet-footer-tooltip-line);
+    --recipe-picker-icon-size: 14px;
     --recipe-picker-save-gap: var(--space-1);
     --recipe-picker-save-pad-y: var(--space-1);
 
@@ -535,11 +531,7 @@
         var(--recipe-picker-card-pad-y) * 2 + var(--recipe-picker-card-inner-gap) +
           clamp(1.9rem, 5.5cqh, 2.25rem)
       );
-      --recipe-picker-icon-size: clamp(10px, 1.4cqh, 12px);
-      --recipe-picker-connector-w: clamp(10px, 1.6cqh, 12px);
-      --recipe-picker-saves-col: 42%;
-      --recipe-picker-connector-weight: 1.5px;
-      --recipe-picker-connector-color: var(--component-sheet-footer-tooltip-line);
+      --recipe-picker-icon-size: clamp(12px, 1.6cqh, 14px);
       --recipe-picker-save-gap: var(--space-1);
       --recipe-picker-save-pad-y: var(--space-1);
 
@@ -664,11 +656,7 @@
     --recipe-picker-card-h: calc(
       var(--recipe-picker-card-pad-y) * 2 + var(--recipe-picker-card-inner-gap) + 2.25rem
     );
-    --recipe-picker-icon-size: 12px;
-    --recipe-picker-connector-w: var(--space-3);
-    --recipe-picker-saves-col: 42%;
-    --recipe-picker-connector-weight: 1.5px;
-    --recipe-picker-connector-color: var(--component-sheet-footer-tooltip-line);
+    --recipe-picker-icon-size: 14px;
     --recipe-picker-save-gap: var(--space-1);
     --recipe-picker-save-pad-y: var(--space-1);
     --bottom-sub-row-h: 38px;
@@ -755,11 +743,7 @@
         var(--recipe-picker-card-pad-y) * 2 + var(--recipe-picker-card-inner-gap) +
           clamp(1.9rem, 5.5dvh, 2.25rem)
       );
-      --recipe-picker-icon-size: clamp(10px, 1.4dvh, 12px);
-      --recipe-picker-connector-w: clamp(10px, 1.6dvh, 12px);
-      --recipe-picker-saves-col: 42%;
-      --recipe-picker-connector-weight: 1.5px;
-      --recipe-picker-connector-color: var(--component-sheet-footer-tooltip-line);
+      --recipe-picker-icon-size: clamp(12px, 1.6dvh, 14px);
       --recipe-picker-save-gap: var(--space-1);
       --recipe-picker-save-pad-y: var(--space-1);
     }

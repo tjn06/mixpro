@@ -18,8 +18,6 @@ import {
 import {
   applyRecipeChange,
   driverIdFromIndex,
-  getIngredientLabel,
-  getLockedRatioDisplay,
   initialMixValues,
   emptyComplementValues,
   mixEpoxyGrams,
@@ -28,6 +26,7 @@ import {
   recipeIngredientIndexes,
 } from "./domain/recipe/calc";
 import { RecipeSelect } from "./components/mixer/RecipeSelect";
+import { RecipeRatioRow } from "./components/mixer/RecipeRatioRow";
 import {
   RecipeHeaderRecipeRow,
   RecipeHeaderSubline,
@@ -78,7 +77,6 @@ import {
 import { componentTokens, cv } from "./ui/tokens";
 
 const swipe = componentTokens.mixerSwipe;
-const meta = componentTokens.recipeMeta;
 const ch = componentTokens.chrome;
 
 // All values stored internally in grams — index order: TOTAL, A, B, TIX, SAND
@@ -166,228 +164,6 @@ function swipeZoneActive(color: string): string {
 
 function swipeZoneStripe(even: boolean): string {
   return surfaceTint(MIXER_SWIPE_STRIPE_INVERSE, even ? SWIPE_STRIPE_A_PCT : SWIPE_STRIPE_B_PCT, SWIPE_SURFACE_BASE);
-}
-
-/** Locked recipe ratio cards (read-only, above mix cards). */
-const RECIPE_RATIO_BG = swipe.recipeRatioBackground;
-/** High-contrast readouts on dark recipe cards — not pure white. */
-const RECIPE_VALUE_COLOR = meta.value;
-const RECIPE_VALUE_COLOR_MUTED = meta.valueMuted;
-const RECIPE_ID_COLOR = meta.id;
-const RECIPE_ID_COLOR_MUTED = meta.idMuted;
-const RECIPE_UNIT_COLOR = meta.unit;
-const RECIPE_COLON_COLOR = meta.colon;
-const RECIPE_CONTAINER_PX = "4px 0";
-
-function RecipeRatioGapSeparator() {
-  return (
-    <div
-      aria-hidden
-      className="flex shrink-0 items-center justify-center pointer-events-none self-stretch"
-      style={{ width: "var(--section-gap)" }}
-    >
-      <span
-        style={{
-          fontSize: "var(--text-recipe-colon)",
-          color: RECIPE_COLON_COLOR,
-          lineHeight: 1,
-          fontWeight: 600,
-        }}
-      >
-        :
-      </span>
-    </div>
-  );
-}
-
-function RecipeRatioCard({
-  id,
-  sublabel,
-  value,
-  unit,
-  muted,
-}: {
-  id: string;
-  sublabel?: string;
-  value: string;
-  unit: string;
-  muted: boolean;
-}) {
-  return (
-    <div
-      aria-hidden
-      className="flex-1 min-w-0 rounded-xl flex flex-col items-center justify-between pointer-events-none"
-      style={{
-        height: "var(--recipe-card-h)",
-        padding: "var(--recipe-card-pt) var(--recipe-card-px) var(--recipe-card-pb)",
-        background: RECIPE_RATIO_BG,
-      }}
-    >
-      <div
-        className="flex flex-col items-center max-w-full min-h-0"
-        style={{ gap: "var(--recipe-id-sublabel-gap)" }}
-      >
-        <span
-          className="uppercase truncate max-w-full"
-          style={{
-            fontSize: "var(--text-recipe-id)",
-            letterSpacing: "0.12em",
-            fontWeight: 700,
-            color: muted ? RECIPE_ID_COLOR_MUTED : RECIPE_ID_COLOR,
-            lineHeight: 1.1,
-          }}
-        >
-          {id}
-        </span>
-        {sublabel && (
-          <span
-            className="truncate max-w-full capitalize"
-            style={{
-              fontSize: "var(--text-recipe-sublabel)",
-              letterSpacing: "0.02em",
-              fontWeight: 600,
-              color: muted ? RECIPE_UNIT_COLOR : RECIPE_ID_COLOR,
-              opacity: muted ? 0.75 : 0.9,
-              lineHeight: 1.1,
-            }}
-          >
-            {sublabel}
-          </span>
-        )}
-      </div>
-      <span
-        className="tabular-nums truncate max-w-full"
-        style={{
-          fontSize: "var(--text-recipe-ratio)",
-          letterSpacing: "-0.02em",
-          fontWeight: 600,
-          color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
-          lineHeight: 1,
-          marginTop: "var(--recipe-row-gap)",
-        }}
-      >
-        {value}
-      </span>
-      <span
-        className="uppercase truncate max-w-full"
-        style={{
-          fontSize: "var(--text-recipe-unit)",
-          letterSpacing: unit.length > 1 ? "0.1em" : "0.05em",
-          fontWeight: 600,
-          color: RECIPE_UNIT_COLOR,
-          opacity: muted ? 0.7 : 1,
-          lineHeight: 1.1,
-          marginTop: "var(--recipe-label-gap)",
-        }}
-      >
-        {unit}
-      </span>
-    </div>
-  );
-}
-
-function RecipeMetaCard({
-  label,
-  value,
-  valueLine2,
-  unit,
-  muted,
-  valueFontFamily,
-}: {
-  label: string;
-  value: string;
-  valueLine2?: string;
-  unit?: string;
-  muted: boolean;
-  valueFontFamily?: string;
-}) {
-  return (
-    <div
-      aria-hidden
-      className="flex-1 min-w-0 rounded-xl flex flex-col items-center justify-between pointer-events-none"
-      style={{
-        height: "var(--recipe-card-h)",
-        padding: "var(--recipe-card-pt-alt) var(--recipe-card-px) var(--recipe-card-pb)",
-        background: RECIPE_RATIO_BG,
-      }}
-    >
-      <span
-        className="uppercase truncate max-w-full"
-        style={{
-          fontSize: "var(--text-recipe-meta-label)",
-          letterSpacing: "0.12em",
-          fontWeight: 700,
-          color: muted ? RECIPE_ID_COLOR_MUTED : RECIPE_ID_COLOR,
-          lineHeight: 1.1,
-        }}
-      >
-        {label}
-      </span>
-      {valueLine2 ? (
-        <div
-          className="flex flex-col items-center max-w-full min-h-0"
-          style={{ gap: "var(--recipe-label-gap)", marginTop: "var(--recipe-meta-name-gap)" }}
-        >
-          <span
-            className="truncate max-w-full text-center"
-            style={{
-              fontFamily: valueFontFamily,
-              fontSize: "var(--text-recipe-meta-value)",
-              letterSpacing: "0.04em",
-              fontWeight: 600,
-              color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
-              lineHeight: 1.15,
-            }}
-          >
-            {value}
-          </span>
-          <span
-            className="truncate max-w-full text-center"
-            style={{
-              fontFamily: valueFontFamily,
-              fontSize: "var(--text-recipe-meta-value)",
-              letterSpacing: "0.04em",
-              fontWeight: 600,
-              color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
-              lineHeight: 1.15,
-            }}
-          >
-            {valueLine2}
-          </span>
-        </div>
-      ) : (
-        <span
-          className="tabular-nums truncate max-w-full"
-          style={{
-            fontFamily: valueFontFamily,
-            fontSize: unit ? "var(--text-recipe-ratio)" : "var(--text-recipe-meta-value)",
-            letterSpacing: unit ? "-0.02em" : "0.04em",
-            fontWeight: 600,
-            color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
-            lineHeight: 1,
-            marginTop: "var(--recipe-row-gap)",
-          }}
-        >
-          {value}
-        </span>
-      )}
-      <span
-        className="uppercase truncate max-w-full"
-        style={{
-          fontSize: "var(--text-recipe-unit)",
-          letterSpacing: unit && unit.length > 1 ? "0.1em" : "0.05em",
-          fontWeight: 600,
-          color: RECIPE_UNIT_COLOR,
-          opacity: unit ? (muted ? 0.7 : 1) : 0,
-          lineHeight: 1.1,
-          marginTop: "var(--recipe-label-gap)",
-          visibility: unit ? "visible" : "hidden",
-        }}
-      >
-        {unit ?? " "}
-      </span>
-    </div>
-  );
 }
 
 /** Connector line between active card and swipe area. */
@@ -1300,6 +1076,10 @@ export function BatchMixer({
                     disabled={isLocked && !loadedSavedMix}
                     muted={isLocked && !loadedSavedMix}
                     allowReselectCurrent={loadedSavedMix != null}
+                    bucketSelection={bucketSelection}
+                    onBucketChange={setBucketSelection}
+                    initialBinderSum={initialBinderSum}
+                    sandType={sandType}
                     savedMixes={savedMixes}
                     loadedSavedMixId={loadedSavedMixId}
                     onSavedMixSelect={handleSavedMixSelect}
@@ -1312,33 +1092,7 @@ export function BatchMixer({
             className="shrink-0 app-gutter-x flex flex-col"
             style={{ paddingTop: "var(--recipe-zone-pt)", gap: "var(--recipe-meta-gap)" }}
           >
-            <div
-              className="rounded-xl flex flex-col min-w-0"
-              style={{
-                background: RECIPE_RATIO_BG,
-                padding: RECIPE_CONTAINER_PX,
-                gap: "var(--recipe-meta-gap)",
-              }}
-            >
-              <div className="flex items-stretch pointer-events-none">
-                {ingredientIndexes.map((pi, i) => {
-                  const p = PARAMS[pi];
-                  const { value, unit } = getLockedRatioDisplay(activeRecipe, p.id);
-                  return (
-                    <React.Fragment key={`recipe-${p.id}`}>
-                      {i > 0 && <RecipeRatioGapSeparator />}
-                      <RecipeRatioCard
-                        id={p.id}
-                        sublabel={getIngredientLabel(activeRecipe, p.id)}
-                        value={value}
-                        unit={unit}
-                        muted={isLocked}
-                      />
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </div>
+            <RecipeRatioRow recipe={activeRecipe} muted={isLocked} />
           </div>
 
           <div className="flex-1 min-h-0" aria-hidden="true" />

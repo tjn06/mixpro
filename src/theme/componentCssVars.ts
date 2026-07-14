@@ -15,6 +15,8 @@ export const componentCssVarNames = {
   stateError: "--semantic-state-error",
   stateErrorMuted: "--semantic-state-error-muted",
   stateAccent: "--semantic-state-accent",
+  selectionBorder: "--semantic-selection-border",
+  selectionBg: "--semantic-selection-bg",
   stateDisabled: "--semantic-state-disabled",
   borderDefault: "--semantic-border-default",
   borderStrong: "--semantic-border-strong",
@@ -104,6 +106,10 @@ export const cv = {
     errorMuted: v(componentCssVarNames.stateErrorMuted),
     accent: v(componentCssVarNames.stateAccent),
     disabled: v(componentCssVarNames.stateDisabled),
+  },
+  selection: {
+    border: v(componentCssVarNames.selectionBorder),
+    background: v(componentCssVarNames.selectionBg),
   },
   sheetPanel: {
     border: v(componentCssVarNames.sheetPanelBorder),
@@ -208,7 +214,7 @@ export const cv = {
     fill: v(componentCssVarNames.longPressFill),
   },
   extraBatch: {
-    accent: v(componentCssVarNames.stateAccent),
+    label: v(componentCssVarNames.textSecondary),
   },
   batchTotals: {
     tableBorder: v(componentCssVarNames.borderSubtle),
@@ -241,7 +247,9 @@ export function getExtendedSemanticCssEntries(): [string, string][] {
     [componentCssVarNames.stateWarn, semanticColors.state.warn],
     [componentCssVarNames.stateError, semanticColors.state.error],
     [componentCssVarNames.stateErrorMuted, semanticColors.state.errorMuted],
-    [componentCssVarNames.stateAccent, semanticColors.state.accent],
+    [componentCssVarNames.stateAccent, semanticColors.text.secondary],
+    [componentCssVarNames.selectionBorder, semanticBorders.strong],
+    [componentCssVarNames.selectionBg, semanticSurfaces.buttonActive],
     [componentCssVarNames.stateDisabled, semanticColors.state.disabled],
     [componentCssVarNames.borderDefault, semanticBorders.default],
     [componentCssVarNames.borderStrong, semanticBorders.strong],

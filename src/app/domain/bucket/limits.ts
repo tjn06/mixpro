@@ -4,7 +4,7 @@ import {
   type BucketSize,
 } from "../bucket/types";
 import { estimateMixVolume, type SandType } from "../mix/volume";
-import { applyRecipeChange, mixEpoxyGrams, mixSandGrams } from "../recipe/calc";
+import { applyRecipeChange, initialMixValues, mixEpoxyGrams, mixSandGrams, recipeBinderSum } from "../recipe/calc";
 import type { BlendingRecipe } from "../recipe/types";
 
 export function mixLitersFromValues(
@@ -98,4 +98,19 @@ export function canDoubleMix(
     sandType,
   );
   return next[0] >= idealTotal;
+}
+
+/** Recommended mix for a recipe, scaled to fit the selected bucket cap (86%). */
+export function recommendedBatchForBucket(
+  recipe: BlendingRecipe,
+  binderSum: number,
+  bucket: BucketSelection,
+  sandType: SandType,
+): { totalGrams: number; fillLiters: number } {
+  const baseValues = initialMixValues(recipe, recipeBinderSum(recipe, binderSum));
+  const values = clampMixValuesToBucketMax(baseValues, recipe, bucket, sandType);
+  return {
+    totalGrams: values[0] ?? 0,
+    fillLiters: mixLitersFromValues(values, sandType, recipe),
+  };
 }

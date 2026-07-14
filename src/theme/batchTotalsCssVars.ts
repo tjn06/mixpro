@@ -1,6 +1,11 @@
 import { componentTokens } from "./components";
 import { themeSurfaces } from "./surfaces";
 import { alphaBlack, alphaWhite } from "./primitives";
+import {
+  extraBatchDarkHc,
+  extraBatchLight,
+  extraBatchLightHc,
+} from "./extraBatchTheme";
 
 /** CSS custom properties for batch-totals surfaces (injected on :root). */
 export const batchTotalsCssVarNames = {
@@ -35,13 +40,13 @@ export function getDarkBatchTotalsCssEntries(): [string, string][] {
 export function getLightBatchTotalsCssEntries(): [string, string][] {
   return [
     [batchTotalsCssVarNames.cardHeaderBg, alphaBlack(0.06)],
-    [batchTotalsCssVarNames.extraCardHeaderBg, "rgba(92, 72, 200, 0.1)"],
-    [batchTotalsCssVarNames.extraTableThBg, "rgba(92, 72, 200, 0.08)"],
+    [batchTotalsCssVarNames.extraCardHeaderBg, extraBatchLight.cardHeaderBg],
+    [batchTotalsCssVarNames.extraTableThBg, extraBatchLight.tableThBg],
     [batchTotalsCssVarNames.batchesCardBg, alphaBlack(0.04)],
-    [batchTotalsCssVarNames.extraBatchBg, "rgba(92, 72, 200, 0.06)"],
+    [batchTotalsCssVarNames.extraBatchBg, extraBatchLight.bodyBg],
     [batchTotalsCssVarNames.emptyCardBg, alphaBlack(0.02)],
-    [batchTotalsCssVarNames.extraBatchBorder, `1px solid rgba(92, 72, 200, 0.35)`],
-    [batchTotalsCssVarNames.extraBatchDashedBorder, `1px dashed rgba(92, 72, 200, 0.35)`],
+    [batchTotalsCssVarNames.extraBatchBorder, extraBatchLight.border],
+    [batchTotalsCssVarNames.extraBatchDashedBorder, extraBatchLight.borderDashed],
     [batchTotalsCssVarNames.insetHighlight, "inset 0 1px 0 rgba(0, 0, 0, 0.06)"],
   ];
 }
@@ -50,13 +55,13 @@ export function getLightBatchTotalsCssEntries(): [string, string][] {
 export function getDarkHcBatchTotalsCssEntries(): [string, string][] {
   return [
     [batchTotalsCssVarNames.cardHeaderBg, alphaWhite(0.12)],
-    [batchTotalsCssVarNames.extraCardHeaderBg, "rgba(184, 168, 255, 0.18)"],
-    [batchTotalsCssVarNames.extraTableThBg, "rgba(184, 168, 255, 0.22)"],
+    [batchTotalsCssVarNames.extraCardHeaderBg, extraBatchDarkHc.cardHeaderBg],
+    [batchTotalsCssVarNames.extraTableThBg, extraBatchDarkHc.tableThBg],
     [batchTotalsCssVarNames.batchesCardBg, alphaWhite(0.08)],
-    [batchTotalsCssVarNames.extraBatchBg, "rgba(184, 168, 255, 0.14)"],
+    [batchTotalsCssVarNames.extraBatchBg, extraBatchDarkHc.bodyBg],
     [batchTotalsCssVarNames.emptyCardBg, alphaWhite(0.05)],
-    [batchTotalsCssVarNames.extraBatchBorder, `1.5px solid rgba(184, 168, 255, 0.45)`],
-    [batchTotalsCssVarNames.extraBatchDashedBorder, `1.5px dashed rgba(184, 168, 255, 0.45)`],
+    [batchTotalsCssVarNames.extraBatchBorder, extraBatchDarkHc.border],
+    [batchTotalsCssVarNames.extraBatchDashedBorder, extraBatchDarkHc.borderDashed],
     [batchTotalsCssVarNames.insetHighlight, themeSurfaces.insetHighlight],
   ];
 }
@@ -65,13 +70,13 @@ export function getDarkHcBatchTotalsCssEntries(): [string, string][] {
 export function getLightHcBatchTotalsCssEntries(): [string, string][] {
   return [
     [batchTotalsCssVarNames.cardHeaderBg, alphaBlack(0.08)],
-    [batchTotalsCssVarNames.extraCardHeaderBg, "rgba(56, 40, 160, 0.12)"],
-    [batchTotalsCssVarNames.extraTableThBg, "rgba(56, 40, 160, 0.1)"],
+    [batchTotalsCssVarNames.extraCardHeaderBg, extraBatchLightHc.cardHeaderBg],
+    [batchTotalsCssVarNames.extraTableThBg, extraBatchLightHc.tableThBg],
     [batchTotalsCssVarNames.batchesCardBg, alphaBlack(0.06)],
-    [batchTotalsCssVarNames.extraBatchBg, "rgba(56, 40, 160, 0.08)"],
+    [batchTotalsCssVarNames.extraBatchBg, extraBatchLightHc.bodyBg],
     [batchTotalsCssVarNames.emptyCardBg, alphaBlack(0.04)],
-    [batchTotalsCssVarNames.extraBatchBorder, `1.5px solid rgba(56, 40, 160, 0.45)`],
-    [batchTotalsCssVarNames.extraBatchDashedBorder, `1.5px dashed rgba(56, 40, 160, 0.4)`],
+    [batchTotalsCssVarNames.extraBatchBorder, extraBatchLightHc.border],
+    [batchTotalsCssVarNames.extraBatchDashedBorder, extraBatchLightHc.borderDashed],
     [batchTotalsCssVarNames.insetHighlight, "inset 0 1px 0 rgba(0, 0, 0, 0.1)"],
   ];
 }

@@ -147,7 +147,7 @@ export function MixerInputSheet({
               icon: <SavedIcon size={SHEET_FOOTER_ICON_SIZE} />,
               onClick: handleApply,
               variant: "primary",
-              accentColor: cv.extraBatch.accent,
+              accentColor: cv.extraBatch.label,
             },
           ]}
         />

@@ -69,7 +69,8 @@ export const themeColors = {
   dropdownMenuLockedLabel: semanticColors.text.muted,
 
   /** Semantic accents */
-  extraBatchAccent: semanticColors.state.accent,
+  /** @deprecated Use text.secondary — kept for legacy theme keys. */
+  extraBatchAccent: semanticColors.text.secondary,
   progress: semanticColors.text.secondary,
 } as const;
 

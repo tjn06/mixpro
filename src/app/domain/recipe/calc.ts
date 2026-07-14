@@ -205,6 +205,48 @@ function formatRatioNumber(n: number): string {
   return s.replace(/\.?0+$/, "");
 }
 
+function formatRecipeIngredientId(id: string): string {
+  if (id.length <= 1) return id.toUpperCase();
+  return id.charAt(0).toUpperCase() + id.slice(1).toLowerCase();
+}
+
+/** Compact ingredient line, e.g. "2:1 Resin/Hardener + 533.33% Sand Filler." */
+export function formatRecipeSummary(recipe: BlendingRecipe): string {
+  const ratio = recipe.binderParts.map((p) => formatRatioNumber(p.parts)).join(":");
+  const binderLabels = recipe.binderParts
+    .map((p) => getIngredientLabel(recipe, p.id) ?? p.id)
+    .join("/");
+
+  let summary = "";
+  if (ratio && binderLabels) summary += `${ratio} ${binderLabels}`;
+  else if (ratio) summary += ratio;
+  else if (binderLabels) summary += binderLabels;
+
+  for (const entry of recipe.binderPercents) {
+    const label = entry.label?.trim();
+    const name = label
+      ? `${formatRecipeIngredientId(entry.id)} ${label}`
+      : formatRecipeIngredientId(entry.id);
+    summary += ` + ${formatRatioNumber(entry.percent)}% ${name}`;
+  }
+
+  return summary ? `${summary}.` : "";
+}
+
+/** Ratio prefix vs remainder for compact displays, e.g. "2:1" | "Resin/Hardener + 533.33% Sand Filler." */
+export function getRecipeSummaryParts(recipe: BlendingRecipe): {
+  ratio: string;
+  detail: string;
+} {
+  const ratio = recipe.binderParts.map((p) => formatRatioNumber(p.parts)).join(":");
+  const full = formatRecipeSummary(recipe);
+  if (!ratio) return { ratio: "", detail: full };
+  if (full.startsWith(ratio)) {
+    return { ratio, detail: full.slice(ratio.length).trimStart() };
+  }
+  return { ratio: "", detail: full };
+}
+
 /** Structured ratio for recipe ratio cards — value + unit on separate rows. */
 export function getLockedRatioDisplay(
   recipe: BlendingRecipe,

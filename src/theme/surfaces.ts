@@ -1,4 +1,5 @@
 import { semanticSurfaces } from "./semantic";
+import { extraBatchDark } from "./extraBatchTheme";
 
 /** Semi-transparent fills, overlays, and shadows — alias semantic tokens. */
 export const themeSurfaces = {
@@ -7,8 +8,8 @@ export const themeSurfaces = {
   cardHeaderBg: semanticSurfaces.cardHeader,
   tableThBg: semanticSurfaces.cardHeader,
   extraBatchBg: semanticSurfaces.extraBatch,
-  extraCardHeaderBg: "rgba(155, 140, 255, 0.14)",
-  extraTableThBg: "rgba(155, 140, 255, 0.18)",
+  extraCardHeaderBg: extraBatchDark.cardHeaderBg,
+  extraTableThBg: extraBatchDark.tableThBg,
   emptyCardBg: semanticSurfaces.emptyCard,
   headerBtnBg: semanticSurfaces.headerButton,
   headerBtnBgActive: semanticSurfaces.headerButtonActive,

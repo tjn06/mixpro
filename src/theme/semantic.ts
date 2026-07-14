@@ -1,4 +1,5 @@
 import { alphaWhite, borderSolid, primitiveInk, primitiveSemantic, primitiveText } from "./primitives";
+import { extraBatchDark } from "./extraBatchTheme";
 
 /**
  * Semantic design tokens — role-based naming.
@@ -88,7 +89,7 @@ export const semanticSurfaces = {
   bucketFillEmpty: alphaWhite(0.04),
   batchesCard: alphaWhite(0.05),
   emptyCard: alphaWhite(0.03),
-  extraBatch: "rgba(155, 140, 255, 0.1)",
+  extraBatch: extraBatchDark.bodyBg,
   tooltipLine: alphaWhite(0.28),
 } as const;
 

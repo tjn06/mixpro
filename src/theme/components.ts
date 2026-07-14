@@ -221,6 +221,6 @@ export const componentTokens = {
     primaryBorder: semanticBorders.strong,
   },
   extraBatch: {
-    accent: semanticColors.state.accent,
+    label: semanticColors.text.secondary,
   },
 } as const;

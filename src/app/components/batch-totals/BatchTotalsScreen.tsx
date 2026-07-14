@@ -369,7 +369,7 @@ function BatchTotalsSummaryBar({
               <>
                 <SummaryPlus />
                 <span
-                  style={sectionTitleStyle(cv.extraBatch.accent)}
+                  style={sectionTitleStyle(cv.extraBatch.label)}
                   title="Extra batch"
                 >
                   EX. BCH
@@ -689,7 +689,7 @@ export function BatchTotalsScreen({
                   className="flex items-center justify-between gap-2 min-w-0 w-full"
                   style={cardHeaderStyle("extra")}
                 >
-                  <p style={sectionTitleStyle(cv.extraBatch.accent)}>Extra batch</p>
+                  <p style={sectionTitleStyle(cv.extraBatch.label)}>Extra batch</p>
                   <div
                     className="flex items-center shrink-0"
                     style={{ gap: "var(--totals-header-action-gap)", padding: "0 var(--totals-header-cell-pad-x)" }}
@@ -697,7 +697,7 @@ export function BatchTotalsScreen({
                     <IconHeaderButton
                       label="Edit extra batch"
                       onClick={() => setExtraBatchSheetOpen(true)}
-                      color={cv.extraBatch.accent}
+                      color={cv.extraBatch.label}
                     >
                       <RenameIcon size={HEADER_ICON_SIZE} />
                     </IconHeaderButton>
@@ -843,7 +843,7 @@ export function BatchTotalsScreen({
                   fontSize: "var(--text-totals-table)",
                   letterSpacing: "0.12em",
                   fontWeight: 600,
-                  color: cv.extraBatch.accent,
+                  color: cv.extraBatch.label,
                   lineHeight: 1.3,
                   opacity: 0.9,
                 }}

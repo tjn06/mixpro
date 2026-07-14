@@ -1,5 +1,6 @@
 import { alphaWhite } from "./primitives";
 import { semanticBorders } from "./semantic";
+import { extraBatchDark } from "./extraBatchTheme";
 
 /** Border strings — alias semantic tokens for backward compatibility. */
 export const themeBorders = {
@@ -15,8 +16,8 @@ export const themeBorders = {
   input: semanticBorders.input,
   inputSubtle: semanticBorders.subtle,
   inputActive: semanticBorders.inputActive,
-  extraBatch: `1px solid rgba(155, 140, 255, 0.32)`,
-  extraBatchDashed: `1px dashed rgba(155, 140, 255, 0.32)`,
+  extraBatch: extraBatchDark.border,
+  extraBatchDashed: extraBatchDark.borderDashed,
   swipeColumn: `1px solid ${alphaWhite(0.08)}`,
   headerBtn: semanticBorders.headerButton,
   headerBtnActive: semanticBorders.headerButtonActive,

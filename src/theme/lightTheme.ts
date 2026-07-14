@@ -114,7 +114,7 @@ const lightLegacyColors: Record<ThemeColorKey, string> = {
   dropdownMenuText: lightText.secondary,
   dropdownMenuTextMuted: lightText.dimmed,
   dropdownMenuLockedLabel: lightText.muted,
-  extraBatchAccent: sem.accent,
+  extraBatchAccent: lightText.secondary,
   progress: lightText.secondary,
 };
 
@@ -133,7 +133,9 @@ export function getFullLightThemeEntries(): [string, string][] {
     [componentCssVarNames.stateWarn, sem.warn],
     [componentCssVarNames.stateError, sem.error],
     [componentCssVarNames.stateErrorMuted, sem.errorMuted],
-    [componentCssVarNames.stateAccent, sem.accent],
+    [componentCssVarNames.stateAccent, lightText.secondary],
+    [componentCssVarNames.selectionBorder, lightBorders.strong],
+    [componentCssVarNames.selectionBg, lightSurfaces.buttonActive],
     [componentCssVarNames.stateDisabled, ink[10]],
     [componentCssVarNames.borderDefault, lightBorders.default],
     [componentCssVarNames.borderStrong, lightBorders.strong],
