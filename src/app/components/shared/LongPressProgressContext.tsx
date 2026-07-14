@@ -105,7 +105,7 @@ export function LongPressHeaderBar() {
           style={{
             fontSize: "var(--text-ui-sm)",
             letterSpacing: "0.08em",
-            color: componentTokens.text.secondary,
+            color: cv.text.secondary,
             marginTop: 7,
             lineHeight: 1.3,
             fontWeight: 500,

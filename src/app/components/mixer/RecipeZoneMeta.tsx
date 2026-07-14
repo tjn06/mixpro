@@ -2,9 +2,7 @@ import { useId, type ReactNode } from "react";
 import { savedMixDisplayName } from "../../saved-mixes/display";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import { ConfigNameIcon } from "../shared/ActionIcons";
-import { componentTokens } from "../../ui/tokens";
-
-const meta = componentTokens.recipeMeta;
+import { recipeMetaVar as meta } from "../../presentation/recipeMetaVars";
 
 export function RecipeZoneMeta({
   label,

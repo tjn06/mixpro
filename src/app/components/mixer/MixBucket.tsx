@@ -28,10 +28,17 @@ import {
   BUCKET_VALUE_STYLE,
 } from "../../presentation/featureReadout";
 import { FeatureReadoutStack } from "./FeatureReadoutStack";
-import { themeColorVar } from "../../../theme/cssVars";
-import { componentTokens } from "../../ui/tokens";
+import { cv, themeColorVar } from "../../ui/tokens";
 
-const dd = componentTokens.dropdown;
+const dd = {
+  menuText: themeColorVar("dropdownMenuText"),
+  menuLockedLabel: themeColorVar("dropdownMenuLockedLabel"),
+  menuBackground: themeColorVar("dropdownMenuBg"),
+  menuActiveBackground: cv.surface.input,
+  inputSurface: themeColorVar("inputSurface"),
+  menuBorder: cv.border.input,
+  menuShadow: cv.sheetPanel.shadow,
+};
 
 export {
   DEFAULT_BUCKET_SELECTION,
@@ -436,7 +443,7 @@ function BucketSelectOptionRow({
             fontSize: "var(--text-ui-sm)",
             fontWeight: 600,
             letterSpacing: "0.1em",
-            color: holding ? componentTokens.text.primary : dd.menuText,
+            color: holding ? cv.text.primary : dd.menuText,
             flexShrink: 0,
             transition: "color 0.15s ease",
           }}

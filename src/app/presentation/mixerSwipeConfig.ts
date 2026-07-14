@@ -2,7 +2,6 @@ import { themeColorVar } from "../../theme/cssVars";
 import { mixerVar } from "../../theme/mixerCssVars";
 import { componentTokens } from "../../theme/components";
 
-const swipe = componentTokens.mixerSwipe;
 const chrome = componentTokens.chrome;
 
 export const MIXER_SWIPE_ZONES = [
@@ -36,7 +35,7 @@ export const MIXER_SWIPE_STEP_IDLE = themeColorVar("swipeStepIdle");
 export const MIXER_DRAG_OVERLAY_HIDE_MS = 320;
 export const MIXER_DRAG_BLOCKED_MS = 120;
 export const MIXER_CARD_LIMIT_FLASH_TINT_PCT = chrome.cardLimitFlashTintPct;
-export const MIXER_BUCKET_LIMIT_COLOR = swipe.limitColor;
+export const MIXER_BUCKET_LIMIT_COLOR = themeColorVar("bucketLimit");
 export const MIXER_BUCKET_LIMIT_VIBRATE_MS = [10, 28, 10] as const;
 export const MIXER_DRAG_FOCUS_Z = 5;
 export const MIXER_CARD_CONNECTOR_Z = 3;

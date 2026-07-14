@@ -77,7 +77,6 @@ import {
 
 import { componentTokens, cv } from "./ui/tokens";
 
-const swipe = componentTokens.mixerSwipe;
 const ch = componentTokens.chrome;
 
 // All values stored internally in grams — index order: TOTAL, A, B, TIX, SAND
@@ -130,7 +129,7 @@ const DRAG_FOCUS_Z      = 5;
 const DRAG_OVERLAY_Z    = 4;
 const DRAG_OVERLAY_HIDE_MS = 320;
 const DRAG_BLOCKED_MS = 120;
-const BUCKET_LIMIT_COLOR = swipe.limitColor;
+const BUCKET_LIMIT_COLOR = cv.state.error;
 const BUCKET_LIMIT_VIBRATE_MS = [10, 28, 10] as const;
 const LOCK_PANEL_Z      = 6;
 const LOCK_SHIELD_Z     = 5;

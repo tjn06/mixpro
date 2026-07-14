@@ -76,6 +76,10 @@ export interface ThemePaletteChrome {
   sheetPanelBlur?: string;
   sheetPanelSaturate?: string;
   sheetPanelShadow: string;
+  recipeContextGradient?: string;
+  fieldInputShadow?: string;
+  fieldInputFocusBorder?: string;
+  fieldInputFocusShadow?: string;
 }
 
 export interface ThemePalette {

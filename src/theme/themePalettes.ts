@@ -97,6 +97,13 @@ export const lightDefaultPalette: ThemePalette = {
     sheetPanelBlur: "20px",
     sheetPanelSaturate: "1.02",
     sheetPanelShadow: "0 20px 56px rgba(0, 0, 0, 0.12)",
+    recipeContextGradient:
+      "linear-gradient(180deg, rgba(0, 0, 0, 0.025) 0, rgba(0, 0, 0, 0.015) calc(var(--recipe-zone-pt) + 2.75rem), rgba(0, 0, 0, 0.01) calc(var(--recipe-zone-pt) + var(--recipe-card-h) + 1.5rem), rgba(0, 0, 0, 0.004) 78%, transparent 94%)",
+    fieldInputShadow:
+      "inset 0 1px 1px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(0, 0, 0, 0.06)",
+    fieldInputFocusBorder: "rgba(0, 0, 0, 0.16)",
+    fieldInputFocusShadow:
+      "inset 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 2px rgba(0, 0, 0, 0.05)",
   },
   shareIconIdleUsesRaised: true,
 };
@@ -169,6 +176,12 @@ export const darkHighContrastPalette: ThemePalette = {
     headerBorder: borderSolid(0.24),
     headerSubInset: "inset 0 1px 0 rgba(255, 255, 255, 0.08)",
     sheetPanelShadow: "0 20px 56px rgba(0, 0, 0, 0.48)",
+    recipeContextGradient:
+      "linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0, rgba(220, 220, 238, 0.025) calc(var(--recipe-zone-pt) + 2.75rem), rgba(180, 180, 204, 0.016) calc(var(--recipe-zone-pt) + var(--recipe-card-h) + 1.5rem), rgba(255, 255, 255, 0.006) 78%, transparent 94%)",
+    fieldInputShadow: "inset 0 1px 3px rgba(0, 0, 0, 0.22)",
+    fieldInputFocusBorder: "rgba(255, 255, 255, 0.36)",
+    fieldInputFocusShadow:
+      "inset 0 1px 3px rgba(0, 0, 0, 0.22), 0 0 0 2px rgba(255, 255, 255, 0.12)",
   },
   shareIconIdleUsesRaised: false,
 };
@@ -246,6 +259,12 @@ export const lightHighContrastPalette: ThemePalette = {
     sheetPanelBlur: "20px",
     sheetPanelSaturate: "1.04",
     sheetPanelShadow: "0 20px 56px rgba(0, 0, 0, 0.18)",
+    recipeContextGradient:
+      "linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0, rgba(0, 0, 0, 0.028) calc(var(--recipe-zone-pt) + 2.75rem), rgba(0, 0, 0, 0.018) calc(var(--recipe-zone-pt) + var(--recipe-card-h) + 1.5rem), rgba(0, 0, 0, 0.008) 78%, transparent 94%)",
+    fieldInputShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.1)",
+    fieldInputFocusBorder: "rgba(0, 0, 0, 0.36)",
+    fieldInputFocusShadow:
+      "inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 0 2px rgba(0, 0, 0, 0.12)",
   },
   shareIconIdleUsesRaised: false,
 };

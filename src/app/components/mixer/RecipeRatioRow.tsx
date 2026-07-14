@@ -6,12 +6,9 @@ import {
   recipeIngredientIndexes,
 } from "../../domain/recipe/calc";
 import { MIX_PARAMS } from "../../domain/mix/entities";
-import { componentTokens } from "../../ui/tokens";
+import { recipeMetaVar as meta } from "../../presentation/recipeMetaVars";
 
-const swipe = componentTokens.mixerSwipe;
-const meta = componentTokens.recipeMeta;
-
-const RECIPE_RATIO_BG = swipe.recipeRatioBackground;
+const RECIPE_RATIO_BG = "transparent";
 const RECIPE_VALUE_COLOR = meta.value;
 const RECIPE_VALUE_COLOR_MUTED = meta.valueMuted;
 const RECIPE_ID_COLOR = meta.id;

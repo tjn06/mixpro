@@ -19,6 +19,7 @@ const FORBIDDEN = [
   /import\s*\{\s*themeColors\b/,
   /import\s*\{\s*themeBorders\b/,
   /import\s*\{\s*themeSurfaces\b/,
+  /componentTokens\.(text|state|recipeMeta|dropdown|mixerSwipe|bucket|lockedAction|headerIconButton|sheetFooterButton|fieldInput|shareBar|loadSheetStrip|loadSheetList|featureReadout|extraBatch|app)\./,
 ];
 
 const ALLOWLIST = new Set(["ui/tokens.ts"]);
@@ -60,7 +61,9 @@ for (const file of walk(APP_DIR)) {
 }
 
 if (violations.length > 0) {
-  console.error("Legacy theme API usage in src/app (use componentTokens instead):\n");
+  console.error(
+    "Legacy theme API or compile-time color token usage in src/app (use cv / themeColorVar instead):\n",
+  );
   for (const v of violations) console.error(`  ${v}`);
   process.exit(1);
 }

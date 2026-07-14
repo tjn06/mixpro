@@ -136,6 +136,15 @@ export function buildThemeCssEntries(
     [componentCssVarNames.fieldInputBorder, borders.input],
     [componentCssVarNames.fieldInputBorderError, fieldInputBorderError],
     [componentCssVarNames.fieldInputColor, text.primary],
+    ...(chrome.fieldInputShadow
+      ? [[componentCssVarNames.fieldInputShadow, chrome.fieldInputShadow] as [string, string]]
+      : []),
+    ...(chrome.fieldInputFocusBorder
+      ? [[componentCssVarNames.fieldInputFocusBorder, chrome.fieldInputFocusBorder] as [string, string]]
+      : []),
+    ...(chrome.fieldInputFocusShadow
+      ? [[componentCssVarNames.fieldInputFocusShadow, chrome.fieldInputFocusShadow] as [string, string]]
+      : []),
     [componentCssVarNames.headerIconBtnBg, surfaces.headerButton],
     [componentCssVarNames.headerIconBtnBgActive, surfaces.headerButtonActive],
     [componentCssVarNames.headerIconBtnBgSolid, surfaces.headerButtonSolid],
@@ -190,6 +199,9 @@ export function buildThemeCssEntries(
       : []),
     ...(chrome.sheetPanelSaturate
       ? [["--ui-sheet-panel-saturate", chrome.sheetPanelSaturate] as [string, string]]
+      : []),
+    ...(chrome.recipeContextGradient
+      ? [[componentCssVarNames.recipeContextGradient, chrome.recipeContextGradient] as [string, string]]
       : []),
     ...extras.mixerChromeEntries,
   ];

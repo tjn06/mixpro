@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { componentTokens } from "../../ui/tokens";
+import { cv } from "../../ui/tokens";
 
 /** Save / lock icons scale up in locked expanded overlays. */
 export const LOCKED_ACTION_ICON_SIZE = 24;
@@ -11,7 +11,7 @@ export const CONTENT_FADE_IN_MS = 140;
 export const EXPAND_CONTENT_DELAY_MS = 200;
 export const COLLAPSE_CONTENT_DELAY_MS = 60;
 
-export const PRIMARY_BORDER = componentTokens.lockedAction.primaryBorder;
+export const PRIMARY_BORDER = cv.border.strong;
 
 export function contentLayerTransition(
   expanded: boolean,
