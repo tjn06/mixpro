@@ -1,6 +1,9 @@
 import {
   useEffect,
+  useMemo,
+  useRef,
   useState,
+  useCallback,
   type CSSProperties,
 } from "react";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
@@ -19,6 +22,7 @@ import {
   SHEET_SUBTITLE,
   SHEET_TITLE,
   SHEET_COVER_HEADER_STYLE,
+  SHEET_COVER_FORM_SPACING,
   sheetFieldInputStyle,
 } from "./sheetChrome";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
@@ -97,6 +101,10 @@ const LIST_TIMESTAMP: CSSProperties = {
   color: list.timestamp,
   fontVariantNumeric: "tabular-nums",
 };
+
+function sortMixesBySavedAt(mixes: readonly SavedMixSnapshot[]): SavedMixSnapshot[] {
+  return [...mixes].sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+}
 
 function bucketLabel(selection: BucketSelection): string {
   return selection === "none" ? "No bucket" : `${selection} L bucket`;
@@ -326,6 +334,57 @@ export function LoadSavedMixesSheet({
   const [moreMenuMixId, setMoreMenuMixId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const now = useTickingNow(open);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [listScroll, setListScroll] = useState({ fromTop: false, fromBottom: false });
+
+  const sortedMixes = useMemo(() => sortMixesBySavedAt(mixes), [mixes]);
+
+  const filteredMixes = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (q.length === 0) return sortedMixes;
+    return sortedMixes.filter((m) => {
+      const name = savedMixDisplayName(m).toLowerCase();
+      const recipe = (m.recipeName || "").toLowerCase();
+      const meta = (m.metaName || "").toLowerCase();
+      const bucket = bucketLabel(m.bucketSelection).toLowerCase();
+      const detail = mixDetailLine(m).toLowerCase();
+      const savedTime = getSavedMixTimeSearchText(new Date(m.savedAt), now);
+      return (
+        name.includes(q) ||
+        recipe.includes(q) ||
+        meta.includes(q) ||
+        bucket.includes(q) ||
+        detail.includes(q) ||
+        savedTime.includes(q)
+      );
+    });
+  }, [sortedMixes, query, now]);
+
+  const syncListScroll = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    setListScroll({
+      fromTop: el.scrollTop > 4,
+      fromBottom: el.scrollTop + el.clientHeight < el.scrollHeight - 4,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      setListScroll({ fromTop: false, fromBottom: false });
+      return;
+    }
+    syncListScroll();
+    const el = listRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", syncListScroll, { passive: true });
+    const ro = new ResizeObserver(syncListScroll);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", syncListScroll);
+      ro.disconnect();
+    };
+  }, [open, syncListScroll, filteredMixes.length]);
 
   useEffect(() => {
     if (!open) setRenameMix(null);
@@ -361,27 +420,6 @@ export function LoadSavedMixesSheet({
         ? "1 saved mix"
         : `${mixes.length} saved mixes`;
 
-  const q = query.trim().toLowerCase();
-  const filteredMixes =
-    q.length === 0
-      ? mixes
-      : mixes.filter((m) => {
-          const name = savedMixDisplayName(m).toLowerCase();
-          const recipe = (m.recipeName || "").toLowerCase();
-          const meta = (m.metaName || "").toLowerCase();
-          const bucket = bucketLabel(m.bucketSelection).toLowerCase();
-          const detail = mixDetailLine(m).toLowerCase();
-          const savedTime = getSavedMixTimeSearchText(new Date(m.savedAt), now);
-          return (
-            name.includes(q) ||
-            recipe.includes(q) ||
-            meta.includes(q) ||
-            bucket.includes(q) ||
-            detail.includes(q) ||
-            savedTime.includes(q)
-          );
-        });
-
   return (
     <>
       <AppFrameCoverSheet
@@ -399,7 +437,7 @@ export function LoadSavedMixesSheet({
             <p style={{ ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" }}>
               {subtitle}
             </p>
-            <div className="w-full" style={{ marginTop: 12 }}>
+            <div className="w-full" style={{ marginTop: SHEET_COVER_FORM_SPACING.headerToMeta }}>
               <input
                 type="search"
                 value={query}
@@ -413,11 +451,14 @@ export function LoadSavedMixesSheet({
           </header>
 
           <div className="flex-1 min-h-0 relative flex flex-col">
-            <ScrollFade edge="top" />
-            <ScrollFade edge="bottom" />
+            {listScroll.fromTop ? <ScrollFade edge="top" /> : null}
+            {listScroll.fromBottom ? <ScrollFade edge="bottom" /> : null}
 
-            <div className="saved-mixes-list recipe-picker-scroll app-gutter-x flex-1 min-h-0 overflow-y-auto overscroll-none">
-              <div style={{ paddingTop: 4, paddingBottom: 8 }}>
+            <div
+              ref={listRef}
+              className="saved-mixes-list recipe-picker-scroll app-gutter-x flex-1 min-h-0 overflow-y-auto overscroll-none"
+            >
+              <div style={{ paddingTop: 12, paddingBottom: 8 }}>
                 {filteredMixes.length === 0 ? (
                   <div
                     className={`${SHEET_LIST_ROW_CLASS} rounded-2xl flex flex-col items-center justify-center text-center px-6 py-12`}
