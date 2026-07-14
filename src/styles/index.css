@@ -125,11 +125,23 @@
     saturate(var(--ui-sheet-panel-saturate, 1.1));
 }
 
-/* Saved mixes — hide scrollbar; fades are overlay gradients on the panel. */
+/* Saved mixes — hide scrollbar; edge fades overlay the scroll viewport. */
 .saved-mixes-list,
 .recipe-picker-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+.scroll-edge-fade-viewport {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll-edge-fade {
+  flex-shrink: 0;
 }
 
 .saved-mixes-list::-webkit-scrollbar,

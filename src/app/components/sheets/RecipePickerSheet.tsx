@@ -747,7 +747,7 @@ export function RecipePickerSheet({
   const scrollEdges = useScrollEdgeFades(
     scrollRef,
     present && phase !== "exit",
-    `${previewRecipe.id}:${showBucketDetail}:${recentMixes.length}:${displayRecipes.length}`,
+    `${previewRecipe.id}:${showBucketDetail}:${recentMixes.length}:${displayRecipes.length}:${phase}`,
   );
 
   const resolvePickerBucket = useCallback(
@@ -899,7 +899,7 @@ export function RecipePickerSheet({
         aria-label="Recipes, bucket, and saved mixes"
         onAnimationEnd={handleMenuAnimationEnd}
       >
-        <div className="flex-1 min-h-0 relative flex flex-col">
+        <div className="scroll-edge-fade-viewport flex-1 min-h-0 relative flex flex-col">
           <ScrollEdgeFadeOverlays
             fromTop={scrollEdges.fromTop}
             fromBottom={scrollEdges.fromBottom}

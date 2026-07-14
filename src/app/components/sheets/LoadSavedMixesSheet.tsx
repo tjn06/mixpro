@@ -336,7 +336,11 @@ export function LoadSavedMixesSheet({
     });
   }, [sortedMixes, query, now]);
 
-  const listScroll = useScrollEdgeFades(listRef, open, filteredMixes.length);
+  const listScroll = useScrollEdgeFades(
+    listRef,
+    open,
+    `${filteredMixes.length}:${query.length}`,
+  );
 
   useEffect(() => {
     if (!open) setRenameMix(null);
@@ -402,7 +406,7 @@ export function LoadSavedMixesSheet({
             </div>
           </header>
 
-          <div className="flex-1 min-h-0 relative flex flex-col">
+          <div className="scroll-edge-fade-viewport flex-1 min-h-0 relative flex flex-col">
             <ScrollEdgeFadeOverlays
               fromTop={listScroll.fromTop}
               fromBottom={listScroll.fromBottom}
