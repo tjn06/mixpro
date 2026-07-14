@@ -30,7 +30,10 @@ Open [http://localhost:5173/mixpro/](http://localhost:5173/mixpro/) after starti
 | `npm run dev` | Start development server |
 | `npm run build` | Production build to `dist/` |
 | `npm run preview` | Preview production build locally |
+| `npm run lint:tokens` | Theme guardrail — blocks legacy `theme.colors` and compile-time color tokens in `src/app` (use `cv` / `themeColorVar()` instead) |
 | `npx tsc --noEmit` | Typecheck (not run automatically by Vite build) |
+
+Run `npm run lint:tokens` when adding or changing UI colors/styles in `src/app/`. See [guidelines/Guidelines.md](./guidelines/Guidelines.md#styling--theme).
 
 Vite `base` is `/mixpro/` (see `vite.config.ts`).
 
@@ -67,11 +70,12 @@ src/
     saved-mixes/           # Types, store, display helpers
     presentation/          # Web styling wrappers over theme
     hooks/
-  theme/                   # Design tokens (source of truth)
+  theme/                   # Design tokens, palettes, runtime appearance (see Guidelines)
   styles/                  # Global CSS, layout, Tailwind
+  app/ui/tokens.ts         # App import point for cv, themeColorVar, componentTokens
 ```
 
-See [guidelines/Guidelines.md](./guidelines/Guidelines.md) for architecture and coding conventions.
+See [guidelines/Guidelines.md](./guidelines/Guidelines.md) for architecture, theme rules, and coding conventions.
 
 ## Attributions
 

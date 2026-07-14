@@ -31,11 +31,42 @@ hooks/
 
 Navigation is in-memory screen state in `BatchMixer.tsx` — no router yet.
 
-## Styling
+## Styling & theme
 
-- Import tokens from `src/theme` (`theme.colors.*`, `theme.borders.*`, etc.).
-- Do not add hex literals in components when a theme token exists.
-- `applyWebThemeColors()` in `main.tsx` mirrors tokens to `--ui-*` CSS variables for CSS/Tailwind.
+### Import rules (app code)
+
+- Import from **`src/app/ui/tokens.ts`** — not `theme.colors`, `theme.borders`, or `theme.surfaces` directly.
+- **Runtime colors** (must follow light/dark + contrast): use `cv`, `themeColorVar()`, or `recipeMetaVar`.
+- **Layout/constants only** (heights, opacities, transitions, math): use `componentTokens`.
+- Do not add hex literals in components when a token or CSS var exists.
+
+`npm run lint:tokens` enforces this in `src/app/` (see `scripts/check-theme-tokens.mjs`). Run it when touching UI colors or styles.
+
+### Appearance (4 modes)
+
+Settings + `applyThemeAppearance()` in `main.tsx` support:
+
+| | Default | High contrast |
+|--|---------|---------------|
+| **Dark** | `semantic.ts` + legacy bridge | `themePalettes.ts` → `darkHighContrastPalette` |
+| **Light** | `themePalettes.ts` → `lightDefaultPalette` | `themePalettes.ts` → `lightHighContrastPalette` |
+
+To tweak colors: edit **`src/theme/themePalettes.ts`** (light + HC) or **`src/theme/semantic.ts`** (dark default). Primitives live in `primitives.ts`.
+
+### Token layers (`src/theme/`)
+
+```
+primitives → semantic → components → CSS vars (cv) → applyThemeAppearance()
+```
+
+- **`componentCssVars.ts`** — `cv` references (`var(--semantic-*)`, `var(--component-*)`).
+- **`cssVars.ts`** — legacy `--ui-*` keys + `themeColorVar()`.
+- **`themePaletteBuilder.ts`** — shared wiring from palette objects to CSS var entries.
+- Feature-specific scheme vars: `mixerCssVars.ts`, `batchTotalsCssVars.ts`.
+
+### CSS
+
+- Prefer `var(--semantic-*)`, `var(--component-*)`, or `var(--ui-*)` in CSS — not hardcoded `rgba()` when a var exists.
 - `entityCardStyles`, `featureReadout`, and `mixerSwipeConfig` live in `presentation/` — web helpers, not domain.
 
 ## Dependencies
@@ -44,10 +75,11 @@ Navigation is in-memory screen state in `BatchMixer.tsx` — no router yet.
 - Icons: `lucide-react`.
 - State: `zustand` (saved mixes persist to localStorage).
 
-## TypeScript
+## TypeScript & checks
 
 - `strict: true` in `tsconfig.json`.
 - Vite build does **not** run `tsc`; run `npx tsc --noEmit` to typecheck.
+- Run `npm run lint:tokens` before committing UI/theme changes.
 - Use `type` for unions/derived types; `interface` for props and object contracts.
 
 ## Conventions
