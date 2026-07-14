@@ -18,6 +18,7 @@ import {
   UserRound,
   ShieldCheck,
   SavePlus,
+  Info,
   type LucideIcon,
 } from "lucide-react";
 
@@ -82,3 +83,5 @@ export const MailIcon = createActionIcon(Mail);
 export const MessageIcon = createActionIcon(MessageSquare);
 
 export const CloseIcon = createActionIcon(X);
+
+export const InfoIcon = createActionIcon(Info);

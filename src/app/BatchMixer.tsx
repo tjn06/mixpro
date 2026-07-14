@@ -6,8 +6,8 @@ import {
   DEFAULT_BUCKET_SELECTION,
   type BucketSelection,
 } from "./components/mixer/MixBucket";
-import { reconcileBucketSelection, maxMixLitersForBucket, isBucketAtMaxFill, type BucketSize } from "./domain/bucket/types";
-import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues, canHalveMix, canDoubleMix } from "./domain/bucket/limits";
+import { reconcileBucketSelection, maxMixLitersForBucket, isBucketAtMaxFill, displayFillPercent, type BucketSize } from "./domain/bucket/types";
+import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues, canHalveMix, canDoubleMix, recommendedBatchForBucket } from "./domain/bucket/limits";
 import { estimateMixVolume, type SandType } from "./domain/mix/volume";
 import { LongPressProgressProvider } from "./components/shared/LongPressProgressContext";
 import {
@@ -496,6 +496,24 @@ export function BatchMixer({
     () => initialMixValues(activeRecipe, recipeBinderSum(activeRecipe, initialBinderSum))[0],
     [activeRecipe, initialBinderSum],
   );
+
+  const recommendedForBucketGrams = useMemo(
+    () =>
+      recommendedBatchForBucket(
+        activeRecipe,
+        initialBinderSum,
+        bucketSelection,
+        sandType,
+      ).totalGrams,
+    [activeRecipe, initialBinderSum, bucketSelection, sandType],
+  );
+
+  const mixFillPercent = useMemo(() => {
+    if (bucketSelection === "none") return null;
+    return displayFillPercent(mixVolume.estimatedLiters, bucketSelection);
+  }, [mixVolume.estimatedLiters, bucketSelection]);
+
+  const currentMixTotalGrams = values[0] ?? 0;
 
   const canHalveMixAction = canHalveMix(values);
   useThemeAppearanceSync();
@@ -1130,6 +1148,10 @@ export function BatchMixer({
             <div ref={recBatchColRef} className="min-w-0 h-full">
             <RecBatchPanel
               recommendedTotalGrams={recommendedTotalGrams}
+              recommendedForBucketGrams={recommendedForBucketGrams}
+              currentMixTotalGrams={currentMixTotalGrams}
+              bucketSelection={bucketSelection}
+              mixFillPercent={mixFillPercent}
               onReset={handleResetToRecommended}
               onSave={handleSaveRequest}
               onLoad={handleLoad}

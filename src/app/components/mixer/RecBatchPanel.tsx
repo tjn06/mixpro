@@ -1,6 +1,9 @@
-import React, { type RefObject } from "react";
+import { useState, type RefObject } from "react";
+import type { BucketSelection } from "../../domain/bucket/types";
+import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import { LongPressButton } from "../shared/LongPressButton";
-import { LoadIcon, SavedIcon, SaveIcon } from "../shared/ActionIcons";
+import { InfoIcon, LoadIcon, SavedIcon, SaveIcon, BaseConfigIcon } from "../shared/ActionIcons";
+import { RecBatchInfoSheet } from "../sheets/RecBatchInfoSheet";
 import { cv } from "../../ui/tokens";
 import {
   FEATURE_PANEL_BG,
@@ -14,6 +17,8 @@ import {
 } from "../../presentation/featureReadout";
 
 const REC_BATCH_LABEL = "Rec. batch";
+const INFO_ICON_SIZE = 18;
+const REC_BATCH_BADGE_SIZE = 11;
 
 /** Match bottom action grid in BatchMixer. */
 export const ACTION_BLOCK_H = "var(--bottom-action-h)";
@@ -40,10 +45,12 @@ export function LockIcon({ locked, size = 16 }: { locked: boolean; size?: number
   );
 }
 
-import type { SavedMixSnapshot } from "../../saved-mixes/types";
-
 export interface RecBatchPanelProps {
   recommendedTotalGrams: number;
+  recommendedForBucketGrams: number;
+  currentMixTotalGrams: number;
+  bucketSelection: BucketSelection;
+  mixFillPercent: number | null;
   onReset: () => void;
   onSave: () => void;
   onLoad: () => void;
@@ -65,6 +72,10 @@ export interface RecBatchPanelProps {
 
 export function RecBatchPanel({
   recommendedTotalGrams,
+  recommendedForBucketGrams,
+  currentMixTotalGrams,
+  bucketSelection,
+  mixFillPercent,
   onReset,
   onSave,
   onLoad,
@@ -81,133 +92,161 @@ export function RecBatchPanel({
   recPanelRef,
   recReadoutRef,
 }: RecBatchPanelProps) {
+  const [infoOpen, setInfoOpen] = useState(false);
   const saveLabel = saveFlash ? "Saved" : loadedSavedMix ? "Update mix" : "Save mix";
   const saveIcon = saveFlash ? <SavedIcon /> : <SaveIcon />;
 
   return (
-    <div
-      className="flex flex-1 flex-col min-w-0 w-full min-h-0 h-full"
-      style={{
-        gap: "var(--action-row-gap)",
-        pointerEvents: "auto",
-        opacity: muted ? 0.88 : 1,
-        transition: "opacity 0.2s ease",
-        ...(isLocked && panelZIndex != null
-          ? { position: "relative" as const, zIndex: panelZIndex }
-          : {}),
-      }}
-    >
+    <>
       <div
-        ref={recPanelRef}
-        className="flex w-full flex-col min-w-0 rounded-xl overflow-hidden shrink-0"
+        className="flex flex-1 flex-col min-w-0 w-full min-h-0 h-full"
         style={{
-          background: FEATURE_PANEL_BG,
-          border: FEATURE_PANEL_BORDER,
-          transition: "border-color 0.2s ease",
+          gap: "var(--action-row-gap)",
+          pointerEvents: "auto",
+          opacity: muted ? 0.88 : 1,
+          transition: "opacity 0.2s ease",
+          ...(isLocked && panelZIndex != null
+            ? { position: "relative" as const, zIndex: panelZIndex }
+            : {}),
         }}
       >
         <div
-          ref={recReadoutRef}
-          className="flex flex-col items-center text-center w-full min-w-0"
+          ref={recPanelRef}
+          className="flex w-full flex-col min-w-0 rounded-xl overflow-hidden shrink-0"
           style={{
-            paddingTop: "var(--feature-panel-pt)",
-            paddingBottom: "var(--action-readout-pb)",
-            gap: "var(--feature-label-gap)",
-            ...(disabled ? { position: "relative" as const, zIndex: 8 } : {}),
+            background: FEATURE_PANEL_BG,
+            border: FEATURE_PANEL_BORDER,
+            transition: "border-color 0.2s ease",
           }}
         >
-          <span
-            className="uppercase truncate w-full"
+          <div
+            ref={recReadoutRef}
+            className="flex flex-col items-center text-center w-full min-w-0"
             style={{
-              ...FEATURE_TITLE_STYLE,
-              color: muted ? FEATURE_TITLE_COLOR_MUTED : FEATURE_TITLE_COLOR,
+              paddingTop: "var(--feature-panel-pt)",
+              paddingBottom: "var(--action-readout-pb)",
+              gap: "var(--feature-label-gap)",
+              ...(disabled ? { position: "relative" as const, zIndex: 8 } : {}),
             }}
           >
-            {REC_BATCH_LABEL}
-          </span>
-          <span
-            className="tabular-nums whitespace-nowrap"
+            <div
+              className="flex items-center justify-center w-full min-w-0"
+              style={{ gap: 5 }}
+            >
+              <span
+                className="uppercase truncate min-w-0"
+                style={{
+                  ...FEATURE_TITLE_STYLE,
+                  color: muted ? FEATURE_TITLE_COLOR_MUTED : FEATURE_TITLE_COLOR,
+                }}
+              >
+                {REC_BATCH_LABEL}
+              </span>
+              <span
+                className="shrink-0 flex items-center"
+                style={{
+                  color: muted ? FEATURE_TITLE_COLOR_MUTED : FEATURE_TITLE_COLOR,
+                  opacity: muted ? 0.75 : 0.92,
+                }}
+                aria-hidden
+              >
+                <BaseConfigIcon size={REC_BATCH_BADGE_SIZE} />
+              </span>
+            </div>
+            <span
+              className="tabular-nums whitespace-nowrap"
+              style={{
+                ...FEATURE_VALUE_FONT,
+                color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
+              }}
+            >
+              {formatRecommendedBatch(recommendedTotalGrams)}
+            </span>
+          </div>
+
+          <div
+            className="flex w-full min-w-0 shrink-0"
             style={{
-              ...FEATURE_VALUE_FONT,
-              color: muted ? FEATURE_VALUE_COLOR_MUTED : FEATURE_VALUE_COLOR,
+              height: "var(--action-row-h)",
+              borderTop: FEATURE_PANEL_BORDER,
             }}
           >
-            {formatRecommendedBatch(recommendedTotalGrams)}
-          </span>
+            <button
+              type="button"
+              aria-label="About recommended batch"
+              disabled={disabled}
+              className="relative flex shrink-0 items-center justify-center touch-none transition-colors duration-150 active:opacity-85"
+              style={{
+                width: "var(--action-row-h)",
+                height: "var(--action-row-h)",
+                minHeight: 0,
+                borderRadius: 0,
+                border: "none",
+                borderRight: FEATURE_PANEL_BORDER,
+                background: cv.action.longPressIdle,
+                cursor: disabled ? "default" : "pointer",
+                opacity: disabled ? cv.longPress.disabledOpacity : 1,
+                color: cv.longPress.labelIdle,
+              }}
+              onClick={() => {
+                if (disabled) return;
+                setInfoOpen(true);
+              }}
+            >
+              <InfoIcon size={INFO_ICON_SIZE} />
+            </button>
+            <LongPressButton
+              ref={resetButtonRef}
+              label="RESET"
+              confirmAction="RESET"
+              onLongPress={onReset}
+              disabled={disabled}
+              labelSize="var(--text-ui-xs)"
+              className="flex-1 min-w-0 rounded-none"
+              style={{
+                height: "var(--action-row-h)",
+                minHeight: 0,
+                borderRadius: 0,
+                border: "none",
+              }}
+            />
+          </div>
         </div>
 
         <div
+          ref={actionsBlockRef}
           className="flex w-full min-w-0 shrink-0"
-          style={{
-            height: "var(--action-row-h)",
-            borderTop: FEATURE_PANEL_BORDER,
-          }}
+          style={{ gap: "var(--action-row-gap)", height: "var(--action-row-h)" }}
         >
-          <button
-            type="button"
-            aria-label="Recommended batch info"
-            disabled={disabled}
-            className="relative flex shrink-0 items-center justify-center touch-none transition-colors duration-150"
-            style={{
-              width: "var(--action-row-h)",
-              height: "var(--action-row-h)",
-              minHeight: 0,
-              borderRadius: 0,
-              border: "none",
-              borderRight: FEATURE_PANEL_BORDER,
-              background: cv.action.longPressIdle,
-              cursor: disabled ? "default" : "pointer",
-              opacity: disabled ? cv.longPress.disabledOpacity : 1,
-              fontFamily: "'Outfit', sans-serif",
-              fontSize: "var(--text-ui-md)",
-              fontWeight: 700,
-              color: cv.longPress.labelIdle,
-              lineHeight: 1,
-            }}
-          >
-            !
-          </button>
           <LongPressButton
-            ref={resetButtonRef}
-            label="RESET"
-            confirmAction="RESET"
-            onLongPress={onReset}
-            disabled={disabled}
-            labelSize="var(--text-ui-xs)"
-            className="flex-1 min-w-0 rounded-none"
-            style={{
-              height: "var(--action-row-h)",
-              minHeight: 0,
-              borderRadius: 0,
-              border: "none",
-            }}
+            ref={saveButtonRef}
+            label={saveLabel}
+            confirmAction="SAVE MIX"
+            onLongPress={onSave}
+            variant="primary"
+            icon={saveIcon}
+            className="flex-1 h-full min-w-0"
+          />
+          <LongPressButton
+            label="Load mix"
+            confirmAction="LOAD MIX"
+            onLongPress={onLoad}
+            disabled={!canLoad || disabled}
+            icon={<LoadIcon />}
+            className="flex-1 h-full min-w-0"
           />
         </div>
       </div>
 
-      <div
-        ref={actionsBlockRef}
-        className="flex w-full min-w-0 shrink-0"
-        style={{ gap: "var(--action-row-gap)", height: "var(--action-row-h)" }}
-      >
-        <LongPressButton
-          ref={saveButtonRef}
-          label={saveLabel}
-          confirmAction="SAVE MIX"
-          onLongPress={onSave}
-          variant="primary"
-          icon={saveIcon}
-          className="flex-1 h-full min-w-0"
-        />
-        <LongPressButton
-          label="Load mix"
-          confirmAction="LOAD MIX"
-          onLongPress={onLoad}
-          disabled={!canLoad || disabled}
-          icon={<LoadIcon />}
-          className="flex-1 h-full min-w-0"
-        />
-      </div>
-    </div>
+      <RecBatchInfoSheet
+        open={infoOpen}
+        onOpenChange={setInfoOpen}
+        bucketSelection={bucketSelection}
+        recommendedNominalGrams={recommendedTotalGrams}
+        recommendedForBucketGrams={recommendedForBucketGrams}
+        currentMixTotalGrams={currentMixTotalGrams}
+        mixFillPercent={mixFillPercent}
+      />
+    </>
   );
 }
