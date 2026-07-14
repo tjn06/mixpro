@@ -4,6 +4,14 @@
 @import './component-tokens.css';
 @import './app-layout.css';
 
+/** App shell owns all scrolling — document must never scroll. */
+html,
+body,
+#root {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 /* Mobile shell — full bleed; safe areas handled inside .app-frame */
 .mobile-shell {
   box-sizing: border-box;

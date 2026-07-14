@@ -682,7 +682,7 @@ export function BatchTotalsScreen({
 
   return (
     <div
-      className={`batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-x-hidden relative${compactSummary ? " batch-totals-screen--compact-summary" : !shellCompact ? " batch-totals-screen--tall" : ""}`}
+      className={`batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden relative${compactSummary ? " batch-totals-screen--compact-summary" : !shellCompact ? " batch-totals-screen--tall" : ""}`}
       data-dense-table={denseTable ? "" : undefined}
     >
       <div

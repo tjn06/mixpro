@@ -35,6 +35,7 @@
   min-height: 0;
   min-width: 0;
   flex-shrink: 0;
+  overflow: hidden;
   container-type: size;
   container-name: app;
 }
@@ -65,8 +66,10 @@
   position: relative;
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .recipe-context-gradient::before {
@@ -900,11 +903,7 @@
   min-width: 0;
 }
 
-/** Totals screen only — sheet bg fills home-indicator zone; content stays inset via __sheet padding. */
-.batch-totals-screen .batch-totals-bottom-panel {
-  margin-bottom: calc(-1 * var(--safe-bottom));
-}
-
+/** Totals screen — sheet bg fills home-indicator zone via __sheet padding (no negative margin — that painted past the flex box and enabled document scroll). */
 .batch-totals-bottom-panel__sheet {
   width: 100%;
   background: var(--ui-header-bg);
