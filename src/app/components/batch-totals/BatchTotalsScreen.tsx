@@ -261,58 +261,60 @@ function BatchTotalsBottomPanel({
   return (
     <div
       id="batch-totals-bottom-panel"
-      className={`shrink-0 app-gutter-x flex flex-col min-w-0 w-full batch-totals-bottom-panel${
+      className={`batch-totals-bottom-panel${
         expanded ? " batch-totals-bottom-panel--expanded" : ""
       }${holding ? " batch-totals-bottom-panel--holding" : ""}`}
-      style={{
-        gap: 8,
-        paddingBottom: "var(--app-bottom-inset)",
-      }}
     >
-      <button
-        type="button"
-        className={`batch-totals-grab-handle touch-manipulation${
-          holding ? " batch-totals-grab-handle--holding" : ""
-        }`}
-        aria-expanded={expanded}
-        aria-controls="batch-totals-bottom-panel-details"
-        aria-label={expanded ? "Drag down to hide share actions" : "Drag up to show share actions"}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
-      >
-        <span className="batch-totals-grab-handle__pill" aria-hidden />
-      </button>
+      <div className="batch-totals-bottom-panel__sheet">
+        <div className="batch-totals-bottom-panel__content app-gutter-x">
+          <button
+            type="button"
+            className={`batch-totals-grab-handle touch-manipulation${
+              holding ? " batch-totals-grab-handle--holding" : ""
+            }`}
+            aria-expanded={expanded}
+            aria-controls="batch-totals-bottom-panel-details"
+            aria-label={
+              expanded ? "Drag down to hide share actions" : "Drag up to show share actions"
+            }
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
+          >
+            <span className="batch-totals-grab-handle__pill" aria-hidden />
+          </button>
 
-      <BatchTotalsSummaryBar
-        multiplier={multiplier}
-        hasExtraBatch={hasExtraBatch}
-        totalGrams={totalGrams}
-        colorScheme={colorScheme}
-      />
-
-      <div
-        id="batch-totals-bottom-panel-details"
-        className={`batch-totals-bottom-panel__details${
-          holding ? " batch-totals-bottom-panel__details--live" : ""
-        }`}
-        aria-hidden={!expanded && !holding && dragOffset === 0}
-        style={{
-          maxHeight: previewHeight,
-          transition: holding
-            ? "none"
-            : "max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
-        }}
-      >
-        <div ref={detailsInnerRef} className="batch-totals-bottom-panel__details-inner">
-          <BatchTotalsShareBar
-            recipe={recipe}
-            values={values}
-            complementValues={complementValues}
-            entityIndexes={entityIndexes}
+          <BatchTotalsSummaryBar
             multiplier={multiplier}
+            hasExtraBatch={hasExtraBatch}
+            totalGrams={totalGrams}
+            colorScheme={colorScheme}
           />
+
+          <div
+            id="batch-totals-bottom-panel-details"
+            className={`batch-totals-bottom-panel__details${
+              holding ? " batch-totals-bottom-panel__details--live" : ""
+            }`}
+            aria-hidden={!expanded && !holding && dragOffset === 0}
+            style={{
+              maxHeight: previewHeight,
+              transition: holding
+                ? "none"
+                : "max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
+            }}
+          >
+            <div ref={detailsInnerRef} className="batch-totals-bottom-panel__details-inner">
+              <BatchTotalsShareBar
+                recipe={recipe}
+                values={values}
+                complementValues={complementValues}
+                entityIndexes={entityIndexes}
+                multiplier={multiplier}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

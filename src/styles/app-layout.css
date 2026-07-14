@@ -794,6 +794,9 @@
 /* Totals screen — slightly smaller sum column type in tables */
 .batch-totals-screen {
   --text-totals-sum: var(--text-totals-mult);
+  --batch-totals-panel-radius: 16px;
+  /** Content inset above home indicator — totals screen only (panel bg bleeds below). */
+  --batch-totals-panel-content-inset-bottom: max(var(--space-3, 12px), var(--safe-bottom));
   --totals-card-header-py: 2px;
   --totals-card-header-px: 6px;
   --totals-header-icon-btn: 32px;
@@ -883,6 +886,29 @@
 .batch-totals-bottom-panel {
   position: relative;
   z-index: 3;
+  flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.batch-totals-bottom-panel__sheet {
+  width: 100%;
+  background: var(--ui-header-bg);
+  border-top: 1px solid var(--semantic-border-subtle);
+  border-radius: var(--batch-totals-panel-radius) var(--batch-totals-panel-radius) 0 0;
+  box-shadow:
+    0 -1px 0 color-mix(in srgb, var(--component-sheet-panel-overlay-light) 35%, transparent),
+    0 -10px 28px color-mix(in srgb, var(--semantic-text-primary) 7%, transparent);
+  padding-bottom: var(--batch-totals-panel-content-inset-bottom);
+  overflow: hidden;
+}
+
+.batch-totals-bottom-panel__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
 .batch-totals-grab-handle {
@@ -891,7 +917,7 @@
   justify-content: center;
   width: 100%;
   margin: 0;
-  padding: 6px 0 2px;
+  padding: 10px 0 4px;
   border: none;
   background: transparent;
   cursor: grab;
