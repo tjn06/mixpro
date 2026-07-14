@@ -97,6 +97,24 @@ function ScrollEdgeFade({ edge }: { edge: "top" | "bottom" }) {
   );
 }
 
+/** Fade above footer — scroll content dissolves before action buttons. */
+export function FooterScrollEdgeFade({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+  return (
+    <div
+      aria-hidden
+      className="sheet-footer-scroll-fade pointer-events-none absolute inset-x-0"
+      style={{
+        height: SCROLL_EDGE_FADE_H,
+        bottom: "100%",
+        zIndex: 12,
+        background:
+          "linear-gradient(to top, var(--ui-header-bg) 0%, transparent 100%)",
+      }}
+    />
+  );
+}
+
 /** Overlay fades — only when scrollable content exists in that direction. */
 export function ScrollEdgeFadeOverlays({
   fromTop,

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FooterScrollEdgeFade } from "./scrollEdgeFades";
 import { componentTokens } from "../../ui/tokens";
 
 const footer = componentTokens.sheetFooterButton;
@@ -24,6 +25,8 @@ export interface SheetFooterButton {
 
 interface SheetFooterProps {
   buttons: SheetFooterButton[];
+  /** Bottom scroll fade — lives on the footer so content fades before buttons, not under a solid bar. */
+  fadeFromBottom?: boolean;
 }
 
 function SheetFooterTooltip({ label }: { label: string }) {
@@ -78,7 +81,7 @@ function SheetIconButton({
 }
 
 /** Bottom action row — icon-only tap buttons sharing one row. */
-export function SheetFooter({ buttons }: SheetFooterProps) {
+export function SheetFooter({ buttons, fadeFromBottom = false }: SheetFooterProps) {
   return (
     <footer
       className="sheet-footer-chrome shrink-0 flex items-center relative z-[11]"
@@ -89,6 +92,7 @@ export function SheetFooter({ buttons }: SheetFooterProps) {
         gap: SHEET_FOOTER_GAP,
       }}
     >
+      <FooterScrollEdgeFade visible={fadeFromBottom} />
       {buttons.map((btn) => (
         <div key={btn.key} className="relative flex flex-1 min-w-0 justify-center">
           {btn.tooltip ? <SheetFooterTooltip label={btn.tooltip} /> : null}

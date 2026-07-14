@@ -409,7 +409,7 @@ export function LoadSavedMixesSheet({
           <div className="scroll-edge-fade-viewport flex-1 min-h-0 relative flex flex-col">
             <ScrollEdgeFadeOverlays
               fromTop={listScroll.fromTop}
-              fromBottom={listScroll.fromBottom}
+              fromBottom={false}
             />
 
             <div
@@ -452,6 +452,7 @@ export function LoadSavedMixesSheet({
           </div>
 
           <SheetFooter
+            fadeFromBottom={listScroll.fromBottom}
             buttons={[
               {
                 key: "close",

@@ -56,11 +56,11 @@
 }
 
 .sheet-footer-chrome {
-  background: var(--component-sheet-panel-bg);
+  background: transparent;
 }
 
-.app-frame-cover-sheet .sheet-footer-chrome {
-  background: transparent;
+.sheet-footer-scroll-fade {
+  flex-shrink: 0;
 }
 
 .sheet-footer-btn {
