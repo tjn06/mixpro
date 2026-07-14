@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   SavePlus,
   Info,
+  PanelTopClose,
   type LucideIcon,
 } from "lucide-react";
 
@@ -83,5 +84,8 @@ export const MailIcon = createActionIcon(Mail);
 export const MessageIcon = createActionIcon(MessageSquare);
 
 export const CloseIcon = createActionIcon(X);
+
+/** Collapse / dismiss a bottom sheet or panel. */
+export const PanelTopCloseIcon = createActionIcon(PanelTopClose);
 
 export const InfoIcon = createActionIcon(Info);

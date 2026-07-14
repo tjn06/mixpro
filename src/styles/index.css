@@ -1321,7 +1321,7 @@
 
 .recipe-picker-close {
   position: absolute;
-  right: max(var(--space-4, 16px), var(--safe-right));
+  left: 50%;
   bottom: max(var(--space-3, 12px), var(--safe-bottom));
   z-index: 2;
   display: flex;
@@ -1332,6 +1332,10 @@
   border-radius: 9999px;
   cursor: pointer;
   touch-action: manipulation;
+  transform: translateX(-50%);
+  box-shadow:
+    0 2px 6px color-mix(in srgb, var(--semantic-text-primary) 14%, transparent),
+    0 1px 2px color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
 }
 
 /* Saved mix card — 2×2 action grid; widens left over content, right edge stays on card. */
