@@ -43,9 +43,34 @@ function defaultPickerBucket(
   return recipeId === appliedRecipeId ? appliedBucket : DEFAULT_BUCKET_SELECTION;
 }
 
-function pickerBucketOptionLabel(option: BucketSelection): string {
-  if (option === "none") return "∞";
-  return `${option} L`;
+
+function PickerBucketLabel({
+  option,
+  className,
+}: {
+  option: BucketSelection;
+  className?: string;
+}) {
+  if (option === "none") {
+    return (
+      <span
+        className={`recipe-picker-bucket-label recipe-picker-bucket-label--infinite${
+          className ? ` ${className}` : ""
+        }`}
+      >
+        <span className="recipe-picker-bucket-label__symbol" aria-hidden="true">
+          ∞
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <span className={`recipe-picker-bucket-label${className ? ` ${className}` : ""}`}>
+      <span className="recipe-picker-bucket-label__value">{option}</span>
+      <span className="recipe-picker-bucket-label__unit">L</span>
+    </span>
+  );
 }
 
 function pickerBucketAriaLabel(option: BucketSelection, selected: boolean): string {
@@ -458,7 +483,7 @@ function RecipePickerCardDetail({
                 className="recipe-picker-card-detail__bucket-selection recipe-picker-side-meta__value recipe-picker-side-meta__value--strong"
                 aria-hidden={bucketOpen}
               >
-                {pickerBucketOptionLabel(bucketSelection)}
+                <PickerBucketLabel option={bucketSelection} />
               </span>
             </button>
             <div className="recipe-picker-card-detail__bucket-body">
@@ -505,7 +530,7 @@ function RecipePickerCardDetail({
                           setBucketOpen(false);
                         }}
                       />
-                      <span>{pickerBucketOptionLabel(option)}</span>
+                      <PickerBucketLabel option={option} />
                     </label>
                   );
                 })}
