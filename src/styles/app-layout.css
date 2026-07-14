@@ -795,8 +795,9 @@
 .batch-totals-screen {
   --text-totals-sum: var(--text-totals-mult);
   --batch-totals-panel-radius: 16px;
-  /** Content inset above home indicator — totals screen only (panel bg bleeds below). */
+  /** Interactive inset above home indicator when share panel is open. */
   --batch-totals-panel-content-inset-bottom: max(var(--space-3, 12px), var(--safe-bottom));
+  --batch-totals-panel-shadow: 0 -6px 20px color-mix(in srgb, var(--semantic-text-primary) 4%, transparent);
   --totals-card-header-py: 2px;
   --totals-card-header-px: 6px;
   --totals-header-icon-btn: 32px;
@@ -808,6 +809,14 @@
   /** Formula row operators (+ / =) — separate from table caption type. */
   --totals-op-sep-font-size: clamp(18px, min(5.13cqi, 2.62cqh), 20px);
   --totals-op-sep-h: clamp(20px, min(5.64cqi, 2.88cqh), 22px);
+}
+
+[data-theme="light"] .batch-totals-screen {
+  --batch-totals-panel-shadow: 0 -4px 14px color-mix(in srgb, var(--semantic-text-primary) 3%, transparent);
+}
+
+[data-theme="dark"] .batch-totals-screen {
+  --batch-totals-panel-shadow: 0 -5px 18px color-mix(in srgb, var(--semantic-text-primary) 3.5%, transparent);
 }
 
 .batch-totals-screen .batch-totals-card-header-btn svg {
@@ -899,12 +908,10 @@
 .batch-totals-bottom-panel__sheet {
   width: 100%;
   background: var(--ui-header-bg);
-  border-top: 1px solid var(--semantic-border-subtle);
+  border-top: none;
   border-radius: var(--batch-totals-panel-radius) var(--batch-totals-panel-radius) 0 0;
-  box-shadow:
-    0 -1px 0 color-mix(in srgb, var(--component-sheet-panel-overlay-light) 35%, transparent),
-    0 -10px 28px color-mix(in srgb, var(--semantic-text-primary) 7%, transparent);
-  padding-bottom: var(--batch-totals-panel-content-inset-bottom);
+  box-shadow: var(--batch-totals-panel-shadow);
+  padding-bottom: var(--safe-bottom);
   overflow: hidden;
 }
 
@@ -914,6 +921,41 @@
   gap: 8px;
   width: 100%;
   min-width: 0;
+  padding-bottom: var(--space-3, 12px);
+}
+
+.batch-totals-bottom-panel__drag-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.batch-totals-bottom-panel--holding .batch-totals-bottom-panel__drag-zone {
+  cursor: grabbing;
+}
+
+.batch-totals-bottom-panel__drag-zone,
+.batch-totals-bottom-panel__drag-zone * {
+  touch-action: none;
+}
+
+.batch-totals-bottom-panel--expanded .batch-totals-bottom-panel__content,
+.batch-totals-bottom-panel--revealing .batch-totals-bottom-panel__content {
+  padding-bottom: var(--batch-totals-panel-content-inset-bottom);
+}
+
+.batch-totals-bottom-panel__details button,
+.batch-totals-bottom-panel__details input,
+.batch-totals-bottom-panel__details a {
+  touch-action: manipulation;
+  user-select: auto;
+  cursor: pointer;
 }
 
 .batch-totals-grab-handle {
@@ -923,15 +965,6 @@
   width: 100%;
   margin: 0;
   padding: 10px 0 4px;
-  border: none;
-  background: transparent;
-  cursor: grab;
-  touch-action: none;
-}
-
-.batch-totals-grab-handle--holding,
-.batch-totals-grab-handle:active {
-  cursor: grabbing;
 }
 
 .batch-totals-grab-handle__pill {
