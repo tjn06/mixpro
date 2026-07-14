@@ -898,6 +898,7 @@
   touch-action: none;
 }
 
+.batch-totals-grab-handle--holding,
 .batch-totals-grab-handle:active {
   cursor: grabbing;
 }
@@ -908,25 +909,37 @@
   height: 4px;
   border-radius: 9999px;
   background: color-mix(in srgb, var(--semantic-text-primary) 24%, transparent);
+  transition:
+    background-color 120ms ease,
+    width 120ms ease,
+    height 120ms ease;
+}
+
+.batch-totals-grab-handle--holding .batch-totals-grab-handle__pill {
+  width: 40px;
+  height: 5px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 46%, transparent);
 }
 
 .batch-totals-bottom-panel__details {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+  min-height: 0;
 }
 
-.batch-totals-bottom-panel--expanded .batch-totals-bottom-panel__details {
-  grid-template-rows: 1fr;
+.batch-totals-bottom-panel__details--live {
+  will-change: max-height;
 }
 
 .batch-totals-bottom-panel__details-inner {
-  overflow: hidden;
   min-height: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .batch-totals-bottom-panel__details {
+    transition: none !important;
+  }
+
+  .batch-totals-grab-handle__pill {
     transition: none;
   }
 }

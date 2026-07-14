@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, type CSSProperties, type ReactNode } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
 import type { BlendingRecipe } from "../../domain/recipe/types";
@@ -133,70 +133,189 @@ const SUMMARY_COLS = "minmax(0, 1fr) auto";
 
 const PANEL_DRAG_THRESHOLD_PX = 16;
 const PANEL_TAP_SLOP_PX = 8;
+const PANEL_DRAG_FOLLOW = 0.72;
+const PANEL_DETAILS_HEIGHT_FALLBACK = 140;
 
-function BatchTotalsPanelGrabHandle({
-  expanded,
-  onExpand,
-  onCollapse,
-  onToggle,
+function BatchTotalsBottomPanel({
+  multiplier,
+  hasExtraBatch,
+  totalGrams,
+  colorScheme,
+  recipe,
+  values,
+  complementValues,
+  entityIndexes,
 }: {
-  expanded: boolean;
-  onExpand: () => void;
-  onCollapse: () => void;
-  onToggle: () => void;
+  multiplier: number;
+  hasExtraBatch: boolean;
+  totalGrams: number;
+  colorScheme: ColorScheme;
+  recipe: BlendingRecipe;
+  values: number[];
+  complementValues: number[];
+  entityIndexes: number[];
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [holding, setHolding] = useState(false);
+  const [detailsHeight, setDetailsHeight] = useState(PANEL_DETAILS_HEIGHT_FALLBACK);
   const dragStartYRef = useRef<number | null>(null);
+  const detailsInnerRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = detailsInnerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      setDetailsHeight(el.scrollHeight || PANEL_DETAILS_HEIGHT_FALLBACK);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [multiplier, hasExtraBatch, recipe.id]);
+
+  const clampDragOffset = useCallback(
+    (dy: number) => {
+      const max = detailsHeight * 0.92;
+      if (expanded) {
+        return Math.min(max, Math.max(0, dy * PANEL_DRAG_FOLLOW));
+      }
+      return Math.max(-max, Math.min(0, dy * PANEL_DRAG_FOLLOW));
+    },
+    [detailsHeight, expanded],
+  );
+
+  const resetDrag = useCallback(() => {
+    dragStartYRef.current = null;
+    setHolding(false);
+    setDragOffset(0);
+  }, []);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
     dragStartYRef.current = event.clientY;
+    setHolding(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   }, []);
+
+  const handlePointerMove = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      const startY = dragStartYRef.current;
+      if (startY == null) return;
+      setDragOffset(clampDragOffset(event.clientY - startY));
+    },
+    [clampDragOffset],
+  );
 
   const handlePointerUp = useCallback(
     (event: React.PointerEvent<HTMLButtonElement>) => {
       const startY = dragStartYRef.current;
-      dragStartYRef.current = null;
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
-      if (startY == null) return;
+      if (startY == null) {
+        resetDrag();
+        return;
+      }
 
       const dy = event.clientY - startY;
+      setHolding(false);
+      setDragOffset(0);
+      dragStartYRef.current = null;
+
       if (Math.abs(dy) <= PANEL_TAP_SLOP_PX) {
-        onToggle();
+        setExpanded((open) => !open);
         return;
       }
-      if (dy <= -PANEL_DRAG_THRESHOLD_PX) {
-        onExpand();
+      if (!expanded && dy <= -PANEL_DRAG_THRESHOLD_PX) {
+        setExpanded(true);
         return;
       }
-      if (dy >= PANEL_DRAG_THRESHOLD_PX) {
-        onCollapse();
+      if (expanded && dy >= PANEL_DRAG_THRESHOLD_PX) {
+        setExpanded(false);
       }
     },
-    [onCollapse, onExpand, onToggle],
+    [expanded, resetDrag],
   );
 
-  const handlePointerCancel = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
-    dragStartYRef.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  }, []);
+  const handlePointerCancel = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      resetDrag();
+    },
+    [resetDrag],
+  );
+
+  const previewHeight =
+    holding || dragOffset !== 0
+      ? expanded
+        ? Math.max(0, detailsHeight - dragOffset)
+        : Math.max(0, -dragOffset)
+      : expanded
+        ? detailsHeight
+        : 0;
 
   return (
-    <button
-      type="button"
-      className="batch-totals-grab-handle touch-manipulation"
-      aria-expanded={expanded}
-      aria-controls="batch-totals-bottom-panel-details"
-      aria-label={expanded ? "Drag down to hide share actions" : "Drag up to show share actions"}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
+    <div
+      id="batch-totals-bottom-panel"
+      className={`shrink-0 app-gutter-x flex flex-col min-w-0 w-full batch-totals-bottom-panel${
+        expanded ? " batch-totals-bottom-panel--expanded" : ""
+      }${holding ? " batch-totals-bottom-panel--holding" : ""}`}
+      style={{
+        gap: 8,
+        paddingBottom: "var(--app-bottom-inset)",
+      }}
     >
-      <span className="batch-totals-grab-handle__pill" aria-hidden />
-    </button>
+      <button
+        type="button"
+        className={`batch-totals-grab-handle touch-manipulation${
+          holding ? " batch-totals-grab-handle--holding" : ""
+        }`}
+        aria-expanded={expanded}
+        aria-controls="batch-totals-bottom-panel-details"
+        aria-label={expanded ? "Drag down to hide share actions" : "Drag up to show share actions"}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+      >
+        <span className="batch-totals-grab-handle__pill" aria-hidden />
+      </button>
+
+      <BatchTotalsSummaryBar
+        multiplier={multiplier}
+        hasExtraBatch={hasExtraBatch}
+        totalGrams={totalGrams}
+        colorScheme={colorScheme}
+      />
+
+      <div
+        id="batch-totals-bottom-panel-details"
+        className={`batch-totals-bottom-panel__details${
+          holding ? " batch-totals-bottom-panel__details--live" : ""
+        }`}
+        aria-hidden={!expanded && !holding && dragOffset === 0}
+        style={{
+          maxHeight: previewHeight,
+          transition: holding
+            ? "none"
+            : "max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
+      >
+        <div ref={detailsInnerRef} className="batch-totals-bottom-panel__details-inner">
+          <BatchTotalsShareBar
+            recipe={recipe}
+            values={values}
+            complementValues={complementValues}
+            entityIndexes={entityIndexes}
+            multiplier={multiplier}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -518,7 +637,6 @@ export function BatchTotalsScreen({
   const amountColor = entityValueColor(true, colorScheme);
   const shellCompact = useAppShellCompact();
   const [extraBatchSheetOpen, setExtraBatchSheetOpen] = useState(false);
-  const [panelExpanded, setPanelExpanded] = useState(false);
   const [sheetPortal, setSheetPortal] = useState<HTMLElement | null>(null);
   const ingredientRows = entityIndexes.filter((i) => i !== 0);
   const batchTableRowCount = ingredientRows.length + 1;
@@ -929,46 +1047,16 @@ export function BatchTotalsScreen({
         </div>
       </div>
 
-      <div
-        id="batch-totals-bottom-panel"
-        className={`shrink-0 app-gutter-x flex flex-col min-w-0 w-full batch-totals-bottom-panel${
-          panelExpanded ? " batch-totals-bottom-panel--expanded" : ""
-        }`}
-        style={{
-          gap: 8,
-          paddingBottom: "var(--app-bottom-inset)",
-        }}
-      >
-        <BatchTotalsPanelGrabHandle
-          expanded={panelExpanded}
-          onExpand={() => setPanelExpanded(true)}
-          onCollapse={() => setPanelExpanded(false)}
-          onToggle={() => setPanelExpanded((open) => !open)}
-        />
-
-        <BatchTotalsSummaryBar
-          multiplier={multiplier}
-          hasExtraBatch={hasExtraBatch}
-          totalGrams={grandTotalGrams}
-          colorScheme={colorScheme}
-        />
-
-        <div
-          id="batch-totals-bottom-panel-details"
-          className="batch-totals-bottom-panel__details"
-          aria-hidden={!panelExpanded}
-        >
-          <div className="batch-totals-bottom-panel__details-inner">
-            <BatchTotalsShareBar
-              recipe={recipe}
-              values={values}
-              complementValues={complementValues}
-              entityIndexes={entityIndexes}
-              multiplier={multiplier}
-            />
-          </div>
-        </div>
-      </div>
+      <BatchTotalsBottomPanel
+        multiplier={multiplier}
+        hasExtraBatch={hasExtraBatch}
+        totalGrams={grandTotalGrams}
+        colorScheme={colorScheme}
+        recipe={recipe}
+        values={values}
+        complementValues={complementValues}
+        entityIndexes={entityIndexes}
+      />
 
       {sheetPortal
         ? createPortal(
