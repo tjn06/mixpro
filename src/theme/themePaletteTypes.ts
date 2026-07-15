@@ -32,9 +32,9 @@ export interface ThemePaletteSurfaces {
   header: string;
   headerSub: string;
   raised: string;
-  /** Sticky bottom-sheet dock (handle + TOTAL + actions) — slightly elevated vs sheetBody. */
+  /** Sticky bottom-sheet dock (handle + TOTAL + actions). */
   sheetDock: string;
-  /** Expanded bottom-sheet body plane — quieter, header-adjacent chrome. */
+  /** Expanded bottom-sheet body — same plane as sheetDock. */
   sheetBody: string;
   button: string;
   buttonActive: string;

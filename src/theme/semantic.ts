@@ -31,10 +31,10 @@ export const semanticColors = {
     shell: primitiveInk[950],
     header: primitiveInk[850],
     raised: primitiveInk[650],
-    /** Sticky dock chrome — modest lift above header-like body, not full entity raised. */
+    /** Sticky dock chrome — modest lift above app, not full entity raised. */
     sheetDock: primitiveInk[700],
-    /** Expanded swipe-panel body — header-adjacent, quieter than dock. */
-    sheetBody: primitiveInk[850],
+    /** Expanded swipe-panel body — matches dock for a single sheet plane. */
+    sheetBody: primitiveInk[700],
     input: primitiveInk[700],
     swipe: primitiveInk[800],
     dropdown: "#3a3a4c",

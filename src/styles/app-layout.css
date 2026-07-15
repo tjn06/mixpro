@@ -1090,8 +1090,8 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
-  /** Expanded summary plane — quieter sheetBody vs sticky dock. */
-  background: var(--semantic-surface-sheet-body, var(--ui-header-bg));
+  /** Expanded summary plane — same sheet surface as dock. */
+  background: var(--semantic-surface-sheet-body, var(--semantic-surface-sheet-dock, var(--ui-header-bg)));
   animation: batch-totals-body-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 

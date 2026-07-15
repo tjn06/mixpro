@@ -8,8 +8,8 @@
  * | Light + default   | lightDefaultPalette below            | no  |
  * | Light + high      | lightHighContrastPalette below       | no  |
  *
- * Sheet chrome: `surfaces.sheetDock` (sticky handle/TOTAL) vs `surfaces.sheetBody`
- * (expanded summary). Dark default also sets these on `semanticColors.surface`.
+ * Sheet chrome: `surfaces.sheetDock` (sticky handle/TOTAL) and `surfaces.sheetBody`
+ * (expanded summary) share one sheet plane per appearance.
  */
 import {
   alphaBlack,
@@ -55,7 +55,7 @@ export const lightDefaultPalette: ThemePalette = {
   surfaces: {
     raised: paper[650],
     sheetDock: paper[950],
-    sheetBody: paper[850],
+    sheetBody: paper[950],
     button: alphaBlack(0.06),
     buttonActive: alphaBlack(0.1),
     buttonSolid: "#e6e6ec",
@@ -141,7 +141,7 @@ export const darkHighContrastPalette: ThemePalette = {
   surfaces: {
     raised: "#1e1e3c",
     sheetDock: primitiveInk[650],
-    sheetBody: primitiveInk[850],
+    sheetBody: primitiveInk[650],
     button: alphaWhite(0.18),
     buttonActive: alphaWhite(0.24),
     buttonSolid: "#42424e",
@@ -221,7 +221,7 @@ export const lightHighContrastPalette: ThemePalette = {
   surfaces: {
     raised: paper[600],
     sheetDock: paper[950],
-    sheetBody: paper[850],
+    sheetBody: paper[950],
     button: alphaBlack(0.1),
     buttonActive: alphaBlack(0.14),
     buttonSolid: "#dedee4",
