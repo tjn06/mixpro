@@ -1,13 +1,15 @@
 import { formatMixAmount, MIX_PARAMS } from "../mix/entities";
+import type { ExtraBatchEntry } from "./extraBatches";
+import { sumExtraBatchGrams } from "./extraBatches";
 
-/** Combined total for one ingredient: N identical batches + optional complement. */
+/** Combined total for one ingredient: N identical batches + optional extra batches. */
 export function batchIngredientTotalGrams(
   batchValues: number[],
-  complementValues: number[],
+  extraBatches: ExtraBatchEntry[],
   index: number,
   multiplier: number,
 ): number {
-  return batchValues[index] * multiplier + complementValues[index];
+  return batchValues[index] * multiplier + sumExtraBatchGrams(extraBatches, index);
 }
 
 export function complementSummaryLine(

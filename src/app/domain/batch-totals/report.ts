@@ -1,6 +1,8 @@
 import { formatMixAmount, MIX_PARAMS } from "../mix/entities";
 import { batchIngredientTotalGrams } from "./totals";
-import { getEntityMetaLabel, getIngredientLabel, hasComplementAmounts } from "../recipe/calc";
+import type { ExtraBatchEntry } from "./extraBatches";
+import { extraBatchTotalCount, hasExtraBatches } from "./extraBatches";
+import { getEntityMetaLabel, getIngredientLabel } from "../recipe/calc";
 import { recipeMenuLabel } from "../recipe/types";
 import type { BlendingRecipe } from "../recipe/types";
 
@@ -56,13 +58,11 @@ export function buildBatchTotalsReportText(
   multiplier: number,
   language: BatchReportLanguage = "sv",
   comment?: string,
-  complementValues?: number[],
+  extraBatches: ExtraBatchEntry[] = [],
 ): string {
   const copy = REPORT_COPY[language];
   const rows = [0, ...entityIndexes.filter((i) => i !== 0)];
   const trimmedComment = comment?.trim();
-  const complement = complementValues ?? [];
-  const hasComplement = hasComplementAmounts(complement);
   const lines: string[] = [];
 
   if (trimmedComment) {
@@ -71,20 +71,24 @@ export function buildBatchTotalsReportText(
 
   lines.push(copy.heading, `${copy.recipe}: ${recipeMenuLabel(recipe)}`, "");
 
-  if (hasComplement) {
+  if (hasExtraBatches(extraBatches)) {
     const batchLabel =
       language === "sv"
         ? `${multiplier} ${multiplier === 1 ? "batch" : "batcher"}`
         : `${multiplier} ${multiplier === 1 ? "batch" : "batches"}`;
-    const complementLabel = language === "sv" ? "extra batch" : "extra batch";
-    lines.push(`${batchLabel} + ${complementLabel}`, "");
+    const extraCount = extraBatchTotalCount(extraBatches);
+    const extraLabel =
+      language === "sv"
+        ? `${extraCount} ${extraCount === 1 ? "extra batch" : "extra batchar"}`
+        : `${extraCount} ${extraCount === 1 ? "extra batch" : "extra batches"}`;
+    lines.push(`${batchLabel} + ${extraLabel}`, "");
   }
 
   for (const pi of rows) {
     const p = MIX_PARAMS[pi];
     const meta = reportMetaLabel(recipe, p.id, language);
     const unit = p.isKg ? "kg" : "g";
-    const totalGrams = batchIngredientTotalGrams(values, complement, pi, multiplier);
+    const totalGrams = batchIngredientTotalGrams(values, extraBatches, pi, multiplier);
     const total = `${formatMixAmount(totalGrams, p.isKg)} ${unit}`;
     const name = meta ? `${p.id} (${meta})` : p.id;
     lines.push(`${name}: ${total}`);

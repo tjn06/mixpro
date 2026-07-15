@@ -226,10 +226,12 @@ function ShareIconButton({
   );
 }
 
+import type { ExtraBatchEntry } from "../../domain/batch-totals/extraBatches";
+
 export interface BatchTotalsShareBarProps {
   recipe: BlendingRecipe;
   values: number[];
-  complementValues: number[];
+  extraBatches: ExtraBatchEntry[];
   entityIndexes: number[];
   multiplier: number;
 }
@@ -237,7 +239,7 @@ export interface BatchTotalsShareBarProps {
 export function BatchTotalsShareBar({
   recipe,
   values,
-  complementValues,
+  extraBatches,
   entityIndexes,
   multiplier,
 }: BatchTotalsShareBarProps) {
@@ -265,9 +267,9 @@ export function BatchTotalsShareBar({
         multiplier,
         language,
         comment,
-        complementValues,
+        extraBatches,
       ),
-    [recipe, values, entityIndexes, multiplier, language, comment, complementValues],
+    [recipe, values, entityIndexes, multiplier, language, comment, extraBatches],
   );
 
   const reportSubject = useMemo(

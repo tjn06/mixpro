@@ -19,13 +19,12 @@ import {
   applyRecipeChange,
   driverIdFromIndex,
   initialMixValues,
-  emptyComplementValues,
-  hasComplementAmounts,
   mixEpoxyGrams,
   mixSandGrams,
   recipeBinderSum,
   recipeIngredientIndexes,
 } from "./domain/recipe/calc";
+import type { ExtraBatchEntry } from "./domain/batch-totals/extraBatches";
 import { RecipeSelect } from "./components/mixer/RecipeSelect";
 import { RecipeRatioRow } from "./components/mixer/RecipeRatioRow";
 import {
@@ -54,7 +53,6 @@ import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "./domain/mix/entit
 import {
   BatchTotalsScreen,
 } from "./components/batch-totals/BatchTotalsScreen";
-import { batchIngredientTotalGrams } from "./domain/batch-totals/totals";
 import {
   CARD_NAME_WEIGHT,
   CARD_UNIT_WEIGHT,
@@ -430,7 +428,7 @@ export function BatchMixer({
   const [screen, setScreen] = useState<MixerScreen>("mixer");
   const [totalsPanelExpanded, setTotalsPanelExpanded] = useState(false);
   const [batchMultiplier, setBatchMultiplier] = useState(1);
-  const [complementValues, setComplementValues] = useState(() => emptyComplementValues());
+  const [extraBatches, setExtraBatches] = useState<ExtraBatchEntry[]>([]);
   const [dragFocus, setDragFocus]   = useState(false);
   const [dragDirection, setDragDirection] = useState<"up" | "down" | null>(null);
   const [dragBlocked, setDragBlocked] = useState(false);
@@ -908,7 +906,7 @@ export function BatchMixer({
   }, []);
 
   const handleBack = useCallback(() => {
-    setComplementValues(emptyComplementValues());
+    setExtraBatches([]);
     setTotalsPanelExpanded(false);
     setScreen("mixer");
   }, []);
@@ -1071,11 +1069,11 @@ export function BatchMixer({
             <BatchTotalsScreen
               recipe={activeRecipe}
               values={values}
-              complementValues={complementValues}
+              extraBatches={extraBatches}
               entityIndexes={ingredientIndexes}
               multiplier={batchMultiplier}
               onMultiplierChange={setBatchMultiplier}
-              onComplementChange={setComplementValues}
+              onExtraBatchesChange={setExtraBatches}
               sandType={sandType}
               totalsPanelExpanded={totalsPanelExpanded}
               onTotalsPanelExpandedChange={setTotalsPanelExpanded}

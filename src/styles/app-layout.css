@@ -794,20 +794,34 @@
   }
 }
 
-/* Totals screen — slightly smaller sum column type in tables */
+/* Totals screen — readable table typography with scroll-friendly spacing */
 .batch-totals-screen {
-  --text-totals-sum: var(--text-totals-mult);
-  --totals-card-header-py: 2px;
-  --totals-card-header-px: 6px;
+  --batch-totals-panel-reserve: 96px;
+  --totals-cell-py: 8px;
+  --totals-cell-px: 10px;
+  --totals-cell-mult-px: 8px;
+  --totals-th-py: 8px;
+  --totals-th-px: 10px;
+  --totals-th-mult-px: 8px;
+  --totals-add-extra-h: 44px;
+  --totals-add-extra-py: 12px;
+  --text-totals-section: var(--text-totals-table);
+  --totals-card-header-py: 4px;
+  --totals-card-header-px: 8px;
   --totals-header-icon-btn: 32px;
   --totals-header-icon-size: 16px;
   --totals-header-action-gap: 8px;
   --totals-header-cell-pad-x: 4px;
   --totals-section-title-pad-x: 4px;
   --totals-step-font-size: 15px;
-  /** Formula row operators (+ / =) — separate from table caption type. */
-  --totals-op-sep-font-size: clamp(18px, min(5.13cqi, 2.62cqh), 20px);
-  --totals-op-sep-h: clamp(20px, min(5.64cqi, 2.88cqh), 22px);
+  --text-totals-row-amount: var(--text-totals-mult);
+  --text-totals-row-amount-total: var(--text-card-value);
+  --text-totals-item-meta: var(--text-totals-table);
+  --text-totals-item-per-batch: var(--text-totals-caption);
+  --batch-totals-summary-batch-row-h: 1.125rem;
+  --batch-totals-summary-batch-row-gap: 2px;
+  --batch-totals-summary-cell-py: 6px;
+  --batch-totals-summary-h-dual: 50px;
 }
 
 .batch-totals-screen .batch-totals-card-header-btn svg {
@@ -817,20 +831,31 @@
 
 /** Shell height > 764px — applied via useAppShellCompact (container queries alone were unreliable). */
 .batch-totals-screen--tall:not(.batch-totals-screen--compact-summary) {
-  --totals-card-header-py: 6px;
-  --totals-card-header-px: 10px;
+  --totals-cell-py: 10px;
+  --totals-cell-px: 12px;
+  --totals-th-py: 10px;
+  --totals-th-px: 12px;
+  --text-totals-table: 12px;
+  --text-totals-section: 13px;
+  --totals-card-header-py: 8px;
+  --totals-card-header-px: 12px;
   --totals-header-icon-btn: 40px;
   --totals-header-icon-size: 18px;
   --totals-header-action-gap: 10px;
   --totals-header-cell-pad-x: 6px;
   --totals-section-title-pad-x: 6px;
   --totals-step-font-size: 17px;
-  --totals-op-sep-font-size: clamp(18px, min(4.6cqi, 2.35cqh), 20px);
-  --totals-op-sep-h: clamp(20px, min(5.13cqi, 2.62cqh), 22px);
+  --totals-add-extra-h: 48px;
+  --text-totals-row-amount: var(--text-card-value);
+  --text-totals-row-amount-total: var(--text-totals-sum);
 }
 
-/** ≤764px + >4 batch rows — compact card headers and formula separators. */
+/** ≤764px + >4 batch rows — compact card headers. */
 .batch-totals-screen--compact-summary {
+  --totals-cell-py: 6px;
+  --totals-cell-px: 8px;
+  --totals-th-py: 6px;
+  --totals-th-px: 8px;
   --totals-card-header-py: 0;
   --totals-card-header-px: 0;
   --totals-card-header-min-h: 27px;
@@ -842,8 +867,8 @@
   --totals-section-title-pad-x: 4px;
   --totals-mult-value-size: var(--text-totals-caption);
   --totals-multiplier-row-gap: 8px;
-  --totals-op-sep-font-size: clamp(15px, min(4.1cqi, 2.09cqh), 17px);
-  --totals-op-sep-h: clamp(18px, min(4.6cqi, 2.35cqh), 20px);
+  --totals-add-extra-h: 40px;
+  --totals-add-extra-py: 10px;
 }
 
 @container app (max-height: 764px) {
@@ -871,8 +896,8 @@
     --totals-section-title-pad-x: 4px;
     --totals-mult-value-size: var(--text-totals-caption);
     --totals-multiplier-row-gap: 8px;
-    --totals-op-sep-font-size: clamp(15px, min(4.1cqi, 2.09cqh), 17px);
-    --totals-op-sep-h: clamp(18px, min(4.6cqi, 2.35cqh), 20px);
+    --totals-add-extra-h: 40px;
+    --totals-add-extra-py: 10px;
   }
 }
 
@@ -907,19 +932,29 @@
   display: none;
 }
 
+.batch-totals-scroll-panel__inner {
+  padding-block: var(--space-2, 8px);
+  padding-bottom: calc(var(--batch-totals-panel-reserve) + var(--space-2, 8px));
+}
+
+.batch-totals-source-table tbody tr:last-child:not([data-section-header]) {
+  border-bottom: 0;
+}
+
+.batch-totals-add-extra-btn {
+  transition: background-color 150ms ease;
+}
+
+.batch-totals-add-extra-btn:active {
+  background: color-mix(in srgb, var(--semantic-extra-batch-label, #c4a86a) 8%, transparent);
+}
+
 .batch-totals-route {
   position: relative;
   flex: 1;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-}
-
-.batch-totals-screen--panel-expanded .batch-totals-scroll-panel {
-  visibility: hidden;
-  overflow: hidden;
-  touch-action: none;
-  pointer-events: none;
 }
 
 .batch-totals-bottom-panel:not(.batch-totals-bottom-panel--share-revealing) .batch-totals-bottom-panel__actions {
@@ -938,52 +973,35 @@
   flex-shrink: 0;
   min-width: 0;
   min-height: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__footer {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+  flex-shrink: 0;
 }
 
-.batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__card-region {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.batch-totals-summary-bar--expanded {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.batch-totals-summary-bar--expanded .batch-totals-summary-bar__card {
-  flex: 1;
-  min-height: 0;
-}
-
-.batch-totals-summary-bar__source-scroll {
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  overscroll-behavior: contain;
-  padding: var(--space-2, 8px);
-}
-
-.batch-totals-summary-bar__source-scroll--readonly {
+.batch-totals-bottom-panel__body--readonly {
   user-select: text;
 }
 
-.batch-totals-summary-bar__total--footer {
-  border-top: var(--semantic-border-default, 1px solid color-mix(in srgb, var(--semantic-text-primary) 8%, transparent));
+.batch-totals-bottom-panel__body--readonly button,
+.batch-totals-bottom-panel__body--readonly input,
+.batch-totals-bottom-panel__body--readonly a {
+  touch-action: manipulation;
+  user-select: auto;
+  cursor: pointer;
 }
 
 /** Absolute bottom sheet — grows upward to header subline; footer stays pinned at bottom. */
 .batch-totals-bottom-panel {
   --batch-totals-panel-radius: 16px;
+  --batch-totals-footer-gap: var(--section-gap);
+  --batch-totals-drag-card-overlap: 8px;
+  --batch-totals-grab-pill-w: 44px;
+  --batch-totals-grab-pill-h: 4px;
+  --batch-totals-grab-pill-w-active: 48px;
+  --batch-totals-grab-pill-h-active: 5px;
   position: absolute;
   left: 0;
   right: 0;
@@ -1027,11 +1045,79 @@
   padding-block: var(--space-3, 12px);
 }
 
+.batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__body-inner {
+  flex: 0 1 auto;
+  align-self: stretch;
+  --entity-summary-body-pad-top: 8px;
+  padding-top: var(--entity-summary-body-pad-top);
+}
+
+.batch-totals-screen--tall .batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__body-inner {
+  --entity-summary-body-pad-top: 12px;
+}
+
+.batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__card-region {
+  margin-top: 0;
+}
+
+.batch-totals-summary-bar__card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.batch-totals-bottom-panel--table-revealing .batch-totals-summary-bar__compact {
+  border-top: var(--semantic-border-default, 1px solid color-mix(in srgb, var(--semantic-text-primary) 8%, transparent));
+}
+
+/** Bottom-panel entity breakdown — max ~6 rows; airy layout, design-system type scale. */
+.batch-totals-entity-total-table {
+  --entity-summary-label-size: 10px;
+  --entity-summary-th-py: 4px;
+  --entity-summary-cell-py: 14px;
+  --entity-summary-pad-top: 20px;
+  --entity-summary-head-gap: 18px;
+}
+
+.batch-totals-entity-summary__title {
+  text-align: center;
+  padding: var(--entity-summary-pad-top) 0 var(--entity-summary-head-gap);
+  background: transparent;
+  vertical-align: bottom;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.batch-totals-entity-summary__columns-row th {
+  padding-top: 0;
+}
+
+.batch-totals-screen--tall .batch-totals-entity-total-table {
+  --entity-summary-label-size: 11px;
+  --entity-summary-th-py: 6px;
+  --entity-summary-cell-py: 16px;
+  --entity-summary-pad-top: 24px;
+  --entity-summary-head-gap: 22px;
+}
+
 .batch-totals-bottom-panel__footer {
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
   min-width: 0;
   padding-bottom: var(--app-bottom-inset);
   margin-top: auto;
+}
+
+.batch-totals-bottom-panel--share-revealing .batch-totals-bottom-panel__actions {
+  margin-top: var(--batch-totals-footer-gap);
 }
 
 .batch-totals-bottom-panel__actions {
@@ -1076,20 +1162,21 @@
 
 .batch-totals-summary-bar__batch-rows,
 .batch-totals-summary-bar__total {
-  padding-block: 6px;
-  padding-inline: 12px;
-}
-
-.batch-totals-summary-bar--with-extra .batch-totals-summary-bar__batch-rows,
-.batch-totals-summary-bar--with-extra .batch-totals-summary-bar__total {
-  padding-block: 5px;
+  padding-block: var(--batch-totals-summary-cell-py);
+  padding-inline: var(--totals-cell-px);
 }
 
 .batch-totals-summary-bar__batch-rows {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   min-width: 0;
+  justify-content: center;
+}
+
+.batch-totals-summary-bar__batch-rows--dual {
+  gap: var(--batch-totals-summary-batch-row-gap);
+  justify-content: center;
 }
 
 .batch-totals-summary-bar__batch-row {
@@ -1098,10 +1185,28 @@
   flex-wrap: nowrap;
   gap: 4px 6px;
   min-width: 0;
+  min-height: var(--batch-totals-summary-batch-row-h);
+}
+
+/** Hidden when only batches — card height stays fixed; row slot unused. */
+.batch-totals-summary-bar__batch-row--extra:not(.batch-totals-summary-bar__batch-row--visible) {
+  visibility: hidden;
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .batch-totals-summary-bar__grid {
   align-items: center;
+}
+
+.batch-totals-summary-bar__compact {
+  height: var(--batch-totals-summary-h-dual);
+  min-height: var(--batch-totals-summary-h-dual);
+  max-height: var(--batch-totals-summary-h-dual);
+  box-sizing: border-box;
 }
 
 .batch-totals-bottom-panel__drag-zone {
@@ -1111,13 +1216,18 @@
   width: 100%;
   min-width: 0;
   margin-inline: 0;
+  margin-bottom: calc(-1 * var(--batch-totals-drag-card-overlap));
   padding-inline: 0;
+  padding-top: 4px;
+  padding-bottom: var(--batch-totals-drag-card-overlap);
   border-top-left-radius: var(--batch-totals-panel-radius);
   border-top-right-radius: var(--batch-totals-panel-radius);
   cursor: grab;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  position: relative;
+  z-index: 2;
 }
 
 .batch-totals-bottom-panel__drag-zone,
@@ -1131,13 +1241,13 @@
   justify-content: center;
   width: 100%;
   margin: 0;
-  padding: 5px 0 0;
+  padding: 2px 0 0;
 }
 
 .batch-totals-grab-handle__pill {
   display: block;
-  width: 36px;
-  height: 4px;
+  width: var(--batch-totals-grab-pill-w);
+  height: var(--batch-totals-grab-pill-h);
   border-radius: 9999px;
   background: color-mix(in srgb, var(--semantic-text-primary) 24%, transparent);
   transition:
@@ -1147,8 +1257,8 @@
 }
 
 .batch-totals-grab-handle--holding .batch-totals-grab-handle__pill {
-  width: 40px;
-  height: 5px;
+  width: var(--batch-totals-grab-pill-w-active);
+  height: var(--batch-totals-grab-pill-h-active);
   background: color-mix(in srgb, var(--semantic-text-primary) 46%, transparent);
 }
 
