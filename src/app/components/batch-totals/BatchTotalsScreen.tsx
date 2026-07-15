@@ -13,6 +13,10 @@ import {
 } from "../../presentation/entityCardStyles";
 import { entityAccentColor } from "../../presentation/entityAccent";
 import { MixerInputSheet } from "../sheets/MixerInputSheet";
+import {
+  ScrollEdgeFadeOverlays,
+  useScrollEdgeFades,
+} from "../sheets/scrollEdgeFades";
 import { DeleteIcon, RenameIcon, ResetIcon } from "../shared/ActionIcons";
 import type { SandType } from "../../domain/mix/volume";
 import { useAppShellCompact } from "../../hooks/useAppShellCompact";
@@ -66,12 +70,13 @@ const TABLE_TH_MULT_PAD = "var(--totals-th-py) var(--totals-th-mult-px, 8px)";
 const SECTION_TITLE: CSSProperties = {
   ...SECTION_HEADER,
   fontSize: "var(--text-totals-table)",
-  fontWeight: 600,
+  fontWeight: 500,
   letterSpacing: "0.12em",
   lineHeight: 1.2,
   textTransform: "uppercase",
   margin: 0,
   padding: "0 var(--totals-section-title-pad-x)",
+  color: cv.text.dimmed,
 };
 
 function sectionTitleStyle(color?: string): CSSProperties {
@@ -83,28 +88,60 @@ function cellTotalStyle(extra?: CSSProperties): CSSProperties {
 }
 
 function sourceCellItemStyle(extra?: CSSProperties): CSSProperties {
-  return { padding: CELL_PAD, ...extra };
+  return {
+    paddingBlock: "var(--totals-cell-py)",
+    paddingInlineEnd: "var(--totals-cell-px)",
+    ...extra,
+  };
 }
 
 function sourceCellMultStyle(extra?: CSSProperties): CSSProperties {
-  return { padding: MULT_CELL_PAD, ...extra };
+  return {
+    paddingBlock: "var(--totals-cell-py)",
+    paddingInline: "var(--totals-cell-mult-px, 6px)",
+    ...extra,
+  };
 }
 
 function sourceThCellItemStyle(extra?: CSSProperties): CSSProperties {
-  return { padding: TABLE_TH_PAD, background: "transparent", ...extra };
+  return {
+    paddingBlock: "var(--totals-th-py)",
+    paddingInlineEnd: "var(--totals-th-px)",
+    background: "transparent",
+    ...extra,
+  };
 }
 
 function sourceThCellMultStyle(extra?: CSSProperties): CSSProperties {
-  return { padding: TABLE_TH_MULT_PAD, background: "transparent", ...extra };
+  return {
+    paddingBlock: "var(--totals-th-py)",
+    paddingInline: "var(--totals-th-mult-px, 8px)",
+    background: "transparent",
+    ...extra,
+  };
 }
 
 function sourceThCellTotalStyle(extra?: CSSProperties): CSSProperties {
-  return { padding: TABLE_TH_PAD, background: "transparent", ...extra };
+  return {
+    paddingBlock: "var(--totals-th-py)",
+    paddingInlineStart: "var(--totals-th-px)",
+    background: "transparent",
+    ...extra,
+  };
+}
+
+function sourceCellTotalStyle(extra?: CSSProperties): CSSProperties {
+  return {
+    paddingBlock: "var(--totals-cell-py)",
+    paddingInlineStart: "var(--totals-cell-px)",
+    ...extra,
+  };
 }
 
 function cardHeaderStyle(variant: "batches" | "extra" = "batches"): CSSProperties {
   return {
-    padding: "var(--totals-card-header-py) var(--totals-card-header-px)",
+    padding:
+      "var(--totals-card-header-py) var(--batch-totals-content-gutter, var(--totals-card-header-px))",
     background: variant === "extra" ? bt.extraCardHeaderBackground : bt.cardHeaderBackground,
     minHeight: "var(--totals-card-header-min-h, var(--totals-header-icon-btn))",
   };
@@ -132,10 +169,40 @@ const TABLE_COLS = `${COL_ITEM} ${COL_MULT} ${COL_TOTAL}`;
 const SUMMARY_COLS = "minmax(0, 1fr) auto";
 
 const PANEL_DRAG_THRESHOLD_PX = 16;
-const PANEL_DRAG_FOLLOW = 0.72;
+/** 1:1 finger follow — sheet height tracks drag delta exactly within stage bounds. */
+const PANEL_DRAG_FOLLOW = 1;
 const PANEL_COLLAPSED_HEIGHT_FALLBACK = 96;
 const PANEL_EXPANDED_HEIGHT_FALLBACK = 480;
 const PANEL_SHARE_HEIGHT_FALLBACK = 140;
+
+type PanelStage = "collapsed" | "share" | "expanded";
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function nearestPanelStage(
+  height: number,
+  collapsed: number,
+  share: number,
+  expanded: number,
+): PanelStage {
+  const candidates: { stage: PanelStage; h: number }[] = [
+    { stage: "collapsed", h: collapsed },
+    { stage: "share", h: share },
+    { stage: "expanded", h: expanded },
+  ];
+  let best = candidates[0];
+  let bestDist = Math.abs(height - best.h);
+  for (let i = 1; i < candidates.length; i++) {
+    const dist = Math.abs(height - candidates[i].h);
+    if (dist < bestDist) {
+      best = candidates[i];
+      bestDist = dist;
+    }
+  }
+  return best.stage;
+}
 
 function shouldBlockHandleDrag(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
@@ -168,7 +235,7 @@ export function BatchTotalsBottomPanel({
   onSourceExpandedChange: (next: boolean) => void;
 }) {
   const [shareOpen, setShareOpen] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
+  const [dragHeight, setDragHeight] = useState<number | null>(null);
   const [holding, setHolding] = useState(false);
   const [expandAnimating, setExpandAnimating] = useState(false);
   const [tableUiReady, setTableUiReady] = useState(false);
@@ -184,10 +251,32 @@ export function BatchTotalsBottomPanel({
   const compactSummaryRef = useRef<HTMLDivElement>(null);
   const lastCompactSummaryHeightRef = useRef(PANEL_COLLAPSED_HEIGHT_FALLBACK);
   const dragStartYRef = useRef<number | null>(null);
+  const dragStartHeightRef = useRef(0);
   const dragCleanupRef = useRef<(() => void) | null>(null);
   const expandSettledRef = useRef(false);
 
-  const isExpandedVisual = sourceExpanded || expandAnimating;
+  const shareStageHeight = collapsedHeight + footerGap + shareActionsHeight;
+  const settledSheetHeight = sourceExpanded || expandAnimating
+    ? maxExpandHeight
+    : shareOpen
+      ? shareStageHeight
+      : collapsedHeight;
+
+  const dragging = holding || dragHeight != null;
+  const resolvedSheetHeight = dragHeight ?? settledSheetHeight;
+
+  /** Share strip height implied by absolute sheet height (continuous scrub). */
+  const shareVisibleHeight = (() => {
+    if (resolvedSheetHeight <= collapsedHeight + 0.5) return 0;
+    if (resolvedSheetHeight >= shareStageHeight - 0.5) return shareActionsHeight;
+    return clamp(resolvedSheetHeight - collapsedHeight - footerGap, 0, shareActionsHeight);
+  })();
+
+  const isShareRevealing = shareVisibleHeight > 0 || holding;
+  const isExpandedVisual =
+    sourceExpanded ||
+    expandAnimating ||
+    (dragging && resolvedSheetHeight > shareStageHeight + 1);
 
   useEffect(() => {
     if (sourceExpanded) return;
@@ -327,121 +416,60 @@ export function BatchTotalsBottomPanel({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [sourceExpanded, shareOpen, expandAnimating, onSourceExpandedChange]);
 
-  const shareVisibleHeight = (() => {
-    if (isExpandedVisual) return shareActionsHeight;
-
-    if (shareOpen) {
-      if (holding || dragOffset !== 0) {
-        if (dragOffset > 0) {
-          return Math.max(0, shareActionsHeight - dragOffset);
-        }
-        return shareActionsHeight;
-      }
-      return shareActionsHeight;
-    }
-
-    if (holding || dragOffset !== 0) {
-      return Math.min(shareActionsHeight, Math.max(0, -dragOffset));
-    }
-    return 0;
-  })();
-
-  const shareFooterGap = shareVisibleHeight > 0 ? footerGap : 0;
-  const shareStageHeight = collapsedHeight + footerGap + shareActionsHeight;
-  const expandRange = Math.max(0, maxExpandHeight - shareStageHeight);
-
-  const clampHandleDragOffset = useCallback(
-    (dy: number) => {
-      if (isExpandedVisual) {
-        const max = expandRange * 0.92;
-        return Math.min(max, Math.max(0, dy * PANEL_DRAG_FOLLOW));
-      }
-      if (shareOpen) {
-        if (dy < 0) {
-          const max = expandRange * 0.92;
-          return Math.max(-max, dy * PANEL_DRAG_FOLLOW);
-        }
-        const max = shareActionsHeight * 0.92;
-        return Math.min(max, Math.max(0, dy * PANEL_DRAG_FOLLOW));
-      }
-      const max = shareActionsHeight * 0.92;
-      return Math.max(-max, Math.min(0, dy * PANEL_DRAG_FOLLOW));
-    },
-    [expandRange, shareActionsHeight, shareOpen, isExpandedVisual],
-  );
-
-  const resolvedSheetHeight = (() => {
-    if (isExpandedVisual) {
-      if (holding || dragOffset !== 0) {
-        return Math.max(shareStageHeight, maxExpandHeight - dragOffset);
-      }
-      return maxExpandHeight;
-    }
-
-    if (shareOpen) {
-      if (holding || dragOffset !== 0) {
-        if (dragOffset < 0) {
-          const extra = Math.min(expandRange, -dragOffset);
-          return shareStageHeight + extra;
-        }
-        return collapsedHeight + shareFooterGap + Math.max(0, shareActionsHeight - dragOffset);
-      }
-      return shareStageHeight;
-    }
-
-    if (holding || dragOffset !== 0) {
-      return collapsedHeight + shareFooterGap + shareVisibleHeight;
-    }
-    return collapsedHeight;
-  })();
-
-  const isShareRevealing = shareVisibleHeight > 0 || holding;
-
   useLayoutEffect(() => {
     const screen = panelRef.current?.closest(".batch-totals-screen");
     if (!(screen instanceof HTMLElement)) return;
     screen.style.setProperty("--batch-totals-panel-reserve", `${resolvedSheetHeight}px`);
   }, [resolvedSheetHeight]);
 
+  const applyPanelStage = useCallback(
+    (stage: PanelStage) => {
+      if (stage === "expanded") {
+        setShareOpen(true);
+        if (!sourceExpanded) {
+          setExpandAnimating(true);
+        } else {
+          setTableUiReady(true);
+        }
+        return;
+      }
+
+      setTableUiReady(false);
+      setExpandAnimating(false);
+      expandSettledRef.current = true;
+      if (sourceExpanded) onSourceExpandedChange(false);
+      setShareOpen(stage === "share");
+    },
+    [onSourceExpandedChange, sourceExpanded],
+  );
+
   const finishHandleDrag = useCallback(
     (clientY: number) => {
       const startY = dragStartYRef.current;
+      const startHeight = dragStartHeightRef.current;
       dragStartYRef.current = null;
       setHolding(false);
-      setDragOffset(0);
+      setDragHeight(null);
 
       if (startY == null) return;
 
       const dy = clientY - startY;
-
-      if (isExpandedVisual) {
-        if (dy >= PANEL_DRAG_THRESHOLD_PX) {
-          setTableUiReady(false);
-          setExpandAnimating(false);
-          expandSettledRef.current = true;
-          if (sourceExpanded) {
-            onSourceExpandedChange(false);
-          }
-        }
+      if (Math.abs(dy) < PANEL_DRAG_THRESHOLD_PX) {
+        // Tiny motion — stay on the stage we started from.
         return;
       }
 
-      if (shareOpen) {
-        if (dy <= -PANEL_DRAG_THRESHOLD_PX) {
-          setExpandAnimating(true);
-          return;
-        }
-        if (dy >= PANEL_DRAG_THRESHOLD_PX) {
-          setShareOpen(false);
-        }
-        return;
-      }
+      const liveHeight = clamp(
+        startHeight - dy * PANEL_DRAG_FOLLOW,
+        collapsedHeight,
+        maxExpandHeight,
+      );
 
-      if (dy <= -PANEL_DRAG_THRESHOLD_PX) {
-        setShareOpen(true);
-      }
+      applyPanelStage(
+        nearestPanelStage(liveHeight, collapsedHeight, shareStageHeight, maxExpandHeight),
+      );
     },
-    [shareOpen, isExpandedVisual, sourceExpanded, onSourceExpandedChange],
+    [applyPanelStage, collapsedHeight, maxExpandHeight, shareStageHeight],
   );
 
   const handleDragPointerDown = useCallback(
@@ -453,12 +481,17 @@ export function BatchTotalsBottomPanel({
       dragCleanupRef.current?.();
 
       dragStartYRef.current = event.clientY;
+      dragStartHeightRef.current = settledSheetHeight;
+      setDragHeight(settledSheetHeight);
       setHolding(true);
 
       const onMove = (ev: PointerEvent) => {
         const startY = dragStartYRef.current;
         if (startY == null) return;
-        setDragOffset(clampHandleDragOffset(ev.clientY - startY));
+        const dy = (ev.clientY - startY) * PANEL_DRAG_FOLLOW;
+        setDragHeight(
+          clamp(dragStartHeightRef.current - dy, collapsedHeight, maxExpandHeight),
+        );
       };
 
       const onEnd = (ev: PointerEvent) => {
@@ -478,7 +511,7 @@ export function BatchTotalsBottomPanel({
       window.addEventListener("pointerup", onEnd);
       window.addEventListener("pointercancel", onEnd);
     },
-    [clampHandleDragOffset, finishHandleDrag],
+    [collapsedHeight, finishHandleDrag, maxExpandHeight, settledSheetHeight],
   );
 
   const panelStageLabel = sourceExpanded
@@ -493,8 +526,8 @@ export function BatchTotalsBottomPanel({
       id="batch-totals-bottom-panel"
       className={`batch-totals-bottom-panel${
         isExpandedVisual ? " batch-totals-bottom-panel--source-expanded" : ""
-      }${tableUiReady ? " batch-totals-bottom-panel--table-revealing" : ""}${
-        shareOpen ? " batch-totals-bottom-panel--share-open" : ""
+      }${isExpandedVisual ? " batch-totals-bottom-panel--table-revealing" : ""}${
+        shareOpen || isShareRevealing ? " batch-totals-bottom-panel--share-open" : ""
       }${isShareRevealing ? " batch-totals-bottom-panel--share-revealing" : ""}${
         holding ? " batch-totals-bottom-panel--holding" : ""
       }`}
@@ -528,7 +561,7 @@ export function BatchTotalsBottomPanel({
             </div>
           </div>
 
-          {tableUiReady ? (
+          {isExpandedVisual ? (
             <div
               className="batch-totals-bottom-panel__body app-gutter-x batch-totals-bottom-panel__body--readonly"
               aria-label="Batch summary — total per ingredient"
@@ -557,6 +590,7 @@ export function BatchTotalsBottomPanel({
                 totalGrams={totalGrams}
                 colorScheme={colorScheme}
                 compactSummaryRef={compactSummaryRef}
+                batchesRelocated={isExpandedVisual}
               />
             </div>
 
@@ -743,30 +777,70 @@ function PerBatchRow({ grams, isKg }: { grams: number; isKg: boolean }) {
 const ENTITY_TOTAL_COL_ITEM = "56%";
 const ENTITY_TOTAL_COL_TOTAL = "44%";
 
-const ENTITY_SUMMARY_TH_TEXT: CSSProperties = {
-  color: cv.text.muted,
-  letterSpacing: "0.1em",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  lineHeight: 1.15,
-};
-
-function entitySummaryThItemStyle(extra?: CSSProperties): CSSProperties {
-  return {
-    padding: "var(--entity-summary-th-py) 0",
-    background: "transparent",
-    fontSize: "var(--entity-summary-label-size)",
-    ...ENTITY_SUMMARY_TH_TEXT,
-    ...extra,
-  };
-}
-
-function entitySummaryThTotalStyle(extra?: CSSProperties): CSSProperties {
-  return entitySummaryThItemStyle(extra);
-}
-
 function entitySummaryCellItemStyle(extra?: CSSProperties): CSSProperties {
   return { padding: "var(--entity-summary-cell-py) 0", ...extra };
+}
+
+function SummaryBatchRows({
+  multiplier,
+  extraBatches,
+  className = "",
+}: {
+  multiplier: number;
+  extraBatches: ExtraBatchEntry[];
+  className?: string;
+}) {
+  const hasExtra = hasExtraBatches(extraBatches);
+  const extraTotalCount = extraBatchTotalCount(extraBatches);
+
+  return (
+    <div
+      className={`batch-totals-summary-bar__batch-rows min-w-0${
+        hasExtra ? " batch-totals-summary-bar__batch-rows--dual" : ""
+      }${className ? ` ${className}` : ""}`}
+    >
+      <div className="batch-totals-summary-bar__batch-row">
+        <span style={sectionTitleStyle()}>Batches</span>
+        <MultCell value={multiplier} />
+      </div>
+      <div
+        className={`batch-totals-summary-bar__batch-row batch-totals-summary-bar__batch-row--extra${
+          hasExtra ? " batch-totals-summary-bar__batch-row--visible" : ""
+        }`}
+        aria-hidden={!hasExtra}
+      >
+        <span style={sectionTitleStyle(cv.extraBatch.label)} title="Extra batch">
+          Extra batch
+        </span>
+        <MultCell value={extraTotalCount} />
+      </div>
+    </div>
+  );
+}
+
+/** Compact status chips for the expanded summary intro (mock-style badge). */
+function SummaryBatchChips({
+  multiplier,
+  extraBatches,
+}: {
+  multiplier: number;
+  extraBatches: ExtraBatchEntry[];
+}) {
+  const hasExtra = hasExtraBatches(extraBatches);
+  const extraTotalCount = extraBatchTotalCount(extraBatches);
+
+  return (
+    <div className="batch-totals-entity-summary__chips" aria-label="Batch counts">
+      <span className="batch-totals-entity-summary__chip">
+        Batches <span className="batch-totals-entity-summary__chip-mult">×{multiplier}</span>
+      </span>
+      {hasExtra ? (
+        <span className="batch-totals-entity-summary__chip batch-totals-entity-summary__chip--extra">
+          Extra <span className="batch-totals-entity-summary__chip-mult">×{extraTotalCount}</span>
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 function BatchTotalsEntityTotalTable({
@@ -789,30 +863,18 @@ function BatchTotalsEntityTotalTable({
 
   return (
     <div className="batch-totals-entity-total-table min-w-0 w-full" aria-readonly>
+      <header className="batch-totals-entity-summary__intro">
+        <h2 className="batch-totals-entity-summary__title">Summary</h2>
+        <p className="batch-totals-entity-summary__subtitle">
+          Combined totals for each ingredient across all batches.
+        </p>
+        <SummaryBatchChips multiplier={multiplier} extraBatches={extraBatches} />
+      </header>
       <table className="batch-totals-entity-total-table__grid w-full min-w-0 border-collapse" style={{ tableLayout: "fixed" }}>
         <colgroup>
           <col style={{ width: ENTITY_TOTAL_COL_ITEM }} />
           <col style={{ width: ENTITY_TOTAL_COL_TOTAL }} />
         </colgroup>
-        <thead>
-          <tr>
-            <th
-              colSpan={2}
-              scope="colgroup"
-              className="batch-totals-entity-summary__title app-header__recipe-value"
-            >
-              Summary
-            </th>
-          </tr>
-          <tr className="batch-totals-entity-summary__columns-row">
-            <th scope="col" className="text-left align-bottom" style={entitySummaryThItemStyle()}>
-              Item
-            </th>
-            <th scope="col" className="text-right align-bottom" style={entitySummaryThTotalStyle()}>
-              Total
-            </th>
-          </tr>
-        </thead>
         <tbody>
           {ingredientRows.map((pi) => {
             const p = MIX_PARAMS[pi];
@@ -833,6 +895,7 @@ function BatchTotalsEntityTotalTable({
                 <td
                   className="text-right align-middle tabular-nums whitespace-nowrap"
                   style={cellTotalStyle({
+                    paddingBlock: "var(--entity-summary-cell-py)",
                     fontSize: "var(--text-totals-row-amount)",
                     fontWeight: 600,
                     letterSpacing: "0.02em",
@@ -906,7 +969,7 @@ function SourceTableDataRow({
       </td>
       <td
         className="text-right align-middle tabular-nums whitespace-nowrap"
-        style={cellTotalStyle({
+        style={sourceCellTotalStyle({
           ...TABLE_TEXT,
           fontSize: isTotal ? "var(--text-totals-row-amount-total)" : "var(--text-totals-row-amount)",
           color: amountColor,
@@ -1034,7 +1097,7 @@ function BatchTotalsSourceTables({
   const batchRowIndexes = [...ingredientRows, 0];
 
   return (
-    <div className="batch-totals-source-card w-full min-w-0 shrink-0 rounded-xl overflow-hidden">
+    <div className="batch-totals-source-card w-full min-w-0 shrink-0 overflow-hidden">
       <MultiplierSectionHeader
         title="Batches"
         multiplier={multiplier}
@@ -1125,7 +1188,7 @@ function BatchTotalsSourceTables({
       <button
         type="button"
         onClick={onAddExtraBatch}
-        className="batch-totals-add-extra-btn w-full flex items-center justify-center gap-2 text-center"
+        className="text-btn batch-totals-add-extra-btn w-full flex items-center justify-center gap-2 text-center"
       >
         <span className="batch-totals-add-extra-btn__icon" aria-hidden>
           +
@@ -1142,21 +1205,37 @@ function BatchTotalsSummaryBar({
   totalGrams,
   colorScheme,
   compactSummaryRef,
+  batchesRelocated = false,
 }: {
   multiplier: number;
   extraBatches: ExtraBatchEntry[];
   totalGrams: number;
   colorScheme: ColorScheme;
   compactSummaryRef: RefObject<HTMLDivElement | null>;
+  /** When true, batch rows live in the expanded table header; footer shows TOTAL left + amount right. */
+  batchesRelocated?: boolean;
 }) {
   const totalParam = MIX_PARAMS[0];
   const amountColor = entityValueColor(true, colorScheme);
-  const hasExtra = hasExtraBatches(extraBatches);
-  const extraTotalCount = extraBatchTotalCount(extraBatches);
 
-  const totalRow = (
-    <div
-      className="text-right min-w-0 flex items-center justify-end gap-2 shrink-0 batch-totals-summary-bar__total"
+  const totalLabel = (
+    <span
+      className="truncate shrink-0"
+      style={{
+        fontSize: "var(--text-card-name)",
+        letterSpacing: "0.18em",
+        fontWeight: CARD_NAME_WEIGHT,
+        color: entityAccentColor(totalParam.id, colorScheme),
+        lineHeight: 1.15,
+      }}
+    >
+      {totalParam.id}
+    </span>
+  );
+
+  const totalAmount = (
+    <span
+      className="tabular-nums whitespace-nowrap shrink-0"
       style={{
         ...TABLE_TEXT,
         fontSize: "var(--text-totals-sum)",
@@ -1165,20 +1244,8 @@ function BatchTotalsSummaryBar({
         lineHeight: 1.1,
       }}
     >
-      <span
-        className="truncate shrink-0"
-        style={{
-          fontSize: "var(--text-card-name)",
-          letterSpacing: "0.18em",
-          fontWeight: CARD_NAME_WEIGHT,
-          color: entityAccentColor(totalParam.id, colorScheme),
-          lineHeight: 1.15,
-        }}
-      >
-        {totalParam.id}
-      </span>
       <AmountCell grams={totalGrams} isKg={totalParam.isKg} colorScheme={colorScheme} />
-    </div>
+    </span>
   );
 
   return (
@@ -1186,31 +1253,22 @@ function BatchTotalsSummaryBar({
       <div className="batch-totals-summary-bar__card w-full min-w-0 flex flex-col min-h-0">
         <div
           ref={compactSummaryRef}
-          className="grid items-center min-w-0 w-full batch-totals-summary-bar__grid batch-totals-summary-bar__compact"
+          className={`grid items-center min-w-0 w-full batch-totals-summary-bar__grid batch-totals-summary-bar__compact${
+            batchesRelocated ? " batch-totals-summary-bar__compact--total-only" : ""
+          }`}
           style={{ gridTemplateColumns: SUMMARY_COLS }}
         >
-          <div
-            className={`batch-totals-summary-bar__batch-rows min-w-0${
-              hasExtra ? " batch-totals-summary-bar__batch-rows--dual" : ""
-            }`}
-          >
-            <div className="batch-totals-summary-bar__batch-row">
-              <span style={sectionTitleStyle()}>Batches</span>
-              <MultCell value={multiplier} />
+          {batchesRelocated ? (
+            <div className="batch-totals-summary-bar__total-label min-w-0 flex items-center">
+              {totalLabel}
             </div>
-            <div
-              className={`batch-totals-summary-bar__batch-row batch-totals-summary-bar__batch-row--extra${
-                hasExtra ? " batch-totals-summary-bar__batch-row--visible" : ""
-              }`}
-              aria-hidden={!hasExtra}
-            >
-              <span style={sectionTitleStyle(cv.extraBatch.label)} title="Extra batch">
-                Extra batch
-              </span>
-              <MultCell value={extraTotalCount} />
-            </div>
+          ) : (
+            <SummaryBatchRows multiplier={multiplier} extraBatches={extraBatches} />
+          )}
+          <div className="text-right min-w-0 flex items-center justify-end gap-2 shrink-0 batch-totals-summary-bar__total">
+            {!batchesRelocated ? totalLabel : null}
+            {totalAmount}
           </div>
-          {totalRow}
         </div>
       </div>
     </div>
@@ -1322,6 +1380,12 @@ export function BatchTotalsScreen({
     });
   }, [extraBatches]);
 
+  const scrollEdges = useScrollEdgeFades(
+    scrollPanelRef,
+    true,
+    `${extraBatches.length}:${compactSummary}:${denseTable}`,
+  );
+
   const sheetValues =
     editingExtraIndex !== null && editingExtraIndex >= 0
       ? extraBatches[editingExtraIndex]?.values ?? emptyComplementValues()
@@ -1337,24 +1401,30 @@ export function BatchTotalsScreen({
       data-dense-table={denseTable ? "" : undefined}
     >
       <div
-        className="batch-totals-screen__main app-gutter-x flex flex-col"
+        className="batch-totals-screen__main flex flex-col"
         style={{ paddingTop: compactSummary ? 0 : "var(--recipe-zone-pt)" }}
       >
-        <div ref={scrollPanelRef} className="batch-totals-scroll-panel flex flex-col">
-          <div className="batch-totals-scroll-panel__inner">
-            <BatchTotalsSourceTables
-              recipe={recipe}
-              values={values}
-              extraBatches={extraBatches}
-              entityIndexes={entityIndexes}
-              multiplier={multiplier}
-              colorScheme={colorScheme}
-              onMultiplierChange={onMultiplierChange}
-              onExtraBatchMultiplierChange={handleExtraBatchMultiplierChange}
-              onAddExtraBatch={handleAddExtraBatch}
-              onEditExtraBatch={handleEditExtraBatch}
-              onRemoveExtraBatch={handleRemoveExtraBatch}
-            />
+        <div className="scroll-edge-fade-viewport batch-totals-scroll-fade-viewport flex flex-col">
+          <ScrollEdgeFadeOverlays
+            fromTop={scrollEdges.fromTop}
+            fromBottom={false}
+          />
+          <div ref={scrollPanelRef} className="batch-totals-scroll-panel flex flex-col">
+            <div className="batch-totals-scroll-panel__inner">
+              <BatchTotalsSourceTables
+                recipe={recipe}
+                values={values}
+                extraBatches={extraBatches}
+                entityIndexes={entityIndexes}
+                multiplier={multiplier}
+                colorScheme={colorScheme}
+                onMultiplierChange={onMultiplierChange}
+                onExtraBatchMultiplierChange={handleExtraBatchMultiplierChange}
+                onAddExtraBatch={handleAddExtraBatch}
+                onEditExtraBatch={handleEditExtraBatch}
+                onRemoveExtraBatch={handleRemoveExtraBatch}
+              />
+            </div>
           </div>
         </div>
       </div>

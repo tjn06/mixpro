@@ -58,6 +58,14 @@ export const componentTokens = {
     colorActive: semanticColors.icon.primary,
     opacityDisabled: 0.4,
   },
+  /** Text/icon only — no fill or border chrome. */
+  textButton: {
+    background: semanticSurfaces.transparent,
+    border: "none",
+    color: semanticColors.text.secondary,
+    colorActive: semanticColors.text.primary,
+    opacityDisabled: 0.4,
+  },
   fieldInput: {
     background: semanticSurfaces.input,
     border: semanticBorders.input,
@@ -158,6 +166,8 @@ export const componentTokens = {
     extraBatchBackground: semanticSurfaces.extraBatch,
     emptyCardBackground: semanticSurfaces.emptyCard,
     insetHighlight: themeSurfaces.insetHighlight,
+    sheetDockBackground: semanticSurfaces.sheetDock,
+    sheetBodyBackground: semanticSurfaces.sheetBody,
   },
   dropdown: {
     menuBackground: semanticColors.surface.dropdown,

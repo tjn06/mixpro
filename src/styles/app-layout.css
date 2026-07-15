@@ -418,7 +418,7 @@
     --text-recipe-meta-label: 14px;
     --text-recipe-meta-value: 16px;
     --text-recipe-colon: 14px;
-    --text-recipe-select: 20px;
+    --text-recipe-select: 16px;
     --text-feature-title: 12px;
     --text-feature-value: 16px;
     --text-lock-name: 13px;
@@ -916,6 +916,13 @@
   overflow: hidden;
 }
 
+.batch-totals-scroll-fade-viewport {
+  --scroll-edge-fade-color: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
 .batch-totals-scroll-panel {
   flex: 1;
   min-height: 0;
@@ -938,6 +945,15 @@
   padding-bottom: calc(var(--batch-totals-panel-reserve) + var(--space-2, 8px));
 }
 
+/** Full-bleed source table; content inset uses app gutter. */
+.batch-totals-screen {
+  --batch-totals-content-gutter: max(var(--space-4, 16px), var(--safe-left), var(--safe-right));
+}
+
+.batch-totals-source-card {
+  border-radius: 0;
+}
+
 .batch-totals-source-table tbody tr:last-child:not([data-section-header]) {
   border-bottom: 0;
 }
@@ -951,26 +967,28 @@
   border-right: none;
 }
 
+.batch-totals-source-table th:first-child,
+.batch-totals-source-table td:first-child,
+.batch-totals-source-table th[scope="row"] {
+  padding-left: var(--batch-totals-content-gutter);
+}
+
+.batch-totals-source-table th:last-child,
+.batch-totals-source-table td:last-child {
+  padding-right: var(--batch-totals-content-gutter);
+}
+
 .batch-totals-add-extra-btn {
   box-sizing: border-box;
-  margin: var(--space-2, 8px) var(--totals-cell-px, 10px) var(--space-3, 12px);
-  width: calc(100% - 2 * var(--totals-cell-px, 10px));
+  margin: var(--space-2, 8px) var(--batch-totals-content-gutter) var(--space-3, 12px);
+  width: calc(100% - 2 * var(--batch-totals-content-gutter));
   min-height: var(--totals-add-extra-h, var(--action-row-h));
-  padding: var(--totals-add-extra-py, 12px) var(--space-3, 12px);
-  border: var(--component-batch-totals-extra-batch-dashed-border, 1px dashed color-mix(in srgb, var(--semantic-text-primary) 22%, transparent));
-  border-radius: 10px;
-  background: var(--component-batch-totals-empty-card-bg, color-mix(in srgb, var(--semantic-text-primary) 3%, transparent));
-  color: var(--semantic-extra-batch-label, var(--semantic-text-secondary));
+  padding: var(--totals-add-extra-py, 12px) 0;
+  border-radius: 0;
   font-size: var(--text-totals-section);
   letter-spacing: 0.08em;
   font-weight: 600;
   line-height: 1.3;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition:
-    background-color 150ms ease,
-    border-color 150ms ease,
-    color 150ms ease;
 }
 
 .batch-totals-add-extra-btn__icon {
@@ -979,20 +997,9 @@
   justify-content: center;
   width: 1.25rem;
   height: 1.25rem;
-  border-radius: 9999px;
   font-size: 1rem;
   font-weight: 500;
   line-height: 1;
-  background: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
-}
-
-.batch-totals-add-extra-btn:hover {
-  background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
-  border-color: color-mix(in srgb, var(--semantic-text-primary) 32%, transparent);
-}
-
-.batch-totals-add-extra-btn:active {
-  background: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
 }
 
 .batch-totals-route {
@@ -1023,10 +1030,6 @@
   z-index: 1;
 }
 
-.batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__footer {
-  flex-shrink: 0;
-}
-
 .batch-totals-bottom-panel__body--readonly {
   user-select: text;
 }
@@ -1044,10 +1047,10 @@
   --batch-totals-panel-radius: 16px;
   --batch-totals-footer-gap: var(--section-gap);
   --batch-totals-drag-card-overlap: 8px;
-  --batch-totals-drag-hit-extend: 48px;
-  --batch-totals-grab-pill-w: 44px;
+  --batch-totals-drag-hit-extend: 64px;
+  --batch-totals-grab-pill-w: 70px;
   --batch-totals-grab-pill-h: 4px;
-  --batch-totals-grab-pill-w-active: 48px;
+  --batch-totals-grab-pill-w-active: 75px;
   --batch-totals-grab-pill-h-active: 5px;
   position: absolute;
   left: 0;
@@ -1065,7 +1068,8 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--ui-header-bg);
+  /** Dock chrome (handle + TOTAL + actions) — sheetDock surface. */
+  background: var(--semantic-surface-sheet-dock, var(--ui-header-bg));
   border-top: var(--semantic-border-default, 1px solid color-mix(in srgb, var(--semantic-text-primary) 8%, transparent));
   border-radius: var(--batch-totals-panel-radius) var(--batch-totals-panel-radius) 0 0;
   overflow: hidden;
@@ -1086,6 +1090,9 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  /** Expanded summary plane — quieter sheetBody vs sticky dock. */
+  background: var(--semantic-surface-sheet-body, var(--ui-header-bg));
+  animation: batch-totals-body-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .batch-totals-bottom-panel__body-inner {
@@ -1099,14 +1106,21 @@
 }
 
 .batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__body-inner {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
+  min-height: 0;
   align-self: stretch;
-  --entity-summary-body-pad-top: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  --entity-summary-body-pad-top: 16px;
+  --entity-summary-body-pad-bottom: 8px;
   padding-top: var(--entity-summary-body-pad-top);
+  padding-bottom: var(--entity-summary-body-pad-bottom);
 }
 
 .batch-totals-screen--tall .batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__body-inner {
-  --entity-summary-body-pad-top: 12px;
+  --entity-summary-body-pad-top: 20px;
+  --entity-summary-body-pad-bottom: 12px;
 }
 
 .batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__card-region {
@@ -1121,37 +1135,7 @@
 }
 
 .batch-totals-bottom-panel--table-revealing .batch-totals-summary-bar__compact {
-  border-top: var(--semantic-border-default, 1px solid color-mix(in srgb, var(--semantic-text-primary) 8%, transparent));
-}
-
-/** Bottom-panel entity breakdown — max ~6 rows; airy layout, design-system type scale. */
-.batch-totals-entity-total-table {
-  --entity-summary-label-size: 10px;
-  --entity-summary-th-py: 4px;
-  --entity-summary-cell-py: 14px;
-  --entity-summary-pad-top: 20px;
-  --entity-summary-head-gap: 18px;
-}
-
-.batch-totals-entity-summary__title {
-  text-align: center;
-  padding: var(--entity-summary-pad-top) 0 var(--entity-summary-head-gap);
-  background: transparent;
-  vertical-align: bottom;
-  font-weight: 600;
-  text-transform: none;
-}
-
-.batch-totals-entity-summary__columns-row th {
-  padding-top: 0;
-}
-
-.batch-totals-screen--tall .batch-totals-entity-total-table {
-  --entity-summary-label-size: 11px;
-  --entity-summary-th-py: 6px;
-  --entity-summary-cell-py: 16px;
-  --entity-summary-pad-top: 24px;
-  --entity-summary-head-gap: 22px;
+  border-top: none;
 }
 
 .batch-totals-bottom-panel__footer {
@@ -1161,6 +1145,170 @@
   min-width: 0;
   padding-bottom: var(--app-bottom-inset);
   margin-top: auto;
+  background: var(--semantic-surface-sheet-dock, var(--ui-header-bg));
+}
+
+.batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__footer {
+  flex-shrink: 0;
+  border-top: var(--semantic-border-default, 1px solid color-mix(in srgb, var(--semantic-text-primary) 10%, transparent));
+  box-shadow: 0 -8px 20px color-mix(in srgb, var(--semantic-text-primary) 4%, transparent);
+}
+
+/** Bottom-panel summary — packed list under centered intro + batch chips. */
+.batch-totals-entity-total-table {
+  --entity-summary-cell-py: 14px;
+  --entity-summary-intro-gap: 8px;
+  --entity-summary-list-gap: 18px;
+  --entity-summary-row-rule: color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
+  --entity-summary-head-rule: color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: batch-totals-shift-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.batch-totals-entity-summary__intro {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--entity-summary-intro-gap);
+  margin-bottom: var(--entity-summary-list-gap);
+  padding-inline: var(--space-3, 12px);
+}
+
+.batch-totals-entity-summary__title {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-recipe-select);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--semantic-text-primary);
+  line-height: 1.15;
+}
+
+.batch-totals-entity-summary__subtitle {
+  margin: 0;
+  max-width: 17rem;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm, 0.8125rem);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--semantic-text-muted);
+  line-height: 1.45;
+}
+
+.batch-totals-entity-summary__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.batch-totals-entity-summary__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  background: color-mix(in srgb, var(--semantic-text-primary) 5%, transparent);
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--semantic-text-secondary);
+  line-height: 1.2;
+}
+
+.batch-totals-entity-summary__chip--extra {
+  border-color: color-mix(in srgb, var(--semantic-extra-batch-label, var(--semantic-text-secondary)) 28%, transparent);
+  color: var(--semantic-extra-batch-label, var(--semantic-text-secondary));
+}
+
+.batch-totals-entity-summary__chip-mult {
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--semantic-text-primary);
+}
+
+.batch-totals-entity-summary__chip--extra .batch-totals-entity-summary__chip-mult {
+  color: inherit;
+}
+
+.batch-totals-entity-total-table__grid {
+  flex: 0 1 auto;
+  width: 100%;
+}
+
+.batch-totals-summary-bar__compact {
+  transition: opacity 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.batch-totals-summary-bar__total-label {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-block: var(--batch-totals-summary-cell-py);
+  padding-inline: var(--totals-cell-px);
+}
+
+@keyframes batch-totals-shift-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes batch-totals-body-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .batch-totals-entity-total-table,
+  .batch-totals-bottom-panel__body {
+    animation: none;
+  }
+
+  .batch-totals-summary-bar__compact {
+    transition: none;
+  }
+}
+
+.batch-totals-entity-total-table__grid tbody tr:first-child th,
+.batch-totals-entity-total-table__grid tbody tr:first-child td {
+  border-top: 1px solid var(--entity-summary-head-rule);
+}
+
+.batch-totals-entity-total-table__grid tbody th,
+.batch-totals-entity-total-table__grid tbody td {
+  border-bottom: 1px solid var(--entity-summary-row-rule);
+  vertical-align: middle;
+}
+
+.batch-totals-entity-total-table__grid tbody tr:last-child th,
+.batch-totals-entity-total-table__grid tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.batch-totals-screen--tall .batch-totals-entity-total-table {
+  --entity-summary-cell-py: 16px;
+  --entity-summary-intro-gap: 10px;
+  --entity-summary-list-gap: 22px;
 }
 
 .batch-totals-bottom-panel--share-revealing .batch-totals-bottom-panel__actions {
@@ -1277,14 +1425,15 @@
   z-index: 2;
 }
 
-/** Invisible touch target — layout and pill unchanged. */
+/** Invisible touch target only — must not affect drag-zone / sheet layout. */
 .batch-totals-bottom-panel__drag-zone::before {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
   top: 50%;
-  transform: translateY(-50%);
+  /* Centered on the visual handle, then nudged 2px toward the sheet top border. */
+  transform: translateY(calc(-50% - 2px));
   height: var(--batch-totals-drag-hit-extend);
   z-index: 1;
   cursor: inherit;

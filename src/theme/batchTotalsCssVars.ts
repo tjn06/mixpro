@@ -39,7 +39,7 @@ export function getDarkBatchTotalsCssEntries(): [string, string][] {
 /** Light-mode batch-totals surfaces. */
 export function getLightBatchTotalsCssEntries(): [string, string][] {
   return [
-    [batchTotalsCssVarNames.cardHeaderBg, alphaBlack(0.06)],
+    [batchTotalsCssVarNames.cardHeaderBg, alphaBlack(0.025)],
     [batchTotalsCssVarNames.extraCardHeaderBg, extraBatchLight.cardHeaderBg],
     [batchTotalsCssVarNames.extraTableThBg, extraBatchLight.tableThBg],
     [batchTotalsCssVarNames.batchesCardBg, alphaBlack(0.04)],
@@ -54,7 +54,7 @@ export function getLightBatchTotalsCssEntries(): [string, string][] {
 /** Dark high-contrast batch-totals surfaces. */
 export function getDarkHcBatchTotalsCssEntries(): [string, string][] {
   return [
-    [batchTotalsCssVarNames.cardHeaderBg, alphaWhite(0.12)],
+    [batchTotalsCssVarNames.cardHeaderBg, alphaWhite(0.055)],
     [batchTotalsCssVarNames.extraCardHeaderBg, extraBatchDarkHc.cardHeaderBg],
     [batchTotalsCssVarNames.extraTableThBg, extraBatchDarkHc.tableThBg],
     [batchTotalsCssVarNames.batchesCardBg, alphaWhite(0.08)],
@@ -69,7 +69,7 @@ export function getDarkHcBatchTotalsCssEntries(): [string, string][] {
 /** Light high-contrast batch-totals surfaces. */
 export function getLightHcBatchTotalsCssEntries(): [string, string][] {
   return [
-    [batchTotalsCssVarNames.cardHeaderBg, alphaBlack(0.08)],
+    [batchTotalsCssVarNames.cardHeaderBg, alphaBlack(0.04)],
     [batchTotalsCssVarNames.extraCardHeaderBg, extraBatchLightHc.cardHeaderBg],
     [batchTotalsCssVarNames.extraTableThBg, extraBatchLightHc.tableThBg],
     [batchTotalsCssVarNames.batchesCardBg, alphaBlack(0.06)],

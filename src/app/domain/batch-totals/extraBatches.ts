@@ -23,6 +23,6 @@ export function sumExtraBatchGrams(entries: ExtraBatchEntry[], index: number): n
   return entries.reduce((sum, entry) => sum + entry.values[index] * entry.multiplier, 0);
 }
 
-export function extraBatchSectionLabel(index: number, total: number): string {
-  return total > 1 ? `Extra batch ${index + 1}` : "Extra batch";
+export function extraBatchSectionLabel(index: number, _total?: number): string {
+  return `Extra batch ${index + 1}`;
 }

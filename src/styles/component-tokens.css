@@ -125,6 +125,33 @@
   color: var(--component-header-icon-btn-color-active);
 }
 
+/* ── Text / icon buttons (no fill, no border) ───────────────────────────── */
+
+.text-btn {
+  background: var(--component-text-btn-bg, transparent);
+  border: var(--component-text-btn-border, none);
+  box-shadow: none;
+  color: var(--component-text-btn-color);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 150ms ease, opacity 150ms ease;
+}
+
+.text-btn:hover,
+.text-btn:focus-visible {
+  color: var(--component-text-btn-color-active);
+}
+
+.text-btn:active {
+  color: var(--component-text-btn-color-active);
+  opacity: 0.82;
+}
+
+.text-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .header-icon-btn:disabled {
   opacity: 0.4;
   cursor: default;

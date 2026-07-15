@@ -31,6 +31,10 @@ export const semanticColors = {
     shell: primitiveInk[950],
     header: primitiveInk[850],
     raised: primitiveInk[650],
+    /** Sticky dock chrome — modest lift above header-like body, not full entity raised. */
+    sheetDock: primitiveInk[700],
+    /** Expanded swipe-panel body — header-adjacent, quieter than dock. */
+    sheetBody: primitiveInk[850],
     input: primitiveInk[700],
     swipe: primitiveInk[800],
     dropdown: "#3a3a4c",
@@ -56,6 +60,8 @@ export const semanticBorders = {
 export const semanticSurfaces = {
   transparent: "transparent",
   raised: semanticColors.surface.raised,
+  sheetDock: semanticColors.surface.sheetDock,
+  sheetBody: semanticColors.surface.sheetBody,
   input: alphaWhite(0.1),
   inputSubtle: alphaWhite(0.08),
   button: alphaWhite(0.12),
@@ -67,7 +73,7 @@ export const semanticSurfaces = {
   headerButtonActive: alphaWhite(0.14),
   headerButtonSolid: "#1a1a24",
   headerButtonActiveSolid: "#262632",
-  cardHeader: alphaWhite(0.08),
+  cardHeader: alphaWhite(0.035),
   search: alphaWhite(0.1),
   sheetPanel: alphaWhite(0.06),
   loadSheetPanel: "rgba(13, 13, 28, 0.52)",

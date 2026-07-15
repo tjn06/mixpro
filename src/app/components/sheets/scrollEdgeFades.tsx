@@ -90,8 +90,8 @@ function ScrollEdgeFade({ edge }: { edge: "top" | "bottom" }) {
         zIndex: 12,
         ...(isTop ? { top: 0 } : { bottom: 0 }),
         background: isTop
-          ? "linear-gradient(to bottom, var(--ui-header-bg) 0%, transparent 100%)"
-          : "linear-gradient(to top, var(--ui-header-bg) 0%, transparent 100%)",
+          ? "linear-gradient(to bottom, var(--scroll-edge-fade-color, var(--ui-header-bg)) 0%, transparent 100%)"
+          : "linear-gradient(to top, var(--scroll-edge-fade-color, var(--ui-header-bg)) 0%, transparent 100%)",
       }}
     />
   );
