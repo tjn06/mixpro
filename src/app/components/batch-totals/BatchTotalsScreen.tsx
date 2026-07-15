@@ -27,12 +27,11 @@ const TABLE_BORDER = bt.tableBorder;
 const SECTION_HEADER: CSSProperties = {
   fontSize: "var(--text-totals-caption)",
   color: cv.text.muted,
-  letterSpacing: "0.14em",
+  letterSpacing: "0.1em",
   fontWeight: 500,
-  opacity: 0.85,
 };
 
-const HEADER_ICON_SIZE = 16;
+const HEADER_ICON_SIZE = 14;
 
 const TABLE_TEXT: CSSProperties = {
   fontSize: "var(--text-totals-table)",
@@ -44,7 +43,7 @@ const TABLE_TEXT: CSSProperties = {
 const TH_TEXT: CSSProperties = {
   ...TABLE_TEXT,
   fontSize: "var(--text-totals-table)",
-  letterSpacing: "0.1em",
+  letterSpacing: "0.08em",
   fontWeight: 600,
   color: cv.text.muted,
   textTransform: "uppercase",
@@ -55,8 +54,8 @@ const MULT_TEXT: CSSProperties = {
   ...TABLE_TEXT,
   fontSize: "var(--text-totals-mult)",
   fontWeight: 600,
-  color: cv.text.muted,
-  letterSpacing: "0.04em",
+  color: cv.text.secondary,
+  letterSpacing: "0.02em",
 };
 
 const CELL_PAD = "var(--totals-cell-py) var(--totals-cell-px)";
@@ -79,35 +78,34 @@ function sectionTitleStyle(color?: string): CSSProperties {
   return color ? { ...SECTION_TITLE, color } : SECTION_TITLE;
 }
 
-function cellItemStyle(extra?: CSSProperties): CSSProperties {
-  return { padding: CELL_PAD, borderRight: TABLE_BORDER, ...extra };
-}
-
-function cellMultStyle(extra?: CSSProperties): CSSProperties {
-  return { padding: MULT_CELL_PAD, borderRight: TABLE_BORDER, ...extra };
-}
-
 function cellTotalStyle(extra?: CSSProperties): CSSProperties {
   return { padding: CELL_PAD, ...extra };
 }
 
-function thCellItemStyle(bg: string, extra?: CSSProperties): CSSProperties {
-  return { padding: TABLE_TH_PAD, borderRight: TABLE_BORDER, background: bg, ...extra };
+function sourceCellItemStyle(extra?: CSSProperties): CSSProperties {
+  return { padding: CELL_PAD, ...extra };
 }
 
-function thCellMultStyle(bg: string, extra?: CSSProperties): CSSProperties {
-  return { padding: TABLE_TH_MULT_PAD, borderRight: TABLE_BORDER, background: bg, ...extra };
+function sourceCellMultStyle(extra?: CSSProperties): CSSProperties {
+  return { padding: MULT_CELL_PAD, ...extra };
 }
 
-function thCellTotalStyle(bg: string, extra?: CSSProperties): CSSProperties {
-  return { padding: TABLE_TH_PAD, background: bg, ...extra };
+function sourceThCellItemStyle(extra?: CSSProperties): CSSProperties {
+  return { padding: TABLE_TH_PAD, background: "transparent", ...extra };
+}
+
+function sourceThCellMultStyle(extra?: CSSProperties): CSSProperties {
+  return { padding: TABLE_TH_MULT_PAD, background: "transparent", ...extra };
+}
+
+function sourceThCellTotalStyle(extra?: CSSProperties): CSSProperties {
+  return { padding: TABLE_TH_PAD, background: "transparent", ...extra };
 }
 
 function cardHeaderStyle(variant: "batches" | "extra" = "batches"): CSSProperties {
   return {
     padding: "var(--totals-card-header-py) var(--totals-card-header-px)",
     background: variant === "extra" ? bt.extraCardHeaderBackground : bt.cardHeaderBackground,
-    borderBottom: TABLE_BORDER,
     minHeight: "var(--totals-card-header-min-h, var(--totals-header-icon-btn))",
   };
 }
@@ -680,10 +678,10 @@ function MultCell({ value }: { value: number | string }) {
 
 const ITEM_META_STYLE: CSSProperties = {
   fontSize: "var(--text-totals-item-meta)",
-  letterSpacing: "0.04em",
-  fontWeight: 600,
-  color: cv.text.muted,
-  lineHeight: 1.2,
+  letterSpacing: "0.02em",
+  fontWeight: 500,
+  color: cv.text.secondary,
+  lineHeight: 1.25,
   textTransform: "capitalize",
 };
 
@@ -730,9 +728,9 @@ function PerBatchRow({ grams, isKg }: { grams: number; isKg: boolean }) {
       style={{
         ...TABLE_TEXT,
         fontSize: "var(--text-totals-item-per-batch)",
-        color: cv.text.muted,
-        marginTop: 3,
-        lineHeight: 1.15,
+        color: cv.text.secondary,
+        marginTop: 2,
+        lineHeight: 1.2,
       }}
     >
       {formatMixAmount(grams, isKg)}
@@ -860,7 +858,6 @@ function SourceTableDataRow({
   perBatchGrams,
   mult,
   amountColor,
-  section = "batches",
 }: {
   pi: number;
   recipe: BlendingRecipe;
@@ -868,23 +865,18 @@ function SourceTableDataRow({
   perBatchGrams: number;
   mult: number;
   amountColor: string;
-  section?: "batches" | "extra";
 }) {
   const p = MIX_PARAMS[pi];
   const isTotal = pi === 0;
   const metaLabel = !isTotal ? getEntityMetaLabel(recipe, p.id) : undefined;
   const lineTotalGrams = perBatchGrams * mult;
-  const rowBg = section === "extra" ? bt.extraBatchBackground : undefined;
-  const cellExtra = rowBg ? { background: rowBg } : undefined;
+  const totalCellExtra = isTotal
+    ? ({ paddingTop: "calc(var(--totals-cell-py) + 6px)" } satisfies CSSProperties)
+    : undefined;
 
   return (
-    <tr
-      style={{
-        borderBottom: isTotal ? undefined : TABLE_BORDER,
-        ...(isTotal ? { borderTop: TABLE_BORDER } : {}),
-      }}
-    >
-      <th scope="row" className="text-left align-middle font-normal" style={cellItemStyle(cellExtra)}>
+    <tr {...(isTotal ? { "data-total-row": true } : undefined)}>
+      <th scope="row" className="text-left align-middle font-normal" style={sourceCellItemStyle(totalCellExtra)}>
         <div className="min-w-0">
           {isTotal ? (
             <span
@@ -909,7 +901,7 @@ function SourceTableDataRow({
           <PerBatchRow grams={perBatchGrams} isKg={p.isKg} />
         </div>
       </th>
-      <td className="text-center align-middle" style={cellMultStyle(cellExtra)}>
+      <td className="text-center align-middle" style={sourceCellMultStyle(totalCellExtra)}>
         <MultCell value={mult} />
       </td>
       <td
@@ -920,7 +912,7 @@ function SourceTableDataRow({
           color: amountColor,
           fontWeight: isTotal ? 700 : 600,
           lineHeight: 1.15,
-          ...cellExtra,
+          ...totalCellExtra,
         })}
       >
         <AmountCell grams={lineTotalGrams} isKg={p.isKg} colorScheme={colorScheme} />
@@ -961,7 +953,7 @@ function MultiplierSectionHeader({
       >
         <div
           className="relative flex items-center justify-center"
-          style={{ minWidth: 36, height: "var(--totals-header-icon-btn)" }}
+          style={{ minWidth: 32, height: "var(--totals-header-icon-btn)" }}
         >
           <StepButton
             label="Decrease batch count"
@@ -1042,10 +1034,7 @@ function BatchTotalsSourceTables({
   const batchRowIndexes = [...ingredientRows, 0];
 
   return (
-    <div
-      className="batch-totals-source-card w-full min-w-0 shrink-0 rounded-xl overflow-hidden"
-      style={{ border: bt.batchesCardBorder }}
-    >
+    <div className="batch-totals-source-card w-full min-w-0 shrink-0 rounded-xl overflow-hidden">
       <MultiplierSectionHeader
         title="Batches"
         multiplier={multiplier}
@@ -1053,13 +1042,7 @@ function BatchTotalsSourceTables({
         showReset
       />
 
-      <div
-        className="batch-totals-source-card__body"
-        style={{
-          background: bt.batchesCardBackground,
-          boxShadow: bt.insetHighlight,
-        }}
-      >
+      <div className="batch-totals-source-card__body">
         <table className="batch-totals-source-table w-full min-w-0 border-collapse" style={{ tableLayout: "fixed" }}>
           <colgroup>
             <col style={{ width: COL_ITEM }} />
@@ -1067,14 +1050,14 @@ function BatchTotalsSourceTables({
             <col style={{ width: COL_TOTAL }} />
           </colgroup>
           <thead>
-            <tr style={{ borderBottom: TABLE_BORDER }}>
-              <th scope="col" className="text-left" style={thCellItemStyle(bt.cardHeaderBackground, TH_TEXT)}>
+            <tr>
+              <th scope="col" className="text-left" style={sourceThCellItemStyle(TH_TEXT)}>
                 Item
               </th>
-              <th scope="col" className="text-center" style={thCellMultStyle(bt.cardHeaderBackground, TH_TEXT)}>
+              <th scope="col" className="text-center" style={sourceThCellMultStyle(TH_TEXT)}>
                 ×
               </th>
-              <th scope="col" className="text-right" style={thCellTotalStyle(bt.cardHeaderBackground, TH_TEXT)}>
+              <th scope="col" className="text-right" style={sourceThCellTotalStyle(TH_TEXT)}>
                 Total
               </th>
             </tr>
@@ -1094,7 +1077,7 @@ function BatchTotalsSourceTables({
             {extraBatches.map((entry, index) => (
               <Fragment key={`extra-section-${index}`}>
                 <tr data-section-header>
-                  <td colSpan={3} style={{ padding: 0, borderTop: TABLE_BORDER }}>
+                  <td colSpan={3} style={{ padding: 0 }}>
                     <MultiplierSectionHeader
                       title={extraBatchSectionLabel(index, extraBatches.length)}
                       titleColor={cv.extraBatch.label}
@@ -1131,7 +1114,6 @@ function BatchTotalsSourceTables({
                     perBatchGrams={entry.values[pi]}
                     mult={entry.multiplier}
                     amountColor={amountColor}
-                    section="extra"
                   />
                 ))}
               </Fragment>
@@ -1143,21 +1125,11 @@ function BatchTotalsSourceTables({
       <button
         type="button"
         onClick={onAddExtraBatch}
-        className="batch-totals-add-extra-btn w-full flex items-center justify-center text-center"
-        style={{
-          cursor: "pointer",
-          background: "transparent",
-          border: 0,
-          borderTop: TABLE_BORDER,
-          minHeight: "var(--totals-add-extra-h, var(--action-row-h))",
-          padding: "var(--totals-add-extra-py, 12px) 10px",
-          fontSize: "var(--text-totals-section)",
-          letterSpacing: "0.1em",
-          fontWeight: 600,
-          color: cv.extraBatch.label,
-          lineHeight: 1.3,
-        }}
+        className="batch-totals-add-extra-btn w-full flex items-center justify-center gap-2 text-center"
       >
+        <span className="batch-totals-add-extra-btn__icon" aria-hidden>
+          +
+        </span>
         Add extra batch
       </button>
     </div>
@@ -1289,6 +1261,8 @@ export function BatchTotalsScreen({
   const [extraBatchSheetOpen, setExtraBatchSheetOpen] = useState(false);
   const [editingExtraIndex, setEditingExtraIndex] = useState<number | null>(null);
   const [sheetPortal, setSheetPortal] = useState<HTMLElement | null>(null);
+  const scrollPanelRef = useRef<HTMLDivElement>(null);
+  const scrollToTableBottomRef = useRef(false);
   const ingredientRows = entityIndexes.filter((i) => i !== 0);
   const batchTableRowCount = ingredientRows.length + 1;
   const denseTable = batchTableRowCount > 4;
@@ -1321,7 +1295,11 @@ export function BatchTotalsScreen({
   };
 
   const handleExtraBatchSheetApply = (nextValues: number[]) => {
-    if (editingExtraIndex === null || editingExtraIndex === -1) {
+    const isCreate = editingExtraIndex === null || editingExtraIndex === -1;
+    if (isCreate) {
+      scrollToTableBottomRef.current = true;
+    }
+    if (isCreate) {
       onExtraBatchesChange([...extraBatches, { values: nextValues, multiplier: 1 }]);
     } else {
       onExtraBatchesChange(
@@ -1333,6 +1311,16 @@ export function BatchTotalsScreen({
     setExtraBatchSheetOpen(false);
     setEditingExtraIndex(null);
   };
+
+  useLayoutEffect(() => {
+    if (!scrollToTableBottomRef.current) return;
+    scrollToTableBottomRef.current = false;
+    const panel = scrollPanelRef.current;
+    if (!panel) return;
+    requestAnimationFrame(() => {
+      panel.scrollTo({ top: panel.scrollHeight, behavior: "smooth" });
+    });
+  }, [extraBatches]);
 
   const sheetValues =
     editingExtraIndex !== null && editingExtraIndex >= 0
@@ -1352,7 +1340,7 @@ export function BatchTotalsScreen({
         className="batch-totals-screen__main app-gutter-x flex flex-col"
         style={{ paddingTop: compactSummary ? 0 : "var(--recipe-zone-pt)" }}
       >
-        <div className="batch-totals-scroll-panel flex flex-col">
+        <div ref={scrollPanelRef} className="batch-totals-scroll-panel flex flex-col">
           <div className="batch-totals-scroll-panel__inner">
             <BatchTotalsSourceTables
               recipe={recipe}
