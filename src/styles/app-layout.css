@@ -998,6 +998,7 @@
   --batch-totals-panel-radius: 16px;
   --batch-totals-footer-gap: var(--section-gap);
   --batch-totals-drag-card-overlap: 8px;
+  --batch-totals-drag-hit-extend: 48px;
   --batch-totals-grab-pill-w: 44px;
   --batch-totals-grab-pill-h: 4px;
   --batch-totals-grab-pill-w-active: 48px;
@@ -1230,6 +1231,20 @@
   z-index: 2;
 }
 
+/** Invisible touch target — layout and pill unchanged. */
+.batch-totals-bottom-panel__drag-zone::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: var(--batch-totals-drag-hit-extend);
+  z-index: 1;
+  cursor: inherit;
+  touch-action: none;
+}
+
 .batch-totals-bottom-panel__drag-zone,
 .batch-totals-bottom-panel__drag-zone * {
   touch-action: none;
@@ -1242,6 +1257,8 @@
   width: 100%;
   margin: 0;
   padding: 2px 0 0;
+  position: relative;
+  z-index: 0;
 }
 
 .batch-totals-grab-handle__pill {
