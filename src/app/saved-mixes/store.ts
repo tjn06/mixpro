@@ -9,6 +9,7 @@ import type { SavedMixSnapshot } from "./types";
 const STORAGE_KEY = "mixmate-saved-mixes";
 const LEGACY_STORAGE_KEY = "blending-mixes";
 const MAX_SAVED_MIXES = 50;
+const HOT_STORE_KEY = "__mixmate_saved_mixes_store__";
 
 export function snapshotValuesFromGrams(values: number[]): SavedMixSnapshot["values"] {
   return {
@@ -78,78 +79,92 @@ interface SavedMixesState {
   deleteMix: (id: string) => void;
 }
 
-export const useSavedMixesStore = create<SavedMixesState>()(
-  persist(
-    (set, get) => ({
-      mixes: [],
+function createSavedMixesStore() {
+  return create<SavedMixesState>()(
+    persist(
+      (set, get) => ({
+        mixes: [],
 
-      saveMix: (input) => {
-        const recipeName = input.recipeName.trim() || input.recipeId;
-        const mix: SavedMixSnapshot = {
-          id: crypto.randomUUID(),
-          savedAt: new Date().toISOString(),
-          ...input,
-          recipeName,
-          metaName: resolveSavedMixMetaName(input.metaName, recipeName),
-        };
-        const next = [...get().mixes, mix];
-        set({ mixes: next.length > MAX_SAVED_MIXES ? next.slice(-MAX_SAVED_MIXES) : next });
-        return mix;
-      },
+        saveMix: (input) => {
+          const recipeName = input.recipeName.trim() || input.recipeId;
+          const mix: SavedMixSnapshot = {
+            id: crypto.randomUUID(),
+            savedAt: new Date().toISOString(),
+            ...input,
+            recipeName,
+            metaName: resolveSavedMixMetaName(input.metaName, recipeName),
+          };
+          const next = [...get().mixes, mix];
+          set({ mixes: next.length > MAX_SAVED_MIXES ? next.slice(-MAX_SAVED_MIXES) : next });
+          return mix;
+        },
 
-      updateMix: (id, input) => {
-        const recipeName = input.recipeName.trim() || input.recipeId;
-        let updated: SavedMixSnapshot | null = null;
-        set({
-          mixes: get().mixes.map((mix) => {
-            if (mix.id !== id) return mix;
-            updated = {
-              ...mix,
-              savedAt: new Date().toISOString(),
-              recipeId: input.recipeId,
-              recipeName,
-              metaName: resolveSavedMixMetaName(input.metaName, recipeName),
-              bucketSelection: input.bucketSelection,
-              sandType: input.sandType,
-              values: input.values,
-            };
-            return updated;
-          }),
-        });
-        return updated;
-      },
+        updateMix: (id, input) => {
+          const recipeName = input.recipeName.trim() || input.recipeId;
+          let updated: SavedMixSnapshot | null = null;
+          set({
+            mixes: get().mixes.map((mix) => {
+              if (mix.id !== id) return mix;
+              updated = {
+                ...mix,
+                savedAt: new Date().toISOString(),
+                recipeId: input.recipeId,
+                recipeName,
+                metaName: resolveSavedMixMetaName(input.metaName, recipeName),
+                bucketSelection: input.bucketSelection,
+                sandType: input.sandType,
+                values: input.values,
+              };
+              return updated;
+            }),
+          });
+          return updated;
+        },
 
-      updateMixMetaName: (id, metaName) => {
-        set({
-          mixes: get().mixes.map((mix) => {
-            if (mix.id !== id) return mix;
-            return {
-              ...mix,
-              metaName: resolveSavedMixMetaName(metaName, mix.recipeName),
-            };
-          }),
-        });
-      },
+        updateMixMetaName: (id, metaName) => {
+          set({
+            mixes: get().mixes.map((mix) => {
+              if (mix.id !== id) return mix;
+              return {
+                ...mix,
+                metaName: resolveSavedMixMetaName(metaName, mix.recipeName),
+              };
+            }),
+          });
+        },
 
-      deleteMix: (id) => {
-        set({ mixes: get().mixes.filter((m) => m.id !== id) });
+        deleteMix: (id) => {
+          set({ mixes: get().mixes.filter((m) => m.id !== id) });
+        },
+      }),
+      {
+        name: STORAGE_KEY,
+        version: 2,
+        migrate: (persisted) => {
+          const data = persisted as { mixes?: SavedMixSnapshot[] } | undefined;
+          return { mixes: (data?.mixes ?? []).map(normalizeMix) };
+        },
+        partialize: (state) => ({ mixes: state.mixes }),
+        onRehydrateStorage: () => (state) => {
+          if (state && state.mixes.length > 0) return;
+          const legacy = migrateLegacyBlendingMixes();
+          if (legacy.length === 0) return;
+          useSavedMixesStore.setState({ mixes: legacy.map(normalizeMix) });
+          localStorage.removeItem(LEGACY_STORAGE_KEY);
+        },
       },
-    }),
-    {
-      name: STORAGE_KEY,
-      version: 2,
-      migrate: (persisted) => {
-        const data = persisted as { mixes?: SavedMixSnapshot[] } | undefined;
-        return { mixes: (data?.mixes ?? []).map(normalizeMix) };
-      },
-      partialize: (state) => ({ mixes: state.mixes }),
-      onRehydrateStorage: () => (state) => {
-        if (state && state.mixes.length > 0) return;
-        const legacy = migrateLegacyBlendingMixes();
-        if (legacy.length === 0) return;
-        useSavedMixesStore.setState({ mixes: legacy.map(normalizeMix) });
-        localStorage.removeItem(LEGACY_STORAGE_KEY);
-      },
-    },
-  ),
-);
+    ),
+  );
+}
+
+type SavedMixesStore = ReturnType<typeof createSavedMixesStore>;
+
+const hotData = import.meta.hot?.data as { [HOT_STORE_KEY]?: SavedMixesStore } | undefined;
+
+/** Keep one store across Vite HMR so saves aren't written to a discarded instance. */
+export const useSavedMixesStore: SavedMixesStore =
+  hotData?.[HOT_STORE_KEY] ?? createSavedMixesStore();
+
+if (import.meta.hot) {
+  import.meta.hot.data[HOT_STORE_KEY] = useSavedMixesStore;
+}

@@ -189,6 +189,11 @@ interface LongPressButtonProps {
   descriptionSize?: number | string;
   compact?: boolean;
   durationMs?: number;
+  /**
+   * Base z-index for portaled side beams (button lifts to beamZIndex + 8).
+   * Raise above cover sheets so beams aren't trapped behind the sheet layer.
+   */
+  beamZIndex?: number;
 }
 
 export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProps>(function LongPressButton({
@@ -210,6 +215,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
   descriptionSize = "var(--text-ui-xs)",
   compact = false,
   durationMs,
+  beamZIndex = BEAM_Z,
 }, ref) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const setButtonRef = useCallback((el: HTMLButtonElement | null) => {
@@ -252,7 +258,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
   /** Header: lift on pointer-down (before beam paints). Body: lift when beam is active. */
   const anchorActive =
     progressVariant === "beam" && liftBox != null && (isHeader || beamEngaged);
-  const liftZIndex = isHeader ? HEADER_OVER_BEAM_Z : BUTTON_OVER_BEAM_Z;
+  const liftZIndex = isHeader ? HEADER_OVER_BEAM_Z : beamZIndex + 8;
   const headerBeamHold = isHeader && progressVariant === "beam" && liftBox != null;
   const lifted = anchorActive && liftBox != null;
 
@@ -469,6 +475,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
           anchorRef={buttonRef}
           accentColor={accentColor}
           edgeContainerRef={beamEdgeRef}
+          zIndex={beamZIndex}
         />
       )}
       <span

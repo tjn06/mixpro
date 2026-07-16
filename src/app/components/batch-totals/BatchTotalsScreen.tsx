@@ -173,7 +173,7 @@ const PANEL_DRAG_THRESHOLD_PX = 16;
 const PANEL_DRAG_FOLLOW = 1;
 const PANEL_COLLAPSED_HEIGHT_FALLBACK = 96;
 const PANEL_EXPANDED_HEIGHT_FALLBACK = 480;
-const PANEL_SHARE_HEIGHT_FALLBACK = 140;
+const PANEL_SHARE_HEIGHT_FALLBACK = 220;
 
 type PanelStage = "collapsed" | "share" | "expanded";
 
@@ -223,6 +223,9 @@ export function BatchTotalsBottomPanel({
   entityIndexes,
   sourceExpanded,
   onSourceExpandedChange,
+  onSaveBatchTotals,
+  onLoadBatchTotals,
+  saveFlash = false,
 }: {
   multiplier: number;
   extraBatches: ExtraBatchEntry[];
@@ -233,6 +236,9 @@ export function BatchTotalsBottomPanel({
   entityIndexes: number[];
   sourceExpanded: boolean;
   onSourceExpandedChange: (next: boolean) => void;
+  onSaveBatchTotals?: () => void;
+  onLoadBatchTotals?: () => void;
+  saveFlash?: boolean;
 }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
@@ -614,6 +620,9 @@ export function BatchTotalsBottomPanel({
                   extraBatches={extraBatches}
                   entityIndexes={entityIndexes}
                   multiplier={multiplier}
+                  onSave={onSaveBatchTotals}
+                  onLoad={onLoadBatchTotals}
+                  saveFlash={saveFlash}
                 />
               </div>
             </div>
@@ -635,6 +644,9 @@ export interface BatchTotalsScreenProps {
   sandType: SandType;
   totalsPanelExpanded?: boolean;
   onTotalsPanelExpandedChange?: (next: boolean) => void;
+  onSaveBatchTotals?: () => void;
+  onLoadBatchTotals?: () => void;
+  saveFlash?: boolean;
 }
 
 function StepButton({
@@ -1313,6 +1325,9 @@ export function BatchTotalsScreen({
   sandType,
   totalsPanelExpanded = false,
   onTotalsPanelExpandedChange,
+  onSaveBatchTotals,
+  onLoadBatchTotals,
+  saveFlash = false,
 }: BatchTotalsScreenProps) {
   const colorScheme = useSettingsStore((s) => s.colorScheme);
   const shellCompact = useAppShellCompact();
@@ -1439,6 +1454,9 @@ export function BatchTotalsScreen({
         entityIndexes={entityIndexes}
         sourceExpanded={totalsPanelExpanded}
         onSourceExpandedChange={onTotalsPanelExpandedChange ?? (() => {})}
+        onSaveBatchTotals={onSaveBatchTotals}
+        onLoadBatchTotals={onLoadBatchTotals}
+        saveFlash={saveFlash}
       />
 
       {sheetPortal

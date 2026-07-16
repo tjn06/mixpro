@@ -903,9 +903,10 @@ body,
   );
   color: var(--ui-recipe-value);
   font-weight: 700;
+  /* Dark inset only — text-primary mix glows white in dark mode. */
   box-shadow:
-    inset 4px 4px 8px color-mix(in srgb, var(--semantic-text-primary) 22%, transparent),
-    inset 2px 2px 4px color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
+    inset 4px 4px 8px rgba(0, 0, 0, 0.28),
+    inset 2px 2px 4px rgba(0, 0, 0, 0.16);
   cursor: default;
 }
 
@@ -917,8 +918,8 @@ body,
   );
   color: var(--ui-recipe-value);
   box-shadow:
-    inset 4px 4px 9px color-mix(in srgb, var(--semantic-text-primary) 26%, transparent),
-    inset 2px 2px 4px color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+    inset 4px 4px 9px rgba(0, 0, 0, 0.34),
+    inset 2px 2px 4px rgba(0, 0, 0, 0.18);
 }
 
 .recipe-picker-card-detail__bucket--open .recipe-picker-bucket-radio:not(.recipe-picker-bucket-radio--checked):active {

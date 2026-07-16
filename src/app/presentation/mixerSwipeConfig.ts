@@ -38,6 +38,8 @@ export const MIXER_CARD_LIMIT_FLASH_TINT_PCT = chrome.cardLimitFlashTintPct;
 export const MIXER_BUCKET_LIMIT_COLOR = themeColorVar("bucketLimit");
 export const MIXER_BUCKET_LIMIT_VIBRATE_MS = [10, 28, 10] as const;
 export const MIXER_DRAG_FOCUS_Z = 5;
+/** Dim layer under focused swipe chrome (cards / swipe / TOTAL). */
+export const MIXER_DRAG_OVERLAY_Z = 4;
 export const MIXER_CARD_CONNECTOR_Z = 3;
 
 export const MIXER_SWIPE_SURFACE_BASE = themeColorVar("swipeSurfaceBase");

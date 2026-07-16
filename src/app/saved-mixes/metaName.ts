@@ -47,6 +47,8 @@ function resolveRegistry(
 export function validateMetaName(
   input: string,
   registryOrReserved: MetaNameRegistry | Iterable<string> = createMetaNameRegistry(),
+  /** Noun in the “already used” error — e.g. "saved mix", "saved batch totals". */
+  takenNoun = "saved mix",
 ): string | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
@@ -60,7 +62,7 @@ export function validateMetaName(
     return `Cannot use a recipe or admin name (“${label}”)`;
   }
 
-  return `That name is already used by another saved mix (“${label}”)`;
+  return `That name is already used by another ${takenNoun} (“${label}”)`;
 }
 
 const MAX_GENERATION_ATTEMPTS = 64;

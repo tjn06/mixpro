@@ -9,9 +9,6 @@ export const RECIPE_PLACEHOLDER_DESCRIPTIONS: Record<string, string> = {
 };
 
 export function recipePlaceholderDescription(recipeId: string): string {
-  if (recipeId.startsWith("picker-demo-")) {
-    return "Scroll demo row — preview only.";
-  }
   return (
     RECIPE_PLACEHOLDER_DESCRIPTIONS[recipeId] ??
     "Locked-ratio epoxy recipe preset for this mixer."

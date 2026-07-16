@@ -24,7 +24,11 @@ import {
   recipeBinderSum,
   recipeIngredientIndexes,
 } from "./domain/recipe/calc";
-import type { ExtraBatchEntry } from "./domain/batch-totals/extraBatches";
+import {
+  batchTotalsPlanBatchCount,
+  hasActiveBatchTotalsPlan,
+  type ExtraBatchEntry,
+} from "./domain/batch-totals/extraBatches";
 import { RecipeSelect } from "./components/mixer/RecipeSelect";
 import { RecipeRatioRow } from "./components/mixer/RecipeRatioRow";
 import {
@@ -32,12 +36,13 @@ import {
   RecipeHeaderSubline,
   RecipeHeaderSublineStack,
   RecipeHeaderMixContext,
-  RecipeEditMixnameRow,
 } from "./components/mixer/RecipeZoneMeta";
 import { RecBatchPanel, LockIcon } from "./components/mixer/RecBatchPanel";
 import { LockedSaveOverlay } from "./components/mixer/LockedSaveOverlay";
 import { LockedUnlockOverlay } from "./components/mixer/LockedUnlockOverlay";
 import { LoadSavedMixesSheet } from "./components/sheets/LoadSavedMixesSheet";
+import { LoadSavedBatchTotalsSheet } from "./components/sheets/LoadSavedBatchTotalsSheet";
+import { SaveBatchTotalsNameSheet } from "./components/sheets/SaveBatchTotalsNameSheet";
 import { SaveMixNameSheet } from "./components/sheets/SaveMixNameSheet";
 import { SettingsSheet } from "./components/sheets/SettingsSheet";
 import { useThemeAppearanceSync } from "./hooks/useThemeAppearanceSync";
@@ -46,6 +51,13 @@ import type { ColorScheme } from "../theme/appearance";
 import { entityAccentColor } from "./presentation/entityAccent";
 import { batchNameInputFromMixer } from "./batch-names";
 import type { SavedMixSnapshot } from "./saved-mixes/types";
+import type { SavedBatchTotalsSnapshot } from "./saved-batch-totals/types";
+import {
+  extraBatchesFromSnapshot,
+  primaryBatch,
+  slotValuesFromGrams,
+  useSavedBatchTotalsStore,
+} from "./saved-batch-totals/store";
 import { UndoIcon } from "./components/shared/ActionIcons";
 import type { BlendingRecipe } from "./domain/recipe/types";
 import { PRESET_RECIPES, recipeMenuLabel } from "./domain/recipe/types";
@@ -422,6 +434,10 @@ export function BatchMixer({
   const [canUndo, setCanUndo]       = useState(false);
   const [saveFlash, setSaveFlash]   = useState(false);
   const [loadPickerOpen, setLoadPickerOpen] = useState(false);
+  const [batchTotalsLoadOpen, setBatchTotalsLoadOpen] = useState(false);
+  const [batchTotalsSaveOpen, setBatchTotalsSaveOpen] = useState(false);
+  const [batchTotalsSaveFlash, setBatchTotalsSaveFlash] = useState(false);
+  const batchTotalsSaveFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saveNameSheetOpen, setSaveNameSheetOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loadedSavedMixId, setLoadedSavedMixId] = useState<string | null>(null);
@@ -530,6 +546,7 @@ export function BatchMixer({
   const updateMix = useSavedMixesStore((s) => s.updateMix);
   const savedMixes = useSavedMixesStore((s) => s.mixes);
   const canLoad = savedMixes.length > 0;
+  const saveBatchTotalsFromSession = useSavedBatchTotalsStore((s) => s.saveFromSession);
 
   /** Live snapshot from persist store — stays in sync after rename/delete/update. */
   const loadedSavedMix = useMemo(
@@ -541,10 +558,13 @@ export function BatchMixer({
   );
 
   useEffect(() => {
-    if (loadedSavedMixId && !loadedSavedMix) {
-      setLoadedSavedMixId(null);
-    }
-  }, [loadedSavedMixId, loadedSavedMix]);
+    if (!loadedSavedMixId || loadedSavedMix) return;
+    // Prefer live store — avoids clearing when React briefly sees a stale mixes snapshot.
+    const exists = useSavedMixesStore
+      .getState()
+      .mixes.some((mix) => mix.id === loadedSavedMixId);
+    if (!exists) setLoadedSavedMixId(null);
+  }, [loadedSavedMixId, loadedSavedMix, savedMixes]);
 
   const saveBatchNameInput = useMemo(
     () =>
@@ -761,6 +781,65 @@ export function BatchMixer({
     [pushUndo, recipes, sandType],
   );
 
+  const handleSaveBatchTotals = useCallback(() => {
+    setBatchTotalsSaveOpen(true);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (batchTotalsSaveFlashTimer.current) {
+        clearTimeout(batchTotalsSaveFlashTimer.current);
+      }
+    };
+  }, []);
+
+  const handleSaveBatchTotalsConfirm = useCallback(
+    (metaName?: string) => {
+      const recipeName = recipeMenuLabel(recipeRef.current);
+      saveBatchTotalsFromSession({
+        recipeId: recipeRef.current.id,
+        recipeName,
+        metaName,
+        linkedSavedMixId: loadedSavedMixId ?? undefined,
+        primaryValues: slotValuesFromGrams(valuesRef.current),
+        primaryMultiplier: batchMultiplier,
+        extraBatches,
+        source: "batch-mixer",
+      });
+      if (batchTotalsSaveFlashTimer.current) {
+        clearTimeout(batchTotalsSaveFlashTimer.current);
+      }
+      setBatchTotalsSaveFlash(true);
+      batchTotalsSaveFlashTimer.current = setTimeout(() => {
+        setBatchTotalsSaveFlash(false);
+        batchTotalsSaveFlashTimer.current = null;
+      }, 1500);
+    },
+    [batchMultiplier, extraBatches, loadedSavedMixId, saveBatchTotalsFromSession],
+  );
+
+  /** Attach totals plan only — table 1 mix stays locked to the current session. */
+  const handleSavedBatchTotalsSelect = useCallback(
+    (entry: SavedBatchTotalsSnapshot) => {
+      const primary = primaryBatch(entry);
+      if (!primary) return;
+      pushUndo();
+      setBatchMultiplier(Math.max(1, primary.multiplier || 1));
+      setExtraBatches(extraBatchesFromSnapshot(entry));
+      setTotalsPanelExpanded(false);
+    },
+    [pushUndo],
+  );
+
+  const batchTotalsSession = useMemo(
+    () => ({
+      recipeId: activeRecipe.id,
+      loadedSavedMixId,
+      values,
+    }),
+    [activeRecipe.id, loadedSavedMixId, values],
+  );
+
   const scaleMix = useCallback((factor: number) => {
     pushUndo();
     const current = valuesRef.current;
@@ -906,7 +985,6 @@ export function BatchMixer({
   }, []);
 
   const handleBack = useCallback(() => {
-    setExtraBatches([]);
     setTotalsPanelExpanded(false);
     setScreen("mixer");
   }, []);
@@ -915,6 +993,11 @@ export function BatchMixer({
     if (screen !== "mixer" || isLocked) return;
     setScreen("totals");
   }, [screen, isLocked]);
+
+  const forwardTotalsBadge = useMemo(() => {
+    if (!hasActiveBatchTotalsPlan(batchMultiplier, extraBatches)) return null;
+    return batchTotalsPlanBatchCount(batchMultiplier, extraBatches);
+  }, [batchMultiplier, extraBatches]);
 
   const endSwipe = useCallback((e?: React.PointerEvent) => {
     if (!isDragging.current) return;
@@ -1077,6 +1160,9 @@ export function BatchMixer({
               sandType={sandType}
               totalsPanelExpanded={totalsPanelExpanded}
               onTotalsPanelExpandedChange={setTotalsPanelExpanded}
+              onSaveBatchTotals={handleSaveBatchTotals}
+              onLoadBatchTotals={() => setBatchTotalsLoadOpen(true)}
+              saveFlash={batchTotalsSaveFlash}
             />
           </div>
         </div>
@@ -1087,11 +1173,13 @@ export function BatchMixer({
           <AppHeader
             isLocked={isLocked}
             onForward={handleForward}
+            forwardBadgeCount={forwardTotalsBadge}
             onSettingsClick={() => setSettingsOpen(true)}
             settingsActive={settingsOpen}
             subline={
               <div className={isLocked && !loadedSavedMix ? "pointer-events-none" : "pointer-events-auto"}>
                 <RecipeHeaderSublineStack>
+                  <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
                   <RecipeSelect
                     recipes={recipes}
                     value={activeRecipe}
@@ -1129,7 +1217,6 @@ export function BatchMixer({
             pointerEvents: isLocked ? "none" : "auto",
           }}
         >
-          <RecipeEditMixnameRow loadedSavedMix={loadedSavedMix} muted={isLocked} />
           <div
             ref={editRowRef}
             className="relative grid min-w-0"
@@ -1431,6 +1518,21 @@ export function BatchMixer({
           open={screen === "mixer" && loadPickerOpen}
           onOpenChange={setLoadPickerOpen}
           onSelect={handleSavedMixSelect}
+        />
+
+        <LoadSavedBatchTotalsSheet
+          open={screen === "totals" && batchTotalsLoadOpen}
+          onOpenChange={setBatchTotalsLoadOpen}
+          onSelect={handleSavedBatchTotalsSelect}
+          session={batchTotalsSession}
+        />
+
+        <SaveBatchTotalsNameSheet
+          open={screen === "totals" && batchTotalsSaveOpen}
+          onOpenChange={setBatchTotalsSaveOpen}
+          recipeName={recipeMenuLabel(activeRecipe)}
+          batchNameInput={saveBatchNameInput}
+          onConfirm={handleSaveBatchTotalsConfirm}
         />
 
         <SaveMixNameSheet

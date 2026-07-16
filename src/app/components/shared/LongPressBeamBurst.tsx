@@ -67,11 +67,13 @@ function SideBar({
   layout,
   progress,
   color,
+  zIndex,
 }: {
   side: "left" | "right";
   layout: Layout;
   progress: number;
   color: string;
+  zIndex: number;
 }) {
   const h = layout.height;
   const span =
@@ -96,7 +98,7 @@ function SideBar({
     <div
       aria-hidden
       className="pointer-events-none fixed overflow-hidden"
-      style={{ left, top: layout.top, width: barW, height: h, zIndex: BEAM_Z }}
+      style={{ left, top: layout.top, width: barW, height: h, zIndex }}
     >
       <div className="absolute inset-0" style={{ background: cv.longPress.beamTrack }} />
       {fillW > 0 && (
@@ -129,11 +131,14 @@ export function LongPressBeamBurst({
   anchorRef,
   accentColor,
   edgeContainerRef,
+  zIndex = BEAM_Z,
 }: {
   progress: number;
   anchorRef: RefObject<HTMLElement | null>;
   accentColor?: string;
   edgeContainerRef?: RefObject<HTMLElement | null>;
+  /** Override when beams must sit above a cover sheet (default BEAM_Z). */
+  zIndex?: number;
 }) {
   const [layout, setLayout] = useState<Layout | null>(null);
   const color = accentColor ?? cv.longPress.progress;
@@ -175,8 +180,8 @@ export function LongPressBeamBurst({
 
   return createPortal(
     <>
-      <SideBar side="left" layout={layout} progress={progress} color={color} />
-      <SideBar side="right" layout={layout} progress={progress} color={color} />
+      <SideBar side="left" layout={layout} progress={progress} color={color} zIndex={zIndex} />
+      <SideBar side="right" layout={layout} progress={progress} color={color} zIndex={zIndex} />
     </>,
     document.body,
   );

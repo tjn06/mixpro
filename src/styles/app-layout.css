@@ -156,13 +156,6 @@
   flex-shrink: 0;
 }
 
-.recipe-edit-zone__mixname {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-}
-
 .app-header__subline {
   display: flex;
   align-items: center;
@@ -318,6 +311,31 @@
   width: 40px;
   height: 40px;
   flex-shrink: 0;
+}
+
+/** Overlaps forward control — no layout growth, ignores pointer. */
+.app-header__nav-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  z-index: 2;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-family: "Outfit", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  /* Invert primary on app surface — readable in light and dark (state-accent is too pale in dark). */
+  color: var(--semantic-surface-app);
+  background: var(--semantic-text-primary);
+  box-shadow: 0 0 0 1.5px var(--ui-header-bg);
 }
 
 /* ── Container-query tokens (preferred) ─────────────────────────────────── */
@@ -1045,7 +1063,7 @@
 /** Absolute bottom sheet — grows upward to header subline; footer stays pinned at bottom. */
 .batch-totals-bottom-panel {
   --batch-totals-panel-radius: 16px;
-  --batch-totals-footer-gap: var(--section-gap);
+  --batch-totals-footer-gap: 8px;
   --batch-totals-drag-card-overlap: 8px;
   --batch-totals-drag-hit-extend: 64px;
   --batch-totals-grab-pill-w: 70px;
@@ -1312,6 +1330,7 @@
 }
 
 .batch-totals-bottom-panel--share-revealing .batch-totals-bottom-panel__actions {
+  /** Tight to TOTAL — the dock top rule carries the separation. */
   margin-top: var(--batch-totals-footer-gap);
 }
 

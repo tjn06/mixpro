@@ -205,21 +205,3 @@ export function RecipeHeaderMixContext({
     </RecipeHeaderSubline>
   );
 }
-
-/** Mix name above bucket / rec. batch controls in the editable mixer zone. */
-export function RecipeEditMixnameRow({
-  loadedSavedMix,
-  muted = false,
-}: {
-  loadedSavedMix: SavedMixSnapshot | null;
-  muted?: boolean;
-}) {
-  const displayName = loadedSavedMix ? savedMixDisplayName(loadedSavedMix) : null;
-  if (!displayName) return null;
-
-  return (
-    <div className="recipe-edit-zone__mixname w-full min-w-0">
-      <RecipeMixnameRow displayName={displayName} muted={muted} />
-    </div>
-  );
-}

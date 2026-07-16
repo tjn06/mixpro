@@ -16,10 +16,19 @@ interface AppHeaderProps {
   isLocked?: boolean;
   onBack?: () => void;
   onForward?: () => void;
+  /**
+   * Small count badge on the forward control (e.g. active batch-totals plan).
+   * Overlays the nav slot; does not affect layout or hit target (`pointer-events: none`).
+   */
+  forwardBadgeCount?: number | null;
   onSettingsClick?: () => void;
   settingsActive?: boolean;
   /** Recipe name / selector — rendered in the subheader strip below the header bar. */
   subline?: ReactNode;
+}
+
+function formatForwardBadge(count: number): string {
+  return count > 9 ? "9+" : String(count);
 }
 
 function HeaderIconButton({
@@ -62,10 +71,17 @@ export function AppHeader({
   isLocked = false,
   onBack,
   onForward,
+  forwardBadgeCount = null,
   onSettingsClick,
   settingsActive = false,
   subline,
 }: AppHeaderProps) {
+  const showForwardBadge =
+    onForward != null &&
+    !isLocked &&
+    forwardBadgeCount != null &&
+    forwardBadgeCount > 0;
+
   return (
     <div className="app-header-chrome shrink-0">
       <header className="app-header">
@@ -135,6 +151,14 @@ export function AppHeader({
                 </svg>
               }
             />
+            {showForwardBadge ? (
+              <span
+                className="app-header__nav-badge"
+                aria-hidden
+              >
+                {formatForwardBadge(forwardBadgeCount!)}
+              </span>
+            ) : null}
           </div>
         </div>
       </header>

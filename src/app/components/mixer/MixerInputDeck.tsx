@@ -1,5 +1,4 @@
-import { useCallback, useRef } from "react";
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "../../domain/mix/entities";
 import {
   CARD_CHROME_TRANSITION,
@@ -35,6 +34,10 @@ import { entityAccentColor } from "../../presentation/entityAccent";
 import { entityValueColor, entityUnitColor } from "../../presentation/entityCardStyles";
 import { useSettingsStore } from "../../settings/store";
 
+export type MixerInputDeckFooterApi = {
+  dragFocus: boolean;
+};
+
 export interface MixerInputDeckProps {
   recipe: BlendingRecipe;
   values: number[];
@@ -45,11 +48,15 @@ export interface MixerInputDeckProps {
   bucketSelection: BucketSelection;
   sandType: SandType;
   disabled?: boolean;
-  footer?: ReactNode;
+  /** Bottom TOTAL tile — measured for swipe→TOTAL connector (place in `footer`). */
+  totalTileRef?: RefObject<HTMLElement | null>;
+  footer?: ReactNode | ((api: MixerInputDeckFooterApi) => ReactNode);
+  /** Notifies parent when swipe drag-focus starts/ends (for sheet-level overlay). */
+  onDragFocusChange?: (dragFocus: boolean) => void;
   className?: string;
 }
 
-/** Stripped mixer control deck — ingredient cards + vertical swipe zones (no bucket / TOTAL tile). */
+/** Mixer control deck — entity cards (incl. TOTAL when in `entityIndexes`) + swipe zones. */
 export function MixerInputDeck({
   recipe,
   values,
@@ -60,7 +67,9 @@ export function MixerInputDeck({
   bucketSelection,
   sandType,
   disabled = false,
+  totalTileRef,
   footer,
+  onDragFocusChange,
   className = "",
 }: MixerInputDeckProps) {
   const colorScheme = useSettingsStore((s) => s.colorScheme);
@@ -84,24 +93,31 @@ export function MixerInputDeck({
     disabled,
   });
 
+  useEffect(() => {
+    onDragFocusChange?.(dragFocus);
+  }, [dragFocus, onDragFocusChange]);
+
   const containerRef = useRef<HTMLDivElement>(null);
+  const cardsRowRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const getParamColor = useCallback(
     (pi: number) => entityAccentColor(PARAMS[pi].id, colorScheme),
     [colorScheme],
   );
+  const indexesKey = entityIndexes.join(",");
   const { connectorLines } = useMixerCardConnectors({
     containerRef,
     cardRefs,
     swipeAreaRef,
+    totalTileRef,
     entityIndexes,
     active,
     enabled: !disabled,
     getParamColor,
-    remeasureKey: values,
+    remeasureKey: `${indexesKey}:${active}:${values.join(",")}`,
   });
 
-  const activeParam = PARAMS[active];
+  const activeParam = PARAMS[active] ?? PARAMS[0];
   const col = entityAccentColor(activeParam.id, colorScheme);
 
   return (
@@ -112,13 +128,17 @@ export function MixerInputDeck({
     >
       {connectorLines.map((line, i) => (
         <div
-          key={i}
+          key={`${entityIndexes[i] ?? i}-${line.active ? "a" : "i"}`}
           aria-hidden
           style={mixerCardConnectorStyle(line, dragFocus, !disabled)}
         />
       ))}
 
-      <div className="flex min-w-0" style={{ gap: "var(--section-gap)" }}>
+      <div
+        ref={cardsRowRef}
+        className="relative z-[1] flex min-w-0"
+        style={{ gap: "var(--section-gap)" }}
+      >
         {entityIndexes.map((pi) => {
           const p = PARAMS[pi];
           const accent = entityAccentColor(p.id, colorScheme);
@@ -137,11 +157,11 @@ export function MixerInputDeck({
               disabled={disabled}
               onClick={() => onActiveChange(pi)}
               className="flex-1 flex flex-col items-center rounded-xl relative overflow-hidden"
-                style={{
-                  paddingTop: "var(--entity-card-pt)",
-                  paddingBottom: "var(--entity-card-pb)",
-                  background: chrome.background,
-                  border: chrome.border,
+              style={{
+                paddingTop: "var(--entity-card-pt)",
+                paddingBottom: "var(--entity-card-pb)",
+                background: chrome.background,
+                border: chrome.border,
                 boxShadow: chrome.boxShadow,
                 transition: CARD_CHROME_TRANSITION,
                 transform: cardBump ? "scale(1.035)" : undefined,
@@ -166,7 +186,7 @@ export function MixerInputDeck({
               />
               <MixerCardReadout
                 name={p.id}
-                value={fmt(values[pi], p.isKg)}
+                value={fmt(values[pi] ?? 0, p.isKg)}
                 unit={p.isKg ? "kg" : "g"}
                 centered
                 nameColor={accent}
@@ -181,7 +201,7 @@ export function MixerInputDeck({
       <div
         className="shrink-0"
         style={{
-          zIndex: dragFocus && !disabled ? MIXER_DRAG_FOCUS_Z : 2,
+          zIndex: dragFocus && !disabled ? MIXER_DRAG_FOCUS_Z : 1,
           position: "relative",
           opacity: disabled ? 0.45 : 1,
           pointerEvents: disabled ? "none" : "auto",
@@ -251,7 +271,7 @@ export function MixerInputDeck({
         </div>
       </div>
 
-      {footer}
+      {typeof footer === "function" ? footer({ dragFocus }) : footer}
     </div>
   );
 }

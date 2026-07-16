@@ -160,27 +160,6 @@ function HorizontalSwipeHintIcon({ size = 15 }: { size?: number }) {
   );
 }
 
-const RECIPE_PICKER_DEMO_PLACEHOLDER_COUNT = 8;
-
-function recipePickerDemoPlaceholderRecipes(): BlendingRecipe[] {
-  return Array.from({ length: RECIPE_PICKER_DEMO_PLACEHOLDER_COUNT }, (_, index) => ({
-    id: `picker-demo-${index + 1}`,
-    name: `Placeholder ${index + 1}`,
-    nameSubline: "Scroll demo",
-    initialBinderSum: 1500,
-    binderParts: [
-      { id: "A", parts: 2, label: "Resin" },
-      { id: "B", parts: 1, label: "Hardener" },
-    ],
-    binderPercents:
-      index % 2 === 0 ? [{ id: "SAND", percent: 400, label: "Filler" }] : [],
-  }));
-}
-
-function isRecipePickerDemoPlaceholder(recipe: BlendingRecipe): boolean {
-  return recipe.id.startsWith("picker-demo-");
-}
-
 function savesForRecipe(
   recipeId: string,
   savedMixes: readonly SavedMixSnapshot[],
@@ -745,16 +724,12 @@ export function RecipePickerSheet({
   const now = useTickingNow(present && phase !== "exit");
 
   const recentMixes = useMemo(() => latestSaves(savedMixes), [savedMixes]);
-  const displayRecipes = useMemo(
-    () => [...recipes, ...recipePickerDemoPlaceholderRecipes()],
-    [recipes],
-  );
   const showBucketDetail = onBucketChange != null;
 
   const scrollEdges = useScrollEdgeFades(
     scrollRef,
     present && phase !== "exit",
-    `${previewRecipe.id}:${showBucketDetail}:${recentMixes.length}:${displayRecipes.length}:${phase}`,
+    `${previewRecipe.id}:${showBucketDetail}:${recentMixes.length}:${recipes.length}:${phase}`,
   );
 
   const resolvePickerBucket = useCallback(
@@ -917,17 +892,16 @@ export function RecipePickerSheet({
           >
             <div className="recipe-picker-matrix">
             <div className="recipe-picker-matrix__grid" role="listbox" aria-label="Recipes">
-              {displayRecipes.map((recipe) => {
+              {recipes.map((recipe) => {
                 const selected = recipe.id === previewRecipe.id;
                 const applied = recipe.id === value.id;
-                const placeholder = isRecipePickerDemoPlaceholder(recipe);
                 return (
                   <div key={recipe.id} className="recipe-picker-matrix__recipe">
                     <RecipePickerCard
                       recipe={recipe}
                       selected={selected}
                       applied={applied}
-                      canApply={!placeholder && (!applied || allowReselectCurrent)}
+                      canApply={!applied || allowReselectCurrent}
                       showDetail={showBucketDetail}
                       initialBinderSum={initialBinderSum}
                       sandType={sandType}
@@ -947,7 +921,6 @@ export function RecipePickerSheet({
                       }}
                       onPreview={() => handlePreviewRecipe(recipe)}
                       onApply={() => {
-                        if (placeholder) return;
                         onBucketChange?.(resolvePickerBucket(recipe.id));
                         onChange(recipe);
                         requestClose();
