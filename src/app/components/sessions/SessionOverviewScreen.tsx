@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
 import { getEntityMetaLabel } from "../../domain/recipe/calc";
@@ -12,7 +13,9 @@ import {
   type SessionShareScope,
 } from "../../domain/sessions/shareScope";
 import {
+  SESSION_STAGE_CARD_LABELS,
   canNavigateToSessionStage,
+  isSessionStageComplete,
   nextSessionStage,
 } from "../../domain/sessions/stages";
 import {
@@ -34,11 +37,8 @@ import {
 } from "../../presentation/entityCardStyles";
 import { entityAccentColor } from "../../presentation/entityAccent";
 import { useSettingsStore } from "../../settings/store";
+import { RenameIcon } from "../shared/ActionIcons";
 import { AppHeader } from "../shared/AppHeader";
-import {
-  RecipeHeaderSubline,
-  RecipeHeaderSublineStack,
-} from "../mixer/RecipeZoneMeta";
 import {
   ScrollEdgeFadeOverlays,
   useScrollEdgeFades,
@@ -83,6 +83,7 @@ export function SessionOverviewScreen({
   const [panelExpanded, setPanelExpanded] = useState(false);
   const [pickRecipeOpen, setPickRecipeOpen] = useState(false);
   const [saveNameOpen, setSaveNameOpen] = useState(false);
+  const [renameNameOpen, setRenameNameOpen] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false);
   const [shareScope, setShareScope] = useState<SessionShareScope>("current");
   const scrollPanelRef = useRef<HTMLDivElement>(null);
@@ -318,24 +319,28 @@ export function SessionOverviewScreen({
             ))
           )}
 
-          <button
-            type="button"
-            onClick={() => setPickRecipeOpen(true)}
-            className="text-btn batch-totals-add-extra-btn w-full flex items-center justify-center gap-2 text-center"
-          >
-            <span className="batch-totals-add-extra-btn__icon" aria-hidden>
-              +
-            </span>
-            Add mix
-          </button>
-
-          <button
-            type="button"
-            className="create-recipe__secondary-btn session-overview__create-recipe"
-            onClick={onCreateRecipe}
-          >
-            + Create recipe for session
-          </button>
+          <div className="session-overview__workspace-actions">
+            <button
+              type="button"
+              onClick={onCreateRecipe}
+              className="session-overview__workspace-btn session-overview__workspace-btn--recipe"
+            >
+              <span className="batch-totals-add-extra-btn__icon" aria-hidden>
+                +
+              </span>
+              Add recipe
+            </button>
+            <button
+              type="button"
+              onClick={() => setPickRecipeOpen(true)}
+              className="session-overview__workspace-btn session-overview__workspace-btn--mix"
+            >
+              <span className="batch-totals-add-extra-btn__icon" aria-hidden>
+                +
+              </span>
+              Add mix
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -433,7 +438,7 @@ export function SessionOverviewScreen({
       <div className="batch-totals-route flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="recipe-context-gradient flex-1 min-h-0 flex flex-col overflow-hidden">
           <AppHeader
-            title={session.name}
+            title="Session"
             onMenuClick={onMenuClick}
             onBack={onBack}
             backLabel="Back to sessions"
@@ -441,63 +446,76 @@ export function SessionOverviewScreen({
             onForward={nextStage ? goNextStage : undefined}
             forwardConfirmAction="NEXT STAGE"
             sessionChrome
-            subline={
-              <RecipeHeaderSublineStack>
-                <RecipeHeaderSubline>
-                  <span className="session-mode-chip">
-                    <span className="session-mode-chip__dot" aria-hidden />
-                    Session · {SESSION_STAGE_LABELS[activeStage]}
-                  </span>
-                </RecipeHeaderSubline>
-              </RecipeHeaderSublineStack>
-            }
           />
 
           <div className="batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden relative">
             <div className="batch-totals-screen__main flex flex-col">
-              <nav className="session-overview__stages app-gutter-x" aria-label="Session stages">
-                {SESSION_STAGE_ORDER.map((stageId, index) => {
-                  const active = stageId === activeStage;
-                  const touched = touchedStages.includes(stageId);
-                  const inShare = stagesInShare.includes(stageId);
-                  const selectable = canNavigateToSessionStage(
-                    stageId,
-                    activeStage,
-                    touchedStages,
-                  );
-                  const isNext = stageId === nextStage;
-                  return (
-                    <button
-                      key={stageId}
-                      type="button"
-                      className={`session-overview__stage-btn${
-                        active ? " session-overview__stage-btn--active" : ""
-                      }${touched && !active ? " session-overview__stage-btn--touched" : ""}${
-                        inShare ? " session-overview__stage-btn--in-share" : ""
-                      }${isNext && !active ? " session-overview__stage-btn--next" : ""}`}
-                      aria-current={active ? "step" : undefined}
-                      disabled={!active && !selectable}
-                      data-touched={touched ? "" : undefined}
-                      data-in-share={inShare ? "" : undefined}
-                      onClick={() => {
-                        if (active) return;
-                        if (isNext) {
-                          goNextStage();
-                          return;
-                        }
-                        setStage(stageId);
-                      }}
-                    >
-                      <span className="session-overview__stage-index" aria-hidden>
-                        {index + 1}
-                      </span>
-                      <span className="session-overview__stage-label">
-                        {SESSION_STAGE_LABELS[stageId]}
-                      </span>
-                    </button>
-                  );
-                })}
-              </nav>
+              <div className="session-overview__chrome">
+                <div className="session-overview__context app-gutter-x">
+                  <button
+                    type="button"
+                    className="session-overview__name-field"
+                    onClick={() => setRenameNameOpen(true)}
+                    aria-label={`Rename session, ${session.name}`}
+                  >
+                    <span className="session-overview__context-name">{session.name}</span>
+                    <span className="session-overview__name-edit" aria-hidden>
+                      <RenameIcon size={14} />
+                    </span>
+                  </button>
+                </div>
+                <nav className="session-overview__stages app-gutter-x" aria-label="Session stages">
+                  {SESSION_STAGE_ORDER.map((stageId, index) => {
+                    const active = stageId === activeStage;
+                    const touched = touchedStages.includes(stageId);
+                    const complete = session
+                      ? isSessionStageComplete(session, stageId)
+                      : false;
+                    const inShare = stagesInShare.includes(stageId);
+                    const selectable = canNavigateToSessionStage(
+                      stageId,
+                      activeStage,
+                      touchedStages,
+                    );
+                    const isNext = stageId === nextStage;
+                    return (
+                      <button
+                        key={stageId}
+                        type="button"
+                        className={`session-overview__stage-btn${
+                          active ? " session-overview__stage-btn--active" : ""
+                        }${complete && !active ? " session-overview__stage-btn--complete" : ""}${
+                          inShare ? " session-overview__stage-btn--in-share" : ""
+                        }${isNext && !active ? " session-overview__stage-btn--next" : ""}`}
+                        aria-current={active ? "step" : undefined}
+                        disabled={!active && !selectable}
+                        data-touched={touched ? "" : undefined}
+                        data-complete={complete ? "" : undefined}
+                        data-in-share={inShare ? "" : undefined}
+                        onClick={() => {
+                          if (active) return;
+                          if (isNext) {
+                            goNextStage();
+                            return;
+                          }
+                          setStage(stageId);
+                        }}
+                      >
+                        <span className="session-overview__stage-index" aria-hidden>
+                          {complete ? (
+                            <Check size={12} strokeWidth={2.5} />
+                          ) : (
+                            index + 1
+                          )}
+                        </span>
+                        <span className="session-overview__stage-label">
+                          {SESSION_STAGE_CARD_LABELS[stageId]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
 
               {stageMain}
 
@@ -533,6 +551,16 @@ export function SessionOverviewScreen({
         onOpenChange={setSaveNameOpen}
         initialName={session.name}
         onConfirm={handleSaveConfirm}
+      />
+
+      <SaveSessionNameSheet
+        open={renameNameOpen}
+        onOpenChange={setRenameNameOpen}
+        initialName={session.name}
+        title="Rename session"
+        subtitle="Update the name shown in your session list."
+        confirmLabel="Rename"
+        onConfirm={(name) => patchSession(session.id, { name })}
       />
     </div>
   );

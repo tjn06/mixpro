@@ -62,7 +62,7 @@ export interface RecBatchPanelProps {
   saveConfirmAction?: string;
   /** Optional hold hint under the primary action (stacked only when provided elsewhere). */
   saveDescription?: string;
-  /** Use check icon instead of save (session commit). */
+  /** Use check icon instead of save (non-session flash / legacy). Session uses text label. */
   useCommitIcon?: boolean;
   /** Session Mode — teal fill on commit button. */
   sessionTone?: boolean;
@@ -116,7 +116,7 @@ export function RecBatchPanel({
     : saveLabelOverride ?? (loadedSavedMix ? "Update mix" : "Save mix");
   const saveConfirm = saveConfirmAction ?? "SAVE MIX";
   const saveIcon =
-    saveFlash || useCommitIcon ? <SavedIcon /> : <SaveIcon />;
+    sessionTone ? undefined : saveFlash || useCommitIcon ? <SavedIcon /> : <SaveIcon />;
 
   return (
     <>

@@ -21,11 +21,17 @@ export function SaveSessionNameSheet({
   onOpenChange,
   initialName,
   onConfirm,
+  title = "Save session",
+  subtitle = "Name this project for your session list.",
+  confirmLabel = "Save",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialName: string;
   onConfirm: (name: string) => void;
+  title?: string;
+  subtitle?: string;
+  confirmLabel?: string;
 }) {
   const [name, setName] = useState(initialName);
 
@@ -56,10 +62,10 @@ export function SaveSessionNameSheet({
         style={SHEET_COVER_FORM_HEADER_STYLE}
       >
         <h2 id="save-session-name-title" className={SHEET_TITLE_CLASS}>
-          Save session
+          {title}
         </h2>
         <p className={SHEET_SUBTITLE_CLASS} style={{ maxWidth: 280, textAlign: "center" }}>
-          Name this project for your session list.
+          {subtitle}
         </p>
       </header>
 
@@ -111,7 +117,7 @@ export function SaveSessionNameSheet({
           },
           {
             key: "save",
-            label: "Save",
+            label: confirmLabel,
             icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: handleSave,
             disabled: !canConfirm,

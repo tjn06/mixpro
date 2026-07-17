@@ -1203,7 +1203,11 @@ export function BatchMixer({
         <div className="batch-totals-route flex-1 min-h-0 flex flex-col overflow-hidden">
           <div className="recipe-context-gradient flex-1 min-h-0 flex flex-col overflow-hidden">
             <AppHeader
-              title={sessionMode ? (sessionMode.mode === "edit" ? "Edit mix" : "Add mix") : "MIXpro"}
+              title={
+                sessionMode
+                  ? `Session · ${sessionMode.sessionName}`
+                  : "MIXpro"
+              }
               isLocked={isLocked}
               onMenuClick={onOpenNav}
               onBack={handleBack}
@@ -1240,35 +1244,23 @@ export function BatchMixer({
       <>
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="recipe-context-gradient">
-          <AppHeader
-            title={
-              sessionMode
-                ? sessionMode.mode === "edit"
-                  ? "Edit mix"
-                  : "Add mix"
-                : "MIXpro"
-            }
-            isLocked={isLocked}
-            onMenuClick={onOpenNav}
-            onBack={sessionMode ? handleSessionCancel : undefined}
-            backLabel={sessionMode ? "Back to session" : "Back"}
-            backConfirmAction={sessionMode ? "BACK TO SESSION" : "GO BACK"}
-            onForward={sessionMode ? undefined : handleForward}
-            forwardBadgeCount={sessionMode ? null : forwardTotalsBadge}
-            sessionChrome={Boolean(sessionMode)}
-            subline={
+            <AppHeader
+              title={
+                sessionMode
+                  ? `Session · ${sessionMode.sessionName}`
+                  : "MIXpro"
+              }
+              isLocked={isLocked}
+              onMenuClick={onOpenNav}
+              onBack={sessionMode ? handleSessionCancel : undefined}
+              backLabel={sessionMode ? "Back to session" : "Back"}
+              backConfirmAction={sessionMode ? "BACK TO SESSION" : "GO BACK"}
+              onForward={sessionMode ? undefined : handleForward}
+              forwardBadgeCount={sessionMode ? null : forwardTotalsBadge}
+              sessionChrome={Boolean(sessionMode)}
+              subline={
               <div className={isLocked && !loadedSavedMix ? "pointer-events-none" : "pointer-events-auto"}>
                 <RecipeHeaderSublineStack>
-                  {sessionMode ? (
-                    <RecipeHeaderSubline>
-                      <span className="session-mode-chip">
-                        <span className="session-mode-chip__dot" aria-hidden />
-                        Session · {sessionMode.sessionName}
-                      </span>
-                    </RecipeHeaderSubline>
-                  ) : (
-                    <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
-                  )}
                   {sessionMode ? (
                     <RecipeHeaderSubline>
                       <RecipeHeaderRecipeRow muted={isLocked}>
@@ -1276,21 +1268,24 @@ export function BatchMixer({
                       </RecipeHeaderRecipeRow>
                     </RecipeHeaderSubline>
                   ) : (
-                    <RecipeSelect
-                      recipes={recipes}
-                      value={activeRecipe}
-                      onChange={handleRecipeChange}
-                      disabled={isLocked && !loadedSavedMix}
-                      muted={isLocked && !loadedSavedMix}
-                      allowReselectCurrent={loadedSavedMix != null}
-                      bucketSelection={bucketSelection}
-                      onBucketChange={setBucketSelection}
-                      initialBinderSum={initialBinderSum}
-                      sandType={sandType}
-                      savedMixes={savedMixes}
-                      loadedSavedMixId={loadedSavedMixId}
-                      onSavedMixSelect={handleSavedMixSelect}
-                    />
+                    <>
+                      <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
+                      <RecipeSelect
+                        recipes={recipes}
+                        value={activeRecipe}
+                        onChange={handleRecipeChange}
+                        disabled={isLocked && !loadedSavedMix}
+                        muted={isLocked && !loadedSavedMix}
+                        allowReselectCurrent={loadedSavedMix != null}
+                        bucketSelection={bucketSelection}
+                        onBucketChange={setBucketSelection}
+                        initialBinderSum={initialBinderSum}
+                        sandType={sandType}
+                        savedMixes={savedMixes}
+                        loadedSavedMixId={loadedSavedMixId}
+                        onSavedMixSelect={handleSavedMixSelect}
+                      />
+                    </>
                   )}
                 </RecipeHeaderSublineStack>
               </div>
@@ -1352,17 +1347,17 @@ export function BatchMixer({
                 sessionMode
                   ? sessionMode.mode === "edit"
                     ? "Update in session"
-                    : "Add to session"
+                    : "Save to session"
                   : undefined
               }
               saveConfirmAction={
                 sessionMode
                   ? sessionMode.mode === "edit"
                     ? "UPDATE IN SESSION"
-                    : "ADD TO SESSION"
+                    : "SAVE TO SESSION"
                   : undefined
               }
-              useCommitIcon={Boolean(sessionMode)}
+              useCommitIcon={false}
               sessionTone={Boolean(sessionMode)}
               hideLoad={Boolean(sessionMode)}
               disabled={isLocked}
@@ -1389,24 +1384,24 @@ export function BatchMixer({
                 sessionMode
                   ? sessionMode.mode === "edit"
                     ? "Update in session"
-                    : "Add to session"
+                    : "Save to session"
                   : undefined
               }
               saveConfirmAction={
                 sessionMode
                   ? sessionMode.mode === "edit"
                     ? "UPDATE IN SESSION"
-                    : "ADD TO SESSION"
+                    : "SAVE TO SESSION"
                   : undefined
               }
               saveDescriptionOverride={
                 sessionMode
                   ? sessionMode.mode === "edit"
                     ? "Hold to save changes back to this session"
-                    : "Hold to add this mix to the session"
+                    : "Hold to save this mix to the session"
                   : undefined
               }
-              useCommitIcon={Boolean(sessionMode)}
+              useCommitIcon={false}
               sessionTone={Boolean(sessionMode)}
               expandMs={LOCK_EXPAND_MS}
               expandEase={LOCK_EASE}

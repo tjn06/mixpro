@@ -1817,18 +1817,38 @@
   min-height: var(--control-h, 44px);
   border-radius: 14px;
   border: var(--semantic-border-default);
-  background: var(--semantic-surface-raised);
+  background: var(--semantic-surface-button-solid);
   color: var(--semantic-text-primary);
   font-family: "Outfit", sans-serif;
   font-size: var(--text-page-body, 16px);
   font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.destination-page__primary-btn:active {
+  background: var(--semantic-surface-button-active-solid);
 }
 
 .destination-page__primary-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/**
+ * Session Mode primary CTA — teal fill (same accent as header / nav / long-press).
+ * Use only for session-scoped create/open/save actions.
+ */
+.destination-page__primary-btn--session {
+  background: var(--session-accent);
+  border: 1px solid color-mix(in srgb, var(--session-accent) 55%, transparent);
+  color: var(--session-btn-fg, #0a0a14);
+}
+
+.destination-page__primary-btn--session:active {
+  background: var(--session-btn-bg-hold, color-mix(in srgb, var(--session-accent) 72%, #000));
 }
 
 .destination-page__list {
@@ -1899,6 +1919,214 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Sessions hub ───────────────────────────────────────────────────────── */
+.sessions-page__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: var(--semantic-border-subtle);
+  background: var(--semantic-surface-input);
+  color: var(--semantic-text-muted);
+}
+
+.sessions-page__search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-body, 16px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--semantic-text-primary);
+  outline: none;
+}
+
+.sessions-page__search-input::placeholder {
+  color: var(--semantic-text-muted);
+}
+
+.sessions-page__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/** Saved-mix row layout: title | value, detail, timestamp + expandable action strip. */
+.sessions-page__card {
+  position: relative;
+}
+
+.sessions-page__card--active {
+  border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
+  box-shadow: inset 3px 0 0 var(--session-accent);
+}
+
+.sessions-page__card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 70px 12px 14px;
+  box-sizing: border-box;
+}
+
+.sessions-page__card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sessions-page__card-title {
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  color: var(--semantic-text-primary);
+  min-width: 0;
+}
+
+.sessions-page__card-time {
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-ui-xs);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.25;
+  color: var(--semantic-text-muted);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sessions-page__card-timestamp {
+  color: var(--semantic-text-dimmed);
+  font-variant-numeric: tabular-nums;
+}
+
+.sessions-page__flow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.sessions-page__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.sessions-page__step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.sessions-page__step-chip {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  min-height: 22px;
+  padding: 3px 5px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--semantic-text-muted);
+}
+
+.sessions-page__step--done .sessions-page__step-chip {
+  border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--session-accent) 12%, transparent);
+  color: var(--session-accent);
+}
+
+.sessions-page__step-chip-text {
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/** Horizontal connector between chips. */
+.sessions-page__step-h-line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  right: -50%;
+  height: 1px;
+  transform: translateY(-50%);
+  background: var(--semantic-border-subtle);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.sessions-page__step--link-done .sessions-page__step-h-line {
+  background: color-mix(in srgb, var(--session-accent) 55%, transparent);
+}
+
+.sessions-page__amounts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+}
+
+.sessions-page__amount {
+  min-height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  color: var(--semantic-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sessions-page__amount-empty {
+  display: block;
+  width: 10px;
+  height: 1px;
+  background: var(--semantic-border-subtle);
+  opacity: 0.7;
 }
 
 /* ── Create Recipe (Phase 2) ────────────────────────────────────────────── */
@@ -2008,10 +2236,22 @@
   letter-spacing: 0.02em;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
 }
 
 .create-recipe__secondary-btn:active {
   opacity: 0.85;
+}
+
+/** Outlined session action — teal border/label, no fill. */
+.create-recipe__secondary-btn--session {
+  border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
+  color: var(--session-accent);
+}
+
+.create-recipe__secondary-btn--session:active {
+  background: color-mix(in srgb, var(--session-accent) 12%, transparent);
+  opacity: 1;
 }
 
 .create-recipe__session-recipes {
@@ -2040,35 +2280,138 @@
   color: var(--ui-recipe-value);
 }
 
-.session-overview__stages {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 6px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  padding: 8px 0 12px;
-  scrollbar-width: none;
+/* Name + stages as one chrome band; hairline cuts into workspace. */
+.session-overview__chrome {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--semantic-border-subtle);
 }
 
-.session-overview__stages::-webkit-scrollbar {
-  display: none;
+.session-overview__context {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+  padding-bottom: 0;
+}
+
+.session-overview__name-field {
+  box-sizing: border-box;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 4px 4px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.session-overview__name-field:active .session-overview__name-edit {
+  color: var(--session-accent);
+}
+
+.session-overview__context-name {
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-section, 13px);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--semantic-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-overview__name-edit {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--semantic-text-muted);
+}
+
+.session-overview__workspace-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--semantic-border-subtle);
+}
+
+.session-overview__workspace-btn {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: var(--totals-add-extra-h, var(--action-row-h, 44px));
+  padding: var(--totals-add-extra-py, 12px) 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 14px;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-totals-section, 13px);
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  line-height: 1.3;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.session-overview__workspace-btn--recipe {
+  border: 1.5px solid color-mix(in srgb, var(--session-accent) 55%, transparent);
+  background: transparent;
+  color: var(--session-accent);
+}
+
+.session-overview__workspace-btn--recipe:active {
+  background: color-mix(in srgb, var(--session-accent) 12%, transparent);
+}
+
+.session-overview__workspace-btn--mix {
+  border: 1.5px solid var(--semantic-border-default);
+  background: var(--semantic-surface-button-solid);
+  color: var(--semantic-text-primary);
+}
+
+.session-overview__workspace-btn--mix:active {
+  background: var(--semantic-surface-button-active-solid);
+}
+
+.session-overview__stages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0 12px;
 }
 
 .session-overview__stage-btn {
-  flex: 0 0 auto;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 4px;
   border: 1px solid var(--semantic-border-subtle);
   background: transparent;
   color: var(--semantic-text-muted);
   font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: var(--text-page-caption, 12px);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  padding: 8px 12px 8px 8px;
+  padding: 7px 4px;
   border-radius: 999px;
   white-space: nowrap;
   cursor: pointer;
@@ -2102,19 +2445,22 @@
 }
 
 .session-overview__stage-label {
+  min-width: 0;
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Visited earlier — quieter than current, clearer than untouched. */
-.session-overview__stage-btn--touched {
+/* Has content / outcome — not merely visited. */
+.session-overview__stage-btn--complete {
   color: var(--semantic-text-secondary);
   border-color: var(--semantic-border-default);
 }
 
-.session-overview__stage-btn--touched .session-overview__stage-index {
-  color: var(--semantic-text-secondary);
-  background: var(--semantic-selection-bg);
-  border-color: var(--semantic-border-default);
+.session-overview__stage-btn--complete .session-overview__stage-index {
+  color: var(--session-accent);
+  background: color-mix(in srgb, var(--session-accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--session-accent) 45%, transparent);
 }
 
 .session-overview__stage-btn--active {
@@ -2141,19 +2487,40 @@
 }
 
 .session-overview__mix-list {
+  --session-overview-gutter: var(
+    --batch-totals-content-gutter,
+    max(var(--space-4, 16px), var(--safe-left), var(--safe-right))
+  );
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding-top: 14px;
+  padding-inline: var(--session-overview-gutter);
 }
 
-.session-overview__create-recipe {
-  margin-top: 4px;
+/* Batch cards stay edge-to-edge; their inner content already uses the gutter. */
+.session-overview__mix-list > .session-mix-card {
+  width: calc(100% + 2 * var(--session-overview-gutter));
+  max-width: none;
+  margin-inline: calc(-1 * var(--session-overview-gutter));
 }
 
 .session-overview__placeholder,
-.session-overview__placeholder-pad,
+.session-overview__placeholder-pad {
+  padding: 14px
+    var(
+      --batch-totals-content-gutter,
+      max(var(--space-4, 16px), var(--safe-left), var(--safe-right))
+    )
+    4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Horizontal inset comes from parent `.session-overview__mix-list`. */
 .session-overview__stage-intro {
-  padding: 8px 0 4px;
+  padding: 0 0 4px;
   display: flex;
   flex-direction: column;
   gap: 8px;

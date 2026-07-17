@@ -171,7 +171,7 @@ export function AppHeader({
               fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
               fontSize: "var(--text-header-title)",
               fontWeight: 600,
-              color: cv.text.primary,
+              color: sessionChrome ? "var(--session-accent)" : cv.text.primary,
               letterSpacing: "0.04em",
               lineHeight: 1.2,
             }}

@@ -383,7 +383,7 @@ export function CreateRecipeScreen({
             {context.source === "session" || canSaveInSession ? (
               <button
                 type="button"
-                className="destination-page__primary-btn"
+                className="destination-page__primary-btn destination-page__primary-btn--session"
                 onClick={saveSession}
               >
                 Save in session

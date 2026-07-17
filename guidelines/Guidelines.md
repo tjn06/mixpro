@@ -93,6 +93,20 @@ Four independent systems — do not mix roles.
 
 `--text-page-title` is **content-only**. Never use it on `AppHeader`. Never remap `--text-ui-*` globally to enlarge destinations.
 
+### Button color systems
+
+Same split as typography — quiet chrome by default; session teal is reserved.
+
+| Layer | Treatment | Tokens / classes |
+|-------|-----------|------------------|
+| **Calculator** | Grayscale controls only | `--semantic-surface-button*` — color reserved for data |
+| **Destination primary** | Stronger solid grayscale | `.destination-page__primary-btn` → `--semantic-surface-button-solid` |
+| **Destination secondary** | Outlined / transparent | `.create-recipe__secondary-btn` |
+| **Session primary** | Teal fill | `.destination-page__primary-btn--session` → `--session-accent` / `--session-btn-fg` |
+| **Session secondary** | Teal outline | `.create-recipe__secondary-btn--session` |
+
+Use session modifiers only for session-scoped create / open / save. Library / Settings / Recipes stay grayscale.
+
 ## Dependencies
 
 - Custom UI only — **no shadcn/ui**, no component library.

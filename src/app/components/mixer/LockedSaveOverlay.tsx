@@ -199,13 +199,16 @@ export function LockedSaveOverlay({
         : "Hold to name and store");
   const confirmAction = saveConfirmAction ?? "SAVE MIX";
   const saveIcon =
-    saveFlash || useCommitIcon ? (
+    sessionTone ? undefined : saveFlash || useCommitIcon ? (
       <SavedIcon size={LOCKED_ACTION_ICON_SIZE} />
     ) : (
       <SaveIcon size={LOCKED_ACTION_ICON_SIZE} />
     );
-  const compactIcon =
-    saveFlash || useCommitIcon ? <SavedIcon /> : <SaveIcon />;
+  const compactIcon = sessionTone
+    ? undefined
+    : saveFlash || useCommitIcon
+      ? <SavedIcon />
+      : <SaveIcon />;
   const expanded = overlay.expanded;
 
   return (

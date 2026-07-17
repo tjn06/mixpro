@@ -284,13 +284,6 @@ export function AppShell() {
             embedded
             onMenuClick={openNav}
             onOpenSession={openSessionOverview}
-            onCreateRecipe={() => {
-              if (!activeSessionId) return;
-              openCreateRecipe(
-                { source: "session", sessionId: activeSessionId },
-                "sessions",
-              );
-            }}
           />
         ) : null}
 
