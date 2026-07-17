@@ -49,7 +49,7 @@ export function AppNavDrawer({
             aria-label="Close menu"
             onClick={onClose}
           >
-            <X size={18} strokeWidth={2} aria-hidden />
+            <X size={22} strokeWidth={2} aria-hidden />
           </button>
         </div>
 

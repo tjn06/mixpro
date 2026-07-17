@@ -315,17 +315,17 @@
 }
 
 .settings-scheme-segment__btn {
-  min-width: 52px;
-  height: 26px;
-  padding: 0 10px;
+  min-width: 56px;
+  height: 32px;
+  padding: 0 12px;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--semantic-text-muted);
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs);
+  font-size: var(--text-page-caption, 12px);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }

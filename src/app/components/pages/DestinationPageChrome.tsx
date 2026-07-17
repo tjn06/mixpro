@@ -44,7 +44,7 @@ export function DestinationPageChrome({
                     <span
                       style={{
                         fontFamily: "'Outfit', sans-serif",
-                        fontSize: "var(--text-ui-sm)",
+                        fontSize: "var(--text-page-section)",
                         fontWeight: 600,
                         letterSpacing: "0.08em",
                         textTransform: "uppercase",

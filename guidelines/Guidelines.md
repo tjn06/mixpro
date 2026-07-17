@@ -80,6 +80,19 @@ Loaded in `fonts.css`. Do **not** rely on Tailwind/browser `ui-sans-serif` / sys
 
 Calculator sets `.app-frame--mixer` so values inherit mono; Outfit is set explicitly on chrome. Destination / Settings inherit Outfit from `.app-frame`.
 
+### Typography scales
+
+Four independent systems — do not mix roles.
+
+| System | Role | Spec |
+|--------|------|------|
+| **1. Navigation bar** | Where you are | Title `--text-header-title` (~17px), weight **600**. Icons ~22–24px. Not a page heading. |
+| **2. Navigation drawer** | Primary destinations | Items `--text-nav-item` (16px), weight **500**. Section labels `--text-page-section` (13px). Layout: `--nav-item-h` 56 / `--nav-item-pad-x` 20. |
+| **3. Page content** | Hierarchy inside the scroll body | Heading `--text-page-title` (24–26) via `.destination-page__heading` when needed · Body 16 · Secondary 14 · Section 13 · Caption 12 |
+| **4. Calculator** | Dense instrument UI | Keep `--text-ui-*`, recipe/card/lock/swipe/totals/share tokens (labels ~11px) |
+
+`--text-page-title` is **content-only**. Never use it on `AppHeader`. Never remap `--text-ui-*` globally to enlarge destinations.
+
 ## Dependencies
 
 - Custom UI only — **no shadcn/ui**, no component library.

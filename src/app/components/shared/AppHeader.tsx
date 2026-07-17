@@ -36,10 +36,29 @@ interface AppHeaderProps {
   subline?: ReactNode;
 }
 
+/** Nav bar icons — ~22–24px per native iOS chrome, not page-heading scale. */
+const NAV_ICON_SIZE = 22;
+
 function MenuIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg width={NAV_ICON_SIZE} height={NAV_ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
       <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg width={NAV_ICON_SIZE} height={NAV_ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg width={NAV_ICON_SIZE} height={NAV_ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 18l6-6-6-6" />
     </svg>
   );
 }
@@ -127,9 +146,7 @@ export function AppHeader({
                     onClick={onBack}
                     disabled={isLocked}
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M15 18l-6-6 6-6" />
-                    </svg>
+                    <ChevronLeftIcon />
                   </HeaderIconButton>
                 ) : (
                   <LongPressButton
@@ -141,11 +158,7 @@ export function AppHeader({
                     disabled={isLocked}
                     className={ROUND_NAV_BTN_CLASS}
                     style={ROUND_NAV_BTN_STYLE}
-                    icon={
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M15 18l-6-6 6-6" />
-                      </svg>
-                    }
+                    icon={<ChevronLeftIcon />}
                   />
                 )}
               </div>
@@ -159,7 +172,7 @@ export function AppHeader({
               fontSize: "var(--text-header-title)",
               fontWeight: 600,
               color: cv.text.primary,
-              letterSpacing: "0.06em",
+              letterSpacing: "0.04em",
               lineHeight: 1.2,
             }}
           >
@@ -176,11 +189,7 @@ export function AppHeader({
                 disabled={isLocked}
                 className={ROUND_NAV_BTN_CLASS}
                 style={ROUND_NAV_BTN_STYLE}
-                icon={
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                }
+                icon={<ChevronRightIcon />}
               />
               {showForwardBadge ? (
                 <span className="app-header__nav-badge" aria-hidden>

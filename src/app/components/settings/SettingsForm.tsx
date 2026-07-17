@@ -1,9 +1,37 @@
 import { useSettingsStore } from "../../settings/store";
 import { cv } from "../../ui/tokens";
-import { SHEET_FIELD_LABEL, SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
+import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
 import { ColorSchemeSegment } from "./ColorSchemeSegment";
 
-const ROW_H = 52;
+const ROW_H = 56;
+
+const labelStyle = {
+  fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
+  fontSize: "var(--text-page-body)",
+  fontWeight: 600,
+  letterSpacing: "0.01em",
+  color: cv.text.primary,
+} as const;
+
+const hintStyle = {
+  fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
+  fontSize: "var(--text-page-secondary)",
+  fontWeight: 500,
+  letterSpacing: "0.01em",
+  color: cv.text.muted,
+  lineHeight: 1.4,
+} as const;
+
+const sectionStyle = {
+  fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
+  fontSize: "var(--text-page-section)",
+  fontWeight: 700,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase" as const,
+  color: cv.text.muted,
+  lineHeight: 1.2,
+  marginBottom: 4,
+};
 
 function ColorSchemeRow() {
   return (
@@ -12,29 +40,8 @@ function ColorSchemeRow() {
       style={{ minHeight: ROW_H }}
     >
       <span className="flex flex-col min-w-0" style={{ gap: 4 }}>
-        <span
-          style={{
-            fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
-            fontSize: "var(--text-ui-md)",
-            fontWeight: 600,
-            letterSpacing: "0.04em",
-            color: cv.text.primary,
-          }}
-        >
-          Color scheme
-        </span>
-        <span
-          style={{
-            fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
-            fontSize: "var(--text-ui-xs)",
-            fontWeight: 500,
-            letterSpacing: "0.03em",
-            color: cv.text.muted,
-            lineHeight: 1.35,
-          }}
-        >
-          Dark or light appearance
-        </span>
+        <span style={labelStyle}>Color scheme</span>
+        <span style={hintStyle}>Dark or light appearance</span>
       </span>
       <ColorSchemeSegment />
     </div>
@@ -52,29 +59,8 @@ function ContrastToggleRow() {
       style={{ minHeight: ROW_H }}
     >
       <span className="flex flex-col min-w-0" style={{ gap: 4 }}>
-        <span
-          style={{
-            fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
-            fontSize: "var(--text-ui-md)",
-            fontWeight: 600,
-            letterSpacing: "0.04em",
-            color: cv.text.primary,
-          }}
-        >
-          High contrast
-        </span>
-        <span
-          style={{
-            fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
-            fontSize: "var(--text-ui-xs)",
-            fontWeight: 500,
-            letterSpacing: "0.03em",
-            color: cv.text.muted,
-            lineHeight: 1.35,
-          }}
-        >
-          Brighter text and borders for outdoor use
-        </span>
+        <span style={labelStyle}>High contrast</span>
+        <span style={hintStyle}>Brighter text and borders for outdoor use</span>
       </span>
       <button
         type="button"
@@ -96,7 +82,7 @@ export function SettingsForm() {
       className={`${SHEET_LIST_ROW_CLASS} rounded-2xl w-full flex flex-col`}
       style={{ padding: "12px 16px", gap: 8 }}
     >
-      <p style={{ ...SHEET_FIELD_LABEL, marginBottom: 4 }}>Display</p>
+      <p style={sectionStyle}>Display</p>
       <ColorSchemeRow />
       <div
         style={{

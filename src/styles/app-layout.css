@@ -155,9 +155,9 @@
   align-items: center;
   gap: 6px;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs);
+  font-size: var(--text-page-caption, 12px);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   line-height: 1.2;
   color: var(--session-accent);
@@ -515,6 +515,19 @@
     --text-ui-md: 15px;
     --text-ui-sm: 11px;
     --text-ui-xs: 9px;
+    /**
+     * Page content heading only (inside scroll body) — never the nav bar title.
+     * Nav bar uses --text-header-title (~17px / 600).
+     */
+    --text-page-title: clamp(24px, 6.5cqi, 26px);
+    --text-nav-item: 16px;
+    --text-page-body: 16px;
+    --text-page-secondary: 14px;
+    --text-page-section: 13px;
+    --text-page-caption: 12px;
+    --nav-item-h: 56px;
+    --nav-item-pad-x: 20px;
+    --nav-item-weight: 500;
     --text-action-md: 14px;
     --text-totals-caption: 10px;
     --text-totals-hero: 34px;
@@ -785,6 +798,15 @@
     --text-ui-md: 15px;
     --text-ui-sm: 11px;
     --text-ui-xs: 9px;
+    --text-page-title: clamp(24px, 6.5vw, 26px);
+    --text-nav-item: 16px;
+    --text-page-body: 16px;
+    --text-page-secondary: 14px;
+    --text-page-section: 13px;
+    --text-page-caption: 12px;
+    --nav-item-h: 56px;
+    --nav-item-pad-x: 20px;
+    --nav-item-weight: 500;
     --text-action-md: 14px;
     --text-totals-caption: 10px;
     --text-totals-hero: 34px;
@@ -1612,7 +1634,7 @@
   pointer-events: auto;
   box-sizing: border-box;
   width: min(80%, 280px);
-  padding: calc(16px + var(--safe-top)) 20px calc(24px + var(--safe-bottom));
+  padding: calc(16px + var(--safe-top)) var(--nav-item-pad-x, 20px) calc(24px + var(--safe-bottom));
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1704,16 +1726,16 @@
 
 .app-nav-drawer__item {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--nav-item-h, 56px);
   text-align: left;
   border: none;
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 0 var(--nav-item-pad-x, 20px);
   background: transparent;
   font-family: var(--font-ui, "Outfit", sans-serif);
-  font-size: var(--text-ui-sm);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: var(--text-nav-item, 16px);
+  font-weight: var(--nav-item-weight, 500);
+  letter-spacing: 0.02em;
   text-transform: none;
   color: var(--semantic-text-secondary);
   touch-action: manipulation;
@@ -1769,14 +1791,25 @@
   padding-inline: 0;
 }
 
+/** In-content page heading — not the navigation bar title. */
+.destination-page__heading {
+  margin: 0;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-title);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: var(--semantic-text-primary);
+}
+
 .destination-page__lede,
 .destination-page__empty {
   margin: 0;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-sm);
+  font-size: var(--text-page-body, 16px);
   font-weight: 500;
-  letter-spacing: 0.03em;
-  line-height: 1.4;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
 }
 
 .destination-page__primary-btn {
@@ -1787,9 +1820,9 @@
   background: var(--semantic-surface-raised);
   color: var(--semantic-text-primary);
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-md);
+  font-size: var(--text-page-body, 16px);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   cursor: pointer;
 }
 
@@ -1837,19 +1870,19 @@
 
 .destination-page__card-title {
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-md);
+  font-size: var(--text-page-body, 16px);
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
   color: var(--semantic-text-primary);
 }
 
 .destination-page__card-meta,
 .destination-page__card-stages {
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs);
+  font-size: var(--text-page-secondary, 14px);
   font-weight: 500;
-  letter-spacing: 0.03em;
-  line-height: 1.35;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
 }
 
 .destination-page__card-delete {
@@ -1858,7 +1891,7 @@
   background: transparent;
   padding: 4px 0;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs);
+  font-size: var(--text-page-caption, 12px);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1883,7 +1916,7 @@
 
 .create-recipe__subline {
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-sm);
+  font-size: var(--text-page-section, 13px);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1901,11 +1934,11 @@
 
 .create-recipe__segment-btn {
   flex: 1;
-  min-height: 40px;
+  min-height: 44px;
   border: none;
   background: transparent;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs);
+  font-size: var(--text-page-caption, 12px);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1928,10 +1961,10 @@
 .create-recipe__error {
   margin: 0;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-sm);
+  font-size: var(--text-page-body, 16px);
   font-weight: 500;
-  letter-spacing: 0.03em;
-  line-height: 1.4;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
 }
 
 .create-recipe__field {
@@ -1949,9 +1982,9 @@
 .create-recipe__suffix {
   flex-shrink: 0;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs);
+  font-size: var(--text-page-secondary, 14px);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   min-width: 4.5rem;
 }
 
@@ -1970,9 +2003,9 @@
   background: transparent;
   color: var(--semantic-text-primary);
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-md);
+  font-size: var(--text-page-body, 16px);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
@@ -1991,7 +2024,7 @@
 .create-recipe__section-title {
   margin: 0;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-sm);
+  font-size: var(--text-page-section, 13px);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2000,7 +2033,7 @@
 /* —— Session overview (Phase 3) —— */
 .session-overview__subline {
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-sm);
+  font-size: var(--text-page-section, 13px);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2031,11 +2064,11 @@
   background: transparent;
   color: var(--semantic-text-muted);
   font-family: var(--font-ui, "Outfit", sans-serif);
-  font-size: var(--text-ui-xs);
+  font-size: var(--text-page-caption, 12px);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 7px 11px 7px 8px;
+  padding: 8px 12px 8px 8px;
   border-radius: 999px;
   white-space: nowrap;
   cursor: pointer;
@@ -2057,10 +2090,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: var(--text-page-caption, 12px);
   font-weight: 700;
   letter-spacing: 0;
   color: var(--semantic-text-dimmed);
@@ -2131,9 +2164,9 @@
 .session-overview__stage-intro h2 {
   margin: 0;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-md, 1rem);
+  font-size: var(--text-page-body, 16px);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .session-overview__placeholder p,
@@ -2142,8 +2175,8 @@
 .session-overview__stage-note {
   margin: 0;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-sm);
-  line-height: 1.4;
+  font-size: var(--text-page-secondary, 14px);
+  line-height: 1.45;
 }
 
 .session-overview__stage-note {
@@ -2187,22 +2220,22 @@
 
 .session-overview__summary-mix-name {
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-sm);
+  font-size: var(--text-page-body, 16px);
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
   color: var(--semantic-text-primary);
 }
 
 .session-overview__summary-mix-meta {
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs);
+  font-size: var(--text-page-secondary, 14px);
   font-weight: 500;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
 }
 
 .session-overview__summary-mix-total {
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-sm);
+  font-size: var(--text-page-secondary, 14px);
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -2228,16 +2261,16 @@
 .session-share-scope__btn {
   flex: 1;
   min-width: 0;
-  height: 30px;
+  height: 34px;
   padding: 0 8px;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--semantic-text-muted);
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs);
+  font-size: var(--text-page-caption, 12px);
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
@@ -2251,10 +2284,10 @@
 .session-share-scope__helper {
   margin: 0;
   font-family: "Outfit", sans-serif;
-  font-size: 10px;
+  font-size: var(--text-page-secondary, 14px);
   font-weight: 500;
-  letter-spacing: 0.03em;
-  line-height: 1.35;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
   color: var(--semantic-text-muted);
   padding: 0 2px;
 }
@@ -2308,9 +2341,9 @@
 .session-pick-recipe__section-title {
   margin: 0;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs);
+  font-size: var(--text-page-section, 13px);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--semantic-text-muted);
 }
