@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { FooterScrollEdgeFade } from "./scrollEdgeFades";
 import { componentTokens } from "../../ui/tokens";
 
 const footer = componentTokens.sheetFooterButton;
@@ -10,6 +9,7 @@ export const SHEET_FOOTER_BTN_H = footer.height;
 const SHEET_FOOTER_GAP = 8;
 const SHEET_FOOTER_ICON = 18;
 const TOOLTIP_LINE_H = 7;
+const FOOTER_SCROLL_FADE_H = 36;
 
 export interface SheetFooterButton {
   key: string;
@@ -27,6 +27,24 @@ interface SheetFooterProps {
   buttons: SheetFooterButton[];
   /** Bottom scroll fade — lives on the footer so content fades before buttons, not under a solid bar. */
   fadeFromBottom?: boolean;
+}
+
+/** Fade above footer — scroll content dissolves before action buttons. */
+function FooterScrollEdgeFade({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+  return (
+    <div
+      aria-hidden
+      className="sheet-footer-scroll-fade pointer-events-none absolute inset-x-0"
+      style={{
+        height: FOOTER_SCROLL_FADE_H,
+        bottom: "100%",
+        zIndex: 12,
+        background:
+          "linear-gradient(to top, var(--ui-header-bg) 0%, transparent 100%)",
+      }}
+    />
+  );
 }
 
 function SheetFooterTooltip({ label }: { label: string }) {

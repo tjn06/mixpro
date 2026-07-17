@@ -404,8 +404,10 @@
 }
 
 /* ── Container-query tokens (preferred) ─────────────────────────────────── */
+/* On container children (not the host) so cqi/cqh resolve; include drawer (host sibling). */
 @supports (width: 1cqi) {
-  .app-frame {
+  .app-frame,
+  .app-nav-drawer {
     --space-1: clamp(4px, 1.1cqi, 6px);
     --space-2: clamp(8px, 2.1cqi, 12px);
     --space-3: clamp(12px, 3.1cqi, 16px);
@@ -531,7 +533,8 @@
   }
 
   @container app (min-height: 765px) {
-    .app-frame {
+    .app-frame,
+    .app-nav-drawer {
       --swipe-h: 180px;
 
       /* Recipe stays under the header — scale internal rhythm on tall phones. */
@@ -557,7 +560,8 @@
   }
 
   @container app (max-height: 764px) {
-    .app-frame {
+    .app-frame,
+    .app-nav-drawer {
       --swipe-h: clamp(120px, calc(var(--swipe-cqh-ratio) * 1cqh), 180px);
 
       --space-3: clamp(10px, 2.6cqi, 16px);
@@ -679,7 +683,8 @@
 
 /* ── Viewport fallbacks when cqi/cqh are unavailable ────────────────────── */
 @supports not (width: 1cqi) {
-  .app-frame {
+  .app-frame,
+  .app-nav-drawer {
     --space-1: clamp(4px, 1.1vw, 6px);
     --space-2: clamp(8px, 2.1vw, 12px);
     --space-3: clamp(12px, 3.1vw, 16px);
@@ -798,7 +803,8 @@
   }
 
   @media (min-height: 765px) {
-    .app-frame {
+    .app-frame,
+    .app-nav-drawer {
       --swipe-h: 180px;
 
       --recipe-zone-pt: clamp(14px, 1.75dvh, 20px);
@@ -835,7 +841,8 @@
   }
 
   @media (max-height: 764px) {
-    .app-frame {
+    .app-frame,
+    .app-nav-drawer {
       --swipe-h: clamp(120px, calc(var(--swipe-cqh-ratio) * 1dvh), 180px);
       --space-4: clamp(12px, 3.6vw, 16px);
       --section-gap: clamp(8px, 1.57dvh, 12px);
@@ -1608,9 +1615,9 @@
   padding: calc(16px + var(--safe-top)) 20px calc(24px + var(--safe-bottom));
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   background: var(--ui-header-bg);
-  border-right: 1px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
+  border-right: 1px solid var(--semantic-border-subtle);
   box-shadow: 8px 0 32px rgba(0, 0, 0, 0.28);
 }
 
@@ -1621,15 +1628,24 @@
 
 .app-nav-drawer__brand-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
   min-width: 0;
 }
 
+.app-nav-drawer__brand-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+/** Brand — same scale as in-app header title (native, not marketing). */
 .app-nav-drawer__brand {
   margin: 0;
-  font-family: "Outfit", sans-serif;
+  font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: var(--text-header-title);
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -1642,6 +1658,39 @@
   flex-shrink: 0;
 }
 
+/** Plain cross — no border / fill (hit target only). */
+.app-nav-drawer__close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -10px -8px -10px 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--semantic-text-secondary);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-nav-drawer__close:active {
+  color: var(--semantic-text-primary);
+  opacity: 0.85;
+}
+
+/** Hairline — token is a full border value (`1px solid …`), not a color. */
+.app-nav-drawer__divider {
+  height: 0;
+  width: 100%;
+  flex-shrink: 0;
+  border: none;
+  border-top: var(--semantic-border-subtle);
+}
+
 .app-nav-drawer__list {
   list-style: none;
   margin: 0;
@@ -1649,6 +1698,8 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .app-nav-drawer__item {
@@ -1659,21 +1710,23 @@
   border-radius: 12px;
   padding: 12px 14px;
   background: transparent;
-  font-family: "Outfit", sans-serif;
+  font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: var(--text-ui-sm);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-transform: none;
   color: var(--semantic-text-secondary);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   box-sizing: border-box;
   border-left: 3px solid transparent;
+  cursor: pointer;
 }
 
 .app-nav-drawer__item--active {
-  background: var(--semantic-selection-bg, rgba(255, 255, 255, 0.08));
+  background: var(--semantic-selection-bg);
   color: var(--semantic-text-primary);
+  font-weight: 600;
 }
 
 /**
@@ -1690,13 +1743,13 @@
   opacity: 0.85;
 }
 
-.app-nav-drawer__hint {
-  margin: auto 0 0;
-  font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs);
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  line-height: 1.4;
+.app-nav-drawer__footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding-top: 4px;
 }
 
 /* ── Top-level destination pages ────────────────────────────────────────── */

@@ -1,19 +1,11 @@
 import { useSettingsStore } from "../../settings/store";
-import type { ColorScheme } from "../../../theme/appearance";
 import { cv } from "../../ui/tokens";
 import { SHEET_FIELD_LABEL, SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
+import { ColorSchemeSegment } from "./ColorSchemeSegment";
 
 const ROW_H = 52;
 
-const SCHEME_OPTIONS: { value: ColorScheme; label: string }[] = [
-  { value: "dark", label: "Dark" },
-  { value: "light", label: "Light" },
-];
-
 function ColorSchemeRow() {
-  const colorScheme = useSettingsStore((s) => s.colorScheme);
-  const setColorScheme = useSettingsStore((s) => s.setColorScheme);
-
   return (
     <div
       className="flex items-center justify-between gap-4 w-full"
@@ -22,7 +14,7 @@ function ColorSchemeRow() {
       <span className="flex flex-col min-w-0" style={{ gap: 4 }}>
         <span
           style={{
-            fontFamily: "'Outfit', sans-serif",
+            fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
             fontSize: "var(--text-ui-md)",
             fontWeight: 600,
             letterSpacing: "0.04em",
@@ -33,7 +25,7 @@ function ColorSchemeRow() {
         </span>
         <span
           style={{
-            fontFamily: "'Outfit', sans-serif",
+            fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
             fontSize: "var(--text-ui-xs)",
             fontWeight: 500,
             letterSpacing: "0.03em",
@@ -44,28 +36,7 @@ function ColorSchemeRow() {
           Dark or light appearance
         </span>
       </span>
-      <div
-        className="settings-scheme-segment shrink-0"
-        role="radiogroup"
-        aria-label="Color scheme"
-      >
-        {SCHEME_OPTIONS.map((option) => {
-          const active = colorScheme === option.value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              className="settings-scheme-segment__btn"
-              data-active={active ? "" : undefined}
-              onClick={() => setColorScheme(option.value)}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
+      <ColorSchemeSegment />
     </div>
   );
 }
@@ -83,7 +54,7 @@ function ContrastToggleRow() {
       <span className="flex flex-col min-w-0" style={{ gap: 4 }}>
         <span
           style={{
-            fontFamily: "'Outfit', sans-serif",
+            fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
             fontSize: "var(--text-ui-md)",
             fontWeight: 600,
             letterSpacing: "0.04em",
@@ -94,7 +65,7 @@ function ContrastToggleRow() {
         </span>
         <span
           style={{
-            fontFamily: "'Outfit', sans-serif",
+            fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
             fontSize: "var(--text-ui-xs)",
             fontWeight: 500,
             letterSpacing: "0.03em",

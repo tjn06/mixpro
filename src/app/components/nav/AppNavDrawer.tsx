@@ -1,6 +1,7 @@
+import { X } from "lucide-react";
 import type { AppDestination } from "../../navigation/types";
 import { APP_DESTINATIONS } from "../../navigation/types";
-import { cv } from "../../ui/tokens";
+import { ColorSchemeSegment } from "../settings/ColorSchemeSegment";
 
 export function AppNavDrawer({
   open,
@@ -33,14 +34,27 @@ export function AppNavDrawer({
         aria-label="Main"
       >
         <div className="app-nav-drawer__brand-row">
-          <p className="app-nav-drawer__brand">MIXpro</p>
-          {sessionChrome ? (
-            <span className="session-mode-chip app-nav-drawer__session-chip">
-              <span className="session-mode-chip__dot" aria-hidden />
-              Session
-            </span>
-          ) : null}
+          <div className="app-nav-drawer__brand-block min-w-0">
+            <p className="app-nav-drawer__brand">MIXpro</p>
+            {sessionChrome ? (
+              <span className="session-mode-chip app-nav-drawer__session-chip">
+                <span className="session-mode-chip__dot" aria-hidden />
+                Session
+              </span>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            className="app-nav-drawer__close"
+            aria-label="Close menu"
+            onClick={onClose}
+          >
+            <X size={18} strokeWidth={2} aria-hidden />
+          </button>
         </div>
+
+        <div className="app-nav-drawer__divider" aria-hidden />
+
         <ul className="app-nav-drawer__list">
           {APP_DESTINATIONS.map((item) => {
             const isActive = item.id === active;
@@ -58,7 +72,7 @@ export function AppNavDrawer({
                   aria-current={isActive ? "page" : undefined}
                   onClick={() => {
                     onNavigate(item.id);
-                    // Settings overlays; shell closes the drawer in openSettings.
+                    // Settings overlays; shell already closes the drawer in openSettings.
                     if (item.id !== "settings") onClose();
                   }}
                 >
@@ -68,11 +82,11 @@ export function AppNavDrawer({
             );
           })}
         </ul>
-        <p className="app-nav-drawer__hint" style={{ color: cv.text.muted }}>
-          {sessionChrome
-            ? "Session open — Settings overlays without leaving. Teal marks where you are."
-            : "Open Settings anytime — overlays the current screen; back closes it."}
-        </p>
+
+        <div className="app-nav-drawer__footer">
+          <div className="app-nav-drawer__divider" aria-hidden />
+          <ColorSchemeSegment />
+        </div>
       </nav>
     </div>
   );
