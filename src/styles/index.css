@@ -1308,9 +1308,6 @@ body,
   box-shadow: none;
   transform-origin: top center;
   will-change: transform, opacity;
-}
-
-.app-frame-cover-sheet {
   box-sizing: border-box;
   padding-bottom: max(var(--space-4, 16px), var(--safe-bottom));
 }

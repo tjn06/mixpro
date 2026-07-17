@@ -30,56 +30,54 @@ export function RecipesPage({
       onMenuClick={onMenuClick}
       embedded={embedded}
     >
-      <div className="destination-page__stack">
-        <button
-          type="button"
-          className="destination-page__primary-btn"
-          onClick={onCreateRecipe}
-        >
-          + Create recipe
-        </button>
-        <p className="destination-page__lede" style={{ color: cv.text.muted }}>
-          Permanent formulas in your library.
-          {userRecipes.length > 0
-            ? ` ${userRecipes.length} custom.`
-            : " Start with a preset or create your own."}
-        </p>
+      <button
+        type="button"
+        className="destination-page__primary-btn"
+        onClick={onCreateRecipe}
+      >
+        + Create recipe
+      </button>
+      <p className="destination-page__lede" style={{ color: cv.text.muted }}>
+        Permanent formulas in your library.
+        {userRecipes.length > 0
+          ? ` ${userRecipes.length} custom.`
+          : " Start with a preset or create your own."}
+      </p>
 
-        <ul className="destination-page__list">
-          {library.map((recipe) => {
-            const isPreset = presetIds.has(recipe.id);
-            return (
-              <li key={recipe.id}>
-                <article className="destination-page__card">
-                  <div className="destination-page__card-main">
-                    <span className="destination-page__card-title">
-                      {recipeMenuLabel(recipe)}
-                    </span>
-                    <span
-                      className="destination-page__card-meta"
-                      style={{ color: cv.text.muted }}
-                    >
-                      {isPreset
-                        ? recipePlaceholderDescription(recipe.id)
-                        : formatRecipeFormulaSummary(recipe)}
-                    </span>
-                  </div>
-                  {!isPreset ? (
-                    <button
-                      type="button"
-                      className="destination-page__card-delete"
-                      aria-label={`Delete ${recipeMenuLabel(recipe)}`}
-                      onClick={() => deleteRecipe(recipe.id)}
-                    >
-                      Delete
-                    </button>
-                  ) : null}
-                </article>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      <ul className="destination-page__list">
+        {library.map((recipe) => {
+          const isPreset = presetIds.has(recipe.id);
+          return (
+            <li key={recipe.id}>
+              <article className="destination-page__card">
+                <div className="destination-page__card-main">
+                  <span className="destination-page__card-title">
+                    {recipeMenuLabel(recipe)}
+                  </span>
+                  <span
+                    className="destination-page__card-meta"
+                    style={{ color: cv.text.muted }}
+                  >
+                    {isPreset
+                      ? recipePlaceholderDescription(recipe.id)
+                      : formatRecipeFormulaSummary(recipe)}
+                  </span>
+                </div>
+                {!isPreset ? (
+                  <button
+                    type="button"
+                    className="destination-page__card-delete"
+                    aria-label={`Delete ${recipeMenuLabel(recipe)}`}
+                    onClick={() => deleteRecipe(recipe.id)}
+                  >
+                    Delete
+                  </button>
+                ) : null}
+              </article>
+            </li>
+          );
+        })}
+      </ul>
     </DestinationPageChrome>
   );
 }

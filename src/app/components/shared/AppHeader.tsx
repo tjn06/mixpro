@@ -21,6 +21,8 @@ interface AppHeaderProps {
   backConfirmAction?: string;
   /** Accessible label for back control. */
   backLabel?: string;
+  /** Tap back instead of long-press (e.g. dismiss Settings overlay). */
+  backImmediate?: boolean;
   onForward?: () => void;
   forwardConfirmAction?: string;
   /**
@@ -28,8 +30,6 @@ interface AppHeaderProps {
    * Overlays the nav slot; does not affect layout or hit target (`pointer-events: none`).
    */
   forwardBadgeCount?: number | null;
-  onSettingsClick?: () => void;
-  settingsActive?: boolean;
   /** Session Mode chrome — accent bar + session token styling. */
   sessionChrome?: boolean;
   /** Recipe name / selector — rendered in the subheader strip below the header bar. */
@@ -90,18 +90,16 @@ export function AppHeader({
   onBack,
   backConfirmAction = "GO BACK",
   backLabel = "Back",
+  backImmediate = false,
   onForward,
   forwardConfirmAction = "GO FORWARD",
   forwardBadgeCount = null,
-  onSettingsClick,
-  settingsActive = false,
   sessionChrome = false,
   subline,
 }: AppHeaderProps) {
   const showForward = onForward != null && !isLocked;
   const showForwardBadge =
     showForward && forwardBadgeCount != null && forwardBadgeCount > 0;
-  const showSettings = onSettingsClick != null;
 
   return (
     <div
@@ -123,42 +121,41 @@ export function AppHeader({
             ) : null}
             {onBack ? (
               <div className="app-header__nav-slot">
-                <LongPressButton
-                  label={backLabel}
-                  confirmAction={backConfirmAction}
-                  variant="header"
-                  sessionTone={sessionChrome}
-                  onLongPress={onBack}
-                  disabled={isLocked}
-                  className={ROUND_NAV_BTN_CLASS}
-                  style={ROUND_NAV_BTN_STYLE}
-                  icon={
+                {backImmediate ? (
+                  <HeaderIconButton
+                    label={backLabel}
+                    onClick={onBack}
+                    disabled={isLocked}
+                  >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M15 18l-6-6 6-6" />
                     </svg>
-                  }
-                />
+                  </HeaderIconButton>
+                ) : (
+                  <LongPressButton
+                    label={backLabel}
+                    confirmAction={backConfirmAction}
+                    variant="header"
+                    sessionTone={sessionChrome}
+                    onLongPress={onBack}
+                    disabled={isLocked}
+                    className={ROUND_NAV_BTN_CLASS}
+                    style={ROUND_NAV_BTN_STYLE}
+                    icon={
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 18l-6-6 6-6" />
+                      </svg>
+                    }
+                  />
+                )}
               </div>
-            ) : null}
-            {showSettings ? (
-              <HeaderIconButton
-                label="Settings"
-                onClick={onSettingsClick}
-                active={settingsActive}
-                disabled={isLocked}
-              >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-              </HeaderIconButton>
             ) : null}
           </div>
 
           <h1
             className="flex-1 min-w-0 truncate text-center pointer-events-none px-1"
             style={{
-              fontFamily: "'Outfit', sans-serif",
+              fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
               fontSize: "var(--text-header-title)",
               fontWeight: 600,
               color: cv.text.primary,

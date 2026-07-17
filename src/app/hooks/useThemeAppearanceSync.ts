@@ -21,6 +21,8 @@ export function useThemeAppearanceSync(): ThemeAppearance {
   }, []);
 
   useEffect(() => {
+    // Avoid flashing DEFAULT_APPEARANCE (light) before persist rehydrates.
+    if (!useSettingsStore.persist.hasHydrated()) return;
     applyThemeAppearance(document.documentElement, appearance);
   }, [colorScheme, contrast]);
 

@@ -8,6 +8,7 @@ import {
   type BlendingRecipe,
 } from "../../domain/recipe/types";
 import { resolveSessionBatchRecipe } from "../../domain/sessions/totals";
+import { useThemeAppearanceSync } from "../../hooks/useThemeAppearanceSync";
 import type { AppDestination } from "../../navigation/types";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
 import { gramsFromSlotValues, slotValuesFromGrams } from "../../saved-batch-totals/batches";
@@ -47,8 +48,13 @@ function destinationFromView(view: ShellView): AppDestination {
 
 /** App root — top-level destinations; Calculator remains the default non-session mode. */
 export function AppShell() {
+  /** Theme sync must live here — not only on Calculator — or remounting BatchMixer re-applies defaults. */
+  useThemeAppearanceSync();
+
   const [view, setView] = useState<ShellView>({ kind: "destination", id: "calculator" });
   const [navOpen, setNavOpen] = useState(false);
+  /** Settings overlays the current screen — never replaces `view`. */
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const activeSessionId = useSessionsStore((s) => s.activeSessionId);
   const sessions = useSessionsStore((s) => s.sessions);
   const addSessionBatch = useSessionsStore((s) => s.addSessionBatch);
@@ -108,23 +114,34 @@ export function AppShell() {
     [view],
   );
 
+  const openSettings = useCallback(() => {
+    setNavOpen(false);
+    setSettingsOpen(true);
+  }, []);
+
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false);
+  }, []);
+
   const goDestination = useCallback(
     (id: AppDestination) => {
+      if (id === "settings") {
+        openSettings();
+        return;
+      }
       const next: ShellView = { kind: "destination", id };
       if (view.kind === "destination") {
+        setSettingsOpen(false);
         setView(next);
         setNavOpen(false);
         return;
       }
       if (!leaveFocusedFlow(next)) return;
+      setSettingsOpen(false);
       setNavOpen(false);
     },
-    [view.kind, leaveFocusedFlow],
+    [view.kind, leaveFocusedFlow, openSettings],
   );
-
-  const goSettings = useCallback(() => {
-    goDestination("settings");
-  }, [goDestination]);
 
   const openCreateRecipe = useCallback(
     (
@@ -243,7 +260,6 @@ export function AppShell() {
             recipes={sessionMixerRecipes}
             initialValues={view.initialValues}
             onOpenNav={openNav}
-            onOpenSettings={goSettings}
             sessionMode={{
               sessionName: activeSession?.name ?? "Session",
               mode: view.mode,
@@ -260,7 +276,6 @@ export function AppShell() {
             recipe={DEFAULT_RECIPE}
             embedded
             onOpenNav={openNav}
-            onOpenSettings={goSettings}
           />
         ) : null}
 
@@ -289,13 +304,23 @@ export function AppShell() {
           />
         ) : null}
 
-        {view.kind === "destination" && view.id === "settings" ? (
-          <SettingsPage embedded onMenuClick={openNav} />
+        {settingsOpen ? (
+          <div
+            className="absolute inset-0"
+            style={{ zIndex: 50 }}
+            role="presentation"
+          >
+            <SettingsPage
+              embedded
+              onMenuClick={openNav}
+              onClose={closeSettings}
+            />
+          </div>
         ) : null}
 
         <AppNavDrawer
           open={navOpen}
-          active={destination}
+          active={settingsOpen ? "settings" : destination}
           sessionChrome={sessionChrome}
           onClose={closeNav}
           onNavigate={goDestination}

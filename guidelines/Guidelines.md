@@ -69,6 +69,17 @@ primitives → semantic → components → CSS vars (cv) → applyThemeAppearanc
 - Prefer `var(--semantic-*)`, `var(--component-*)`, or `var(--ui-*)` in CSS — not hardcoded `rgba()` when a var exists.
 - `entityCardStyles`, `featureReadout`, and `mixerSwipeConfig` live in `presentation/` — web helpers, not domain.
 
+### Fonts
+
+Loaded in `fonts.css`. Do **not** rely on Tailwind/browser `ui-sans-serif` / system defaults.
+
+| Role | Family | Token / class |
+|------|--------|----------------|
+| UI chrome, labels, buttons | **Outfit** | `--font-ui` (default on `body` / `.app-frame`) |
+| Numeric readouts | **DM Mono** | `--font-readout`, `.app-frame--mixer`, `.app-readout` |
+
+Calculator sets `.app-frame--mixer` so values inherit mono; Outfit is set explicitly on chrome. Destination / Settings inherit Outfit from `.app-frame`.
+
 ## Dependencies
 
 - Custom UI only — **no shadcn/ui**, no component library.

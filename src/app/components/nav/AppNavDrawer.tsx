@@ -58,7 +58,8 @@ export function AppNavDrawer({
                   aria-current={isActive ? "page" : undefined}
                   onClick={() => {
                     onNavigate(item.id);
-                    onClose();
+                    // Settings overlays; shell closes the drawer in openSettings.
+                    if (item.id !== "settings") onClose();
                   }}
                 >
                   {item.label}
@@ -69,8 +70,8 @@ export function AppNavDrawer({
         </ul>
         <p className="app-nav-drawer__hint" style={{ color: cv.text.muted }}>
           {sessionChrome
-            ? "Session open — teal marks where you are."
-            : "Calculator stays available without a session."}
+            ? "Session open — Settings overlays without leaving. Teal marks where you are."
+            : "Open Settings anytime — overlays the current screen; back closes it."}
         </p>
       </nav>
     </div>

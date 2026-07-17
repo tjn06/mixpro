@@ -59,6 +59,21 @@
   min-width: 0;
   position: relative;
   touch-action: manipulation;
+  /** UI default — destination pages, sessions, settings. */
+  font-family: var(--font-ui, "Outfit", sans-serif);
+}
+
+/**
+ * Calculator / mixer readouts inherit mono from the frame; chrome that needs
+ * Outfit sets it explicitly (header, labels, long-press, etc.).
+ */
+.app-frame--mixer {
+  font-family: var(--font-readout, "DM Mono", monospace);
+}
+
+/** Numeric values outside the mixer frame (session totals, dock amounts). */
+.app-readout {
+  font-family: var(--font-readout, "DM Mono", monospace);
 }
 
 .app-gutter-x {
@@ -1685,17 +1700,20 @@
 }
 
 /* ── Top-level destination pages ────────────────────────────────────────── */
+/**
+ * Fills the scroll column. Horizontal inset comes only from parent `.app-gutter-x`
+ * (responsive `--space-4` / safe areas). No static max-width — the app-frame is the
+ * width constraint.
+ */
 .destination-page__body {
   box-sizing: border-box;
-  padding: 16px 0 calc(24px + var(--safe-bottom));
-}
-
-.destination-page__stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-width: 360px;
-  margin: 0 auto;
+  gap: var(--section-gap, 12px);
+  width: 100%;
+  min-width: 0;
+  padding-block: var(--space-4, 16px) var(--app-bottom-inset);
+  padding-inline: 0;
 }
 
 .destination-page__lede,
@@ -1710,10 +1728,10 @@
 
 .destination-page__primary-btn {
   width: 100%;
-  min-height: 48px;
+  min-height: var(--control-h, 44px);
   border-radius: 14px;
-  border: 1.5px solid var(--semantic-border-default, rgba(255, 255, 255, 0.2));
-  background: var(--semantic-surface-raised, rgba(255, 255, 255, 0.06));
+  border: var(--semantic-border-default);
+  background: var(--semantic-surface-raised);
   color: var(--semantic-text-primary);
   font-family: "Outfit", sans-serif;
   font-size: var(--text-ui-md);
@@ -1739,15 +1757,15 @@
 .destination-page__card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2, 8px);
   border-radius: 14px;
-  border: 1.5px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
-  background: var(--component-sheet-panel-list-row-bg, rgba(255, 255, 255, 0.04));
-  padding: 12px 14px;
+  border: var(--semantic-border-subtle);
+  background: var(--component-sheet-panel-list-row-bg);
+  padding: var(--space-3, 12px) var(--space-3, 12px);
 }
 
 .destination-page__card--active {
-  border-color: var(--semantic-selection-border, rgba(255, 255, 255, 0.28));
+  border-color: var(--semantic-selection-border);
 }
 
 .destination-page__card-main {
@@ -1798,14 +1816,16 @@
 }
 
 /* ── Create Recipe (Phase 2) ────────────────────────────────────────────── */
+/** Same width rules as `.destination-page__body` — gutter parent, no px max-width. */
 .create-recipe__body {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-width: 360px;
-  margin: 0 auto;
-  padding: 16px 0 calc(24px + var(--safe-bottom));
+  gap: var(--section-gap, 12px);
+  width: 100%;
+  min-width: 0;
+  padding-block: var(--space-4, 16px) var(--app-bottom-inset);
+  padding-inline: 0;
 }
 
 .create-recipe__subline {
@@ -1954,10 +1974,10 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
+  border: 1px solid var(--semantic-border-subtle);
   background: transparent;
-  color: var(--semantic-text-muted, #8888a8);
-  font-family: "Outfit", sans-serif;
+  color: var(--semantic-text-muted);
+  font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: var(--text-ui-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -1965,6 +1985,19 @@
   padding: 7px 11px 7px 8px;
   border-radius: 999px;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+/** Future stages — advance with header Next (or the immediate-next chip). */
+.session-overview__stage-btn:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+/** Immediate next step — same action as header Next. */
+.session-overview__stage-btn--next:not(:disabled) {
+  color: var(--semantic-text-secondary);
+  border-color: var(--semantic-border-default);
 }
 
 .session-overview__stage-index {
@@ -1977,9 +2010,9 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0;
-  color: var(--semantic-text-dimmed, #686878);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--semantic-text-dimmed);
+  background: var(--semantic-surface-input);
+  border: 1px solid var(--semantic-border-subtle);
 }
 
 .session-overview__stage-label {
@@ -1988,25 +2021,25 @@
 
 /* Visited earlier — quieter than current, clearer than untouched. */
 .session-overview__stage-btn--touched {
-  color: var(--semantic-text-secondary, #b0b0c8);
-  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--semantic-text-secondary);
+  border-color: var(--semantic-border-default);
 }
 
 .session-overview__stage-btn--touched .session-overview__stage-index {
-  color: var(--semantic-text-secondary, #b0b0c8);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--semantic-text-secondary);
+  background: var(--semantic-selection-bg);
+  border-color: var(--semantic-border-default);
 }
 
 .session-overview__stage-btn--active {
-  color: var(--semantic-text-primary, #f2f2f8);
-  border-color: var(--semantic-border-strong, rgba(255, 255, 255, 0.28));
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--semantic-text-primary);
+  border-color: var(--semantic-border-strong);
+  background: var(--semantic-selection-bg);
 }
 
 .session-overview__stage-btn--active .session-overview__stage-index {
-  color: var(--semantic-surface-app, #12121a);
-  background: var(--ui-recipe-value, #c4c4dc);
+  color: var(--semantic-surface-app);
+  background: var(--ui-recipe-value);
   border-color: transparent;
 }
 

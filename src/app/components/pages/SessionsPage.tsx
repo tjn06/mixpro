@@ -49,132 +49,130 @@ export function SessionsPage({
       onMenuClick={onMenuClick}
       embedded={embedded}
     >
-      <div className="destination-page__stack">
+      <button
+        type="button"
+        className="destination-page__primary-btn"
+        onClick={handleNewSession}
+      >
+        + New session
+      </button>
+
+      {activeSession && onOpenSession ? (
         <button
           type="button"
-          className="destination-page__primary-btn"
-          onClick={handleNewSession}
+          className="create-recipe__secondary-btn"
+          onClick={() => onOpenSession(activeSession.id)}
         >
-          + New session
+          Open mixes — {activeSession.name}
         </button>
+      ) : null}
 
-        {activeSession && onOpenSession ? (
-          <button
-            type="button"
-            className="create-recipe__secondary-btn"
-            onClick={() => onOpenSession(activeSession.id)}
-          >
-            Open mixes — {activeSession.name}
-          </button>
-        ) : null}
+      {activeSession && onCreateRecipe ? (
+        <button
+          type="button"
+          className="create-recipe__secondary-btn"
+          onClick={onCreateRecipe}
+        >
+          + Create recipe for session
+        </button>
+      ) : null}
 
-        {activeSession && onCreateRecipe ? (
-          <button
-            type="button"
-            className="create-recipe__secondary-btn"
-            onClick={onCreateRecipe}
-          >
-            + Create recipe for session
-          </button>
-        ) : null}
+      <p className="destination-page__lede" style={{ color: cv.text.muted }}>
+        Project containers for multiple mixes. Open a session to add mixes,
+        share, and save.
+      </p>
 
-        <p className="destination-page__lede" style={{ color: cv.text.muted }}>
-          Project containers for multiple mixes. Open a session to add mixes,
-          share, and save.
+      {sessions.length === 0 ? (
+        <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
+          No sessions yet.
         </p>
-
-        {sessions.length === 0 ? (
-          <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
-            No sessions yet.
-          </p>
-        ) : (
-          <ul className="destination-page__list">
-            {sessions.map((session) => {
-              const active = session.id === activeSessionId;
-              const recipeCount = session.sessionRecipes?.length ?? 0;
-              return (
-                <li key={session.id}>
-                  <article
-                    className={`destination-page__card${
-                      active ? " destination-page__card--active" : ""
-                    }`}
+      ) : (
+        <ul className="destination-page__list">
+          {sessions.map((session) => {
+            const active = session.id === activeSessionId;
+            const recipeCount = session.sessionRecipes?.length ?? 0;
+            return (
+              <li key={session.id}>
+                <article
+                  className={`destination-page__card${
+                    active ? " destination-page__card--active" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="destination-page__card-main"
+                    onClick={() => {
+                      setActiveSession(session.id);
+                      onOpenSession?.(session.id);
+                    }}
                   >
-                    <button
-                      type="button"
-                      className="destination-page__card-main"
-                      onClick={() => {
-                        setActiveSession(session.id);
-                        onOpenSession?.(session.id);
-                      }}
+                    <span className="destination-page__card-title">{session.name}</span>
+                    <span
+                      className="destination-page__card-meta"
+                      style={{ color: cv.text.muted }}
                     >
-                      <span className="destination-page__card-title">{session.name}</span>
-                      <span
-                        className="destination-page__card-meta"
-                        style={{ color: cv.text.muted }}
-                      >
-                        {session.batches.length} mix
-                        {session.batches.length === 1 ? "" : "es"}
-                        {" · "}
-                        {recipeCount} session recipe{recipeCount === 1 ? "" : "s"}
-                        {" · "}
-                        {session.status === "saved" ? "Saved" : "Draft"}
-                        {" · "}
-                        {formatUpdatedAt(session.updatedAt)}
-                      </span>
-                      <span
-                        className="destination-page__card-stages"
-                        style={{ color: cv.text.dimmed }}
-                      >
-                        {SESSION_STAGE_ORDER.map((id) => SESSION_STAGE_LABELS[id]).join(
-                          " → ",
-                        )}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className="destination-page__card-delete"
-                      aria-label={`Delete ${session.name}`}
-                      onClick={() => deleteSession(session.id)}
+                      {session.batches.length} mix
+                      {session.batches.length === 1 ? "" : "es"}
+                      {" · "}
+                      {recipeCount} session recipe{recipeCount === 1 ? "" : "s"}
+                      {" · "}
+                      {session.status === "saved" ? "Saved" : "Draft"}
+                      {" · "}
+                      {formatUpdatedAt(session.updatedAt)}
+                    </span>
+                    <span
+                      className="destination-page__card-stages"
+                      style={{ color: cv.text.dimmed }}
                     >
-                      Delete
-                    </button>
-                  </article>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                      {SESSION_STAGE_ORDER.map((id) => SESSION_STAGE_LABELS[id]).join(
+                        " → ",
+                      )}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="destination-page__card-delete"
+                    aria-label={`Delete ${session.name}`}
+                    onClick={() => deleteSession(session.id)}
+                  >
+                    Delete
+                  </button>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
-        {activeSession && sessionRecipes.length > 0 ? (
-          <section className="create-recipe__session-recipes">
-            <h3
-              className="create-recipe__section-title"
-              style={{ color: cv.text.primary }}
-            >
-              Session recipes — {activeSession.name}
-            </h3>
-            <ul className="destination-page__list">
-              {sessionRecipes.map((recipe) => (
-                <li key={recipe.id}>
-                  <article className="destination-page__card">
-                    <div className="destination-page__card-main">
-                      <span className="destination-page__card-title">
-                        {recipeMenuLabel(recipe)}
-                      </span>
-                      <span
-                        className="destination-page__card-meta"
-                        style={{ color: cv.text.muted }}
-                      >
-                        {formatRecipeFormulaSummary(recipe)}
-                      </span>
-                    </div>
-                  </article>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-      </div>
+      {activeSession && sessionRecipes.length > 0 ? (
+        <section className="create-recipe__session-recipes">
+          <h3
+            className="create-recipe__section-title"
+            style={{ color: cv.text.primary }}
+          >
+            Session recipes — {activeSession.name}
+          </h3>
+          <ul className="destination-page__list">
+            {sessionRecipes.map((recipe) => (
+              <li key={recipe.id}>
+                <article className="destination-page__card">
+                  <div className="destination-page__card-main">
+                    <span className="destination-page__card-title">
+                      {recipeMenuLabel(recipe)}
+                    </span>
+                    <span
+                      className="destination-page__card-meta"
+                      style={{ color: cv.text.muted }}
+                    >
+                      {formatRecipeFormulaSummary(recipe)}
+                    </span>
+                  </div>
+                </article>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </DestinationPageChrome>
   );
 }

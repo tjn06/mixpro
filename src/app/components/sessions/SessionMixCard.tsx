@@ -126,7 +126,7 @@ function AmountCell({
   const unit = isKg ? "kg" : "g";
   return (
     <span
-      className="tabular-nums whitespace-nowrap"
+      className="app-readout tabular-nums whitespace-nowrap"
       style={{ color: entityValueColor(true, colorScheme) }}
     >
       {formatMixAmount(grams, isKg)}
@@ -210,7 +210,7 @@ export function SessionMixCard({
           </p>
           {!expanded ? (
             <span
-              className="tabular-nums whitespace-nowrap"
+              className="app-readout tabular-nums whitespace-nowrap"
               style={{
                 ...TABLE_TEXT,
                 fontSize: "var(--text-totals-sum)",
@@ -369,7 +369,7 @@ export function SessionMixCard({
                           ) : null}
                         </div>
                         <div
-                          className="tabular-nums whitespace-nowrap"
+                          className="app-readout tabular-nums whitespace-nowrap"
                           style={{
                             ...TABLE_TEXT,
                             fontSize: "var(--text-totals-item-per-batch)",
@@ -396,7 +396,7 @@ export function SessionMixCard({
                       </span>
                     </td>
                     <td
-                      className="text-right align-middle tabular-nums whitespace-nowrap"
+                      className="app-readout text-right align-middle tabular-nums whitespace-nowrap"
                       style={{
                         ...TABLE_TEXT,
                         paddingBlock: "var(--totals-cell-py)",

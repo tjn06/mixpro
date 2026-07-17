@@ -1,4 +1,7 @@
-/** Top-level app destinations (hamburger menu). */
+/**
+ * Top-level app destinations (hamburger menu).
+ * `settings` opens an overlay sheet — it is not a navigable screen.
+ */
 export type AppDestination = "calculator" | "sessions" | "recipes" | "settings";
 
 export const APP_DESTINATIONS: {

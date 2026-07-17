@@ -1,2 +1,10 @@
 @import 'tailwindcss' source(none);
 @source '../**/*.{js,ts,jsx,tsx}';
+
+/* Replace Tailwind preflight ui-sans-serif / ui-monospace with project fonts. */
+@theme {
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-readout);
+  --default-font-family: var(--font-ui);
+  --default-mono-font-family: var(--font-readout);
+}

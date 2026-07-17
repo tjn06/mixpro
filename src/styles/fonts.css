@@ -1,1 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;800&display=swap');
+
+/**
+ * Project typefaces (calculator baseline):
+ * - UI chrome / labels / buttons → Outfit (`--font-ui`)
+ * - Numeric readouts (mixer values) → DM Mono (`--font-readout`)
+ * Never rely on Tailwind/browser ui-sans-serif / system defaults.
+ */
+:root {
+  --font-ui: "Outfit", sans-serif;
+  --font-readout: "DM Mono", monospace;
+}

@@ -77,7 +77,7 @@ function AmountCell({
   const unit = isKg ? "kg" : "g";
   return (
     <span
-      className="tabular-nums whitespace-nowrap"
+      className="app-readout tabular-nums whitespace-nowrap"
       style={{ color: entityValueColor(true, colorScheme) }}
     >
       {formatMixAmount(grams, isKg)}
@@ -124,7 +124,7 @@ function StatusValue({
 }) {
   return (
     <span
-      className="tabular-nums whitespace-nowrap shrink-0"
+      className="app-readout tabular-nums whitespace-nowrap shrink-0"
       style={{
         fontSize: "var(--text-totals-sum)",
         color: accentId

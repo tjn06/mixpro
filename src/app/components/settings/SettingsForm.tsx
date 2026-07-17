@@ -118,11 +118,11 @@ function ContrastToggleRow() {
   );
 }
 
-/** Shared settings controls — used by Settings page (and legacy sheet). */
+/** Shared settings controls — used by Settings page. */
 export function SettingsForm() {
   return (
     <div
-      className={`${SHEET_LIST_ROW_CLASS} rounded-2xl w-full max-w-[360px] mx-auto flex flex-col`}
+      className={`${SHEET_LIST_ROW_CLASS} rounded-2xl w-full flex flex-col`}
       style={{ padding: "12px 16px", gap: 8 }}
     >
       <p style={{ ...SHEET_FIELD_LABEL, marginBottom: 4 }}>Display</p>

@@ -7,12 +7,19 @@ export function DestinationPageChrome({
   title,
   subline,
   onMenuClick,
+  onBack,
+  backLabel,
+  backImmediate = false,
   embedded = false,
   children,
 }: {
   title: string;
   subline?: string;
   onMenuClick: () => void;
+  onBack?: () => void;
+  backLabel?: string;
+  /** Tap back (Settings overlay) instead of long-press. */
+  backImmediate?: boolean;
   /** Parent AppShell owns mobile-shell / app-frame-host. */
   embedded?: boolean;
   children: ReactNode;
@@ -27,6 +34,9 @@ export function DestinationPageChrome({
           <AppHeader
             title={title}
             onMenuClick={onMenuClick}
+            onBack={onBack}
+            backLabel={backLabel}
+            backImmediate={backImmediate}
             subline={
               subline ? (
                 <RecipeHeaderSublineStack>

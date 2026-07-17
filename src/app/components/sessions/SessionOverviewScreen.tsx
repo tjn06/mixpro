@@ -12,6 +12,10 @@ import {
   type SessionShareScope,
 } from "../../domain/sessions/shareScope";
 import {
+  canNavigateToSessionStage,
+  nextSessionStage,
+} from "../../domain/sessions/stages";
+import {
   resolveSessionBatchRecipe,
   sessionEntityIndexes,
   sessionGrandTotalGrams,
@@ -87,11 +91,7 @@ export function SessionOverviewScreen({
   const sessionRecipes = session?.sessionRecipes ?? [];
   const activeStage = session?.activeStage ?? "mixes";
   const touchedStages = session?.touchedStages ?? ["mixes"];
-  const activeStageIndex = SESSION_STAGE_ORDER.indexOf(activeStage);
-  const nextStage =
-    activeStageIndex >= 0 && activeStageIndex < SESSION_STAGE_ORDER.length - 1
-      ? SESSION_STAGE_ORDER[activeStageIndex + 1]
-      : null;
+  const nextStage = nextSessionStage(activeStage);
 
   useEffect(() => {
     setShareScope(defaultShareScope(activeStage));
@@ -155,12 +155,14 @@ export function SessionOverviewScreen({
   }
 
   const setStage = (stage: SessionStageId) => {
+    if (!canNavigateToSessionStage(stage, activeStage, touchedStages)) return;
     patchSession(session.id, { activeStage: stage });
   };
 
+  /** Header Next and the immediate-next chip share this path. */
   const goNextStage = () => {
     if (!nextStage) return;
-    setStage(nextStage);
+    patchSession(session.id, { activeStage: nextStage });
   };
 
   const handleSaveConfirm = (name: string) => {
@@ -247,7 +249,7 @@ export function SessionOverviewScreen({
                     </div>
                   </th>
                   <td
-                    className="text-right align-middle tabular-nums whitespace-nowrap"
+                    className="app-readout text-right align-middle tabular-nums whitespace-nowrap"
                     style={{
                       paddingBlock: "var(--entity-summary-cell-py)",
                       fontSize: "var(--text-totals-row-amount)",
@@ -381,7 +383,7 @@ export function SessionOverviewScreen({
                       </span>
                     </button>
                     <span
-                      className="session-overview__summary-mix-total tabular-nums"
+                      className="session-overview__summary-mix-total app-readout tabular-nums"
                       style={{ color: amountColor }}
                     >
                       {formatMixAmount(total, true)} kg
@@ -458,6 +460,12 @@ export function SessionOverviewScreen({
                   const active = stageId === activeStage;
                   const touched = touchedStages.includes(stageId);
                   const inShare = stagesInShare.includes(stageId);
+                  const selectable = canNavigateToSessionStage(
+                    stageId,
+                    activeStage,
+                    touchedStages,
+                  );
+                  const isNext = stageId === nextStage;
                   return (
                     <button
                       key={stageId}
@@ -466,11 +474,19 @@ export function SessionOverviewScreen({
                         active ? " session-overview__stage-btn--active" : ""
                       }${touched && !active ? " session-overview__stage-btn--touched" : ""}${
                         inShare ? " session-overview__stage-btn--in-share" : ""
-                      }`}
+                      }${isNext && !active ? " session-overview__stage-btn--next" : ""}`}
                       aria-current={active ? "step" : undefined}
+                      disabled={!active && !selectable}
                       data-touched={touched ? "" : undefined}
                       data-in-share={inShare ? "" : undefined}
-                      onClick={() => setStage(stageId)}
+                      onClick={() => {
+                        if (active) return;
+                        if (isNext) {
+                          goNextStage();
+                          return;
+                        }
+                        setStage(stageId);
+                      }}
                     >
                       <span className="session-overview__stage-index" aria-hidden>
                         {index + 1}

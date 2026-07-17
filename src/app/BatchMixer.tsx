@@ -44,7 +44,6 @@ import { LoadSavedMixesSheet } from "./components/sheets/LoadSavedMixesSheet";
 import { LoadSavedBatchTotalsSheet } from "./components/sheets/LoadSavedBatchTotalsSheet";
 import { SaveBatchTotalsNameSheet } from "./components/sheets/SaveBatchTotalsNameSheet";
 import { SaveMixNameSheet } from "./components/sheets/SaveMixNameSheet";
-import { useThemeAppearanceSync } from "./hooks/useThemeAppearanceSync";
 import { useSettingsStore } from "./settings/store";
 import type { ColorScheme } from "../theme/appearance";
 import { entityAccentColor } from "./presentation/entityAccent";
@@ -425,8 +424,6 @@ export interface BatchMixerProps {
   sandType?: SandType;
   /** Opens application navigation (hamburger). */
   onOpenNav?: () => void;
-  /** Opens Settings destination (top-level page). */
-  onOpenSettings?: () => void;
   /**
    * When true, render only the app-frame (parent owns mobile-shell / app-frame-host).
    * Used by AppShell so nav overlays stay inside the frame.
@@ -449,7 +446,6 @@ export function BatchMixer({
   initialBucketSelection = DEFAULT_BUCKET_SELECTION,
   sandType = "medium",
   onOpenNav,
-  onOpenSettings,
   embedded = false,
   sessionMode,
 }: BatchMixerProps) {
@@ -579,7 +575,6 @@ export function BatchMixer({
   const currentMixTotalGrams = values[0] ?? 0;
 
   const canHalveMixAction = canHalveMix(values);
-  useThemeAppearanceSync();
   const colorScheme = useSettingsStore((s) => s.colorScheme);
   const canDoubleMixAction = useMemo(
     () => canDoubleMix(values, activeRecipe, bucketSelection, sandType),
@@ -1177,10 +1172,9 @@ export function BatchMixer({
         <div
           ref={containerRef}
           data-beam-canvas
-          className="app-frame relative flex flex-col overflow-hidden select-none"
+          className="app-frame app-frame--mixer relative flex flex-col overflow-hidden select-none"
           style={{
             background: cv.app.background,
-            fontFamily: "'DM Mono', monospace",
           }}
         >
 
@@ -1213,7 +1207,6 @@ export function BatchMixer({
               isLocked={isLocked}
               onMenuClick={onOpenNav}
               onBack={handleBack}
-              onSettingsClick={sessionMode ? undefined : onOpenSettings}
               sessionChrome={Boolean(sessionMode)}
               subline={
                 <RecipeHeaderSublineStack>
@@ -1262,7 +1255,6 @@ export function BatchMixer({
             backConfirmAction={sessionMode ? "BACK TO SESSION" : "GO BACK"}
             onForward={sessionMode ? undefined : handleForward}
             forwardBadgeCount={sessionMode ? null : forwardTotalsBadge}
-            onSettingsClick={sessionMode ? undefined : onOpenSettings}
             sessionChrome={Boolean(sessionMode)}
             subline={
               <div className={isLocked && !loadedSavedMix ? "pointer-events-none" : "pointer-events-auto"}>
