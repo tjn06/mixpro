@@ -44,7 +44,6 @@ import { LoadSavedMixesSheet } from "./components/sheets/LoadSavedMixesSheet";
 import { LoadSavedBatchTotalsSheet } from "./components/sheets/LoadSavedBatchTotalsSheet";
 import { SaveBatchTotalsNameSheet } from "./components/sheets/SaveBatchTotalsNameSheet";
 import { SaveMixNameSheet } from "./components/sheets/SaveMixNameSheet";
-import { SettingsSheet } from "./components/sheets/SettingsSheet";
 import { useThemeAppearanceSync } from "./hooks/useThemeAppearanceSync";
 import { useSettingsStore } from "./settings/store";
 import type { ColorScheme } from "../theme/appearance";
@@ -396,6 +395,21 @@ const TotalTile = forwardRef<HTMLButtonElement, {
 // /* LINE_MEASUREMENT_LEGACY */
 // interface Line { x1: number; y1: number; x2: number; y2: number }
 
+export type SessionMixCommitPayload = {
+  recipe: BlendingRecipe;
+  values: number[];
+  name: string;
+};
+
+export type BatchMixerSessionMode = {
+  sessionName: string;
+  mode: "add" | "edit";
+  /** Display name for the session batch (defaults to recipe label). */
+  batchName?: string;
+  onCommit: (payload: SessionMixCommitPayload) => void;
+  onCancel: () => void;
+};
+
 export interface BatchMixerProps {
   /** Initial / preferred recipe (must exist in `recipes`). */
   recipe?: BlendingRecipe;
@@ -403,10 +417,23 @@ export interface BatchMixerProps {
   recipes?: BlendingRecipe[];
   /** Binder base (A + B) in grams for the initial mix. Default 1000 g. */
   initialBinderSum?: number;
+  /** Seed ingredient grams (TOTAL · A · B · TIX · SAND) — used for session edit. */
+  initialValues?: number[];
   /** Initial bucket selection — 5, 10, 17 L or none. Default 17 L. */
   initialBucketSelection?: BucketSelection;
   /** Sand grain type for volume void correction. Default medium. */
   sandType?: SandType;
+  /** Opens application navigation (hamburger). */
+  onOpenNav?: () => void;
+  /** Opens Settings destination (top-level page). */
+  onOpenSettings?: () => void;
+  /**
+   * When true, render only the app-frame (parent owns mobile-shell / app-frame-host).
+   * Used by AppShell so nav overlays stay inside the frame.
+   */
+  embedded?: boolean;
+  /** Nested calculator for Session Mode — commit/cancel back to session overview. */
+  sessionMode?: BatchMixerSessionMode;
 }
 
 function resolveRecipe(seed: BlendingRecipe | undefined, catalog: BlendingRecipe[]): BlendingRecipe {
@@ -418,15 +445,33 @@ export function BatchMixer({
   recipe: initialRecipe,
   recipes = PRESET_RECIPES,
   initialBinderSum = 1000,
+  initialValues,
   initialBucketSelection = DEFAULT_BUCKET_SELECTION,
   sandType = "medium",
+  onOpenNav,
+  onOpenSettings,
+  embedded = false,
+  sessionMode,
 }: BatchMixerProps) {
   const [activeRecipe, setActiveRecipe] = useState<BlendingRecipe>(() =>
     resolveRecipe(initialRecipe, recipes),
   );
   const resolvedInitial = resolveRecipe(initialRecipe, recipes);
-  const [values, setValues]         = useState<number[]>(() =>
-    initialMixValues(resolvedInitial, recipeBinderSum(resolvedInitial, initialBinderSum)),
+  const [values, setValues]         = useState<number[]>(() => {
+    if (initialValues && initialValues.length > 0) {
+      return clampMixValuesToBucketMax(
+        initialValues,
+        resolvedInitial,
+        initialBucketSelection,
+        sandType,
+      );
+    }
+    return initialMixValues(resolvedInitial, recipeBinderSum(resolvedInitial, initialBinderSum));
+  });
+  const sessionBaselineRef = useRef<number[]>(
+    initialValues && initialValues.length > 0
+      ? [...initialValues]
+      : initialMixValues(resolvedInitial, recipeBinderSum(resolvedInitial, initialBinderSum)),
   );
   const [bucketSelection, setBucketSelection] = useState<BucketSelection>(initialBucketSelection);
   const [active, setActive]         = useState(0);
@@ -439,7 +484,6 @@ export function BatchMixer({
   const [batchTotalsSaveFlash, setBatchTotalsSaveFlash] = useState(false);
   const batchTotalsSaveFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saveNameSheetOpen, setSaveNameSheetOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [loadedSavedMixId, setLoadedSavedMixId] = useState<string | null>(null);
   const [screen, setScreen] = useState<MixerScreen>("mixer");
   const [totalsPanelExpanded, setTotalsPanelExpanded] = useState(false);
@@ -729,9 +773,39 @@ export function BatchMixer({
     };
   }, [screen]);
 
+  const handleSessionCancel = useCallback(() => {
+    if (!sessionMode) return;
+    const dirty = valuesRef.current.some(
+      (v, i) => Math.abs(v - (sessionBaselineRef.current[i] ?? 0)) > 0.05,
+    );
+    if (dirty) {
+      const ok = window.confirm(
+        sessionMode.mode === "edit"
+          ? "Discard changes to this mix?"
+          : "Discard this mix?",
+      );
+      if (!ok) return;
+    }
+    sessionMode.onCancel();
+  }, [sessionMode]);
+
+  const handleSessionCommit = useCallback(() => {
+    if (!sessionMode) return;
+    const recipe = recipeRef.current;
+    sessionMode.onCommit({
+      recipe,
+      values: [...valuesRef.current],
+      name: sessionMode.batchName?.trim() || recipeMenuLabel(recipe),
+    });
+  }, [sessionMode]);
+
   const handleSaveRequest = useCallback(() => {
+    if (sessionMode) {
+      handleSessionCommit();
+      return;
+    }
     setSaveNameSheetOpen(true);
-  }, []);
+  }, [sessionMode, handleSessionCommit]);
 
   const handleSaveConfirm = useCallback(
     (metaName?: string, strategy: "update" | "new" = "new") => {
@@ -985,14 +1059,19 @@ export function BatchMixer({
   }, []);
 
   const handleBack = useCallback(() => {
+    if (sessionMode && screen === "mixer") {
+      handleSessionCancel();
+      return;
+    }
     setTotalsPanelExpanded(false);
     setScreen("mixer");
-  }, []);
+  }, [sessionMode, screen, handleSessionCancel]);
 
   const handleForward = useCallback(() => {
+    if (sessionMode) return;
     if (screen !== "mixer" || isLocked) return;
     setScreen("totals");
-  }, [screen, isLocked]);
+  }, [sessionMode, screen, isLocked]);
 
   const forwardTotalsBadge = useMemo(() => {
     if (!hasActiveBatchTotalsPlan(batchMultiplier, extraBatches)) return null;
@@ -1094,11 +1173,7 @@ export function BatchMixer({
   const activeParam = PARAMS[active];
   const col = entityAccentColor(activeParam.id, colorScheme);
 
-  return (
-    <div className="mobile-shell">
-        <LongPressProgressProvider>
-        <LongPressEdgeProvider edgeRef={containerRef}>
-        <div className="app-frame-host">
+  const frame = (
         <div
           ref={containerRef}
           data-beam-canvas
@@ -1134,10 +1209,12 @@ export function BatchMixer({
         <div className="batch-totals-route flex-1 min-h-0 flex flex-col overflow-hidden">
           <div className="recipe-context-gradient flex-1 min-h-0 flex flex-col overflow-hidden">
             <AppHeader
+              title={sessionMode ? (sessionMode.mode === "edit" ? "Edit mix" : "Add mix") : "MIXpro"}
               isLocked={isLocked}
+              onMenuClick={onOpenNav}
               onBack={handleBack}
-              onSettingsClick={() => setSettingsOpen(true)}
-              settingsActive={settingsOpen}
+              onSettingsClick={sessionMode ? undefined : onOpenSettings}
+              sessionChrome={Boolean(sessionMode)}
               subline={
                 <RecipeHeaderSublineStack>
                   <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
@@ -1171,30 +1248,58 @@ export function BatchMixer({
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="recipe-context-gradient">
           <AppHeader
+            title={
+              sessionMode
+                ? sessionMode.mode === "edit"
+                  ? "Edit mix"
+                  : "Add mix"
+                : "MIXpro"
+            }
             isLocked={isLocked}
-            onForward={handleForward}
-            forwardBadgeCount={forwardTotalsBadge}
-            onSettingsClick={() => setSettingsOpen(true)}
-            settingsActive={settingsOpen}
+            onMenuClick={onOpenNav}
+            onBack={sessionMode ? handleSessionCancel : undefined}
+            backLabel={sessionMode ? "Back to session" : "Back"}
+            backConfirmAction={sessionMode ? "BACK TO SESSION" : "GO BACK"}
+            onForward={sessionMode ? undefined : handleForward}
+            forwardBadgeCount={sessionMode ? null : forwardTotalsBadge}
+            onSettingsClick={sessionMode ? undefined : onOpenSettings}
+            sessionChrome={Boolean(sessionMode)}
             subline={
               <div className={isLocked && !loadedSavedMix ? "pointer-events-none" : "pointer-events-auto"}>
                 <RecipeHeaderSublineStack>
-                  <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
-                  <RecipeSelect
-                    recipes={recipes}
-                    value={activeRecipe}
-                    onChange={handleRecipeChange}
-                    disabled={isLocked && !loadedSavedMix}
-                    muted={isLocked && !loadedSavedMix}
-                    allowReselectCurrent={loadedSavedMix != null}
-                    bucketSelection={bucketSelection}
-                    onBucketChange={setBucketSelection}
-                    initialBinderSum={initialBinderSum}
-                    sandType={sandType}
-                    savedMixes={savedMixes}
-                    loadedSavedMixId={loadedSavedMixId}
-                    onSavedMixSelect={handleSavedMixSelect}
-                  />
+                  {sessionMode ? (
+                    <RecipeHeaderSubline>
+                      <span className="session-mode-chip">
+                        <span className="session-mode-chip__dot" aria-hidden />
+                        Session · {sessionMode.sessionName}
+                      </span>
+                    </RecipeHeaderSubline>
+                  ) : (
+                    <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
+                  )}
+                  {sessionMode ? (
+                    <RecipeHeaderSubline>
+                      <RecipeHeaderRecipeRow muted={isLocked}>
+                        {recipeMenuLabel(activeRecipe)}
+                      </RecipeHeaderRecipeRow>
+                    </RecipeHeaderSubline>
+                  ) : (
+                    <RecipeSelect
+                      recipes={recipes}
+                      value={activeRecipe}
+                      onChange={handleRecipeChange}
+                      disabled={isLocked && !loadedSavedMix}
+                      muted={isLocked && !loadedSavedMix}
+                      allowReselectCurrent={loadedSavedMix != null}
+                      bucketSelection={bucketSelection}
+                      onBucketChange={setBucketSelection}
+                      initialBinderSum={initialBinderSum}
+                      sandType={sandType}
+                      savedMixes={savedMixes}
+                      loadedSavedMixId={loadedSavedMixId}
+                      onSavedMixSelect={handleSavedMixSelect}
+                    />
+                  )}
                 </RecipeHeaderSublineStack>
               </div>
             }
@@ -1251,6 +1356,23 @@ export function BatchMixer({
               saveFlash={saveFlash}
               loadedSavedMix={loadedSavedMix}
               canLoad={canLoad}
+              saveLabelOverride={
+                sessionMode
+                  ? sessionMode.mode === "edit"
+                    ? "Update in session"
+                    : "Add to session"
+                  : undefined
+              }
+              saveConfirmAction={
+                sessionMode
+                  ? sessionMode.mode === "edit"
+                    ? "UPDATE IN SESSION"
+                    : "ADD TO SESSION"
+                  : undefined
+              }
+              useCommitIcon={Boolean(sessionMode)}
+              sessionTone={Boolean(sessionMode)}
+              hideLoad={Boolean(sessionMode)}
               disabled={isLocked}
               muted={isLocked}
               saveButtonRef={saveButtonRef}
@@ -1271,6 +1393,29 @@ export function BatchMixer({
               onSave={handleSaveRequest}
               saveFlash={saveFlash}
               loadedSavedMix={loadedSavedMix}
+              saveLabelOverride={
+                sessionMode
+                  ? sessionMode.mode === "edit"
+                    ? "Update in session"
+                    : "Add to session"
+                  : undefined
+              }
+              saveConfirmAction={
+                sessionMode
+                  ? sessionMode.mode === "edit"
+                    ? "UPDATE IN SESSION"
+                    : "ADD TO SESSION"
+                  : undefined
+              }
+              saveDescriptionOverride={
+                sessionMode
+                  ? sessionMode.mode === "edit"
+                    ? "Hold to save changes back to this session"
+                    : "Hold to add this mix to the session"
+                  : undefined
+              }
+              useCommitIcon={Boolean(sessionMode)}
+              sessionTone={Boolean(sessionMode)}
               expandMs={LOCK_EXPAND_MS}
               expandEase={LOCK_EASE}
               zIndex={LOCK_UNLOCK_Z}
@@ -1546,12 +1691,20 @@ export function BatchMixer({
           onConfirm={handleSaveConfirm}
         />
 
-        <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+        </div>
+  );
 
-        </div>
-        </div>
-        </LongPressEdgeProvider>
-        </LongPressProgressProvider>
-    </div>
+  return (
+    <LongPressProgressProvider>
+      <LongPressEdgeProvider edgeRef={containerRef}>
+        {embedded ? (
+          frame
+        ) : (
+          <div className="mobile-shell">
+            <div className="app-frame-host">{frame}</div>
+          </div>
+        )}
+      </LongPressEdgeProvider>
+    </LongPressProgressProvider>
   );
 }

@@ -13,6 +13,10 @@ export interface ThemePaletteState {
   error: string;
   errorMuted: string;
   disabled: string;
+  /** Session Mode accent (header bar, nav rail, session-tone buttons). */
+  session: string;
+  /** Label/icon on session-tone button fill. */
+  sessionOnAccent: string;
 }
 
 export interface ThemePaletteBorders {

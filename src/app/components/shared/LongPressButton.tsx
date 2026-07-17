@@ -180,6 +180,11 @@ interface LongPressButtonProps {
   /** Icon + title + optional description, for large locked overlays. */
   stacked?: boolean;
   variant?: "primary" | "secondary" | "header";
+  /**
+   * Session Mode fill — uses --session-accent background so commit/back
+   * read as session actions (same mark as header bar / nav rail).
+   */
+  sessionTone?: boolean;
   /** fill = in-button bars; beam = side loading bars to app edge (default); water = bottom fill only */
   progressVariant?: "fill" | "beam" | "water";
   edgeContainerRef?: RefObject<HTMLElement | null>;
@@ -207,6 +212,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
   description,
   stacked = false,
   variant = "secondary",
+  sessionTone = false,
   progressVariant = "beam",
   edgeContainerRef,
   className = "",
@@ -225,11 +231,17 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
   }, [ref]);
   const contextEdgeRef = useLongPressEdgeContainer();
   const beamEdgeRef = edgeContainerRef ?? contextEdgeRef;
+  const resolvedAccent = accentColor ?? (sessionTone ? "var(--session-accent)" : undefined);
   const { progress, holding, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } =
-    useLongPress(onLongPress, disabled, { accentColor, confirmAction, durationMs });
+    useLongPress(onLongPress, disabled, {
+      accentColor: resolvedAccent,
+      confirmAction,
+      durationMs,
+    });
 
   const isHeader = variant === "header";
   const borderAlpha = lp.borderAlpha;
+  const sessionBtn = cv.sessionButton;
 
   const idleBorder = disabled
     ? borderAlpha.disabled
@@ -241,13 +253,13 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
 
   const idleLabel = disabled
     ? cv.longPress.labelDisabled
-    : holding
-      ? isHeader
+    : sessionTone
+      ? sessionBtn.color
+      : holding
         ? cv.longPress.labelHolding
-        : cv.longPress.labelHolding
-      : isHeader
-        ? cv.headerIconButton.color
-        : cv.longPress.labelIdle;
+        : isHeader
+          ? cv.headerIconButton.color
+          : cv.longPress.labelIdle;
 
   const lit = active || holding;
   const beamEngaged = progressVariant === "beam" && progress > 0;
@@ -315,12 +327,20 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
   }, [onPointerCancel, clearHoldBox]);
 
   const sheetBackground = (() => {
+    if (sessionTone) {
+      return active || holding ? sessionBtn.backgroundHold : sessionBtn.background;
+    }
     if (holding && !beamEngaged) return cv.action.longPressHolding;
     if (active || holding) return cv.action.longPressActive;
     return cv.action.longPressIdle;
   })();
 
   const headerBackground = (() => {
+    if (sessionTone) {
+      return headerBeamHold || active || holding
+        ? sessionBtn.backgroundHold
+        : sessionBtn.background;
+    }
     if (headerBeamHold) return cv.headerIconButton.backgroundActiveSolid;
     return active || holding
       ? cv.headerIconButton.backgroundActive
@@ -330,21 +350,23 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
   const idleBackground = isHeader ? headerBackground : sheetBackground;
 
   const borderWidth = isHeader ? lp.borderWidthHeader : lp.borderWidthSheet;
-  const borderStyle = isHeader
-    ? lit
-      ? cv.headerIconButton.borderActive
-      : cv.headerIconButton.border
-    : `${borderWidth}px solid rgba(var(--ui-long-press-border-rgb), ${
-        holding
-          ? isHeader
-            ? borderAlpha.holdingHeader
-            : borderAlpha.holdingSheet
-          : lit
+  const borderStyle = sessionTone
+    ? `${borderWidth}px solid color-mix(in srgb, var(--session-accent) 55%, transparent)`
+    : isHeader
+      ? lit
+        ? cv.headerIconButton.borderActive
+        : cv.headerIconButton.border
+      : `${borderWidth}px solid rgba(var(--ui-long-press-border-rgb), ${
+          holding
             ? isHeader
-              ? borderAlpha.litHeader
-              : borderAlpha.litSheet
-            : idleBorder
-      })`;
+              ? borderAlpha.holdingHeader
+              : borderAlpha.holdingSheet
+            : lit
+              ? isHeader
+                ? borderAlpha.litHeader
+                : borderAlpha.litSheet
+              : idleBorder
+        })`;
 
   const renderPressButton = () => (
     <button
@@ -354,12 +376,20 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
       aria-label={label}
       className={`relative flex flex-col items-center justify-center overflow-hidden touch-none transition-colors duration-150 ${
         isHeader ? "header-icon-btn rounded-full shrink-0" : "rounded-xl"
-      }${headerBeamHold ? " header-icon-btn--beam-holding" : ""}${anchorActive ? "" : ` ${className}`}`}
+      }${sessionTone && isHeader ? " header-icon-btn--session" : ""}${
+        headerBeamHold ? " header-icon-btn--beam-holding" : ""
+      }${anchorActive ? "" : ` ${className}`}`}
       style={{
         cursor: disabled ? "default" : "pointer",
         background: idleBackground,
         border: borderStyle,
-        color: isHeader ? (lit ? cv.headerIconButton.colorActive : cv.headerIconButton.color) : undefined,
+        color: sessionTone
+          ? sessionBtn.color
+          : isHeader
+            ? lit
+              ? cv.headerIconButton.colorActive
+              : cv.headerIconButton.color
+            : undefined,
         minHeight: isHeader ? 0 : compact ? 0 : 32,
         ...(disabled && !isHeader ? { opacity: cv.longPress.disabledOpacity } : {}),
         ...(isHeader
@@ -389,9 +419,9 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
       onPointerCancel={handlePointerCancel}
     >
       {progressVariant === "fill" ? (
-        <LongPressProgress progress={progress} accentColor={accentColor} />
+        <LongPressProgress progress={progress} accentColor={resolvedAccent} />
       ) : progressVariant === "water" ? (
-        <LongPressProgress progress={progress} accentColor={accentColor} leftBar={false} />
+        <LongPressProgress progress={progress} accentColor={resolvedAccent} leftBar={false} />
       ) : null}
       {stacked ? (
         <span
@@ -473,7 +503,7 @@ export const LongPressButton = forwardRef<HTMLButtonElement, LongPressButtonProp
         <LongPressBeamBurst
           progress={progress}
           anchorRef={buttonRef}
-          accentColor={accentColor}
+          accentColor={resolvedAccent}
           edgeContainerRef={beamEdgeRef}
           zIndex={beamZIndex}
         />

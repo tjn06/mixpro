@@ -41,6 +41,8 @@ export const lightDefaultPalette: ThemePalette = {
     error: sem.error,
     errorMuted: sem.errorMuted,
     disabled: ink[10],
+    session: sem.session,
+    sessionOnAccent: paper[950],
   },
   borders: {
     subtle: borderSolidBlack(0.08),
@@ -127,6 +129,8 @@ export const darkHighContrastPalette: ThemePalette = {
     error: "#ff8a9a",
     errorMuted: "#d07080",
     disabled: "#9090b0",
+    session: "#5eead4",
+    sessionOnAccent: "#0a0a14",
   },
   borders: {
     subtle: borderSolid(0.28),
@@ -207,6 +211,8 @@ export const lightHighContrastPalette: ThemePalette = {
     error: "#901828",
     errorMuted: "#702030",
     disabled: ink[30],
+    session: "#115e59",
+    sessionOnAccent: paper[950],
   },
   borders: {
     subtle: borderSolidBlack(0.16),

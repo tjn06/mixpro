@@ -89,6 +89,13 @@ export function buildThemeCssEntries(
     [componentCssVarNames.stateError, state.error],
     [componentCssVarNames.stateErrorMuted, state.errorMuted],
     [componentCssVarNames.stateAccent, accentColor(palette)],
+    [componentCssVarNames.stateSession, state.session],
+    [componentCssVarNames.sessionAccent, state.session],
+    [componentCssVarNames.sessionBtnFg, state.sessionOnAccent],
+    [
+      componentCssVarNames.sessionBtnBgHold,
+      `color-mix(in srgb, ${state.session} 72%, #000)`,
+    ],
     [componentCssVarNames.selectionBorder, borders.strong],
     [componentCssVarNames.selectionBg, surfaces.buttonActive],
     [componentCssVarNames.stateDisabled, state.disabled],

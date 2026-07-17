@@ -8,6 +8,10 @@
   --app-max-h: 960px;
   --app-ref-w: 390px;
   --app-ref-h: 764px;
+  /** Session Mode — chrome + session-tone long-press buttons (theme may override). */
+  --session-accent: #2dd4bf;
+  --session-btn-fg: #0a0a14;
+  --session-btn-bg-hold: color-mix(in srgb, var(--session-accent) 72%, #000);
   /** Full 180px swipe above this; at 764px and below swipe scales via --swipe-cqh-ratio. */
   --swipe-compromise-max-h: 764px;
   --swipe-fixed-min-h: 765px;
@@ -38,6 +42,13 @@
   overflow: hidden;
   container-type: size;
   container-name: app;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-frame-host > .app-frame {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .app-frame {
@@ -104,6 +115,45 @@
   padding-top: var(--safe-top);
   background: var(--ui-header-bg, #ececf4);
   position: relative;
+}
+
+/** Session Mode — thin accent under safe-area (distinct from calculator brand chrome). */
+.app-header-chrome--session::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--safe-top);
+  height: 3px;
+  background: var(--session-accent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.app-header-chrome--session .session-overview__subline,
+.app-header-chrome--session .session-mode-chip {
+  color: var(--session-accent);
+}
+
+.session-mode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--session-accent);
+}
+
+.session-mode-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--session-accent);
+  flex-shrink: 0;
 }
 
 .app-header {
@@ -1509,5 +1559,714 @@
   .batch-totals-grab-handle__pill {
     transition: none;
   }
+}
+
+/* ── App navigation drawer (scoped to .app-frame-host, not the viewport) ─── */
+.app-nav-drawer {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.app-nav-drawer__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.app-nav-drawer__panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: auto;
+  box-sizing: border-box;
+  width: min(80%, 280px);
+  padding: calc(16px + var(--safe-top)) 20px calc(24px + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--ui-header-bg);
+  border-right: 1px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.28);
+}
+
+.app-nav-drawer__panel--session {
+  border-top: 3px solid var(--session-accent);
+  padding-top: calc(13px + var(--safe-top));
+}
+
+.app-nav-drawer__brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.app-nav-drawer__brand {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-header-title);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  color: var(--semantic-text-primary);
+  min-width: 0;
+}
+
+.app-nav-drawer__session-chip {
+  flex-shrink: 0;
+}
+
+.app-nav-drawer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-nav-drawer__item {
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: transparent;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--semantic-text-secondary);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+  border-left: 3px solid transparent;
+}
+
+.app-nav-drawer__item--active {
+  background: var(--semantic-selection-bg, rgba(255, 255, 255, 0.08));
+  color: var(--semantic-text-primary);
+}
+
+/**
+ * Session Mode — same accent as header / drawer top bar (--session-accent).
+ * Rail + label share that color so the active item syncs with the chrome stripe.
+ */
+.app-nav-drawer__item--session-active {
+  border-left-color: var(--session-accent);
+  color: var(--session-accent);
+  background: color-mix(in srgb, var(--session-accent) 14%, transparent);
+}
+
+.app-nav-drawer__item:active {
+  opacity: 0.85;
+}
+
+.app-nav-drawer__hint {
+  margin: auto 0 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+}
+
+/* ── Top-level destination pages ────────────────────────────────────────── */
+.destination-page__body {
+  box-sizing: border-box;
+  padding: 16px 0 calc(24px + var(--safe-bottom));
+}
+
+.destination-page__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.destination-page__lede,
+.destination-page__empty {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+}
+
+.destination-page__primary-btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1.5px solid var(--semantic-border-default, rgba(255, 255, 255, 0.2));
+  background: var(--semantic-surface-raised, rgba(255, 255, 255, 0.06));
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-md);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.destination-page__primary-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.destination-page__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.destination-page__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 14px;
+  border: 1.5px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
+  background: var(--component-sheet-panel-list-row-bg, rgba(255, 255, 255, 0.04));
+  padding: 12px 14px;
+}
+
+.destination-page__card--active {
+  border-color: var(--semantic-selection-border, rgba(255, 255, 255, 0.28));
+}
+
+.destination-page__card-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.destination-page__card-title {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-md);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--semantic-text-primary);
+}
+
+.destination-page__card-meta,
+.destination-page__card-stages {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+}
+
+.destination-page__card-delete {
+  align-self: flex-end;
+  border: none;
+  background: transparent;
+  padding: 4px 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--semantic-state-error);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Create Recipe (Phase 2) ────────────────────────────────────────────── */
+.create-recipe__body {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 16px 0 calc(24px + var(--safe-bottom));
+}
+
+.create-recipe__subline {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-recipe-value);
+}
+
+.create-recipe__segment {
+  display: flex;
+  gap: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
+  background: var(--component-sheet-panel-list-row-bg, rgba(255, 255, 255, 0.04));
+}
+
+.create-recipe__segment-btn {
+  flex: 1;
+  min-height: 40px;
+  border: none;
+  background: transparent;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--semantic-text-secondary);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.create-recipe__segment-btn[data-active] {
+  background: var(--semantic-selection-bg, rgba(255, 255, 255, 0.1));
+  color: var(--semantic-text-primary);
+}
+
+.create-recipe__segment-btn:active {
+  opacity: 0.85;
+}
+
+.create-recipe__lede,
+.create-recipe__preview,
+.create-recipe__error {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+}
+
+.create-recipe__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.create-recipe__field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-recipe__suffix {
+  flex-shrink: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  min-width: 4.5rem;
+}
+
+.create-recipe__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.create-recipe__secondary-btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1.5px solid var(--semantic-border-default, rgba(255, 255, 255, 0.2));
+  background: transparent;
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-md);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.create-recipe__secondary-btn:active {
+  opacity: 0.85;
+}
+
+.create-recipe__session-recipes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.create-recipe__section-title {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* —— Session overview (Phase 3) —— */
+.session-overview__subline {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-recipe-value);
+}
+
+.session-overview__stages {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 8px 0 12px;
+  scrollbar-width: none;
+}
+
+.session-overview__stages::-webkit-scrollbar {
+  display: none;
+}
+
+.session-overview__stage-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--semantic-text-muted, #8888a8);
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 7px 11px 7px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.session-overview__stage-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--semantic-text-dimmed, #686878);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.session-overview__stage-label {
+  line-height: 1.2;
+}
+
+/* Visited earlier — quieter than current, clearer than untouched. */
+.session-overview__stage-btn--touched {
+  color: var(--semantic-text-secondary, #b0b0c8);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.session-overview__stage-btn--touched .session-overview__stage-index {
+  color: var(--semantic-text-secondary, #b0b0c8);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.session-overview__stage-btn--active {
+  color: var(--semantic-text-primary, #f2f2f8);
+  border-color: var(--semantic-border-strong, rgba(255, 255, 255, 0.28));
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.session-overview__stage-btn--active .session-overview__stage-index {
+  color: var(--semantic-surface-app, #12121a);
+  background: var(--ui-recipe-value, #c4c4dc);
+  border-color: transparent;
+}
+
+/** Soft preview of stages included in the current share scope. */
+.session-overview__stage-btn--in-share:not(.session-overview__stage-btn--active) {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--session-accent) 45%, transparent);
+}
+
+.session-overview__stage-btn--in-share:not(.session-overview__stage-btn--active)
+  .session-overview__stage-index {
+  border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
+  color: var(--session-accent);
+}
+
+.session-overview__mix-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.session-overview__create-recipe {
+  margin-top: 4px;
+}
+
+.session-overview__placeholder,
+.session-overview__placeholder-pad,
+.session-overview__stage-intro {
+  padding: 8px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-overview__placeholder h2,
+.session-overview__placeholder-pad h2,
+.session-overview__stage-intro h2 {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-md, 1rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.session-overview__placeholder p,
+.session-overview__placeholder-pad p,
+.session-overview__stage-intro p,
+.session-overview__stage-note {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm);
+  line-height: 1.4;
+}
+
+.session-overview__stage-note {
+  margin-top: 8px;
+}
+
+.session-overview__summary-mixes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-overview__summary-mix-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, var(--session-accent) 8%, transparent);
+}
+
+.session-overview__summary-mix-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.session-overview__summary-mix-name {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--semantic-text-primary);
+}
+
+.session-overview__summary-mix-meta {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+.session-overview__summary-mix-total {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.session-share-scope {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.session-share-scope__segment {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  border: var(--semantic-border-default);
+  background: var(--semantic-surface-input);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.session-share-scope__btn {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--semantic-text-muted);
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.session-share-scope__btn[data-active] {
+  background: color-mix(in srgb, var(--session-accent) 22%, transparent);
+  color: var(--session-accent);
+}
+
+.session-share-scope__helper {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  color: var(--semantic-text-muted);
+  padding: 0 2px;
+}
+
+.session-mix-card__title-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  min-width: 0;
+}
+
+/* Pick recipe for session mix — session accent chrome (matches header / nav). */
+.session-pick-recipe {
+  position: relative;
+}
+
+.session-pick-recipe::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--session-accent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.session-pick-recipe__header {
+  gap: 6px;
+}
+
+.session-pick-recipe__chip {
+  margin-bottom: 2px;
+}
+
+.session-pick-recipe__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 12px;
+}
+
+.session-pick-recipe__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-pick-recipe__section-title {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+}
+
+.session-pick-recipe__section-title--session {
+  color: var(--session-accent);
+}
+
+.session-pick-recipe__row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  border-left: 3px solid transparent;
+  transition:
+    background-color 0.18s ease,
+    border-left-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.session-pick-recipe .session-pick-recipe__row--session {
+  border-left: 3px solid var(--session-accent);
+  background: color-mix(
+    in srgb,
+    var(--session-accent) 12%,
+    var(--component-sheet-panel-list-row-bg, transparent)
+  );
+}
+
+.session-pick-recipe .session-pick-recipe__row--session .session-pick-recipe__row-title {
+  color: var(--session-accent);
+}
+
+.session-pick-recipe .session-pick-recipe__row--session:active {
+  background: color-mix(
+    in srgb,
+    var(--session-accent) 22%,
+    var(--component-sheet-panel-list-row-bg, transparent)
+  );
 }
 

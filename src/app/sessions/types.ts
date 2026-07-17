@@ -1,0 +1,60 @@
+import type { BlendingRecipe } from "../domain/recipe/types";
+import type { MixSlotValues } from "../saved-batch-totals/types";
+
+/** Session workflow stages — Mixes interactive; Tools/Consumables/Summary later. */
+export type SessionStageId =
+  | "mixes"
+  | "consumption-tools"
+  | "consumables"
+  | "summary";
+
+export const SESSION_STAGE_ORDER: SessionStageId[] = [
+  "mixes",
+  "consumption-tools",
+  "consumables",
+  "summary",
+];
+
+export const SESSION_STAGE_LABELS: Record<SessionStageId, string> = {
+  mixes: "Mixes",
+  "consumption-tools": "Tools",
+  consumables: "Consumables",
+  summary: "Summary",
+};
+
+/**
+ * One calculated mix in a session — unique item (no extras merge).
+ * Phase 3 fills calculator fields; Phase 1 keeps the shape ready.
+ */
+export type SessionBatchItem = {
+  id: string;
+  name: string;
+  recipeId: string;
+  recipeName: string;
+  /** Optional session-only recipe snapshot (not in library). */
+  recipe?: BlendingRecipe;
+  values: MixSlotValues;
+  multiplier: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** Project container — multiple unique batch items + future stages. */
+export type MixSession = {
+  id: string;
+  name: string;
+  /** Silent draft vs user-confirmed save from session dock. */
+  status: "draft" | "saved";
+  activeStage: SessionStageId;
+  /** Stages the user has opened at least once (progress indicator). */
+  touchedStages: SessionStageId[];
+  batches: SessionBatchItem[];
+  /** Recipes saved only into this session (not Recipe Library). */
+  sessionRecipes: BlendingRecipe[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateSessionInput = {
+  name?: string;
+};

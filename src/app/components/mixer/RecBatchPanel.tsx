@@ -57,6 +57,17 @@ export interface RecBatchPanelProps {
   saveFlash?: boolean;
   loadedSavedMix?: SavedMixSnapshot | null;
   canLoad?: boolean;
+  /** Override Save mix label (e.g. session commit). */
+  saveLabelOverride?: string;
+  saveConfirmAction?: string;
+  /** Optional hold hint under the primary action (stacked only when provided elsewhere). */
+  saveDescription?: string;
+  /** Use check icon instead of save (session commit). */
+  useCommitIcon?: boolean;
+  /** Session Mode — teal fill on commit button. */
+  sessionTone?: boolean;
+  /** Hide Load mix (session nested calculator). */
+  hideLoad?: boolean;
   isLocked?: boolean;
   panelZIndex?: number;
   disabled?: boolean;
@@ -82,6 +93,11 @@ export function RecBatchPanel({
   saveFlash = false,
   loadedSavedMix = null,
   canLoad = false,
+  saveLabelOverride,
+  saveConfirmAction,
+  useCommitIcon = false,
+  sessionTone = false,
+  hideLoad = false,
   isLocked = false,
   panelZIndex,
   disabled = false,
@@ -93,8 +109,14 @@ export function RecBatchPanel({
   recReadoutRef,
 }: RecBatchPanelProps) {
   const [infoOpen, setInfoOpen] = useState(false);
-  const saveLabel = saveFlash ? "Saved" : loadedSavedMix ? "Update mix" : "Save mix";
-  const saveIcon = saveFlash ? <SavedIcon /> : <SaveIcon />;
+  const saveLabel = saveFlash
+    ? saveLabelOverride
+      ? "Added"
+      : "Saved"
+    : saveLabelOverride ?? (loadedSavedMix ? "Update mix" : "Save mix");
+  const saveConfirm = saveConfirmAction ?? "SAVE MIX";
+  const saveIcon =
+    saveFlash || useCommitIcon ? <SavedIcon /> : <SaveIcon />;
 
   return (
     <>
@@ -221,20 +243,23 @@ export function RecBatchPanel({
           <LongPressButton
             ref={saveButtonRef}
             label={saveLabel}
-            confirmAction="SAVE MIX"
+            confirmAction={saveConfirm}
             onLongPress={onSave}
             variant="primary"
+            sessionTone={sessionTone}
             icon={saveIcon}
             className="flex-1 h-full min-w-0"
           />
-          <LongPressButton
-            label="Load mix"
-            confirmAction="LOAD MIX"
-            onLongPress={onLoad}
-            disabled={!canLoad || disabled}
-            icon={<LoadIcon />}
-            className="flex-1 h-full min-w-0"
-          />
+          {hideLoad ? null : (
+            <LongPressButton
+              label="Load mix"
+              confirmAction="LOAD MIX"
+              onLongPress={onLoad}
+              disabled={!canLoad || disabled}
+              icon={<LoadIcon />}
+              className="flex-1 h-full min-w-0"
+            />
+          )}
         </div>
       </div>
 

@@ -129,6 +129,18 @@
   color: var(--component-header-icon-btn-color-active);
 }
 
+/** Session Mode long-press — same accent as header bar / nav rail. */
+.header-icon-btn--session,
+.header-icon-btn--session.header-icon-btn--beam-holding {
+  background: var(--session-accent);
+  border: 1px solid color-mix(in srgb, var(--session-accent) 55%, transparent);
+  color: var(--session-btn-fg, #0a0a14);
+}
+
+.header-icon-btn--session.header-icon-btn--beam-holding {
+  background: var(--session-btn-bg-hold, color-mix(in srgb, var(--session-accent) 72%, #000));
+}
+
 /* ── Text / icon buttons (no fill, no border) ───────────────────────────── */
 
 .text-btn {

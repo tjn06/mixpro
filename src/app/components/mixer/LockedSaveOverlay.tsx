@@ -28,6 +28,13 @@ export interface LockedSaveOverlayProps {
   onSave: () => void;
   saveFlash?: boolean;
   loadedSavedMix?: { id: string } | null;
+  /** Session Mode — commit copy instead of library save. */
+  saveLabelOverride?: string;
+  saveConfirmAction?: string;
+  saveDescriptionOverride?: string;
+  useCommitIcon?: boolean;
+  /** Session Mode — teal fill on commit button. */
+  sessionTone?: boolean;
   expandMs: number;
   expandEase: string;
   zIndex: number;
@@ -51,6 +58,11 @@ export function LockedSaveOverlay({
   onSave,
   saveFlash = false,
   loadedSavedMix = null,
+  saveLabelOverride,
+  saveConfirmAction,
+  saveDescriptionOverride,
+  useCommitIcon = false,
+  sessionTone = false,
   expandMs,
   expandEase,
   zIndex,
@@ -172,16 +184,28 @@ export function LockedSaveOverlay({
     border: overlay.expanded ? PRIMARY_BORDER : "1.5px solid transparent",
   };
 
-  const saveLabel = saveFlash ? "Saved" : loadedSavedMix ? "Update mix" : "Save mix";
+  const saveLabel = saveFlash
+    ? saveLabelOverride
+      ? "Added"
+      : "Saved"
+    : saveLabelOverride ?? (loadedSavedMix ? "Update mix" : "Save mix");
   const saveDescription = saveFlash
-    ? "Stored in your mixes"
-    : loadedSavedMix
-      ? "Hold to update this saved mix"
-      : "Hold to name and store";
-  const saveIcon = saveFlash
-    ? <SavedIcon size={LOCKED_ACTION_ICON_SIZE} />
-    : <SaveIcon size={LOCKED_ACTION_ICON_SIZE} />;
-  const compactIcon = saveFlash ? <SavedIcon /> : <SaveIcon />;
+    ? saveLabelOverride
+      ? "Mix is in this session"
+      : "Stored in your mixes"
+    : saveDescriptionOverride ??
+      (loadedSavedMix
+        ? "Hold to update this saved mix"
+        : "Hold to name and store");
+  const confirmAction = saveConfirmAction ?? "SAVE MIX";
+  const saveIcon =
+    saveFlash || useCommitIcon ? (
+      <SavedIcon size={LOCKED_ACTION_ICON_SIZE} />
+    ) : (
+      <SaveIcon size={LOCKED_ACTION_ICON_SIZE} />
+    );
+  const compactIcon =
+    saveFlash || useCommitIcon ? <SavedIcon /> : <SaveIcon />;
   const expanded = overlay.expanded;
 
   return (
@@ -190,9 +214,10 @@ export function LockedSaveOverlay({
         <LongPressButton
           label={saveLabel}
           description={saveDescription}
-          confirmAction="SAVE MIX"
+          confirmAction={confirmAction}
           onLongPress={onSave}
           variant="primary"
+          sessionTone={sessionTone}
           progressVariant="water"
           stacked
           labelSize="var(--text-ui-sm)"
@@ -204,9 +229,10 @@ export function LockedSaveOverlay({
       <div style={crossfadeLayerStyles(expanded, expandEase, false)}>
         <LongPressButton
           label={saveLabel}
-          confirmAction="SAVE MIX"
+          confirmAction={confirmAction}
           onLongPress={onSave}
           variant="primary"
+          sessionTone={sessionTone}
           progressVariant="water"
           icon={compactIcon}
           className="w-full h-full"

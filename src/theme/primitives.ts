@@ -63,6 +63,8 @@ export const primitiveSemantic = {
   error: "#d86474",
   errorMuted: "#9a5060",
   accent: "#9b8cff",
+  /** Session Mode chrome — header bar + nav active rail (shared). */
+  session: "#2dd4bf",
 } as const;
 
 export const primitiveSemanticLight = {
@@ -70,6 +72,7 @@ export const primitiveSemanticLight = {
   error: "#b83848",
   errorMuted: "#8a4858",
   accent: "#5c48c8",
+  session: "#0f766e",
 } as const;
 
 /** White overlay on dark surfaces — outdoor-readable alphas start ~16%. */

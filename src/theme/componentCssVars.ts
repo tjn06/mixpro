@@ -1,5 +1,6 @@
 import { batchTotalsCssVarNames } from "./batchTotalsCssVars";
 import { componentTokens } from "./components";
+import { primitiveInk } from "./primitives";
 import { semanticBorders, semanticColors, semanticSurfaces } from "./semantic";
 
 /** CSS custom property names for component tokens (injected on :root). */
@@ -15,6 +16,10 @@ export const componentCssVarNames = {
   stateError: "--semantic-state-error",
   stateErrorMuted: "--semantic-state-error-muted",
   stateAccent: "--semantic-state-accent",
+  stateSession: "--semantic-state-session",
+  sessionAccent: "--session-accent",
+  sessionBtnFg: "--session-btn-fg",
+  sessionBtnBgHold: "--session-btn-bg-hold",
   selectionBorder: "--semantic-selection-border",
   selectionBg: "--semantic-selection-bg",
   stateDisabled: "--semantic-state-disabled",
@@ -151,6 +156,11 @@ export const cv = {
     color: v(componentCssVarNames.headerIconBtnColor),
     colorActive: v(componentCssVarNames.headerIconBtnColorActive),
   },
+  sessionButton: {
+    background: v(componentCssVarNames.sessionAccent),
+    backgroundHold: v(componentCssVarNames.sessionBtnBgHold),
+    color: v(componentCssVarNames.sessionBtnFg),
+  },
   textButton: {
     background: v(componentCssVarNames.textBtnBg),
     border: v(componentCssVarNames.textBtnBorder),
@@ -266,6 +276,13 @@ export function getExtendedSemanticCssEntries(): [string, string][] {
     [componentCssVarNames.stateError, semanticColors.state.error],
     [componentCssVarNames.stateErrorMuted, semanticColors.state.errorMuted],
     [componentCssVarNames.stateAccent, semanticColors.text.secondary],
+    [componentCssVarNames.stateSession, semanticColors.state.session],
+    [componentCssVarNames.sessionAccent, semanticColors.state.session],
+    [componentCssVarNames.sessionBtnFg, primitiveInk[850]],
+    [
+      componentCssVarNames.sessionBtnBgHold,
+      `color-mix(in srgb, ${semanticColors.state.session} 72%, #000)`,
+    ],
     [componentCssVarNames.selectionBorder, semanticBorders.strong],
     [componentCssVarNames.selectionBg, semanticSurfaces.buttonActive],
     [componentCssVarNames.stateDisabled, semanticColors.state.disabled],

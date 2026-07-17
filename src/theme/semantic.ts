@@ -24,6 +24,8 @@ export const semanticColors = {
     error: primitiveSemantic.error,
     errorMuted: primitiveSemantic.errorMuted,
     accent: primitiveSemantic.accent,
+    /** Session Mode accent — keep in sync with --session-accent. */
+    session: primitiveSemantic.session,
     disabled: primitiveText[10],
   },
   surface: {
