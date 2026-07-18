@@ -1,8 +1,8 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
-  type CSSProperties,
 } from "react";
 import { CirclePlay, Search } from "lucide-react";
 import { useTickingNow } from "../../hooks/useTickingNow";
@@ -11,202 +11,67 @@ import { useSessionsStore } from "../../sessions/store";
 import {
   SESSION_STAGE_CARD_LABELS,
   isSessionStageComplete,
+  sessionCardTitle,
   sessionStageAmountLabel,
 } from "../../domain/sessions/stages";
 import type { MixSession } from "../../sessions/types";
 import { SESSION_STAGE_ORDER } from "../../sessions/types";
 import { cv } from "../../ui/tokens";
 import {
-  CollapseActionsIcon,
   DeleteIcon,
-  ExpandActionsIcon,
+  MoreIcon,
   RenameIcon,
 } from "../shared/ActionIcons";
 import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
 import { SaveSessionNameSheet } from "../sessions/SaveSessionNameSheet";
 import { DestinationPageChrome } from "./DestinationPageChrome";
 
-const strip = cv.loadSheetStrip;
-const STRIP_PANEL_BG = strip.panelBackground;
-const STRIP_DIVIDER = strip.divider;
-const ACTION_ICON = 16;
-const SWIPE_PANEL_CLOSED_W = 52;
-const SWIPE_PANEL_OPEN_W = 104;
-
-const stripCellBase: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  minHeight: 0,
-  minWidth: 0,
-  borderRadius: 0,
-  border: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
+const MORE_ICON = 18;
+const PLAY_ICON = 24;
 
 function SessionStageSteps({ session }: { session: MixSession }) {
   return (
-    <div className="sessions-page__flow" aria-label="Session stages">
-      <ol className="sessions-page__steps">
-        {SESSION_STAGE_ORDER.map((stageId, index) => {
-          const done = isSessionStageComplete(session, stageId);
-          const nextId = SESSION_STAGE_ORDER[index + 1];
-          const nextDone =
-            nextId != null && isSessionStageComplete(session, nextId);
-          const step = index + 1;
-          const label = SESSION_STAGE_CARD_LABELS[stageId];
-          const isLast = index === SESSION_STAGE_ORDER.length - 1;
-          return (
-            <li
-              key={stageId}
-              className={`sessions-page__step${done ? " sessions-page__step--done" : ""}${
-                !isLast && done && nextDone ? " sessions-page__step--link-done" : ""
+    <ol className="sessions-page__stages" aria-label="Session stages">
+      {SESSION_STAGE_ORDER.map((stageId, index) => {
+        const done = isSessionStageComplete(session, stageId);
+        const active = session.activeStage === stageId && !done;
+        const label = SESSION_STAGE_CARD_LABELS[stageId];
+        const amount = sessionStageAmountLabel(session, stageId);
+        const isLast = index === SESSION_STAGE_ORDER.length - 1;
+        const stateClass = done
+          ? " sessions-page__stage--done"
+          : active
+            ? " sessions-page__stage--active"
+            : "";
+        return (
+          <li
+            key={stageId}
+            className={`sessions-page__stage${stateClass}${
+              !isLast && done ? " sessions-page__stage--link-ahead" : ""
+            }`}
+            aria-label={
+              done
+                ? `${label}, ${amount}, complete`
+                : active
+                  ? `${label}, ${amount}, current step`
+                  : `${label}, ${amount}`
+            }
+          >
+            <span className="sessions-page__stage-name">{label}</span>
+            <span
+              className={`sessions-page__stage-amount${
+                stageId === "summary" ? " sessions-page__stage-amount--status" : ""
               }`}
             >
-              <span
-                className="sessions-page__step-chip"
-                aria-label={done ? `${label}, complete` : `${label}, step ${step}`}
-              >
-                <span className="sessions-page__step-chip-text">
-                  {step}.{label}
-                </span>
-              </span>
-              {!isLast ? <span className="sessions-page__step-h-line" aria-hidden /> : null}
-            </li>
-          );
-        })}
-      </ol>
-      <ul className="sessions-page__amounts" aria-label="Stage amounts">
-        {SESSION_STAGE_ORDER.map((stageId, index) => {
-          const amount = sessionStageAmountLabel(session, stageId);
-          const done = isSessionStageComplete(session, stageId);
-          const nextId = SESSION_STAGE_ORDER[index + 1];
-          const nextDone =
-            nextId != null && isSessionStageComplete(session, nextId);
-          const isLast = index === SESSION_STAGE_ORDER.length - 1;
-          return (
-            <li
-              key={stageId}
-              className={`sessions-page__amount${done ? " sessions-page__amount--done" : ""}${
-                !isLast && done && nextDone ? " sessions-page__amount--link-done" : ""
-              }`}
-            >
-              <span className="sessions-page__amount-value">{amount}</span>
-              {!isLast ? (
-                <span className="sessions-page__amount-h-line" aria-hidden />
-              ) : null}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-function SessionSwipeStrip({
-  open,
-  onToggle,
-  onOpen,
-  onRename,
-  onDelete,
-}: {
-  open: boolean;
-  onToggle: () => void;
-  onOpen: () => void;
-  onRename: () => void;
-  onDelete: () => void;
-}) {
-  const cellR1C1: CSSProperties = {
-    ...stripCellBase,
-    borderRight: STRIP_DIVIDER,
-    borderBottom: STRIP_DIVIDER,
-    color: open ? strip.renameColor : strip.mutedColor,
-    background: open ? strip.moreOpen : strip.neutral,
-  };
-  const cellR1C2: CSSProperties = {
-    ...stripCellBase,
-    borderRight: "none",
-    borderBottom: STRIP_DIVIDER,
-    background: strip.delete,
-    color: strip.deleteColor,
-  };
-  const cellR2C1: CSSProperties = {
-    ...stripCellBase,
-    borderRight: open ? STRIP_DIVIDER : "none",
-    borderBottom: "none",
-    background: strip.open,
-    color: "var(--session-accent)",
-  };
-  const cellR2C2: CSSProperties = {
-    ...stripCellBase,
-    background: strip.rename,
-    color: strip.renameColor,
-  };
-
-  return (
-    <div
-      role="group"
-      aria-label="Session actions"
-      className={`saved-mix-swipe-panel absolute inset-y-0 right-0 min-h-0 ${
-        open ? "saved-mix-swipe-panel--open" : "saved-mix-swipe-panel--closed"
-      }`}
-      style={{
-        width: open ? SWIPE_PANEL_OPEN_W : SWIPE_PANEL_CLOSED_W,
-        borderLeft: STRIP_DIVIDER,
-        background: STRIP_PANEL_BG,
-        zIndex: 2,
-      }}
-    >
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-label={open ? "Close actions" : "More actions"}
-        className="saved-mix-swipe-cell saved-mix-swipe-cell--r1c1 transition-colors duration-150"
-        style={cellR1C1}
-        onClick={onToggle}
-      >
-        {open ? (
-          <CollapseActionsIcon size={ACTION_ICON} />
-        ) : (
-          <ExpandActionsIcon size={ACTION_ICON} />
-        )}
-      </button>
-
-      {open ? (
-        <button
-          type="button"
-          aria-label="Delete"
-          className="saved-mix-swipe-cell saved-mix-swipe-cell--r1c2 h-full w-full shrink-0 rounded-none transition-colors duration-150"
-          style={cellR1C2}
-          onClick={onDelete}
-        >
-          <DeleteIcon size={ACTION_ICON} />
-        </button>
-      ) : null}
-
-      <button
-        type="button"
-        aria-label="Open"
-        className="saved-mix-swipe-cell saved-mix-swipe-cell--r2c1 h-full w-full shrink-0 rounded-none transition-colors duration-150"
-        style={cellR2C1}
-        onClick={onOpen}
-      >
-        <CirclePlay size={ACTION_ICON} strokeWidth={2} aria-hidden />
-      </button>
-
-      {open ? (
-        <button
-          type="button"
-          aria-label="Rename"
-          className="saved-mix-swipe-cell saved-mix-swipe-cell--r2c2 transition-colors duration-150"
-          style={cellR2C2}
-          onClick={onRename}
-        >
-          <RenameIcon size={ACTION_ICON} />
-        </button>
-      ) : null}
-    </div>
+              {amount}
+            </span>
+            {!isLast ? (
+              <span className="sessions-page__stage-connector" aria-hidden />
+            ) : null}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -230,42 +95,97 @@ function SessionCard({
   onRename: () => void;
 }) {
   const savedTime = getHumanSavedTime(new Date(session.updatedAt), now);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!moreMenuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        onMoreMenuOpenChange(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [moreMenuOpen, onMoreMenuOpenChange]);
 
   return (
     <article
-      className={`${SHEET_LIST_ROW_CLASS} sessions-page__card rounded-2xl min-w-0 overflow-hidden relative${
+      className={`${SHEET_LIST_ROW_CLASS} sessions-page__card w-full min-w-0 overflow-visible relative${
         active ? " sessions-page__card--active" : ""
       }`}
     >
-      <div className="sessions-page__card-grid min-w-0">
+      <div className="sessions-page__card-grid w-full min-w-0">
         <div className="sessions-page__card-head min-w-0">
-          <p className="sessions-page__card-title truncate min-w-0">{session.name}</p>
-          <p className="sessions-page__card-time shrink-0 tabular-nums">
-            {savedTime.comment ? (
-              <>
-                <span>{savedTime.comment}</span>
-                <span aria-hidden> · </span>
-              </>
+          <div className="sessions-page__card-meta min-w-0">
+            <p className="sessions-page__card-title truncate min-w-0">
+              {sessionCardTitle(session)}
+            </p>
+            <p className="sessions-page__card-time tabular-nums">
+              {savedTime.comment ? (
+                <>
+                  <span>{savedTime.comment}</span>
+                  <span aria-hidden> · </span>
+                </>
+              ) : null}
+              <span className="sessions-page__card-timestamp">
+                {savedTime.timestamp}
+              </span>
+            </p>
+          </div>
+
+          <div className="sessions-page__card-actions" ref={menuRef}>
+            <button
+              type="button"
+              className={`sessions-page__card-action${
+                moreMenuOpen ? " sessions-page__card-action--active" : ""
+              }`}
+              aria-label={moreMenuOpen ? "Close actions" : "More actions"}
+              aria-expanded={moreMenuOpen}
+              aria-haspopup="menu"
+              onClick={() => onMoreMenuOpenChange(!moreMenuOpen)}
+            >
+              <MoreIcon size={MORE_ICON} />
+            </button>
+            <button
+              type="button"
+              className="sessions-page__card-action sessions-page__card-action--play"
+              aria-label="Open session"
+              onClick={onOpen}
+            >
+              <CirclePlay size={PLAY_ICON} strokeWidth={2} aria-hidden />
+            </button>
+            {moreMenuOpen ? (
+              <div className="sessions-page__card-menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="sessions-page__card-menu-item"
+                  onClick={() => {
+                    onRename();
+                    onMoreMenuOpenChange(false);
+                  }}
+                >
+                  <RenameIcon size={16} />
+                  <span>Rename</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="sessions-page__card-menu-item sessions-page__card-menu-item--danger"
+                  onClick={() => {
+                    onDelete();
+                    onMoreMenuOpenChange(false);
+                  }}
+                >
+                  <DeleteIcon size={16} />
+                  <span>Delete</span>
+                </button>
+              </div>
             ) : null}
-            <span className="sessions-page__card-timestamp">{savedTime.timestamp}</span>
-          </p>
+          </div>
         </div>
         <SessionStageSteps session={session} />
       </div>
-
-      <SessionSwipeStrip
-        open={moreMenuOpen}
-        onToggle={() => onMoreMenuOpenChange(!moreMenuOpen)}
-        onOpen={onOpen}
-        onRename={() => {
-          onRename();
-          onMoreMenuOpenChange(false);
-        }}
-        onDelete={() => {
-          onDelete();
-          onMoreMenuOpenChange(false);
-        }}
-      />
     </article>
   );
 }
@@ -348,7 +268,7 @@ export function SessionsPage({
       ) : (
         <ul className="sessions-page__list">
           {filtered.map((session) => (
-            <li key={session.id}>
+            <li key={session.id} className="sessions-page__list-item">
               <SessionCard
                 session={session}
                 active={session.id === activeSessionId}

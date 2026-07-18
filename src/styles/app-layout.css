@@ -2071,62 +2071,98 @@
   color: var(--semantic-text-muted);
 }
 
+/**
+ * Break out of `.app-gutter-x` so session cards span the full app-frame width
+ * (New session / search stay inset).
+ */
 .sessions-page__list {
+  --sessions-gutter-x: max(var(--space-4, 16px), var(--safe-left), var(--safe-right));
   list-style: none;
   margin: 0;
+  margin-inline: calc(-1 * var(--sessions-gutter-x));
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: stretch;
+  gap: 0;
+  width: calc(100% + 2 * var(--sessions-gutter-x));
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-/** Saved-mix row layout: title | value, detail, timestamp + expandable action strip. */
-.sessions-page__card {
+.sessions-page__list-item {
   position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+/** One divider line between every card (token is a full border shorthand). */
+.sessions-page__list-item + .sessions-page__list-item {
+  border-top: var(--semantic-border-subtle);
+}
+
+/** Session list card: title/time + play/more in header, stages below. */
+.sessions-page__list .sessions-page__card.sheet-list-row {
+  position: relative;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 0;
+  z-index: 1;
 }
 
 .sessions-page__card--active {
-  border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
   box-shadow: inset 3px 0 0 var(--session-accent);
 }
 
 .sessions-page__card-grid {
+  --sessions-stage-gap: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   min-width: 0;
   margin: 0;
-  padding: 12px 70px 12px 14px;
+  padding: 10px var(--sessions-gutter-x);
   box-sizing: border-box;
 }
 
 .sessions-page__card-head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
   min-width: 0;
 }
 
+.sessions-page__card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .sessions-page__card-title {
   font-family: var(--font-ui, "Outfit", sans-serif);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  line-height: 1.35;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
   color: var(--semantic-text-primary);
   min-width: 0;
+  max-width: 100%;
 }
 
 .sessions-page__card-time {
   font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: var(--text-ui-xs);
   font-weight: 500;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   line-height: 1.25;
   color: var(--semantic-text-muted);
-  text-align: right;
   white-space: nowrap;
 }
 
@@ -2135,115 +2171,185 @@
   font-variant-numeric: tabular-nums;
 }
 
-.sessions-page__flow {
+.sessions-page__card-actions {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  min-width: 0;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
-.sessions-page__steps {
+.sessions-page__card-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--session-accent);
+  cursor: pointer;
+}
+
+.sessions-page__card-action--play {
+  width: 40px;
+  height: 40px;
+}
+
+.sessions-page__card-action:active {
+  background: color-mix(in srgb, var(--session-accent) 14%, transparent);
+}
+
+.sessions-page__card-action--active {
+  background: color-mix(in srgb, var(--session-accent) 14%, transparent);
+}
+
+.sessions-page__card-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 5;
+  min-width: 148px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--semantic-border-subtle);
+  background: var(--semantic-surface-elevated, #1a1a1a);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sessions-page__card-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--semantic-text-primary);
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sessions-page__card-menu-item:active {
+  background: color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
+}
+
+.sessions-page__card-menu-item--danger {
+  color: var(--semantic-danger, #f07178);
+}
+
+/**
+ * Four stage tiles:
+ * badge+name / amount · connectors span the grid gap (no tile overflow clip).
+ */
+.sessions-page__stages {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: center;
+  column-gap: var(--sessions-stage-gap);
   width: 100%;
   min-width: 0;
+  overflow: visible;
 }
 
-.sessions-page__step {
+.sessions-page__stage {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1px;
   min-width: 0;
-  padding: 0 2px;
-}
-
-.sessions-page__step-chip {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  max-width: 100%;
-  min-height: 22px;
-  padding: 3px 5px;
+  min-height: 0;
+  padding: 4px 2px;
   box-sizing: border-box;
-  border-radius: 999px;
-  border: 1px solid transparent;
+  border: 1.5px solid
+    color-mix(in srgb, var(--semantic-text-muted) 45%, transparent);
+  border-radius: 12px;
   background: transparent;
   color: var(--semantic-text-muted);
+  text-align: center;
+  overflow: visible;
 }
 
-.sessions-page__step--done .sessions-page__step-chip {
-  border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
-  background: color-mix(in srgb, var(--session-accent) 12%, transparent);
+.sessions-page__stage--active {
+  border-color: var(--session-accent);
+  box-shadow: inset 0 0 0 1px var(--session-accent);
+  color: var(--semantic-text-secondary);
+}
+
+.sessions-page__stage--done {
+  border-color: var(--session-accent);
+  background: transparent;
   color: var(--session-accent);
 }
 
-.sessions-page__step-chip-text {
+.sessions-page__stage-name {
   font-family: var(--font-ui, "Outfit", sans-serif);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.sessions-page__stage-amount {
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--semantic-text-primary);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
 }
 
-/** Horizontal connector between chips. */
-.sessions-page__step-h-line {
+.sessions-page__stage--done .sessions-page__stage-amount {
+  color: var(--semantic-text-primary);
+}
+
+.sessions-page__stage-amount--status {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/** Bridge line — vertically centered, spans the column-gap between tiles. */
+.sessions-page__stage-connector {
   position: absolute;
   top: 50%;
-  left: 50%;
-  right: -50%;
-  height: 1px;
+  left: 100%;
+  width: var(--sessions-stage-gap);
+  height: 0;
+  border-top: 2px solid
+    color-mix(in srgb, var(--semantic-text-muted) 55%, transparent);
   transform: translateY(-50%);
-  background: var(--semantic-border-subtle);
-  z-index: 0;
   pointer-events: none;
+  z-index: 2;
 }
 
-.sessions-page__step--link-done .sessions-page__step-h-line {
-  background: color-mix(in srgb, var(--session-accent) 55%, transparent);
-}
-
-.sessions-page__amounts {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  width: 100%;
-  min-width: 0;
-}
-
-.sessions-page__amount {
-  min-height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-ui, "Outfit", sans-serif);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  line-height: 1.2;
-  color: var(--semantic-text-secondary);
-  font-variant-numeric: tabular-nums;
-}
-
-.sessions-page__amount-empty {
-  display: block;
-  width: 10px;
-  height: 1px;
-  background: var(--semantic-border-subtle);
-  opacity: 0.7;
+.sessions-page__stage--link-ahead .sessions-page__stage-connector {
+  border-top-color: var(--session-accent);
 }
 
 /* ── Create Recipe (Phase 2) ────────────────────────────────────────────── */

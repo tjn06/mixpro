@@ -1,11 +1,9 @@
-import { formatMixAmount } from "../mix/entities";
 import { flexSelectSelectionTotal } from "../select/selection";
 import {
   SESSION_STAGE_ORDER,
   type MixSession,
   type SessionStageId,
 } from "../../sessions/types";
-import { sessionGrandTotalGrams } from "./totals";
 
 /** Index in `SESSION_STAGE_ORDER`, or -1 if unknown. */
 export function sessionStageIndex(stage: SessionStageId): number {
@@ -39,13 +37,24 @@ export function nextSessionStage(
   return SESSION_STAGE_ORDER[idx + 1] ?? null;
 }
 
-/** Compact labels for dense session list cards and the overview stage strip. */
+/** Compact stage labels for session list cards and overview stage strip. */
 export const SESSION_STAGE_CARD_LABELS: Record<SessionStageId, string> = {
   mixes: "Mixes",
   "consumption-tools": "Tools",
   consumables: "Cons.",
-  summary: "Summary",
+  summary: "Sum.",
 };
+
+const DEFAULT_SESSION_NAME = "Untitled session";
+
+/** Card title — avoid showing the placeholder untitled name for now. */
+export function sessionCardTitle(session: MixSession): string {
+  const name = session.name.trim();
+  if (!name || name === DEFAULT_SESSION_NAME) {
+    return session.status === "saved" ? "Saved session" : "Draft session";
+  }
+  return name;
+}
 
 /**
  * Count of items recorded in a stage.
@@ -87,16 +96,14 @@ export function isSessionStageComplete(
   }
 }
 
-/** List-card amount cell: item count, "-", or session total (kg) under Summary. */
+/** List-card amount: item count, em dash, or Saved / Draft under Summary. */
 export function sessionStageAmountLabel(
   session: MixSession,
   stage: SessionStageId,
 ): string {
   if (stage === "summary") {
-    const totalGrams = sessionGrandTotalGrams(session.batches);
-    if (totalGrams <= 0) return "-";
-    return `${formatMixAmount(totalGrams, true)} kg`;
+    return session.status === "saved" ? "Saved" : "Draft";
   }
   const count = sessionStageItemCount(session, stage) ?? 0;
-  return count > 0 ? String(count) : "-";
+  return count > 0 ? String(count) : "—";
 }
