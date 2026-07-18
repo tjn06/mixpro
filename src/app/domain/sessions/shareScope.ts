@@ -5,6 +5,7 @@ import {
 } from "../../sessions/types";
 import type { MixSession } from "../../sessions/types";
 import type { BatchReportLanguage } from "../batch-totals/report";
+import { flexSelectSelectionTotal } from "../select/selection";
 
 /** What the share payload includes relative to session stages. */
 export type SessionShareScope = "current" | "through" | "all";
@@ -92,7 +93,12 @@ export function sessionShareHasContent(
     if (stage === "mixes" || stage === "summary") {
       return session.batches.length > 0;
     }
-    // Tools / Consumables — no data model yet.
+    if (stage === "consumption-tools") {
+      return flexSelectSelectionTotal(session.selectedToolQtys ?? {}) > 0;
+    }
+    if (stage === "consumables") {
+      return flexSelectSelectionTotal(session.selectedConsumableQtys ?? {}) > 0;
+    }
     return false;
   });
 }

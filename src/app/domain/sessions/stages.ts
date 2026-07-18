@@ -1,4 +1,5 @@
 import { formatMixAmount } from "../mix/entities";
+import { flexSelectSelectionTotal } from "../select/selection";
 import {
   SESSION_STAGE_ORDER,
   type MixSession,
@@ -58,11 +59,9 @@ export function sessionStageItemCount(
     case "mixes":
       return session.batches.length;
     case "consumption-tools":
-      // Tools inventory not modeled yet.
-      return 0;
+      return flexSelectSelectionTotal(session.selectedToolQtys ?? {});
     case "consumables":
-      // Consumables inventory not modeled yet.
-      return 0;
+      return flexSelectSelectionTotal(session.selectedConsumableQtys ?? {});
     case "summary":
       return null;
   }

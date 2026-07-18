@@ -51,6 +51,24 @@ export type MixSession = {
   batches: SessionBatchItem[];
   /** Recipes saved only into this session (not Recipe Library). */
   sessionRecipes: BlendingRecipe[];
+  /**
+   * Selected tools with quantities (id → qty ≥ 1).
+   * Legacy persisted `selectedToolIds` arrays are migrated on load.
+   */
+  selectedToolQtys: Record<string, number>;
+  /** @deprecated Migrated into selectedToolQtys — kept optional for old saves. */
+  selectedToolIds?: string[];
+  /** User-defined simple tools (no dropdown) for this session. */
+  customTools: { id: string; label: string }[];
+  /**
+   * Selected consumables with quantities (id → qty ≥ 1).
+   * Legacy persisted `selectedConsumableIds` arrays are migrated on load.
+   */
+  selectedConsumableQtys: Record<string, number>;
+  /** @deprecated Migrated into selectedConsumableQtys — kept optional for old saves. */
+  selectedConsumableIds?: string[];
+  /** User-defined simple consumables (no dropdown). */
+  customConsumables: { id: string; label: string }[];
   createdAt: string;
   updatedAt: string;
 };

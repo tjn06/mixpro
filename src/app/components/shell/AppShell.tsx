@@ -18,6 +18,8 @@ import { CreateRecipeScreen } from "../recipe/CreateRecipeScreen";
 import { RecipesPage } from "../pages/RecipesPage";
 import { SessionsPage } from "../pages/SessionsPage";
 import { SettingsPage } from "../pages/SettingsPage";
+import { ConsumablesPage } from "../pages/ConsumablesPage";
+import { ToolsPage } from "../pages/ToolsPage";
 import { SessionOverviewScreen } from "../sessions/SessionOverviewScreen";
 
 type ShellView =
@@ -295,6 +297,14 @@ export function AppShell() {
               openCreateRecipe({ source: "library" }, "recipes")
             }
           />
+        ) : null}
+
+        {view.kind === "destination" && view.id === "tools" ? (
+          <ToolsPage embedded onMenuClick={openNav} />
+        ) : null}
+
+        {view.kind === "destination" && view.id === "consumables" ? (
+          <ConsumablesPage embedded onMenuClick={openNav} />
         ) : null}
 
         {settingsOpen ? (

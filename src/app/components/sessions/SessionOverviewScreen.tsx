@@ -44,6 +44,16 @@ import {
   useScrollEdgeFades,
 } from "../sheets/scrollEdgeFades";
 import { cv } from "../../ui/tokens";
+import { useConsumablesLibraryStore } from "../../consumables/libraryStore";
+import { listSelectedConsumableLabelEntries } from "../../domain/consumables/labels";
+import {
+  ensureFlexSelectSelected,
+  flexSelectSelectionTotal,
+} from "../../domain/select/selection";
+import { listSelectedToolLabelEntries } from "../../domain/tools/catalog";
+import { useToolsLibraryStore } from "../../tools/libraryStore";
+import { ConsumablesPicker } from "../consumables/ConsumablesPicker";
+import { ToolsPicker } from "../tools/ToolsPicker";
 import { PickRecipeForMixSheet } from "./PickRecipeForMixSheet";
 import { SaveSessionNameSheet } from "./SaveSessionNameSheet";
 import { SessionBottomPanel } from "./SessionBottomPanel";
@@ -90,9 +100,35 @@ export function SessionOverviewScreen({
 
   const batches = session?.batches ?? [];
   const sessionRecipes = session?.sessionRecipes ?? [];
+  const toolsCatalog = useToolsLibraryStore((s) => s.items);
+  const consumablesCatalog = useConsumablesLibraryStore((s) => s.items);
+  const selectedToolQtys = session?.selectedToolQtys ?? {};
+  const customTools = session?.customTools ?? [];
+  const selectedConsumableQtys = session?.selectedConsumableQtys ?? {};
+  const customConsumables = session?.customConsumables ?? [];
+  const toolCount = flexSelectSelectionTotal(selectedToolQtys);
+  const consumableCount = flexSelectSelectionTotal(selectedConsumableQtys);
   const activeStage = session?.activeStage ?? "mixes";
   const touchedStages = session?.touchedStages ?? ["mixes"];
   const nextStage = nextSessionStage(activeStage);
+  const selectedToolLabels = useMemo(
+    () =>
+      listSelectedToolLabelEntries(
+        selectedToolQtys,
+        toolsCatalog,
+        customTools,
+      ),
+    [selectedToolQtys, toolsCatalog, customTools],
+  );
+  const selectedConsumableLabels = useMemo(
+    () =>
+      listSelectedConsumableLabelEntries(
+        selectedConsumableQtys,
+        consumablesCatalog,
+        customConsumables,
+      ),
+    [selectedConsumableQtys, consumablesCatalog, customConsumables],
+  );
 
   useEffect(() => {
     setShareScope(defaultShareScope(activeStage));
@@ -182,18 +218,84 @@ export function SessionOverviewScreen({
           {SESSION_STAGE_LABELS[activeStage]}
         </h2>
         <p className="batch-totals-entity-summary__subtitle">
-          {activeStage === "mixes" || activeStage === "summary"
-            ? "Combined totals for each ingredient across all mixes."
-            : activeStage === "consumption-tools"
-              ? "Tools for this session — list coming soon."
-              : "Consumables for this session — list coming soon."}
+          {activeStage === "summary"
+            ? "Session package — mixes, tools, consumables, and combined ingredient totals."
+            : activeStage === "mixes"
+              ? "Combined totals for each ingredient across all mixes."
+              : activeStage === "consumption-tools"
+                ? selectedToolLabels.length > 0
+                  ? "Tools selected for this session."
+                  : "No tools selected yet."
+                : selectedConsumableLabels.length > 0
+                  ? "Consumables selected for this session."
+                  : "No consumables selected yet."}
         </p>
         {activeStage === "mixes" || activeStage === "summary" ? (
-          <div className="batch-totals-entity-summary__chips" aria-label="Mix count">
+          <div className="batch-totals-entity-summary__chips" aria-label="Session counts">
             <span className="batch-totals-entity-summary__chip">
               Mixes{" "}
-              <span className="batch-totals-entity-summary__chip-mult">×{batches.length}</span>
+              <span className="batch-totals-entity-summary__chip-mult">
+                ×{batches.length}
+              </span>
             </span>
+            {activeStage === "summary" ? (
+              <>
+                <span className="batch-totals-entity-summary__chip">
+                  Tools{" "}
+                  <span className="batch-totals-entity-summary__chip-mult">
+                    ×{toolCount}
+                  </span>
+                </span>
+                <span className="batch-totals-entity-summary__chip">
+                  Cons.{" "}
+                  <span className="batch-totals-entity-summary__chip-mult">
+                    ×{consumableCount}
+                  </span>
+                </span>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+        {activeStage === "consumption-tools" && selectedToolLabels.length > 0 ? (
+          <div className="batch-totals-entity-summary__chips" aria-label="Selected tools">
+            {selectedToolLabels.map((label) => (
+              <span key={label} className="batch-totals-entity-summary__chip">
+                {label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {activeStage === "consumables" && selectedConsumableLabels.length > 0 ? (
+          <div
+            className="batch-totals-entity-summary__chips"
+            aria-label="Selected consumables"
+          >
+            {selectedConsumableLabels.map((label) => (
+              <span key={label} className="batch-totals-entity-summary__chip">
+                {label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {activeStage === "summary" && selectedToolLabels.length > 0 ? (
+          <div className="batch-totals-entity-summary__chips" aria-label="Selected tools">
+            {selectedToolLabels.map((label) => (
+              <span key={`tool-${label}`} className="batch-totals-entity-summary__chip">
+                {label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {activeStage === "summary" && selectedConsumableLabels.length > 0 ? (
+          <div
+            className="batch-totals-entity-summary__chips"
+            aria-label="Selected consumables"
+          >
+            {selectedConsumableLabels.map((label) => (
+              <span key={`cons-${label}`} className="batch-totals-entity-summary__chip">
+                {label}
+              </span>
+            ))}
           </div>
         ) : null}
       </header>
@@ -275,13 +377,17 @@ export function SessionOverviewScreen({
             })}
           </tbody>
         </table>
-      ) : (
-        <p style={{ color: cv.text.dimmed, margin: 0 }}>
-          {activeStage === "consumption-tools"
-            ? "No tools recorded yet."
-            : "No consumables recorded yet."}
-        </p>
-      )}
+      ) : activeStage === "consumption-tools" ? (
+        selectedToolLabels.length === 0 ? (
+          <p style={{ color: cv.text.dimmed, margin: 0 }}>No tools selected yet.</p>
+        ) : null
+      ) : activeStage === "consumables" ? (
+        selectedConsumableLabels.length === 0 ? (
+          <p style={{ color: cv.text.dimmed, margin: 0 }}>
+            No consumables selected yet.
+          </p>
+        ) : null
+      ) : null}
     </div>
   );
 
@@ -346,6 +452,15 @@ export function SessionOverviewScreen({
     </div>
   );
 
+  const goToStage = (stage: SessionStageId) => {
+    if (canNavigateToSessionStage(stage, activeStage, touchedStages)) {
+      patchSession(session.id, { activeStage: stage });
+    }
+  };
+
+  const summaryStatusLabel =
+    session.status === "saved" ? "Saved" : "Ready to save";
+
   const summaryMain = (
     <div className="scroll-edge-fade-viewport batch-totals-scroll-fade-viewport flex flex-col">
       <ScrollEdgeFadeOverlays fromTop={scrollEdges.fromTop} fromBottom={false} />
@@ -354,70 +469,225 @@ export function SessionOverviewScreen({
           <header className="session-overview__stage-intro">
             <h2 style={{ color: cv.text.primary, margin: 0 }}>Summary</h2>
             <p style={{ color: cv.text.muted, margin: 0 }}>
-              Review mixes, then pull up to share or save the session.
+              Check the job package, then save or share from the dock.
             </p>
           </header>
 
-          {batches.length === 0 ? (
-            <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
-              No mixes to summarize yet.
-            </p>
-          ) : (
-            <ul className="session-overview__summary-mixes">
-              {batches.map((batch) => {
-                const recipe = resolveRecipe(batch.id);
-                const total = sessionGrandTotalGrams([batch]);
-                return (
-                  <li key={batch.id} className="session-overview__summary-mix-row">
-                    <button
-                      type="button"
-                      className="session-overview__summary-mix-btn"
-                      onClick={() => onEditMix(batch.id)}
-                    >
-                      <span className="session-overview__summary-mix-name">
-                        {batch.name}
-                      </span>
-                      <span
-                        className="session-overview__summary-mix-meta"
-                        style={{ color: cv.text.muted }}
-                      >
-                        {batch.recipeName ||
-                          (recipe ? recipeMenuLabel(recipe) : batch.recipeId)}
-                        {" · "}
-                        ×{Math.max(1, batch.multiplier)}
-                      </span>
-                    </button>
-                    <span
-                      className="session-overview__summary-mix-total app-readout tabular-nums"
-                      style={{ color: amountColor }}
-                    >
-                      {formatMixAmount(total, true)} kg
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+          <div
+            className="session-overview__summary-snapshot"
+            aria-label="Session snapshot"
+          >
+            <div className="session-overview__summary-snapshot-hero">
+              <span
+                className="session-overview__summary-snapshot-total app-readout tabular-nums"
+                style={{ color: amountColor }}
+              >
+                {grandTotal > 0 ? `${formatMixAmount(grandTotal, true)} kg` : "—"}
+              </span>
+              <span
+                className="session-overview__summary-snapshot-status"
+                data-saved={session.status === "saved" ? "" : undefined}
+              >
+                {summaryStatusLabel}
+              </span>
+            </div>
+            <div className="session-overview__summary-snapshot-facts">
+              <span>
+                <strong>{batches.length}</strong>{" "}
+                {batches.length === 1 ? "mix" : "mixes"}
+              </span>
+              <span aria-hidden>·</span>
+              <span>
+                <strong>{toolCount}</strong>{" "}
+                {toolCount === 1 ? "tool" : "tools"}
+              </span>
+              <span aria-hidden>·</span>
+              <span>
+                <strong>{consumableCount}</strong>{" "}
+                {consumableCount === 1 ? "consumable" : "consumables"}
+              </span>
+            </div>
+          </div>
 
-          <p className="session-overview__stage-note" style={{ color: cv.text.dimmed }}>
-            Tools and consumables will appear here when those stages are filled in.
-          </p>
+          <section className="session-overview__summary-section" aria-labelledby="summary-mixes-heading">
+            <div className="session-overview__summary-section-head">
+              <h3 id="summary-mixes-heading">Mixes</h3>
+              <span className="session-overview__summary-section-count">
+                {batches.length}
+              </span>
+            </div>
+            {batches.length === 0 ? (
+              <p className="session-overview__summary-empty" style={{ color: cv.text.dimmed }}>
+                No mixes yet — add them in the Mixes stage.
+              </p>
+            ) : (
+              <ul className="session-overview__summary-mixes">
+                {batches.map((batch) => {
+                  const recipe = resolveRecipe(batch.id);
+                  const total = sessionGrandTotalGrams([batch]);
+                  return (
+                    <li key={batch.id} className="session-overview__summary-mix-row">
+                      <button
+                        type="button"
+                        className="session-overview__summary-mix-btn"
+                        onClick={() => onEditMix(batch.id)}
+                      >
+                        <span className="session-overview__summary-mix-name">
+                          {batch.name}
+                        </span>
+                        <span
+                          className="session-overview__summary-mix-meta"
+                          style={{ color: cv.text.muted }}
+                        >
+                          {batch.recipeName ||
+                            (recipe ? recipeMenuLabel(recipe) : batch.recipeId)}
+                          {" · "}
+                          ×{Math.max(1, batch.multiplier)}
+                        </span>
+                      </button>
+                      <span
+                        className="session-overview__summary-mix-total app-readout tabular-nums"
+                        style={{ color: amountColor }}
+                      >
+                        {formatMixAmount(total, true)} kg
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          <section
+            className="session-overview__summary-section"
+            aria-labelledby="summary-tools-heading"
+          >
+            <div className="session-overview__summary-section-head">
+              <h3 id="summary-tools-heading">Tools</h3>
+              <span className="session-overview__summary-section-count">
+                {toolCount}
+              </span>
+            </div>
+            {selectedToolLabels.length > 0 ? (
+              <div className="session-overview__summary-chips" aria-label="Selected tools">
+                {selectedToolLabels.map((label) => (
+                  <span key={label} className="session-overview__summary-chip">
+                    {label}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="session-overview__summary-empty" style={{ color: cv.text.dimmed }}>
+                None selected — add them in Tools, or continue without.
+              </p>
+            )}
+            <button
+              type="button"
+              className="session-overview__summary-jump"
+              disabled={
+                !canNavigateToSessionStage(
+                  "consumption-tools",
+                  activeStage,
+                  touchedStages,
+                )
+              }
+              onClick={() => goToStage("consumption-tools")}
+            >
+              Open Tools
+            </button>
+          </section>
+
+          <section
+            className="session-overview__summary-section"
+            aria-labelledby="summary-cons-heading"
+          >
+            <div className="session-overview__summary-section-head">
+              <h3 id="summary-cons-heading">Consumables</h3>
+              <span className="session-overview__summary-section-count">
+                {consumableCount}
+              </span>
+            </div>
+            {selectedConsumableLabels.length > 0 ? (
+              <div
+                className="session-overview__summary-chips"
+                aria-label="Selected consumables"
+              >
+                {selectedConsumableLabels.map((label) => (
+                  <span key={label} className="session-overview__summary-chip">
+                    {label}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="session-overview__summary-empty" style={{ color: cv.text.dimmed }}>
+                None selected — add them in Consumables, or continue without.
+              </p>
+            )}
+            <button
+              type="button"
+              className="session-overview__summary-jump"
+              disabled={
+                !canNavigateToSessionStage("consumables", activeStage, touchedStages)
+              }
+              onClick={() => goToStage("consumables")}
+            >
+              Open Consumables
+            </button>
+          </section>
         </div>
       </div>
     </div>
   );
 
-  const placeholderMain = (
+  const toolsMain = (
     <div className="scroll-edge-fade-viewport batch-totals-scroll-fade-viewport flex flex-col">
       <div className="batch-totals-scroll-panel flex flex-col">
-        <div className="batch-totals-scroll-panel__inner session-overview__placeholder-pad">
-          <h2 style={{ color: cv.text.primary, margin: 0 }}>
-            {SESSION_STAGE_LABELS[activeStage]}
-          </h2>
-          <p style={{ color: cv.text.muted, margin: 0 }}>
-            Coming later — this stage is a placeholder for now. Share and save stay
-            available in the dock below.
-          </p>
+        <div className="batch-totals-scroll-panel__inner session-overview__tools-pad app-gutter-x">
+          <ToolsPicker
+            selection={selectedToolQtys}
+            onSelectionChange={(next) => {
+              if (!session) return;
+              patchSession(session.id, { selectedToolQtys: next });
+            }}
+            customTools={customTools}
+            onAddCustomTool={(item) => {
+              if (!session) return;
+              patchSession(session.id, {
+                customTools: [...customTools, item],
+                selectedToolQtys: ensureFlexSelectSelected(
+                  selectedToolQtys,
+                  item.id,
+                ),
+              });
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const consumablesMain = (
+    <div className="scroll-edge-fade-viewport batch-totals-scroll-fade-viewport flex flex-col">
+      <div className="batch-totals-scroll-panel flex flex-col">
+        <div className="batch-totals-scroll-panel__inner session-overview__tools-pad app-gutter-x">
+          <ConsumablesPicker
+            selection={selectedConsumableQtys}
+            onSelectionChange={(next) => {
+              if (!session) return;
+              patchSession(session.id, { selectedConsumableQtys: next });
+            }}
+            customConsumables={customConsumables}
+            onAddCustomConsumable={(item) => {
+              if (!session) return;
+              patchSession(session.id, {
+                customConsumables: [...customConsumables, item],
+                selectedConsumableQtys: ensureFlexSelectSelected(
+                  selectedConsumableQtys,
+                  item.id,
+                ),
+              });
+            }}
+          />
         </div>
       </div>
     </div>
@@ -426,9 +696,11 @@ export function SessionOverviewScreen({
   const stageMain =
     activeStage === "mixes"
       ? mixesMain
-      : activeStage === "summary"
-        ? summaryMain
-        : placeholderMain;
+      : activeStage === "consumption-tools"
+        ? toolsMain
+        : activeStage === "consumables"
+          ? consumablesMain
+          : summaryMain;
 
   const frame = (
     <div
@@ -532,6 +804,8 @@ export function SessionOverviewScreen({
                 onShareScopeChange={setShareScope}
                 onSaveSession={() => setSaveNameOpen(true)}
                 saveFlash={saveFlash}
+                toolCount={toolCount}
+                consumableCount={consumableCount}
               />
             </div>
           </div>

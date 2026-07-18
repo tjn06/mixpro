@@ -1202,9 +1202,15 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   /** Expanded summary plane — same sheet surface as dock. */
   background: var(--semantic-surface-sheet-body, var(--semantic-surface-sheet-dock, var(--ui-header-bg)));
   animation: batch-totals-body-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.batch-totals-bottom-panel__body::-webkit-scrollbar {
+  display: none;
 }
 
 .batch-totals-bottom-panel__body-inner {
@@ -1491,9 +1497,87 @@
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 4px 6px;
+  gap: 6px 8px;
   min-width: 0;
   min-height: var(--batch-totals-summary-batch-row-h);
+}
+
+.batch-totals-summary-bar__session-name {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-totals-table);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  color: var(--semantic-text-secondary);
+  padding: 0 var(--totals-section-title-pad-x);
+}
+
+.batch-totals-summary-bar__status-message {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-totals-table);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  color: var(--semantic-text-secondary);
+  padding: 0 var(--totals-section-title-pad-x);
+}
+
+.batch-totals-summary-bar__status-message[data-saved] {
+  color: var(--session-accent);
+}
+
+.batch-totals-summary-bar__total--status {
+  gap: 0;
+}
+
+.batch-totals-summary-bar__count {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-totals-mult);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--semantic-text-secondary);
+}
+
+.batch-totals-summary-bar__total {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  text-align: right;
+}
+
+.batch-totals-summary-bar__total--inventory {
+  gap: 6px;
+}
+
+.batch-totals-summary-bar__total--mass {
+  gap: 8px;
+}
+
+.batch-totals-summary-bar__metric-label {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-totals-table);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+  white-space: nowrap;
+}
+
+.batch-totals-summary-bar__metric-label--accent {
+  text-transform: uppercase;
+  color: inherit;
+}
+
+.batch-totals-summary-bar__metric-unit {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-totals-unit, 12px);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--semantic-text-muted);
+  white-space: nowrap;
 }
 
 /** Hidden when only batches — card height stays fixed; row slot unused. */
@@ -1789,6 +1873,39 @@
   min-width: 0;
   padding-block: var(--space-4, 16px) var(--app-bottom-inset);
   padding-inline: 0;
+}
+
+/**
+ * Inside `.batch-totals-scroll-panel__inner` — that class already applies
+ * `--batch-totals-panel-reserve` bottom padding for the stage sheet.
+ */
+.destination-page__body--in-sheet {
+  padding-block: var(--space-3, 12px) 0;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/** Fill column for hub tabs that own their own scroll (e.g. Edit). */
+.destination-page__fill {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.destination-page__body--fill {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-block: var(--space-3, 12px) 0;
+  overflow: hidden;
+}
+
+/** Compact sub-nav strip under the app header. */
+.destination-page__subnav {
+  flex-shrink: 0;
+  padding-block: 6px 8px;
 }
 
 /** In-content page heading — not the navigation bar title. */
@@ -2552,6 +2669,156 @@
   margin-top: 8px;
 }
 
+.session-overview__summary-snapshot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 16px;
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--session-accent) 28%, transparent);
+  background: color-mix(in srgb, var(--session-accent) 8%, transparent);
+}
+
+.session-overview__summary-snapshot-hero {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.session-overview__summary-snapshot-total {
+  font-family: "Outfit", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
+.session-overview__summary-snapshot-status {
+  flex-shrink: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+}
+
+.session-overview__summary-snapshot-status[data-saved] {
+  color: var(--session-accent);
+}
+
+.session-overview__summary-snapshot-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-secondary, 14px);
+  font-weight: 500;
+  color: var(--semantic-text-secondary);
+  line-height: 1.3;
+}
+
+.session-overview__summary-snapshot-facts strong {
+  font-weight: 700;
+  color: var(--semantic-text-primary);
+}
+
+.session-overview__summary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+  min-width: 0;
+}
+
+.session-overview__summary-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.session-overview__summary-section-head h3 {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+}
+
+.session-overview__summary-section-count {
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--semantic-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.session-overview__summary-empty {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-secondary, 14px);
+  line-height: 1.45;
+}
+
+.session-overview__summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.session-overview__summary-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--session-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--session-accent) 10%, transparent);
+  color: var(--session-accent);
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-overview__summary-jump {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--session-accent);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.session-overview__summary-jump:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.session-overview__summary-jump:not(:disabled):active {
+  opacity: 0.75;
+}
+
 .session-overview__summary-mixes {
   list-style: none;
   margin: 0;
@@ -3062,5 +3329,563 @@
     var(--session-accent) 22%,
     var(--component-sheet-panel-list-row-bg, transparent)
   );
+}
+
+/* ——— Responsive Flex Select View (tools catalog, reusable) ——— */
+.select-view {
+  /* Default = app selection (hubs). Session stages opt into --session via modifier. */
+  --select-chip-accent: var(--ui-recipe-value, var(--semantic-text-primary));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  /* Let qty ::after badges hang outside chips. */
+  overflow: visible;
+  padding-top: 6px;
+  padding-left: 6px;
+}
+
+.select-view--session {
+  --select-chip-accent: var(--session-accent, #2dd4bf);
+}
+
+/* Anchor sizes to the chip only — menu is portaled (no flex reflow). */
+.select-chip-anchor {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  vertical-align: top;
+  overflow: visible;
+}
+
+.select-chip {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  max-width: 100%;
+  height: 36px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  overflow: visible;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.select-chip__label {
+  min-width: 0;
+}
+
+/**
+ * Qty badge via ::after — no layout width; sits top-left with a bit outside the chip.
+ */
+.select-chip[data-qty]::after {
+  content: attr(data-qty);
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  z-index: 2;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 1.5px solid var(--select-chip-accent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  color: var(--select-chip-accent);
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.select-chip:active {
+  background: color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
+}
+
+.select-chip[data-selected] {
+  color: var(--select-chip-accent);
+  border-color: var(--select-chip-accent);
+  background: color-mix(in srgb, var(--select-chip-accent) 14%, transparent);
+}
+
+.select-chip--select {
+  gap: 6px;
+  padding-right: 8px;
+}
+
+.select-chip__group-label {
+  min-width: 0;
+}
+
+.select-chip__choice {
+  min-width: 0;
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+.select-chip__group-label + .select-chip__choice::before {
+  content: "·";
+  margin-right: 6px;
+  font-weight: 500;
+  opacity: 0.55;
+  color: inherit;
+}
+
+.select-chip__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.select-chip--select[data-open] .select-chip__chevron {
+  opacity: 1;
+}
+
+/* Overlay menu — fixed via inline style; does not occupy flex space. */
+.select-chip-menu {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--semantic-surface-app, #12121a) 92%,
+    var(--semantic-text-primary) 8%
+  );
+  box-shadow:
+    0 10px 28px color-mix(in srgb, #000 45%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--semantic-text-inverse, #fff) 6%, transparent);
+  max-height: min(240px, 50vh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.select-chip-menu::-webkit-scrollbar {
+  display: none;
+}
+
+.select-chip-menu__option {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.select-chip-menu__option-qty {
+  flex-shrink: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--select-chip-accent, var(--ui-recipe-value));
+  background: transparent;
+  color: var(--select-chip-accent, var(--ui-recipe-value));
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.select-chip-menu__option:active {
+  background: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+}
+
+.select-chip-menu__option[data-active] {
+  color: var(--select-chip-accent, var(--session-accent, #2dd4bf));
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent, var(--session-accent, #2dd4bf)) 14%,
+    transparent
+  );
+}
+
+.select-chip-menu__option--unselect {
+  margin-top: 2px;
+  border-top: 1px solid color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+  border-radius: 0 0 6px 6px;
+  color: var(--semantic-text-muted);
+  font-weight: 500;
+}
+
+.select-chip-menu__option--unselect:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.select-chip-menu__option--unselect:not(:disabled):active {
+  color: var(--semantic-text-secondary);
+}
+
+/* Standout control — add simple custom item (no dropdown). */
+.select-chip--add {
+  gap: 5px;
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--select-chip-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--select-chip-accent) 12%, transparent);
+  color: var(--select-chip-accent);
+  font-weight: 600;
+}
+
+.select-chip--add:active {
+  background: color-mix(in srgb, var(--select-chip-accent) 20%, transparent);
+}
+
+.select-chip--add-compose {
+  gap: 6px;
+  padding: 0 6px 0 10px;
+  border-style: solid;
+  border-color: var(--select-chip-accent);
+  background: color-mix(in srgb, var(--select-chip-accent) 10%, transparent);
+  cursor: default;
+}
+
+.select-chip__add-input {
+  box-sizing: border-box;
+  width: 9.5rem;
+  max-width: 42vw;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+  color: var(--semantic-text-primary);
+  caret-color: var(--select-chip-accent);
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.select-chip__add-input::placeholder {
+  color: var(--semantic-text-muted);
+  opacity: 1;
+}
+
+.select-chip__add-confirm {
+  flex-shrink: 0;
+  height: 28px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--select-chip-accent) 28%, transparent);
+  color: var(--select-chip-accent);
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.select-chip__add-confirm:active {
+  background: color-mix(in srgb, var(--select-chip-accent) 40%, transparent);
+}
+
+@media (min-width: 480px) {
+  .select-view {
+    gap: 10px;
+  }
+
+  .select-chip {
+    padding: 0 14px;
+  }
+
+  .select-chip--select {
+    padding-right: 10px;
+  }
+
+  .select-chip__add-input {
+    width: 11rem;
+  }
+}
+
+.session-overview__tools-pad {
+  padding-block: 12px 20px;
+}
+
+.tools-page__picker {
+  margin-top: 2px;
+}
+
+/* Catalog hub (Tools / Consumables): compact Select · Edit under header */
+.catalog-hub__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+}
+
+.catalog-hub__tab {
+  min-width: 0;
+  min-height: 30px;
+  margin: 0;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.catalog-hub__tab:active {
+  opacity: 0.88;
+}
+
+.catalog-hub__tab[data-active] {
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  color: var(--semantic-text-primary);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--semantic-text-primary) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
+}
+
+.catalog-hub__edit {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+.catalog-hub__edit-fixed {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.catalog-hub__edit-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-block: 10px var(--app-bottom-inset);
+}
+
+.catalog-hub__edit-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.catalog-hub__lede {
+  margin: 0 0 10px;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-secondary, 14px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  color: var(--semantic-text-muted);
+}
+
+.catalog-hub__add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.catalog-hub__add-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-h, 44px);
+  margin: 0;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1.5px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
+  background: var(--component-sheet-panel-list-row-bg, rgba(255, 255, 255, 0.04));
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-body, 16px);
+  font-weight: 500;
+  outline: none;
+}
+
+.catalog-hub__add-btn {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 4.5rem;
+  padding-inline: 16px;
+}
+
+.catalog-hub__search {
+  margin-bottom: 0;
+}
+
+.catalog-hub__edit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.catalog-hub__edit-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+
+.catalog-hub__edit-card-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.catalog-hub__edit-card-title {
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-body, 16px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  color: var(--semantic-text-primary);
+}
+
+.catalog-hub__edit-card-meta {
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-ui-xs, 11px);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+}
+
+.catalog-hub__edit-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.catalog-hub__text-btn {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ui-recipe-value, var(--semantic-text-secondary));
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.catalog-hub__delete-btn {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--semantic-state-error);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.catalog-hub__rename-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 34px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid var(--semantic-selection-border, var(--semantic-border-default));
+  border-radius: 8px;
+  background: var(--semantic-surface-input, transparent);
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-body, 16px);
+  font-weight: 600;
+  outline: none;
 }
 

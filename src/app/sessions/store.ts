@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { BlendingRecipe } from "../domain/recipe/types";
+import { normalizeFlexSelectSelection } from "../domain/select/selection";
 import type {
   CreateSessionInput,
   MixSession,
@@ -45,6 +46,10 @@ function createEmptySession(input: CreateSessionInput = {}): MixSession {
     touchedStages: ["mixes"],
     batches: [],
     sessionRecipes: [],
+    selectedToolQtys: {},
+    customTools: [],
+    selectedConsumableQtys: {},
+    customConsumables: [],
     createdAt: ts,
     updatedAt: ts,
   };
@@ -58,6 +63,18 @@ function normalizeSession(session: MixSession): MixSession {
     touchedStages: normalizeTouchedStages(session.touchedStages, activeStage),
     sessionRecipes: session.sessionRecipes ?? [],
     batches: session.batches ?? [],
+    selectedToolQtys: normalizeFlexSelectSelection(
+      session.selectedToolQtys,
+      session.selectedToolIds,
+    ),
+    customTools: Array.isArray(session.customTools) ? session.customTools : [],
+    selectedConsumableQtys: normalizeFlexSelectSelection(
+      session.selectedConsumableQtys,
+      session.selectedConsumableIds,
+    ),
+    customConsumables: Array.isArray(session.customConsumables)
+      ? session.customConsumables
+      : [],
   };
 }
 
@@ -73,7 +90,15 @@ interface SessionsState {
     patch: Partial<
       Pick<
         MixSession,
-        "name" | "activeStage" | "touchedStages" | "batches" | "sessionRecipes"
+        | "name"
+        | "activeStage"
+        | "touchedStages"
+        | "batches"
+        | "sessionRecipes"
+        | "selectedToolQtys"
+        | "customTools"
+        | "selectedConsumableQtys"
+        | "customConsumables"
       >
     >,
   ) => void;

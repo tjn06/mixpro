@@ -8,6 +8,10 @@ import { recipeMenuLabel, type BlendingRecipe } from "../recipe/types";
 import { gramsFromSlotValues } from "../../saved-batch-totals/batches";
 import type { MixSession, SessionBatchItem, SessionStageId } from "../../sessions/types";
 import { SESSION_STAGE_LABELS } from "../../sessions/types";
+import { useConsumablesLibraryStore } from "../../consumables/libraryStore";
+import { useToolsLibraryStore } from "../../tools/libraryStore";
+import { listSelectedConsumableLabelEntries } from "../consumables/labels";
+import { listSelectedToolLabelEntries } from "../tools/catalog";
 import type { BatchReportLanguage } from "../batch-totals/report";
 import {
   sessionEntityIndexes,
@@ -182,12 +186,36 @@ function appendStageSection(
     case "mixes":
       appendMixesSection(lines, session, libraryRecipes, language);
       break;
-    case "consumption-tools":
-      appendPlaceholderStage(lines, copy.tools, copy.toolsEmpty);
+    case "consumption-tools": {
+      const labels = listSelectedToolLabelEntries(
+        session.selectedToolQtys ?? {},
+        useToolsLibraryStore.getState().items,
+        session.customTools ?? [],
+      );
+      if (labels.length === 0) {
+        appendPlaceholderStage(lines, copy.tools, copy.toolsEmpty);
+        break;
+      }
+      lines.push(`— ${copy.tools} —`);
+      for (const label of labels) lines.push(`· ${label}`);
+      lines.push("");
       break;
-    case "consumables":
-      appendPlaceholderStage(lines, copy.consumables, copy.consumablesEmpty);
+    }
+    case "consumables": {
+      const labels = listSelectedConsumableLabelEntries(
+        session.selectedConsumableQtys ?? {},
+        useConsumablesLibraryStore.getState().items,
+        session.customConsumables ?? [],
+      );
+      if (labels.length === 0) {
+        appendPlaceholderStage(lines, copy.consumables, copy.consumablesEmpty);
+        break;
+      }
+      lines.push(`— ${copy.consumables} —`);
+      for (const label of labels) lines.push(`· ${label}`);
+      lines.push("");
       break;
+    }
     case "summary":
       appendSummarySection(lines, session, libraryRecipes, language);
       break;

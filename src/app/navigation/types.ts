@@ -2,7 +2,13 @@
  * Top-level app destinations (hamburger menu).
  * `settings` opens an overlay sheet — it is not a navigable screen.
  */
-export type AppDestination = "calculator" | "sessions" | "recipes" | "settings";
+export type AppDestination =
+  | "calculator"
+  | "sessions"
+  | "recipes"
+  | "tools"
+  | "consumables"
+  | "settings";
 
 export const APP_DESTINATIONS: {
   id: AppDestination;
@@ -11,5 +17,7 @@ export const APP_DESTINATIONS: {
   { id: "calculator", label: "Calculator" },
   { id: "sessions", label: "Sessions" },
   { id: "recipes", label: "Recipes" },
+  { id: "tools", label: "Tools" },
+  { id: "consumables", label: "Consumables" },
   { id: "settings", label: "Settings" },
 ];
