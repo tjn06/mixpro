@@ -65,10 +65,12 @@ function StepButton({
   label,
   onClick,
   disabled,
+  compact = false,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  compact?: boolean;
 }) {
   const symbol = label === "Decrease batch count" ? "−" : "+";
   return (
@@ -77,13 +79,19 @@ function StepButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="batch-totals-card-header-btn flex items-center justify-center shrink-0 transition-colors duration-150 active:scale-95"
-      style={{
-        ...cardRoundBtnStyle(disabled),
-        fontSize: "var(--totals-step-font-size)",
-        fontWeight: 300,
-        lineHeight: 1,
-      }}
+      className={`batch-totals-card-header-btn flex items-center justify-center shrink-0 transition-colors duration-150 active:scale-95${
+        compact ? " session-mix-card__step-btn" : ""
+      }`}
+      style={
+        compact
+          ? undefined
+          : {
+              ...cardRoundBtnStyle(disabled),
+              fontSize: "var(--totals-step-font-size)",
+              fontWeight: 300,
+              lineHeight: 1,
+            }
+      }
     >
       {symbol}
     </button>
@@ -179,13 +187,12 @@ export function SessionMixCard({
   return (
     <div className="batch-totals-source-card session-mix-card w-full min-w-0 shrink-0 overflow-hidden">
       <div
-        className="shrink-0 grid items-center min-w-0 w-full session-mix-card__header"
+        className="shrink-0 grid items-center min-w-0 w-full session-mix-card__header session-mix-card__header--collapsed"
         style={{
           padding:
             "var(--totals-card-header-py) var(--batch-totals-content-gutter, var(--totals-card-header-px))",
           background: bt.cardHeaderBackground,
           minHeight: "var(--totals-card-header-min-h, var(--totals-header-icon-btn))",
-          gridTemplateColumns: TABLE_COLS,
         }}
       >
         <button
@@ -194,91 +201,41 @@ export function SessionMixCard({
           onClick={() => onExpandedChange(!expanded)}
           aria-expanded={expanded}
         >
-          <p
-            className="truncate"
-            style={{
-              fontSize: "var(--text-totals-table)",
-              fontWeight: 600,
-              letterSpacing: "0.06em",
-              lineHeight: 1.2,
-              textTransform: "uppercase",
-              margin: 0,
-              color: cv.text.primary,
-            }}
-          >
-            {batch.name}
-          </p>
-          {!expanded ? (
-            <span
-              className="app-readout tabular-nums whitespace-nowrap"
-              style={{
-                ...TABLE_TEXT,
-                fontSize: "var(--text-totals-sum)",
-                color: amountColor,
-                fontWeight: 700,
-                lineHeight: 1.2,
-                marginTop: 4,
-                display: "block",
-              }}
-            >
-              <AmountCell
-                grams={totalGrams}
-                isKg={totalParam.isKg}
-                colorScheme={colorScheme}
-              />
-            </span>
-          ) : null}
+          <p className="truncate session-mix-card__title">{batch.name}</p>
+          <span className="session-mix-card__amount app-readout tabular-nums">
+            <AmountCell
+              grams={totalGrams}
+              isKg={totalParam.isKg}
+              colorScheme={colorScheme}
+            />
+          </span>
         </button>
 
-        <div className="flex items-center justify-center" style={{ padding: "0 2px", position: "relative" }}>
-          <div
-            className="relative flex items-center justify-center"
-            style={{ minWidth: 32, height: "var(--totals-header-icon-btn)" }}
-          >
-            <div
-              className="absolute"
-              style={{ right: "100%", marginRight: "var(--totals-multiplier-row-gap, 12px)" }}
-            >
-              <StepButton
-                label="Decrease batch count"
-                onClick={() => onMultiplierChange(Math.max(1, mult - 1))}
-                disabled={mult <= 1}
-              />
-            </div>
-            <p
-              className="tabular-nums text-center"
-              style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: "var(--totals-mult-value-size, 20px)",
-                fontWeight: 400,
-                color: cv.text.primary,
-                letterSpacing: "-0.02em",
-                lineHeight: 1,
-                margin: 0,
-              }}
-            >
-              {mult}
-            </p>
-            <div
-              className="absolute"
-              style={{ left: "100%", marginLeft: "var(--totals-multiplier-row-gap, 12px)" }}
-            >
-              <StepButton
-                label="Increase batch count"
-                onClick={() => onMultiplierChange(Math.min(999, mult + 1))}
-                disabled={mult >= 999}
-              />
-            </div>
-          </div>
+        <div
+          className="session-mix-card__mult-field"
+          aria-label={`Batch multiplier, ${mult}`}
+        >
+          <span className="session-mix-card__mult-prefix" aria-hidden>
+            ×
+          </span>
+          <StepButton
+            label="Decrease batch count"
+            onClick={() => onMultiplierChange(Math.max(1, mult - 1))}
+            disabled={mult <= 1}
+            compact
+          />
+          <span className="tabular-nums session-mix-card__mult-value session-mix-card__mult-value--field">
+            {mult}
+          </span>
+          <StepButton
+            label="Increase batch count"
+            onClick={() => onMultiplierChange(Math.min(999, mult + 1))}
+            disabled={mult >= 999}
+            compact
+          />
         </div>
 
-        <div
-          className="flex items-center justify-end shrink-0"
-          style={{
-            gap: "var(--totals-header-action-gap)",
-            padding: "0 var(--totals-header-cell-pad-x)",
-          }}
-        >
+        <div className="flex items-center justify-end shrink-0 session-mix-card__actions">
           <IconHeaderButton label={`Edit ${batch.name}`} onClick={onEdit}>
             <RenameIcon size={HEADER_ICON_SIZE} />
           </IconHeaderButton>

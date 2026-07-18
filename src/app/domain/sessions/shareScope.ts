@@ -17,14 +17,14 @@ export const SESSION_SHARE_SCOPE_ORDER: SessionShareScope[] = [
 
 const SCOPE_LABELS = {
   sv: {
-    current: "Detta steg",
-    through: "Hit",
-    all: "Alla",
+    current: "detta",
+    through: "hit",
+    all: "alla",
   },
   en: {
-    current: "This step",
-    through: "Up to here",
-    all: "All steps",
+    current: "this",
+    through: "from",
+    all: "all",
   },
 } as const;
 

@@ -22,8 +22,6 @@ import {
 import {
   SESSION_SHARE_SCOPE_ORDER,
   sessionShareHasContent,
-  shareScopeEmptyHint,
-  shareScopeHelperText,
   shareScopeLabel,
   stagesForShareScope,
   type SessionShareScope,
@@ -38,8 +36,9 @@ import {
   SavedIcon,
   SaveIcon,
 } from "../shared/ActionIcons";
-import { SHEET_FIELD_INPUT_CLASS, sheetFieldInputStyle } from "../sheets/sheetChrome";
 import { SHEET_FOOTER_BTN_H, SHEET_FOOTER_ICON_SIZE } from "../sheets/SheetCloseButton";
+
+const SCOPE_CHECK_SIZE = 12;
 
 const SHARE_LABELS = {
   sv: {
@@ -51,6 +50,8 @@ const SHARE_LABELS = {
     text: "SMS",
     closeComment: "Stäng kommentar",
     scope: "Delningsomfång",
+    shareSteps: "Dela steg:",
+    commentField: "Kommentar / titel",
   },
   en: {
     save: "Save session",
@@ -61,6 +62,8 @@ const SHARE_LABELS = {
     text: "Text",
     closeComment: "Close comment",
     scope: "Share scope",
+    shareSteps: "Share steps:",
+    commentField: "Comment / title",
   },
 } as const;
 
@@ -83,62 +86,55 @@ function ShareIconButton({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className={`batch-totals-dock-orb share-icon-btn relative flex flex-col items-center justify-center overflow-hidden touch-none transition-colors duration-150${
+      className={`batch-totals-dock-orb share-icon-btn relative flex flex-col items-center justify-center overflow-hidden transition-colors duration-150${
         active ? " share-icon-btn--active batch-totals-dock-orb--active" : ""
-      }`}
-      style={disabled ? { opacity: 0.45, cursor: "default" } : undefined}
+      }${disabled ? " batch-totals-dock-orb--disabled" : ""}`}
     >
       {icon}
     </button>
   );
 }
 
-function CommentGridInput({
+function CommentUnderlineField({
   value,
   onChange,
   onClose,
   placeholder,
+  active,
 }: {
   value: string;
   onChange: (next: string) => void;
   onClose: () => void;
   placeholder: string;
+  active: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const id = window.requestAnimationFrame(() => inputRef.current?.focus());
-    return () => window.cancelAnimationFrame(id);
-  }, []);
+    if (!active) return;
+    const id = window.setTimeout(() => inputRef.current?.focus(), 60);
+    return () => window.clearTimeout(id);
+  }, [active]);
 
   return (
-    <input
-      ref={inputRef}
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      aria-label={placeholder}
-      className={`${SHEET_FIELD_INPUT_CLASS} batch-totals-dock-comment-slot min-w-0`}
-      style={sheetFieldInputStyle({
-        height: 44,
-        padding: "0 14px",
-        borderRadius: 9999,
-      })}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === "Escape") {
-          e.preventDefault();
-          onClose();
-        }
-      }}
-      onBlur={(e) => {
-        const next = e.relatedTarget;
-        if (next instanceof Node && e.currentTarget.parentElement?.contains(next)) {
-          return;
-        }
-        onClose();
-      }}
-    />
+    <div className="session-share-scope__underline-field">
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className="session-share-scope__underline-input"
+        tabIndex={active ? 0 : -1}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === "Escape") {
+            e.preventDefault();
+            onClose();
+          }
+        }}
+      />
+    </div>
   );
 }
 
@@ -171,9 +167,6 @@ export function SessionShareBar({
     [shareScope, activeStage],
   );
   const canShare = sessionShareHasContent(session, scopedStages);
-  const helper = canShare
-    ? shareScopeHelperText(shareScope, activeStage, language)
-    : shareScopeEmptyHint(language);
 
   const reportText = useMemo(
     () =>
@@ -194,6 +187,10 @@ export function SessionShareBar({
     [session, language, comment, shareScope, activeStage],
   );
 
+  const closeComment = useCallback(() => {
+    setCommentOpen(false);
+  }, []);
+
   const handleCopy = useCallback(async () => {
     if (!canShare) return;
     const ok = await copyTextToClipboard(reportText);
@@ -212,75 +209,102 @@ export function SessionShareBar({
     openSmsWithReport(reportText);
   }, [canShare, reportText]);
 
-  const closeComment = useCallback(() => setCommentOpen(false), []);
-
   return (
     <div className="batch-totals-dock-actions flex flex-col items-stretch min-w-0 w-full">
-      <section className="batch-totals-dock-module flex flex-col items-stretch min-w-0 w-full gap-2">
-        <div className="session-share-scope">
-          <div
-            className="session-share-scope__segment"
-            role="radiogroup"
-            aria-label={labels.scope}
-          >
-            {SESSION_SHARE_SCOPE_ORDER.map((scope) => {
-              const active = scope === shareScope;
-              return (
-                <button
-                  key={scope}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  className="session-share-scope__btn"
-                  data-active={active ? "" : undefined}
-                  onClick={() => onShareScopeChange(scope)}
-                >
-                  {shareScopeLabel(scope, language)}
-                </button>
-              );
-            })}
+      <section
+        className="batch-totals-dock-module session-share-dock min-w-0 w-full"
+        data-edit-open={commentOpen ? "" : undefined}
+      >
+        <div className="session-share-dock__body">
+          {/* Pen stays outside the sliding stage — one instance, never translated. */}
+          <div className="session-share-dock__row">
+            <div className="session-share-dock__pen">
+              <ShareIconButton
+                label={commentOpen ? labels.closeComment : commentPlaceholder}
+                onClick={() => setCommentOpen((open) => !open)}
+                icon={<RenameIcon />}
+                active={commentOpen || hasComment}
+              />
+            </div>
+
+            <div className="session-share-dock__stage">
+              <div className="session-share-dock__actions">
+                <ShareIconButton
+                  label={copied ? labels.copied : labels.copy}
+                  onClick={handleCopy}
+                  icon={copied ? <SavedIcon /> : <CopyIcon />}
+                  active={copied}
+                  disabled={!canShare || commentOpen}
+                />
+                <ShareIconButton
+                  label={labels.mail}
+                  onClick={handleMail}
+                  icon={<MailIcon />}
+                  disabled={!canShare || commentOpen}
+                />
+                <ShareIconButton
+                  label={labels.text}
+                  onClick={handleSms}
+                  icon={<MessageIcon />}
+                  disabled={!canShare || commentOpen}
+                />
+              </div>
+
+              <div
+                className="session-share-dock__edit"
+                data-open={commentOpen ? "" : undefined}
+                role="dialog"
+                aria-label={labels.scope}
+                aria-hidden={!commentOpen}
+              >
+                <div className="session-share-scope__panel-main">
+                  <CommentUnderlineField
+                    value={comment}
+                    onChange={setComment}
+                    onClose={closeComment}
+                    placeholder={labels.commentField}
+                    active={commentOpen}
+                  />
+                  <div
+                    className="session-share-scope__segment"
+                    role="radiogroup"
+                    aria-label={labels.scope}
+                  >
+                    <span className="session-share-scope__prefix">
+                      {labels.shareSteps}
+                    </span>
+                    <div className="session-share-scope__options">
+                      {SESSION_SHARE_SCOPE_ORDER.map((scope) => {
+                        const active = scope === shareScope;
+                        return (
+                          <button
+                            key={scope}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            className="session-share-scope__btn"
+                            data-active={active ? "" : undefined}
+                            tabIndex={commentOpen ? 0 : -1}
+                            onClick={() => onShareScopeChange(scope)}
+                          >
+                            <span
+                              className="session-share-scope__check"
+                              aria-hidden="true"
+                            >
+                              <SavedIcon size={SCOPE_CHECK_SIZE} />
+                            </span>
+                            <span className="session-share-scope__btn-label">
+                              {shareScopeLabel(scope, language)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="session-share-scope__helper">{helper}</p>
-        </div>
-
-        <div className="batch-totals-dock-orb-grid">
-          <ShareIconButton
-            label={commentOpen ? labels.closeComment : commentPlaceholder}
-            onClick={() => setCommentOpen((open) => !open)}
-            icon={<RenameIcon />}
-            active={commentOpen || hasComment}
-          />
-
-          {commentOpen ? (
-            <CommentGridInput
-              value={comment}
-              onChange={setComment}
-              onClose={closeComment}
-              placeholder={commentPlaceholder}
-            />
-          ) : (
-            <>
-              <ShareIconButton
-                label={copied ? labels.copied : labels.copy}
-                onClick={handleCopy}
-                icon={copied ? <SavedIcon /> : <CopyIcon />}
-                active={copied}
-                disabled={!canShare}
-              />
-              <ShareIconButton
-                label={labels.mail}
-                onClick={handleMail}
-                icon={<MailIcon />}
-                disabled={!canShare}
-              />
-              <ShareIconButton
-                label={labels.text}
-                onClick={handleSms}
-                icon={<MessageIcon />}
-                disabled={!canShare}
-              />
-            </>
-          )}
         </div>
       </section>
 

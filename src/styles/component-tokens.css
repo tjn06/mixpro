@@ -240,6 +240,11 @@
   color: var(--semantic-text-primary);
 }
 
+.batch-totals-dock-orb--disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .batch-totals-dock-comment-slot {
   grid-column: 2 / -1;
   justify-self: stretch;

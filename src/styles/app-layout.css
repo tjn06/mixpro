@@ -2338,18 +2338,18 @@
 }
 
 .session-overview__workspace-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   box-sizing: border-box;
   width: 100%;
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid var(--semantic-border-subtle);
 }
 
 .session-overview__workspace-btn {
   box-sizing: border-box;
+  width: 100%;
   min-width: 0;
   min-height: var(--totals-add-extra-h, var(--action-row-h, 44px));
   padding: var(--totals-add-extra-py, 12px) 8px;
@@ -2357,7 +2357,9 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-radius: 14px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: var(--text-totals-section, 13px);
   letter-spacing: 0.06em;
@@ -2369,24 +2371,24 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Theme text — secondary create-recipe action. */
 .session-overview__workspace-btn--recipe {
-  border: 1.5px solid color-mix(in srgb, var(--session-accent) 55%, transparent);
-  background: transparent;
-  color: var(--session-accent);
+  color: var(--component-text-btn-color, var(--semantic-text-primary));
 }
 
 .session-overview__workspace-btn--recipe:active {
-  background: color-mix(in srgb, var(--session-accent) 12%, transparent);
+  color: var(--component-text-btn-color-active, var(--semantic-text-secondary));
+  opacity: 0.82;
 }
 
+/* Session accent — primary add-mix action. */
 .session-overview__workspace-btn--mix {
-  border: 1.5px solid var(--semantic-border-default);
-  background: var(--semantic-surface-button-solid);
-  color: var(--semantic-text-primary);
+  color: var(--session-accent);
 }
 
 .session-overview__workspace-btn--mix:active {
-  background: var(--semantic-surface-button-active-solid);
+  color: color-mix(in srgb, var(--session-accent) 78%, #000);
+  opacity: 0.9;
 }
 
 .session-overview__stages {
@@ -2607,56 +2609,252 @@
   flex-shrink: 0;
 }
 
-.session-share-scope {
+/*
+ * Dock: 4 equal columns. Pen is column 1 (outside the stage).
+ * Stage = cols 2–4: actions when closed; edit slides over actions when open.
+ * Pen never transforms / never shares a stacking context with the slide.
+ */
+.session-share-dock.batch-totals-dock-module {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.session-share-dock__body {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  padding: 0 12px;
   min-width: 0;
+}
+
+/* Visual-only share glyph (top-left) — ::before, no layout impact. */
+.session-share-dock__body::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 12px;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  background-color: var(--semantic-text-muted);
+  opacity: 1;
+  transition: opacity 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8'/%3E%3Cpolyline points='16 6 12 2 8 6'/%3E%3Cline x1='12' x2='12' y1='2' y2='15'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8'/%3E%3Cpolyline points='16 6 12 2 8 6'/%3E%3Cline x1='12' x2='12' y1='2' y2='15'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.session-share-dock[data-edit-open] .session-share-dock__body::before {
+  opacity: 0;
+}
+
+.session-share-dock__row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 8px;
+  align-items: center;
+  min-width: 0;
+  height: 76px;
+}
+
+.session-share-dock__pen {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.session-share-dock__stage {
+  grid-column: 2 / -1;
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.session-share-dock__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+  column-gap: 8px;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition: opacity 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.session-share-dock[data-edit-open] .session-share-dock__actions {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.session-share-dock__edit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 2px 4px 2px 4px;
+  background: transparent;
+  opacity: 0;
+  transform: translate3d(16px, 0, 0);
+  pointer-events: none;
+  transition:
+    opacity 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.session-share-dock__edit[data-open] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  pointer-events: auto;
+}
+
+.session-share-scope__panel-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.session-share-scope__underline-field {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.session-share-scope__underline-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 26px;
+  margin: 0;
+  padding: 0 0 4px;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--semantic-text-primary) 22%, transparent);
+  border-radius: 0;
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: var(--semantic-text-primary);
+  caret-color: var(--session-accent);
+}
+
+.session-share-scope__underline-input::placeholder {
+  color: var(--semantic-text-muted);
+  opacity: 1;
+}
+
+.session-share-scope__underline-input:focus {
+  border-bottom-color: var(--session-accent);
 }
 
 .session-share-scope__segment {
   display: flex;
-  gap: 4px;
-  padding: 3px;
-  border-radius: 999px;
-  border: var(--semantic-border-default);
-  background: var(--semantic-surface-input);
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 
-.session-share-scope__btn {
-  flex: 1;
-  min-width: 0;
-  height: 34px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--semantic-text-muted);
+.session-share-scope__prefix {
+  flex-shrink: 0;
   font-family: "Outfit", sans-serif;
-  font-size: var(--text-page-caption, 12px);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: var(--semantic-text-muted);
   white-space: nowrap;
 }
 
+/* Equal slots → even rhythm; check reserved in every cell. */
+.session-share-scope__options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.session-share-scope__btn {
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--semantic-text-muted);
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.session-share-scope__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  opacity: 0;
+  color: inherit;
+}
+
+.session-share-scope__btn[data-active] .session-share-scope__check {
+  opacity: 1;
+}
+
+.session-share-scope__btn-label {
+  min-width: 0;
+}
+
+.session-share-scope__btn:active {
+  color: var(--semantic-text-secondary);
+}
+
 .session-share-scope__btn[data-active] {
-  background: color-mix(in srgb, var(--session-accent) 22%, transparent);
   color: var(--session-accent);
 }
 
-.session-share-scope__helper {
-  margin: 0;
-  font-family: "Outfit", sans-serif;
-  font-size: var(--text-page-secondary, 14px);
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  line-height: 1.4;
-  color: var(--semantic-text-muted);
-  padding: 0 2px;
+@media (prefers-reduced-motion: reduce) {
+  .session-share-dock__actions,
+  .session-share-dock__edit {
+    transition: opacity 0.12s ease;
+    transform: none;
+  }
+
+  .session-share-dock__edit {
+    transform: none;
+  }
 }
 
 .session-mix-card__title-btn {
@@ -2665,6 +2863,116 @@
   padding: 0;
   cursor: pointer;
   min-width: 0;
+}
+
+/* Collapsed header: title | mult field | actions — fits app width without overlap. */
+.session-mix-card__header--collapsed {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  column-gap: 8px;
+  align-items: center;
+}
+
+.session-mix-card__title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--semantic-text-primary);
+}
+
+.session-mix-card__amount {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-totals-mult, 14px);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--semantic-text-primary);
+}
+
+.session-mix-card__amount .app-readout {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.session-mix-card__amount .app-readout span {
+  font-size: 10px;
+}
+
+.session-mix-card__actions {
+  gap: 4px;
+}
+
+.session-mix-card__actions .batch-totals-card-header-btn {
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+}
+
+.session-mix-card__mult-field {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 2px 4px 2px 6px;
+  border: 1px solid var(--semantic-border-default);
+  border-radius: 10px;
+  background: var(--semantic-surface-input, var(--component-sheet-panel-list-row-bg));
+}
+
+.session-mix-card__mult-prefix {
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--semantic-text-muted);
+  line-height: 1;
+  padding-inline-end: 1px;
+}
+
+.session-mix-card__mult-value {
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--totals-mult-value-size, 20px);
+  font-weight: 400;
+  color: var(--semantic-text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-align: center;
+  min-width: 1.25em;
+}
+
+.session-mix-card__mult-value--field {
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 1.4em;
+  padding-inline: 2px;
+}
+
+.session-mix-card__step-btn {
+  width: 26px;
+  height: 26px;
+  min-height: 0;
+  border-radius: 999px;
+  padding: 0;
+  background: var(--component-sheet-panel-list-row-bg, transparent);
+  border: 1px solid var(--semantic-border-subtle);
+  color: var(--semantic-text-secondary);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.session-mix-card__step-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.session-mix-card__step-btn:not(:disabled):active {
+  color: var(--session-accent);
+  border-color: color-mix(in srgb, var(--session-accent) 45%, transparent);
 }
 
 /* Pick recipe for session mix — session accent chrome (matches header / nav). */
