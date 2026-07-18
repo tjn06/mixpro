@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useMemo, useState } from "react";
 import { CirclePlay, Search } from "lucide-react";
 import { useTickingNow } from "../../hooks/useTickingNow";
 import { getHumanSavedTime } from "../../saved-mixes/humanSavedTime";
@@ -17,17 +12,13 @@ import {
 import type { MixSession } from "../../sessions/types";
 import { SESSION_STAGE_ORDER } from "../../sessions/types";
 import { cv } from "../../ui/tokens";
-import {
-  DeleteIcon,
-  MoreIcon,
-  RenameIcon,
-} from "../shared/ActionIcons";
+import { DeleteIcon, RenameIcon } from "../shared/ActionIcons";
 import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
 import { SaveSessionNameSheet } from "../sessions/SaveSessionNameSheet";
 import { DestinationPageChrome } from "./DestinationPageChrome";
 
-const MORE_ICON = 18;
-const PLAY_ICON = 24;
+const ACTION_ICON = 18;
+const PLAY_ICON = 30;
 
 function SessionStageSteps({ session }: { session: MixSession }) {
   return (
@@ -79,8 +70,6 @@ function SessionCard({
   session,
   active,
   now,
-  moreMenuOpen,
-  onMoreMenuOpenChange,
   onOpen,
   onDelete,
   onRename,
@@ -88,29 +77,15 @@ function SessionCard({
   session: MixSession;
   active: boolean;
   now: Date;
-  moreMenuOpen: boolean;
-  onMoreMenuOpenChange: (open: boolean) => void;
   onOpen: () => void;
   onDelete: () => void;
   onRename: () => void;
 }) {
   const savedTime = getHumanSavedTime(new Date(session.updatedAt), now);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!moreMenuOpen) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        onMoreMenuOpenChange(false);
-      }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [moreMenuOpen, onMoreMenuOpenChange]);
 
   return (
     <article
-      className={`${SHEET_LIST_ROW_CLASS} sessions-page__card w-full min-w-0 overflow-visible relative${
+      className={`${SHEET_LIST_ROW_CLASS} sessions-page__card w-full min-w-0 overflow-hidden relative${
         active ? " sessions-page__card--active" : ""
       }`}
     >
@@ -133,18 +108,22 @@ function SessionCard({
             </p>
           </div>
 
-          <div className="sessions-page__card-actions" ref={menuRef}>
+          <div className="sessions-page__card-actions">
             <button
               type="button"
-              className={`sessions-page__card-action${
-                moreMenuOpen ? " sessions-page__card-action--active" : ""
-              }`}
-              aria-label={moreMenuOpen ? "Close actions" : "More actions"}
-              aria-expanded={moreMenuOpen}
-              aria-haspopup="menu"
-              onClick={() => onMoreMenuOpenChange(!moreMenuOpen)}
+              className="sessions-page__card-action"
+              aria-label="Edit session name"
+              onClick={onRename}
             >
-              <MoreIcon size={MORE_ICON} />
+              <RenameIcon size={ACTION_ICON} />
+            </button>
+            <button
+              type="button"
+              className="sessions-page__card-action sessions-page__card-action--danger"
+              aria-label="Delete session"
+              onClick={onDelete}
+            >
+              <DeleteIcon size={ACTION_ICON} />
             </button>
             <button
               type="button"
@@ -154,34 +133,6 @@ function SessionCard({
             >
               <CirclePlay size={PLAY_ICON} strokeWidth={2} aria-hidden />
             </button>
-            {moreMenuOpen ? (
-              <div className="sessions-page__card-menu" role="menu">
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="sessions-page__card-menu-item"
-                  onClick={() => {
-                    onRename();
-                    onMoreMenuOpenChange(false);
-                  }}
-                >
-                  <RenameIcon size={16} />
-                  <span>Rename</span>
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="sessions-page__card-menu-item sessions-page__card-menu-item--danger"
-                  onClick={() => {
-                    onDelete();
-                    onMoreMenuOpenChange(false);
-                  }}
-                >
-                  <DeleteIcon size={16} />
-                  <span>Delete</span>
-                </button>
-              </div>
-            ) : null}
           </div>
         </div>
         <SessionStageSteps session={session} />
@@ -207,7 +158,6 @@ export function SessionsPage({
   const deleteSession = useSessionsStore((s) => s.deleteSession);
   const patchSession = useSessionsStore((s) => s.patchSession);
   const [query, setQuery] = useState("");
-  const [moreMenuSessionId, setMoreMenuSessionId] = useState<string | null>(null);
   const [renameSession, setRenameSession] = useState<MixSession | null>(null);
   const now = useTickingNow(true);
 
@@ -216,10 +166,6 @@ export function SessionsPage({
     if (!q) return sessions;
     return sessions.filter((s) => s.name.toLowerCase().includes(q));
   }, [sessions, query]);
-
-  useEffect(() => {
-    setMoreMenuSessionId(null);
-  }, [query]);
 
   const handleNewSession = () => {
     const session = createSession();
@@ -273,10 +219,6 @@ export function SessionsPage({
                 session={session}
                 active={session.id === activeSessionId}
                 now={now}
-                moreMenuOpen={moreMenuSessionId === session.id}
-                onMoreMenuOpenChange={(open) =>
-                  setMoreMenuSessionId(open ? session.id : null)
-                }
                 onOpen={() => openSession(session)}
                 onDelete={() => {
                   if (window.confirm(`Delete “${session.name}”?`)) {

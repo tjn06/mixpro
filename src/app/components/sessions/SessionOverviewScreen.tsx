@@ -428,16 +428,6 @@ export function SessionOverviewScreen({
           <div className="session-overview__workspace-actions">
             <button
               type="button"
-              onClick={onCreateRecipe}
-              className="session-overview__workspace-btn session-overview__workspace-btn--recipe"
-            >
-              <span className="batch-totals-add-extra-btn__icon" aria-hidden>
-                +
-              </span>
-              Add recipe
-            </button>
-            <button
-              type="button"
               onClick={() => setPickRecipeOpen(true)}
               className="session-overview__workspace-btn session-overview__workspace-btn--mix"
             >
@@ -445,6 +435,16 @@ export function SessionOverviewScreen({
                 +
               </span>
               Add mix
+            </button>
+            <button
+              type="button"
+              onClick={onCreateRecipe}
+              className="session-overview__workspace-btn session-overview__workspace-btn--recipe"
+            >
+              <span className="batch-totals-add-extra-btn__icon" aria-hidden>
+                +
+              </span>
+              Add recipe
             </button>
           </div>
         </div>
