@@ -24,12 +24,48 @@ import {
   optionIdsForItem,
   type FlexSelectItem,
 } from "../../domain/select/types";
-import { useSelectChipGestures } from "./useSelectChipGestures";
+import {
+  SELECT_CHIP_LONG_PRESS_MS,
+  useSelectChipGestures,
+} from "./useSelectChipGestures";
 
 const CHEVRON_SIZE = 14;
 const PLUS_SIZE = 14;
 const MENU_GAP_PX = 4;
 const DEFER_MENU_MS = 340;
+const PULSE_MS = 240;
+
+/** Light pulse + hold-drain feedback for quantity chips. */
+function useSelectChipFeedback() {
+  const [holding, setHolding] = useState(false);
+  const [pulse, setPulse] = useState(false);
+  const pulseTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (pulseTimerRef.current != null) {
+        window.clearTimeout(pulseTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  const triggerPulse = useCallback(() => {
+    setPulse(false);
+    window.requestAnimationFrame(() => {
+      setPulse(true);
+      if (pulseTimerRef.current != null) {
+        window.clearTimeout(pulseTimerRef.current);
+      }
+      pulseTimerRef.current = window.setTimeout(() => {
+        pulseTimerRef.current = null;
+        setPulse(false);
+      }, PULSE_MS);
+    });
+  }, []);
+
+  return { holding, setHolding, pulse, triggerPulse };
+}
 
 /** Widest label by character length (stable closed-chip width for number suffixes). */
 function widestOptionLabel(
@@ -142,8 +178,12 @@ function SelectDropdownChip({
     };
   }, [open, onOpenChange]);
 
+  const { holding, setHolding, pulse, triggerPulse } = useSelectChipFeedback();
+
   const gestures = useSelectChipGestures({
     enabled: !open,
+    holdFeedback: selected && !open,
+    onHoldChange: setHolding,
     onTap: () => {
       if (open) {
         onOpenChange(false);
@@ -161,7 +201,9 @@ function SelectDropdownChip({
     },
     onDoubleTap: () => {
       clearDeferOpen();
-      if (selected) onIncrement();
+      if (!selected) return;
+      triggerPulse();
+      onIncrement();
     },
     onLongPress: () => {
       clearDeferOpen();
@@ -225,6 +267,15 @@ function SelectDropdownChip({
         data-selected={selected ? "" : undefined}
         data-qty={qty > 1 ? String(qty) : undefined}
         data-open={open ? "" : undefined}
+        data-hold={holding ? "" : undefined}
+        data-pulse={pulse ? "up" : undefined}
+        style={
+          holding
+            ? ({
+                "--select-chip-hold-ms": `${SELECT_CHIP_LONG_PRESS_MS}ms`,
+              } as CSSProperties)
+            : undefined
+        }
         aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -262,11 +313,15 @@ function SimpleSelectChip({
   onDecrement: () => void;
 }) {
   const selected = qty >= 1;
+  const { holding, setHolding, pulse, triggerPulse } = useSelectChipFeedback();
   const gestures = useSelectChipGestures({
+    holdFeedback: selected,
+    onHoldChange: setHolding,
     onTap: () => {
       if (!selected) onSelect();
     },
     onDoubleTap: () => {
+      triggerPulse();
       onIncrement();
     },
     onLongPress: () => {
@@ -280,6 +335,15 @@ function SimpleSelectChip({
       className="select-chip"
       data-selected={selected ? "" : undefined}
       data-qty={qty > 1 ? String(qty) : undefined}
+      data-hold={holding ? "" : undefined}
+      data-pulse={pulse ? "up" : undefined}
+      style={
+        holding
+          ? ({
+              "--select-chip-hold-ms": `${SELECT_CHIP_LONG_PRESS_MS}ms`,
+            } as CSSProperties)
+          : undefined
+      }
       aria-pressed={selected}
       aria-label={
         selected ? (qty > 1 ? `${label}, quantity ${qty}` : label) : label

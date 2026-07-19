@@ -3509,6 +3509,61 @@
   );
 }
 
+/** Long-press drain toward unselected colors (duration matches gesture). */
+.select-chip[data-selected][data-hold] {
+  transition:
+    color var(--select-chip-hold-ms, 420ms) linear,
+    border-color var(--select-chip-hold-ms, 420ms) linear,
+    background-color var(--select-chip-hold-ms, 420ms) linear;
+  color: var(--semantic-text-primary);
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+}
+
+/** Double-tap quantity-up pulse (chip + badge). */
+.select-chip[data-pulse="up"] {
+  animation: select-chip-pulse-up 240ms ease;
+}
+
+.select-chip[data-pulse="up"][data-qty]::after {
+  animation: select-chip-badge-pop 240ms ease;
+}
+
+@keyframes select-chip-pulse-up {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes select-chip-badge-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.28);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .select-chip[data-pulse="up"],
+  .select-chip[data-pulse="up"][data-qty]::after {
+    animation: none;
+  }
+
+  .select-chip[data-selected][data-hold] {
+    transition-duration: 0.01ms;
+  }
+}
+
 .select-chip--select {
   gap: 6px;
   padding-right: 8px;
