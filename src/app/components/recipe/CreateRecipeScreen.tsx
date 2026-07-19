@@ -18,10 +18,8 @@ import {
 } from "../mixer/RecipeZoneMeta";
 import {
   SHEET_FIELD_INPUT_CLASS,
-  SHEET_FIELD_LABEL,
   sheetFieldInputStyle,
 } from "../sheets/sheetChrome";
-import { cv } from "../../ui/tokens";
 
 function parseNum(raw: string): number {
   const n = Number(String(raw).replace(",", "."));
@@ -43,20 +41,16 @@ function Field({
 }) {
   return (
     <label className="create-recipe__field">
-      <span style={SHEET_FIELD_LABEL}>{label}</span>
+      <span className="create-recipe__field-label">{label}</span>
       <span className="create-recipe__field-row">
         <input
-          className={SHEET_FIELD_INPUT_CLASS}
+          className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
           style={sheetFieldInputStyle({ flex: 1 })}
           value={value}
           inputMode={inputMode}
           onChange={(e) => onChange(e.target.value)}
         />
-        {suffix ? (
-          <span className="create-recipe__suffix" style={{ color: cv.text.muted }}>
-            {suffix}
-          </span>
-        ) : null}
+        {suffix ? <span className="create-recipe__suffix">{suffix}</span> : null}
       </span>
     </label>
   );
@@ -196,7 +190,7 @@ export function CreateRecipeScreen({
 
   const frame = (
     <div
-      className="app-frame relative flex flex-col overflow-hidden select-none"
+      className="app-frame relative flex flex-col overflow-hidden select-none h-full min-h-0"
       style={{ background: "var(--semantic-surface-app)" }}
     >
       <AppHeader
@@ -224,36 +218,38 @@ export function CreateRecipeScreen({
         }
       />
 
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-none app-gutter-x">
-        <div className="create-recipe__body">
-          <div
-            className="create-recipe__segment"
-            role="tablist"
-            aria-label="Recipe method"
+      <div className="destination-page__subnav app-gutter-x">
+        <div
+          className="catalog-hub__tabs"
+          role="tablist"
+          aria-label="Recipe method"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={method === "formula"}
+            className="catalog-hub__tab"
+            data-active={method === "formula" ? "" : undefined}
+            onClick={() => switchMethod("formula")}
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={method === "formula"}
-              className="create-recipe__segment-btn"
-              data-active={method === "formula" ? "" : undefined}
-              onClick={() => switchMethod("formula")}
-            >
-              Formula
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={method === "weights"}
-              className="create-recipe__segment-btn"
-              data-active={method === "weights" ? "" : undefined}
-              onClick={() => switchMethod("weights")}
-            >
-              Actual weights
-            </button>
-          </div>
+            Formula
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={method === "weights"}
+            className="catalog-hub__tab"
+            data-active={method === "weights" ? "" : undefined}
+            onClick={() => switchMethod("weights")}
+          >
+            Actual weights
+          </button>
+        </div>
+      </div>
 
-          <p className="create-recipe__lede" style={{ color: cv.text.muted }}>
+      <div className="create-recipe__scroll flex-1 min-h-0 overflow-y-auto overscroll-none app-gutter-x">
+        <div className="create-recipe__body">
+          <p className="create-recipe__lede">
             {method === "formula"
               ? "Define A:B parts and filler / thickener as % of binder."
               : "Enter measured grams — the formula is derived automatically."}
@@ -368,39 +364,37 @@ export function CreateRecipeScreen({
           )}
 
           {preview ? (
-            <p className="create-recipe__preview" style={{ color: cv.text.secondary }}>
+            <p className="create-recipe__preview">
               {formatRecipeFormulaSummary(preview)}
             </p>
           ) : null}
 
-          {error ? (
-            <p className="create-recipe__error" style={{ color: cv.state.error }}>
-              {error}
-            </p>
-          ) : null}
+          {error ? <p className="create-recipe__error">{error}</p> : null}
+        </div>
+      </div>
 
-          <div className="create-recipe__actions">
-            {context.source === "session" || canSaveInSession ? (
-              <button
-                type="button"
-                className="destination-page__primary-btn destination-page__primary-btn--session"
-                onClick={saveSession}
-              >
-                Save in session
-              </button>
-            ) : null}
+      <div className="create-recipe__dock app-gutter-x">
+        <div className="create-recipe__actions">
+          {context.source === "session" || canSaveInSession ? (
             <button
               type="button"
-              className={
-                context.source === "session" || canSaveInSession
-                  ? "create-recipe__secondary-btn"
-                  : "destination-page__primary-btn"
-              }
-              onClick={saveLibrary}
+              className="destination-page__primary-btn destination-page__primary-btn--session"
+              onClick={saveSession}
             >
-              Save to library
+              Save in session
             </button>
-          </div>
+          ) : null}
+          <button
+            type="button"
+            className={
+              context.source === "session" || canSaveInSession
+                ? "create-recipe__secondary-btn"
+                : "destination-page__primary-btn"
+            }
+            onClick={saveLibrary}
+          >
+            Save to library
+          </button>
         </div>
       </div>
     </div>

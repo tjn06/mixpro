@@ -2038,7 +2038,8 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ── Sessions hub ───────────────────────────────────────────────────────── */
+/* ── Shared page / sheet search (icon + field) ───────────────────────────── */
+.app-search,
 .sessions-page__search {
   display: flex;
   align-items: center;
@@ -2053,6 +2054,7 @@
   color: var(--semantic-text-muted);
 }
 
+.app-search__input,
 .sessions-page__search-input {
   flex: 1 1 auto;
   min-width: 0;
@@ -2067,8 +2069,15 @@
   outline: none;
 }
 
+.app-search__input::placeholder,
 .sessions-page__search-input::placeholder {
   color: var(--semantic-text-muted);
+}
+
+.app-search__input::-webkit-search-cancel-button,
+.sessions-page__search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 /**
@@ -2237,8 +2246,7 @@
   min-height: 0;
   padding: 4px 2px;
   box-sizing: border-box;
-  border: 1.5px solid
-    color-mix(in srgb, var(--semantic-text-muted) 45%, transparent);
+  border: var(--semantic-border-subtle);
   border-radius: 12px;
   background: transparent;
   color: var(--semantic-text-muted);
@@ -2247,18 +2255,14 @@
 }
 
 .sessions-page__stage--active {
-  border-color: color-mix(in srgb, var(--semantic-text-muted) 55%, transparent);
+  border: var(--semantic-border-default);
   color: var(--semantic-text-secondary);
 }
 
-/** Completed = filled background only (steps are not interactive). */
+/** Completed = filled surface (works in light + dark; steps are not interactive). */
 .sessions-page__stage--done {
   border-color: transparent;
-  background: color-mix(
-    in srgb,
-    var(--semantic-surface-elevated, #1a1a1a) 88%,
-    var(--semantic-text-muted) 12%
-  );
+  background: var(--semantic-surface-raised);
   color: var(--semantic-text-secondary);
 }
 
@@ -2302,19 +2306,23 @@
   left: 100%;
   width: var(--sessions-stage-gap);
   height: 0;
-  border-top: 2px solid
-    color-mix(in srgb, var(--semantic-text-muted) 45%, transparent);
+  border-top: var(--semantic-border-subtle);
   transform: translateY(-50%);
   pointer-events: none;
   z-index: 2;
 }
 
 .sessions-page__stage--link-ahead .sessions-page__stage-connector {
-  border-top-color: color-mix(in srgb, var(--semantic-text-muted) 70%, transparent);
+  border-top: var(--semantic-border-default);
 }
 
-/* ── Create Recipe (Phase 2) ────────────────────────────────────────────── */
-/** Same width rules as `.destination-page__body` — gutter parent, no px max-width. */
+/* ── Create Recipe ──────────────────────────────────────────────────────── */
+/** Scrollable form column (method tabs + save dock stay pinned). */
+.create-recipe__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .create-recipe__body {
   box-sizing: border-box;
   display: flex;
@@ -2322,61 +2330,26 @@
   gap: var(--section-gap, 12px);
   width: 100%;
   min-width: 0;
-  padding-block: var(--space-4, 16px) var(--app-bottom-inset);
+  padding-block: var(--space-3, 12px) var(--space-4, 16px);
   padding-inline: 0;
 }
 
-.create-recipe__subline {
-  font-family: "Outfit", sans-serif;
-  font-size: var(--text-page-section, 13px);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ui-recipe-value);
+/** Pinned save actions above the home-indicator inset. */
+.create-recipe__dock {
+  flex-shrink: 0;
+  padding-block: 10px var(--app-bottom-inset);
+  border-top: var(--semantic-border-subtle);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
 }
 
-.create-recipe__segment {
-  display: flex;
-  gap: 0;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1.5px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
-  background: var(--component-sheet-panel-list-row-bg, rgba(255, 255, 255, 0.04));
-}
-
-.create-recipe__segment-btn {
-  flex: 1;
-  min-height: 44px;
-  border: none;
-  background: transparent;
-  font-family: "Outfit", sans-serif;
-  font-size: var(--text-page-caption, 12px);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--semantic-text-secondary);
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.create-recipe__segment-btn[data-active] {
-  background: var(--semantic-selection-bg, rgba(255, 255, 255, 0.1));
-  color: var(--semantic-text-primary);
-}
-
-.create-recipe__segment-btn:active {
-  opacity: 0.85;
-}
-
-.create-recipe__lede,
-.create-recipe__preview,
-.create-recipe__error {
+.create-recipe__lede {
   margin: 0;
-  font-family: "Outfit", sans-serif;
-  font-size: var(--text-page-body, 16px);
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-secondary, 14px);
   font-weight: 500;
   letter-spacing: 0.01em;
   line-height: 1.45;
+  color: var(--semantic-text-muted);
 }
 
 .create-recipe__field {
@@ -2385,36 +2358,75 @@
   gap: 6px;
 }
 
+.create-recipe__field-label {
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-section, 13px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--semantic-text-secondary);
+}
+
 .create-recipe__field-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.create-recipe__input {
+  border-radius: 12px !important;
 }
 
 .create-recipe__suffix {
   flex-shrink: 0;
-  font-family: "Outfit", sans-serif;
-  font-size: var(--text-page-secondary, 14px);
+  min-width: 4.25rem;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-caption, 12px);
   font-weight: 600;
-  letter-spacing: 0.02em;
-  min-width: 4.5rem;
+  letter-spacing: 0.03em;
+  color: var(--semantic-text-muted);
+}
+
+.create-recipe__preview {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: var(--semantic-border-subtle);
+  background: var(--semantic-surface-raised);
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-secondary, 14px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  color: var(--semantic-text-secondary);
+}
+
+.create-recipe__error {
+  margin: 0;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-secondary, 14px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  color: var(--semantic-state-error, #f07178);
 }
 
 .create-recipe__actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
 .create-recipe__secondary-btn {
   width: 100%;
   min-height: 48px;
   border-radius: 14px;
-  border: 1.5px solid var(--semantic-border-default, rgba(255, 255, 255, 0.2));
+  border: var(--semantic-border-default);
   background: transparent;
   color: var(--semantic-text-primary);
-  font-family: "Outfit", sans-serif;
+  font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: var(--text-page-body, 16px);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -2424,7 +2436,8 @@
 }
 
 .create-recipe__secondary-btn:active {
-  opacity: 0.85;
+  background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
+  opacity: 1;
 }
 
 /** Outlined session action — teal border/label, no fill. */
@@ -2435,23 +2448,6 @@
 
 .create-recipe__secondary-btn--session:active {
   background: color-mix(in srgb, var(--session-accent) 12%, transparent);
-  opacity: 1;
-}
-
-.create-recipe__session-recipes {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.create-recipe__section-title {
-  margin: 0;
-  font-family: "Outfit", sans-serif;
-  font-size: var(--text-page-section, 13px);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 /* —— Session overview (Phase 3) —— */

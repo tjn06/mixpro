@@ -12,6 +12,21 @@ body,
   overscroll-behavior: none;
 }
 
+/**
+ * Hide scrollbars on app lists (still scrollable).
+ * Matches the common `overflow-y-auto overscroll-none` list pattern.
+ */
+.app-scroll-hidden,
+.overflow-y-auto.overscroll-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.app-scroll-hidden::-webkit-scrollbar,
+.overflow-y-auto.overscroll-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* Mobile shell — full bleed; safe areas handled inside .app-frame */
 .mobile-shell {
   box-sizing: border-box;

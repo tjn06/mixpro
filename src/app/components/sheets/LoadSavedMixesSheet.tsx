@@ -16,22 +16,19 @@ import { batchNameInputFromSavedMix } from "../../batch-names";
 import { SaveMixNameSheet } from "./SaveMixNameSheet";
 import { AppFrameCoverSheet } from "./AppFrameCoverSheet";
 import {
-  SHEET_FIELD_INPUT_CLASS,
   SHEET_LIST_ROW_CLASS,
   SHEET_SUBTITLE,
   SHEET_TITLE,
   SHEET_COVER_HEADER_STYLE,
   SHEET_COVER_FORM_SPACING,
-  sheetFieldInputStyle,
 } from "./sheetChrome";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "./SheetCloseButton";
 import { ScrollEdgeFadeOverlays, useScrollEdgeFades } from "./scrollEdgeFades";
+import { PageSearchField } from "../shared/PageSearchField";
 import { cv } from "../../ui/tokens";
 
 const strip = cv.loadSheetStrip;
 const list = cv.loadSheetList;
-
-const SEARCH_H = 40;
 
 /** Two-line compact card — action grid on the right; widens left over content when open. */
 const CARD_PAD_X = 14;
@@ -394,14 +391,11 @@ export function LoadSavedMixesSheet({
               {subtitle}
             </p>
             <div className="w-full" style={{ marginTop: SHEET_COVER_FORM_SPACING.subtitleToSubinfo }}>
-              <input
-                type="search"
+              <PageSearchField
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={setQuery}
                 placeholder="Search saved mixes"
                 aria-label="Search saved mixes"
-                className={SHEET_FIELD_INPUT_CLASS}
-                style={sheetFieldInputStyle({ height: SEARCH_H })}
               />
             </div>
           </header>

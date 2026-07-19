@@ -1,4 +1,3 @@
-import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   flattenCatalogForEdit,
@@ -6,6 +5,7 @@ import {
 } from "../../domain/select/catalogMutations";
 import type { FlexSelectItem } from "../../domain/select/types";
 import { cv } from "../../ui/tokens";
+import { PageSearchField } from "../shared/PageSearchField";
 import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
 
 /** Edit global catalog — fixed chrome + independently scrolling list. */
@@ -85,17 +85,12 @@ export function CatalogEditPanel({
           </button>
         </form>
 
-        <label className="sessions-page__search catalog-hub__search">
-          <Search size={18} strokeWidth={2} aria-hidden />
-          <input
-            type="search"
-            className="sessions-page__search-input"
-            placeholder={searchPlaceholder}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            enterKeyHint="search"
-          />
-        </label>
+        <PageSearchField
+          className="catalog-hub__search"
+          placeholder={searchPlaceholder}
+          value={query}
+          onChange={setQuery}
+        />
       </div>
 
       <div className="catalog-hub__edit-scroll">

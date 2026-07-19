@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CirclePlay, Search } from "lucide-react";
+import { CirclePlay } from "lucide-react";
 import { useTickingNow } from "../../hooks/useTickingNow";
 import { getHumanSavedTime } from "../../saved-mixes/humanSavedTime";
 import { useSessionsStore } from "../../sessions/store";
@@ -13,6 +13,7 @@ import type { MixSession } from "../../sessions/types";
 import { SESSION_STAGE_ORDER } from "../../sessions/types";
 import { cv } from "../../ui/tokens";
 import { DeleteIcon, RenameIcon } from "../shared/ActionIcons";
+import { PageSearchField } from "../shared/PageSearchField";
 import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
 import { SaveSessionNameSheet } from "../sessions/SaveSessionNameSheet";
 import { DestinationPageChrome } from "./DestinationPageChrome";
@@ -191,17 +192,11 @@ export function SessionsPage({
         + New session
       </button>
 
-      <label className="sessions-page__search">
-        <Search size={18} strokeWidth={2} aria-hidden />
-        <input
-          type="search"
-          className="sessions-page__search-input"
-          placeholder="Search sessions…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          enterKeyHint="search"
-        />
-      </label>
+      <PageSearchField
+        placeholder="Search sessions…"
+        value={query}
+        onChange={setQuery}
+      />
 
       {sessions.length === 0 ? (
         <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
