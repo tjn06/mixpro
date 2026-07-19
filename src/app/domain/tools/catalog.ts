@@ -8,17 +8,22 @@ import type { FlexSelectSelection } from "../select/selection";
 import type { ToolItem } from "./types";
 
 /**
- * Placeholder tools catalog for session Tools stage + standalone Tools screen.
- * Items with `children` open an overlay dropdown (label + chosen option on the chip).
+ * Tools catalog for session Tools stage + standalone Tools screen.
+ * - No `children` → simple chip
+ * - With `children` → variant select (closed chip shows family label;
+ *   options are variants like "Mixer 245", sized to the widest option)
+ *
+ * Variant number scales for layout testing: 1–10, 100–999, 1000–9999.
  */
 export const TOOLS_CATALOG: ToolItem[] = [
   {
     id: "mixer",
     label: "Mixer",
     children: [
-      { id: "mixer-drill", label: "Drill mixer" },
-      { id: "mixer-hand", label: "Hand mixer" },
-      { id: "mixer-paddle", label: "Spiral paddle" },
+      { id: "mixer-3", label: "Mixer 3" },
+      { id: "mixer-7", label: "Mixer 7" },
+      { id: "mixer-245", label: "Mixer 245" },
+      { id: "mixer-1842", label: "Mixer 1842" },
     ],
   },
   { id: "roller", label: "Roller" },
@@ -26,17 +31,19 @@ export const TOOLS_CATALOG: ToolItem[] = [
     id: "brush",
     label: "Brush",
     children: [
-      { id: "brush-chip", label: "Chip brush" },
-      { id: "brush-foam", label: "Foam brush" },
-      { id: "brush-bristle", label: "Bristle brush" },
+      { id: "brush-2", label: "Brush 2" },
+      { id: "brush-10", label: "Brush 10" },
+      { id: "brush-501", label: "Brush 501" },
+      { id: "brush-9001", label: "Brush 9001" },
     ],
   },
   {
     id: "squeegee",
     label: "Squeegee",
     children: [
-      { id: "squeegee-notch", label: "Notched" },
-      { id: "squeegee-flat", label: "Flat" },
+      { id: "squeegee-1", label: "Squeegee 1" },
+      { id: "squeegee-9", label: "Squeegee 9" },
+      { id: "squeegee-412", label: "Squeegee 412" },
     ],
   },
   { id: "spike-roller", label: "Spike roller" },
@@ -45,18 +52,19 @@ export const TOOLS_CATALOG: ToolItem[] = [
     id: "gloves",
     label: "Gloves",
     children: [
-      { id: "gloves-nitrile", label: "Nitrile" },
-      { id: "gloves-latex", label: "Latex" },
-      { id: "gloves-chemical", label: "Chemical" },
+      { id: "gloves-4", label: "Gloves 4" },
+      { id: "gloves-88", label: "Gloves 88" },
+      { id: "gloves-760", label: "Gloves 760" },
+      { id: "gloves-3200", label: "Gloves 3200" },
     ],
   },
   {
     id: "ppe",
     label: "PPE",
     children: [
-      { id: "ppe-mask", label: "Respirator" },
-      { id: "ppe-goggles", label: "Goggles" },
-      { id: "ppe-suit", label: "Coverall" },
+      { id: "ppe-5", label: "PPE 5" },
+      { id: "ppe-333", label: "PPE 333" },
+      { id: "ppe-5555", label: "PPE 5555" },
     ],
   },
   { id: "heat-gun", label: "Heat gun" },
@@ -66,9 +74,9 @@ export const TOOLS_CATALOG: ToolItem[] = [
     id: "tape",
     label: "Tape",
     children: [
-      { id: "tape-masking", label: "Masking" },
-      { id: "tape-duct", label: "Duct" },
-      { id: "tape-painters", label: "Painter’s" },
+      { id: "tape-6", label: "Tape 6" },
+      { id: "tape-150", label: "Tape 150" },
+      { id: "tape-8888", label: "Tape 8888" },
     ],
   },
   { id: "scissors", label: "Scissors" },

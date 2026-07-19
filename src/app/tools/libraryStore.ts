@@ -51,8 +51,11 @@ function createToolsLibraryStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 1,
+        version: 2,
         partialize: (state) => ({ items: state.items }),
+        migrate: () => ({
+          items: cloneFlexSelectItems(TOOLS_CATALOG),
+        }),
         merge: (persisted, current) => {
           const p = persisted as { items?: ToolItem[] } | undefined;
           if (!p?.items?.length) return current;

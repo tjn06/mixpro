@@ -31,6 +31,18 @@ const PLUS_SIZE = 14;
 const MENU_GAP_PX = 4;
 const DEFER_MENU_MS = 340;
 
+/** Widest label by character length (stable closed-chip width for number suffixes). */
+function widestOptionLabel(
+  familyLabel: string,
+  options: readonly FlexSelectItem[] | undefined,
+): string {
+  let widest = familyLabel;
+  for (const option of options ?? []) {
+    if (option.label.length > widest.length) widest = option.label;
+  }
+  return widest;
+}
+
 function SelectDropdownChip({
   item,
   selectedOption,
@@ -60,6 +72,10 @@ function SelectDropdownChip({
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
   const listboxId = useId();
   const selected = selectedOption != null;
+  const widthSizerLabel = useMemo(
+    () => widestOptionLabel(item.label, item.children),
+    [item.label, item.children],
+  );
 
   const clearDeferOpen = useCallback(() => {
     if (deferOpenRef.current != null) {
@@ -75,16 +91,17 @@ function SelectDropdownChip({
     if (!anchor) return;
     const rect = anchor.getBoundingClientRect();
     const viewportPad = 8;
-    const minWidth = Math.max(rect.width, 148);
+    /** Match closed button width exactly (no forced min wider than the chip). */
+    const width = rect.width;
     let left = rect.left;
-    if (left + minWidth > window.innerWidth - viewportPad) {
-      left = Math.max(viewportPad, window.innerWidth - viewportPad - minWidth);
+    if (left + width > window.innerWidth - viewportPad) {
+      left = Math.max(viewportPad, window.innerWidth - viewportPad - width);
     }
     setMenuStyle({
       position: "fixed",
       top: rect.bottom + MENU_GAP_PX,
       left,
-      minWidth,
+      width,
       zIndex: 80,
     });
   }, []);
@@ -176,9 +193,6 @@ function SelectDropdownChip({
                   onClick={() => onPickOption(option.id)}
                 >
                   {option.label}
-                  {active && qty > 0 ? (
-                    <span className="select-chip-menu__option-qty">{qty}</span>
-                  ) : null}
                 </button>
               );
             })}
@@ -197,23 +211,34 @@ function SelectDropdownChip({
         )
       : null;
 
+  const ariaLabel = selectedOption
+    ? qty > 1
+      ? `${item.label}, ${selectedOption.label}, quantity ${qty}`
+      : `${item.label}, ${selectedOption.label}`
+    : item.label;
+
   return (
     <div className="select-chip-anchor" ref={anchorRef}>
       <button
         type="button"
         className="select-chip select-chip--select"
         data-selected={selected ? "" : undefined}
-        data-qty={qty >= 1 ? String(qty) : undefined}
+        data-qty={qty > 1 ? String(qty) : undefined}
         data-open={open ? "" : undefined}
+        aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listboxId : undefined}
         {...gestures}
       >
-        <span className="select-chip__group-label">{item.label}</span>
-        {selectedOption ? (
-          <span className="select-chip__choice">{selectedOption.label}</span>
-        ) : null}
+        <span className="select-chip__label-stack">
+          <span className="select-chip__width-sizer" aria-hidden>
+            {widthSizerLabel}
+          </span>
+          <span className="select-chip__group-label">
+            {selectedOption?.label ?? item.label}
+          </span>
+        </span>
         <span className="select-chip__chevron" aria-hidden>
           <ChevronDown size={CHEVRON_SIZE} strokeWidth={2} />
         </span>
@@ -254,9 +279,11 @@ function SimpleSelectChip({
       type="button"
       className="select-chip"
       data-selected={selected ? "" : undefined}
-      data-qty={qty >= 1 ? String(qty) : undefined}
+      data-qty={qty > 1 ? String(qty) : undefined}
       aria-pressed={selected}
-      aria-label={selected ? `${label}, quantity ${qty}` : label}
+      aria-label={
+        selected ? (qty > 1 ? `${label}, quantity ${qty}` : label) : label
+      }
       {...gestures}
     >
       <span className="select-chip__label">{label}</span>

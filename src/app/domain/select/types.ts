@@ -3,8 +3,9 @@ export type FlexSelectItem = {
   id: string;
   label: string;
   /**
-   * When present, chip is a dropdown select: options open in an overlay menu
-   * (not inserted into the flex flow). One option selected at a time per group.
+   * When present, chip is a variant select: closed chip shows `label` only
+   * (sized to the widest option). Options open in an overlay menu.
+   * One variant selected at a time; parent id is never selected.
    */
   children?: FlexSelectItem[];
 };
