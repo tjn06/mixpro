@@ -1,138 +1,217 @@
-import { useCallback, useRef, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useMemo,
+  useRef,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 
+/** Shared timing — menu open defer uses the same window as double-tap. */
 export const SELECT_CHIP_LONG_PRESS_MS = 420;
-const DOUBLE_TAP_MS = 320;
+export const SELECT_CHIP_DOUBLE_TAP_MS = 300;
+export const SELECT_CHIP_PULSE_MS = 240;
+
 const MOVE_CANCEL_PX = 10;
+/** Salvage a select-mode tap if the browser cancels a short, still press. */
+const CANCEL_SALVAGE_MS = 280;
+
+export type SelectChipGestureMode = "select" | "qty";
+
+type ChipActions = {
+  onTap: () => void;
+  onDoubleTap?: () => void;
+  onLongPress?: () => void;
+};
+
+function clearHold(el: HTMLElement | null) {
+  if (!el) return;
+  delete el.dataset.hold;
+  el.style.removeProperty("--select-chip-hold-ms");
+}
+
+function startHold(el: HTMLElement) {
+  el.dataset.hold = "";
+  el.style.setProperty(
+    "--select-chip-hold-ms",
+    `${SELECT_CHIP_LONG_PRESS_MS}ms`,
+  );
+}
+
+function pulseUp(el: HTMLElement) {
+  delete el.dataset.pulse;
+  // Restart CSS animation if a pulse is already running.
+  void el.offsetWidth;
+  el.dataset.pulse = "up";
+  window.setTimeout(() => {
+    if (el.dataset.pulse === "up") delete el.dataset.pulse;
+  }, SELECT_CHIP_PULSE_MS);
+}
 
 /**
- * Tap / double-tap / long-press for quantity chips.
+ * Pointer gestures for select chips.
  *
- * Unselected (`qtyGestures` false): instant tap only — no long-press timer.
- * Selected (`qtyGestures` true): double-tap (+1) and long-press (−1) with hold feedback.
+ * - `select`: instant tap only (first pick / open). No long-press timer.
+ * - `qty`: double-tap (+1 + pulse), long-press (−1 + hold drain).
  *
- * Unselected taps do not stamp the double-tap clock — a bounce right after
- * first select will not fire +1 pulse by accident.
+ * Hold/pulse feedback writes `data-hold` / `data-pulse` on the event target
+ * (no React re-render). Action callbacks are read from a ref each time.
  */
 export function useSelectChipGestures({
   enabled = true,
-  qtyGestures = false,
+  mode,
   onTap,
   onDoubleTap,
   onLongPress,
-  onHoldChange,
 }: {
   enabled?: boolean;
-  /** When true, enable double-tap / long-press qty gestures + hold drain. */
-  qtyGestures?: boolean;
+  mode: SelectChipGestureMode;
   onTap: () => void;
-  onDoubleTap: () => void;
-  onLongPress: () => void;
-  onHoldChange?: (holding: boolean) => void;
+  onDoubleTap?: () => void;
+  onLongPress?: () => void;
 }) {
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  const actionsRef = useRef<ChipActions>({ onTap, onDoubleTap, onLongPress });
+  actionsRef.current = { onTap, onDoubleTap, onLongPress };
+
   const longTimerRef = useRef<number | null>(null);
   const longFiredRef = useRef(false);
-  const holdingRef = useRef(false);
-  const startRef = useRef({ x: 0, y: 0 });
   const lastTapAtRef = useRef(0);
-  const qtyGesturesRef = useRef(qtyGestures);
-  qtyGesturesRef.current = qtyGestures;
+  const startRef = useRef({ x: 0, y: 0, t: 0 });
+  const movedRef = useRef(false);
+  const targetRef = useRef<HTMLElement | null>(null);
 
-  const stopHoldVisual = useCallback(() => {
-    if (!holdingRef.current) return;
-    holdingRef.current = false;
-    onHoldChange?.(false);
-  }, [onHoldChange]);
+  return useMemo(() => {
+    const clearLongTimer = () => {
+      if (longTimerRef.current != null) {
+        window.clearTimeout(longTimerRef.current);
+        longTimerRef.current = null;
+      }
+    };
 
-  const clearLongTimer = useCallback(() => {
-    if (longTimerRef.current != null) {
-      window.clearTimeout(longTimerRef.current);
-      longTimerRef.current = null;
-    }
-  }, []);
+    const endHoldVisual = () => clearHold(targetRef.current);
 
-  const cancelHold = useCallback(() => {
-    clearLongTimer();
-    stopHoldVisual();
-  }, [clearLongTimer, stopHoldVisual]);
-
-  const onPointerDown = useCallback(
-    (event: ReactPointerEvent<HTMLElement>) => {
-      if (!enabled) return;
-      if (event.button !== 0) return;
-      longFiredRef.current = false;
-      startRef.current = { x: event.clientX, y: event.clientY };
+    const cancelPress = () => {
       clearLongTimer();
-      stopHoldVisual();
+      endHoldVisual();
+    };
 
-      /** Qty gestures only when selected — unselected stays a simple instant tap. */
-      if (!qtyGesturesRef.current) return;
+    const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+      if (!enabledRef.current || event.button !== 0) return;
 
-      holdingRef.current = true;
-      onHoldChange?.(true);
+      const el = event.currentTarget;
+      targetRef.current = el;
+      longFiredRef.current = false;
+      movedRef.current = false;
+      startRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+        t: performance.now(),
+      };
+      cancelPress();
+
+      try {
+        el.setPointerCapture(event.pointerId);
+      } catch {
+        /* ignore — not all targets support capture */
+      }
+
+      if (modeRef.current !== "qty") return;
+
+      startHold(el);
       longTimerRef.current = window.setTimeout(() => {
         longFiredRef.current = true;
         longTimerRef.current = null;
-        stopHoldVisual();
+        endHoldVisual();
         navigator.vibrate?.(10);
-        onLongPress();
+        actionsRef.current.onLongPress?.();
       }, SELECT_CHIP_LONG_PRESS_MS);
-    },
-    [clearLongTimer, enabled, onHoldChange, onLongPress, stopHoldVisual],
-  );
+    };
 
-  const onPointerMove = useCallback(
-    (event: ReactPointerEvent<HTMLElement>) => {
-      if (!enabled || longTimerRef.current == null) return;
+    const onPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+      if (!enabledRef.current) return;
       const dx = event.clientX - startRef.current.x;
       const dy = event.clientY - startRef.current.y;
-      if (dx * dx + dy * dy > MOVE_CANCEL_PX * MOVE_CANCEL_PX) cancelHold();
-    },
-    [cancelHold, enabled],
-  );
+      if (dx * dx + dy * dy <= MOVE_CANCEL_PX * MOVE_CANCEL_PX) return;
+      movedRef.current = true;
+      if (longTimerRef.current != null) cancelPress();
+    };
 
-  const onPointerUp = useCallback(
-    (event: ReactPointerEvent<HTMLElement>) => {
-      if (!enabled) return;
+    const onPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
+      if (!enabledRef.current) return;
       clearLongTimer();
+
+      try {
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        /* ignore */
+      }
+
       if (longFiredRef.current) {
         event.preventDefault();
         return;
       }
-      stopHoldVisual();
 
+      endHoldVisual();
+      if (movedRef.current) return;
+
+      const modeNow = modeRef.current;
       const now = performance.now();
 
-      if (!qtyGesturesRef.current) {
+      if (modeNow === "select") {
         lastTapAtRef.current = 0;
-        onTap();
+        actionsRef.current.onTap();
         return;
       }
 
-      if (now - lastTapAtRef.current <= DOUBLE_TAP_MS) {
+      // qty mode
+      if (now - lastTapAtRef.current <= SELECT_CHIP_DOUBLE_TAP_MS) {
         lastTapAtRef.current = 0;
         navigator.vibrate?.(8);
-        onDoubleTap();
+        pulseUp(event.currentTarget);
+        actionsRef.current.onDoubleTap?.();
         return;
       }
       lastTapAtRef.current = now;
-      onTap();
-    },
-    [clearLongTimer, enabled, onDoubleTap, onTap, stopHoldVisual],
-  );
+      actionsRef.current.onTap();
+    };
 
-  const onPointerCancel = useCallback(() => {
-    cancelHold();
-  }, [cancelHold]);
+    const onPointerCancel = (event: ReactPointerEvent<HTMLElement>) => {
+      const elapsed = performance.now() - startRef.current.t;
+      const canSalvageSelect =
+        modeRef.current === "select" &&
+        !movedRef.current &&
+        !longFiredRef.current &&
+        elapsed <= CANCEL_SALVAGE_MS;
 
-  const onContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
+      cancelPress();
+      try {
+        if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        /* ignore */
+      }
+
+      if (canSalvageSelect && enabledRef.current) {
+        lastTapAtRef.current = 0;
+        actionsRef.current.onTap();
+      }
+    };
+
+    const onContextMenu = (event: ReactMouseEvent) => {
+      event.preventDefault();
+    };
+
+    return {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp,
+      onPointerCancel,
+      onContextMenu,
+    };
   }, []);
-
-  return {
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-    onPointerCancel,
-    onContextMenu,
-  };
 }
