@@ -182,6 +182,15 @@
   border-bottom: var(--ui-border-header, 1px solid rgba(255, 255, 255, 0.08));
 }
 
+.app-header__title-btn {
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .app-header-chrome:has(.app-header-sub) > .app-header {
   border-bottom-color: transparent;
 }
@@ -2460,61 +2469,10 @@
   color: var(--ui-recipe-value);
 }
 
-/* Name + stages as one chrome band; hairline cuts into workspace. */
+/* Stage chips chrome band; hairline cuts into workspace. */
 .session-overview__chrome {
   flex-shrink: 0;
   border-bottom: 1px solid var(--semantic-border-subtle);
-}
-
-.session-overview__context {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  padding-top: 6px;
-  padding-bottom: 0;
-}
-
-.session-overview__name-field {
-  box-sizing: border-box;
-  max-width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin: 0;
-  padding: 4px 4px;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  text-align: center;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.session-overview__name-field:active .session-overview__name-edit {
-  color: var(--session-accent);
-}
-
-.session-overview__context-name {
-  min-width: 0;
-  margin: 0;
-  font-family: var(--font-ui, "Outfit", sans-serif);
-  font-size: var(--text-page-section, 13px);
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--semantic-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.session-overview__name-edit {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--semantic-text-muted);
 }
 
 .session-overview__workspace-actions {
@@ -3402,13 +3360,13 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 6px;
+  gap: 10px 10px;
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  /* Let qty ::after badges hang outside chips. */
+  /* Let qty / family badges hang outside chips. */
   overflow: visible;
-  padding-top: 6px;
+  padding-top: 12px;
   padding-left: 6px;
 }
 
@@ -3434,16 +3392,16 @@
   gap: 6px;
   width: auto;
   max-width: 100%;
-  height: 36px;
+  height: 40px;
   margin: 0;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
-  border-radius: 6px;
+  border-radius: 7px;
   /* Match workspace plane so selected accent tint reads clearly (esp. light mode). */
   background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
   color: var(--semantic-text-primary);
   font-family: "Outfit", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.01em;
   line-height: 1;
@@ -3461,6 +3419,35 @@
 }
 
 /**
+ * Family name badge when a variant is selected — tiny label above the chip
+ * (qty badge stays top-left via ::after).
+ */
+.select-chip--select[data-family]::before {
+  content: attr(data-family);
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  z-index: 2;
+  box-sizing: border-box;
+  max-width: calc(100% - 18px);
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--select-chip-accent) 45%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  color: var(--select-chip-accent);
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+/**
  * Qty badge via ::after — no layout width; sits top-left, mostly on the chip.
  */
 .select-chip[data-qty]::after {
@@ -3468,7 +3455,7 @@
   position: absolute;
   top: -5px;
   left: -5px;
-  z-index: 2;
+  z-index: 3;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -3635,15 +3622,15 @@
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  min-height: 36px;
+  min-height: 40px;
   margin: 0;
   padding: 0 12px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 7px;
   background: transparent;
   color: var(--semantic-text-primary);
   font-family: "Outfit", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.01em;
   text-align: left;
@@ -3684,6 +3671,220 @@
 
 .select-chip-menu__option--unselect:not(:disabled):active {
   color: var(--semantic-text-secondary);
+}
+
+.select-chip-menu__option:disabled,
+.select-chip-menu__option[data-taken] {
+  opacity: 0.38;
+  cursor: default;
+}
+
+/**
+ * Last dropdown chip + clone-plus look like one card; plus stays a separate
+ * button (no chip gestures). Head/clones earlier in the group stay alone.
+ */
+.select-chip-cluster {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  flex: 0 0 auto;
+  max-width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  border-radius: 7px;
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  overflow: visible;
+}
+
+.select-chip-cluster[data-selected] {
+  border-color: var(--select-chip-accent);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+.select-chip-cluster > .select-chip-anchor {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+}
+
+/** Only the dropdown chip — never the sibling plus (also has .select-chip). */
+.select-chip-cluster > .select-chip-anchor > .select-chip {
+  border: none;
+  border-radius: 7px 0 0 7px;
+  background: transparent;
+  height: 100%;
+  max-width: none;
+}
+
+.select-chip-cluster > .select-chip-anchor > .select-chip[data-selected] {
+  border: none;
+  background: transparent;
+}
+
+/** Hold drain on the fused shell (chip text still drives data-hold). */
+.select-chip-cluster:has(.select-chip-anchor .select-chip[data-hold]) {
+  transition:
+    color var(--select-chip-hold-ms, 420ms) linear,
+    border-color var(--select-chip-hold-ms, 420ms) linear,
+    background-color var(--select-chip-hold-ms, 420ms) linear;
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+}
+
+.select-chip-cluster:has(.select-chip-anchor .select-chip[data-hold])
+  > .select-chip-anchor
+  > .select-chip[data-selected] {
+  color: var(--semantic-text-primary);
+}
+
+/** Slitage segment — fixed column (L/M/H + chevron) reserved before variant pick. */
+.select-chip--wear {
+  position: relative;
+  flex: 0 0 3.5rem;
+  align-self: stretch;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 3.5rem;
+  min-width: 3.5rem;
+  max-width: 3.5rem;
+  height: auto;
+  margin: 0;
+  padding: 0 6px;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+  border-radius: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--semantic-text-primary) 55%, transparent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  overflow: visible;
+}
+
+/** Tiny title badge above the wear column (same idea as family badge). */
+.select-chip--wear[data-wear-title]::before {
+  content: attr(data-wear-title);
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  z-index: 2;
+  box-sizing: border-box;
+  max-width: calc(100% + 12px);
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--select-chip-accent) 45%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  color: var(--select-chip-accent);
+  font-family: "Outfit", sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.select-chip--wear[data-selected] {
+  color: var(--select-chip-accent);
+  border-color: transparent;
+  background: transparent;
+}
+
+.select-chip-cluster[data-selected] .select-chip--wear {
+  border-left-color: color-mix(in srgb, var(--select-chip-accent) 40%, transparent);
+  color: var(--select-chip-accent);
+}
+
+.select-chip--wear:not([data-selected]) {
+  color: var(--semantic-text-muted);
+}
+
+.select-chip--wear:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.select-chip--wear[data-open] .select-chip__wear-chevron {
+  transform: rotate(180deg);
+}
+
+.select-chip__wear-label {
+  flex: 0 0 auto;
+  min-width: 0.7em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.select-chip__wear-chevron {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  transition: transform 0.15s ease;
+}
+
+.select-chip-cluster[data-has-wear] > .select-chip-anchor > .select-chip {
+  border-radius: 7px 0 0 7px;
+}
+
+.select-chip-cluster[data-has-wear] .select-chip--clone-plus {
+  border-radius: 0 7px 7px 0;
+}
+
+.select-chip-cluster[data-has-wear]:not(:has(.select-chip--clone-plus))
+  .select-chip--wear {
+  border-radius: 0 7px 7px 0;
+}
+
+.select-chip--clone-plus {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 38px;
+  align-self: stretch;
+  box-sizing: border-box;
+  width: 38px;
+  min-width: 38px;
+  max-width: 38px;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+  border-radius: 0 7px 7px 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--semantic-text-primary) 55%, transparent);
+}
+
+.select-chip-cluster[data-selected] .select-chip--clone-plus {
+  border-left-color: color-mix(in srgb, var(--select-chip-accent) 40%, transparent);
+  color: var(--select-chip-accent);
+}
+
+.select-chip--clone-plus:active:not(:disabled) {
+  background: color-mix(in srgb, var(--select-chip-accent) 14%, transparent);
+}
+
+.select-chip--clone-plus:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .select-chip-cluster:has(.select-chip-anchor .select-chip[data-hold]) {
+    transition-duration: 0.01ms;
+  }
 }
 
 /* Standout control — add simple custom item (no dropdown). */
@@ -3757,7 +3958,7 @@
 
 @media (min-width: 480px) {
   .select-view {
-    gap: 10px;
+    gap: 12px 12px;
   }
 
   .select-chip {
@@ -3766,6 +3967,15 @@
 
   .select-chip--select {
     padding-right: 10px;
+  }
+
+  /** Keep fused + from inheriting the wider chip padding (was crushing the icon). */
+  .select-chip--clone-plus {
+    flex-basis: 40px;
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    padding: 0;
   }
 
   .select-chip__add-input {

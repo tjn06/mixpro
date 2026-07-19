@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { BlendingRecipe } from "../domain/recipe/types";
 import { normalizeFlexSelectSelection } from "../domain/select/selection";
+import { normalizeWearByOptionId } from "../domain/select/wear";
 import type {
   CreateSessionInput,
   MixSession,
@@ -49,6 +50,7 @@ function createEmptySession(input: CreateSessionInput = {}): MixSession {
     selectedToolQtys: {},
     customTools: [],
     selectedConsumableQtys: {},
+    consumableWearByOptionId: {},
     customConsumables: [],
     createdAt: ts,
     updatedAt: ts,
@@ -57,20 +59,26 @@ function createEmptySession(input: CreateSessionInput = {}): MixSession {
 
 function normalizeSession(session: MixSession): MixSession {
   const activeStage = session.activeStage ?? "mixes";
+  const selectedToolQtys = normalizeFlexSelectSelection(
+    session.selectedToolQtys,
+    session.selectedToolIds,
+  );
+  const selectedConsumableQtys = normalizeFlexSelectSelection(
+    session.selectedConsumableQtys,
+    session.selectedConsumableIds,
+  );
   return {
     ...session,
     activeStage,
     touchedStages: normalizeTouchedStages(session.touchedStages, activeStage),
     sessionRecipes: session.sessionRecipes ?? [],
     batches: session.batches ?? [],
-    selectedToolQtys: normalizeFlexSelectSelection(
-      session.selectedToolQtys,
-      session.selectedToolIds,
-    ),
+    selectedToolQtys,
     customTools: Array.isArray(session.customTools) ? session.customTools : [],
-    selectedConsumableQtys: normalizeFlexSelectSelection(
-      session.selectedConsumableQtys,
-      session.selectedConsumableIds,
+    selectedConsumableQtys,
+    consumableWearByOptionId: normalizeWearByOptionId(
+      session.consumableWearByOptionId,
+      selectedConsumableQtys,
     ),
     customConsumables: Array.isArray(session.customConsumables)
       ? session.customConsumables
@@ -98,6 +106,7 @@ interface SessionsState {
         | "selectedToolQtys"
         | "customTools"
         | "selectedConsumableQtys"
+        | "consumableWearByOptionId"
         | "customConsumables"
       >
     >,
@@ -276,7 +285,7 @@ function createSessionsStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 3,
+        version: 4,
         migrate: (persisted) => {
           const data = persisted as {
             sessions?: MixSession[];

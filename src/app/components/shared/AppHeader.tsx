@@ -32,6 +32,9 @@ interface AppHeaderProps {
   forwardBadgeCount?: number | null;
   /** Session Mode chrome — accent bar + session token styling. */
   sessionChrome?: boolean;
+  /** When set, title is tappable (e.g. rename session). */
+  onTitleClick?: () => void;
+  titleClickLabel?: string;
   /** Recipe name / selector — rendered in the subheader strip below the header bar. */
   subline?: ReactNode;
 }
@@ -114,11 +117,21 @@ export function AppHeader({
   forwardConfirmAction = "GO FORWARD",
   forwardBadgeCount = null,
   sessionChrome = false,
+  onTitleClick,
+  titleClickLabel,
   subline,
 }: AppHeaderProps) {
   const showForward = onForward != null && !isLocked;
   const showForwardBadge =
     showForward && forwardBadgeCount != null && forwardBadgeCount > 0;
+  const titleStyle = {
+    fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
+    fontSize: "var(--text-header-title)",
+    fontWeight: 600,
+    color: sessionChrome ? "var(--session-accent)" : cv.text.primary,
+    letterSpacing: "0.04em",
+    lineHeight: 1.2,
+  } as const;
 
   return (
     <div
@@ -165,19 +178,24 @@ export function AppHeader({
             ) : null}
           </div>
 
-          <h1
-            className="flex-1 min-w-0 truncate text-center pointer-events-none px-1"
-            style={{
-              fontFamily: "var(--font-ui, 'Outfit', sans-serif)",
-              fontSize: "var(--text-header-title)",
-              fontWeight: 600,
-              color: sessionChrome ? "var(--session-accent)" : cv.text.primary,
-              letterSpacing: "0.04em",
-              lineHeight: 1.2,
-            }}
-          >
-            {title}
-          </h1>
+          {onTitleClick && !isLocked ? (
+            <button
+              type="button"
+              className="app-header__title-btn flex-1 min-w-0 truncate text-center px-1"
+              style={titleStyle}
+              aria-label={titleClickLabel ?? `Rename, ${title}`}
+              onClick={onTitleClick}
+            >
+              {title}
+            </button>
+          ) : (
+            <h1
+              className="flex-1 min-w-0 truncate text-center pointer-events-none px-1"
+              style={titleStyle}
+            >
+              {title}
+            </h1>
+          )}
 
           {showForward ? (
             <div className="app-header__nav-slot">

@@ -206,6 +206,7 @@ function appendStageSection(
         session.selectedConsumableQtys ?? {},
         useConsumablesLibraryStore.getState().items,
         session.customConsumables ?? [],
+        session.consumableWearByOptionId ?? {},
       );
       if (labels.length === 0) {
         appendPlaceholderStage(lines, copy.consumables, copy.consumablesEmpty);

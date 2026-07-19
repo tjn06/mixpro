@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  formatFlexSelectLabelEntries,
-  listSelectedFlexSelectEntries,
-} from "../../domain/select/catalogLookup";
+import { listSelectedFlexSelectEntries } from "../../domain/select/catalogLookup";
 import {
   ensureFlexSelectSelected,
   flexSelectSelectionTotal,
   type FlexSelectSelection,
 } from "../../domain/select/selection";
 import type { FlexSelectItem } from "../../domain/select/types";
+import {
+  wearLabelSuffix,
+  type WearByOptionId,
+  type WearLevel,
+} from "../../domain/select/wear";
 import { useSettingsStore } from "../../settings/store";
 import { CatalogFlexPicker } from "../select/CatalogFlexPicker";
 import { DestinationPageChrome } from "../pages/DestinationPageChrome";
@@ -34,6 +36,8 @@ export function CatalogHub({
   customItems,
   selection,
   onSelectionChange,
+  wearByOptionId,
+  onWearChange,
   onAddCustomItem,
   onAddGlobalItem,
   onRenameGlobalItem,
@@ -51,6 +55,8 @@ export function CatalogHub({
   customItems?: readonly FlexSelectItem[];
   selection: FlexSelectSelection;
   onSelectionChange: (next: Record<string, number>) => void;
+  wearByOptionId?: WearByOptionId;
+  onWearChange?: (next: Record<string, WearLevel>) => void;
   /** Session-style custom add on Report tab (optional). */
   onAddCustomItem?: (item: FlexSelectItem) => void;
   onAddGlobalItem: (label: string) => void;
@@ -73,8 +79,13 @@ export function CatalogHub({
     [selection, catalog, customItems],
   );
   const selectedLabels = useMemo(
-    () => formatFlexSelectLabelEntries(selectedEntries),
-    [selectedEntries],
+    () =>
+      selectedEntries.map((entry) => {
+        const base =
+          entry.qty > 1 ? `${entry.label} ×${entry.qty}` : entry.label;
+        return `${base}${wearLabelSuffix(wearByOptionId?.[entry.id])}`;
+      }),
+    [selectedEntries, wearByOptionId],
   );
   const selectedTotal = flexSelectSelectionTotal(selection);
 
@@ -171,6 +182,8 @@ export function CatalogHub({
             customItems={customItems}
             selection={selection}
             onSelectionChange={onSelectionChange}
+            wearByOptionId={wearByOptionId}
+            onWearChange={onWearChange}
             onAddCustomItem={
               onAddCustomItem
                 ? (item) => {

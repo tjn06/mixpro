@@ -51,7 +51,7 @@ function createToolsLibraryStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 2,
+        version: 4,
         partialize: (state) => ({ items: state.items }),
         migrate: () => ({
           items: cloneFlexSelectItems(TOOLS_CATALOG),

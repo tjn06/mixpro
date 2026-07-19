@@ -51,7 +51,7 @@ function createConsumablesLibraryStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 2,
+        version: 5,
         partialize: (state) => ({ items: state.items }),
         migrate: () => ({
           items: cloneFlexSelectItems(CONSUMABLES_CATALOG),

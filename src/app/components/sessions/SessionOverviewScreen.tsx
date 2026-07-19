@@ -37,7 +37,6 @@ import {
 } from "../../presentation/entityCardStyles";
 import { entityAccentColor } from "../../presentation/entityAccent";
 import { useSettingsStore } from "../../settings/store";
-import { RenameIcon } from "../shared/ActionIcons";
 import { AppHeader } from "../shared/AppHeader";
 import {
   ScrollEdgeFadeOverlays,
@@ -50,6 +49,7 @@ import {
   ensureFlexSelectSelected,
   flexSelectSelectionTotal,
 } from "../../domain/select/selection";
+import { pruneWearByOptionId } from "../../domain/select/wear";
 import { listSelectedToolLabelEntries } from "../../domain/tools/catalog";
 import { useToolsLibraryStore } from "../../tools/libraryStore";
 import { ConsumablesPicker } from "../consumables/ConsumablesPicker";
@@ -63,7 +63,6 @@ export function SessionOverviewScreen({
   sessionId,
   embedded = false,
   onMenuClick,
-  onBack,
   onAddMix,
   onEditMix,
   onCreateRecipe,
@@ -71,7 +70,6 @@ export function SessionOverviewScreen({
   sessionId: string;
   embedded?: boolean;
   onMenuClick: () => void;
-  onBack: () => void;
   onAddMix: (recipe: BlendingRecipe) => void;
   onEditMix: (batchId: string) => void;
   onCreateRecipe: () => void;
@@ -105,6 +103,7 @@ export function SessionOverviewScreen({
   const selectedToolQtys = session?.selectedToolQtys ?? {};
   const customTools = session?.customTools ?? [];
   const selectedConsumableQtys = session?.selectedConsumableQtys ?? {};
+  const consumableWearByOptionId = session?.consumableWearByOptionId ?? {};
   const customConsumables = session?.customConsumables ?? [];
   const toolCount = flexSelectSelectionTotal(selectedToolQtys);
   const consumableCount = flexSelectSelectionTotal(selectedConsumableQtys);
@@ -126,8 +125,14 @@ export function SessionOverviewScreen({
         selectedConsumableQtys,
         consumablesCatalog,
         customConsumables,
+        consumableWearByOptionId,
       ),
-    [selectedConsumableQtys, consumablesCatalog, customConsumables],
+    [
+      selectedConsumableQtys,
+      consumablesCatalog,
+      customConsumables,
+      consumableWearByOptionId,
+    ],
   );
 
   useEffect(() => {
@@ -171,14 +176,7 @@ export function SessionOverviewScreen({
         className="app-frame relative flex flex-col overflow-hidden select-none h-full min-h-0"
         style={{ background: "var(--semantic-surface-app)" }}
       >
-        <AppHeader
-          title="Session"
-          onMenuClick={onMenuClick}
-          onBack={onBack}
-          backLabel="Back to sessions"
-          backConfirmAction="BACK TO SESSIONS"
-          sessionChrome
-        />
+        <AppHeader title="SESSION" onMenuClick={onMenuClick} sessionChrome />
         <p className="destination-page__empty app-gutter-x" style={{ color: cv.text.dimmed }}>
           Session not found.
         </p>
@@ -674,7 +672,18 @@ export function SessionOverviewScreen({
             selection={selectedConsumableQtys}
             onSelectionChange={(next) => {
               if (!session) return;
-              patchSession(session.id, { selectedConsumableQtys: next });
+              patchSession(session.id, {
+                selectedConsumableQtys: next,
+                consumableWearByOptionId: pruneWearByOptionId(
+                  consumableWearByOptionId,
+                  next,
+                ),
+              });
+            }}
+            wearByOptionId={consumableWearByOptionId}
+            onWearChange={(next) => {
+              if (!session) return;
+              patchSession(session.id, { consumableWearByOptionId: next });
             }}
             customConsumables={customConsumables}
             onAddCustomConsumable={(item) => {
@@ -710,32 +719,16 @@ export function SessionOverviewScreen({
       <div className="batch-totals-route flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="recipe-context-gradient flex-1 min-h-0 flex flex-col overflow-hidden">
           <AppHeader
-            title="Session"
+            title={`SESSION: ${session.name}`}
             onMenuClick={onMenuClick}
-            onBack={onBack}
-            backLabel="Back to sessions"
-            backConfirmAction="BACK TO SESSIONS"
-            onForward={nextStage ? goNextStage : undefined}
-            forwardConfirmAction="NEXT STAGE"
+            onTitleClick={() => setRenameNameOpen(true)}
+            titleClickLabel={`Rename session, ${session.name}`}
             sessionChrome
           />
 
           <div className="batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden relative">
             <div className="batch-totals-screen__main flex flex-col">
               <div className="session-overview__chrome">
-                <div className="session-overview__context app-gutter-x">
-                  <button
-                    type="button"
-                    className="session-overview__name-field"
-                    onClick={() => setRenameNameOpen(true)}
-                    aria-label={`Rename session, ${session.name}`}
-                  >
-                    <span className="session-overview__context-name">{session.name}</span>
-                    <span className="session-overview__name-edit" aria-hidden>
-                      <RenameIcon size={14} />
-                    </span>
-                  </button>
-                </div>
                 <nav className="session-overview__stages app-gutter-x" aria-label="Session stages">
                   {SESSION_STAGE_ORDER.map((stageId, index) => {
                     const active = stageId === activeStage;

@@ -1,5 +1,6 @@
 import type { ConsumableItem } from "../../domain/consumables/types";
 import type { FlexSelectSelection } from "../../domain/select/selection";
+import type { WearByOptionId, WearLevel } from "../../domain/select/wear";
 import { useConsumablesLibraryStore } from "../../consumables/libraryStore";
 import { CatalogFlexPicker } from "../select/CatalogFlexPicker";
 
@@ -7,6 +8,8 @@ import { CatalogFlexPicker } from "../select/CatalogFlexPicker";
 export function ConsumablesPicker({
   selection,
   onSelectionChange,
+  wearByOptionId,
+  onWearChange,
   customConsumables = [],
   onCustomConsumablesChange,
   onAddCustomConsumable,
@@ -15,6 +18,8 @@ export function ConsumablesPicker({
 }: {
   selection: FlexSelectSelection;
   onSelectionChange: (next: Record<string, number>) => void;
+  wearByOptionId?: WearByOptionId;
+  onWearChange?: (next: Record<string, WearLevel>) => void;
   customConsumables?: readonly ConsumableItem[];
   onCustomConsumablesChange?: (next: ConsumableItem[]) => void;
   onAddCustomConsumable?: (item: ConsumableItem) => void;
@@ -30,6 +35,8 @@ export function ConsumablesPicker({
       customItems={customConsumables}
       selection={selection}
       onSelectionChange={onSelectionChange}
+      wearByOptionId={wearByOptionId}
+      onWearChange={onWearChange}
       onCustomItemsChange={onCustomConsumablesChange}
       onAddCustomItem={onAddCustomConsumable}
       className={className}

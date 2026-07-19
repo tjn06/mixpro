@@ -217,7 +217,6 @@ export function AppShell() {
             embedded
             sessionId={view.sessionId}
             onMenuClick={openNav}
-            onBack={() => setView({ kind: "destination", id: "sessions" })}
             onCreateRecipe={() =>
               openCreateRecipe(
                 { source: "session", sessionId: view.sessionId },

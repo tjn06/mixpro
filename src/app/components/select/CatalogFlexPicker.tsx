@@ -4,6 +4,7 @@ import {
   type FlexSelectSelection,
 } from "../../domain/select/selection";
 import type { FlexSelectItem } from "../../domain/select/types";
+import type { WearByOptionId, WearLevel } from "../../domain/select/wear";
 import { FlexSelectView } from "./FlexSelectView";
 
 /**
@@ -16,6 +17,8 @@ export function CatalogFlexPicker({
   customItems = [],
   selection,
   onSelectionChange,
+  wearByOptionId,
+  onWearChange,
   onCustomItemsChange,
   onAddCustomItem,
   className,
@@ -30,6 +33,8 @@ export function CatalogFlexPicker({
   customItems?: readonly FlexSelectItem[];
   selection: FlexSelectSelection;
   onSelectionChange: (next: Record<string, number>) => void;
+  wearByOptionId?: WearByOptionId;
+  onWearChange?: (next: Record<string, WearLevel>) => void;
   onCustomItemsChange?: (next: FlexSelectItem[]) => void;
   /** Preferred atomic add + select. */
   onAddCustomItem?: (item: FlexSelectItem) => void;
@@ -53,6 +58,8 @@ export function CatalogFlexPicker({
       items={items}
       selection={selection}
       onSelectionChange={onSelectionChange}
+      wearByOptionId={wearByOptionId}
+      onWearChange={onWearChange}
       className={className}
       tone={tone}
       aria-label={ariaLabel}

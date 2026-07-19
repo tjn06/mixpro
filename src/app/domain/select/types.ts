@@ -8,6 +8,11 @@ export type FlexSelectItem = {
    * One variant selected at a time; parent id is never selected.
    */
   children?: FlexSelectItem[];
+  /**
+   * After a variant is chosen, show a secondary slitage (wear) picker
+   * (Låg / Medel / Hög) fused into the chip.
+   */
+  requiresWear?: boolean;
 };
 
 /** True when the chip opens a dropdown of alternatives. */

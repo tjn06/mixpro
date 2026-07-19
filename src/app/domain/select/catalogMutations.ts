@@ -6,6 +6,7 @@ export function cloneFlexSelectItems(
   return items.map((item) => ({
     id: item.id,
     label: item.label,
+    requiresWear: item.requiresWear,
     children: item.children ? cloneFlexSelectItems(item.children) : undefined,
   }));
 }

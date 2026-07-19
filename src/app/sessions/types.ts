@@ -67,6 +67,11 @@ export type MixSession = {
   selectedConsumableQtys: Record<string, number>;
   /** @deprecated Migrated into selectedConsumableQtys — kept optional for old saves. */
   selectedConsumableIds?: string[];
+  /**
+   * Slitage (wear) per selected consumable option id — Låg / Medel / Hög.
+   * Only used for abrasive families (diamantsegment, slipskål, …).
+   */
+  consumableWearByOptionId: Record<string, "lag" | "medel" | "hog">;
   /** User-defined simple consumables (no dropdown). */
   customConsumables: { id: string; label: string }[];
   createdAt: string;
