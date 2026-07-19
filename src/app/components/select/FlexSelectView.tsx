@@ -182,7 +182,7 @@ function SelectDropdownChip({
 
   const gestures = useSelectChipGestures({
     enabled: !open,
-    holdFeedback: selected && !open,
+    qtyGestures: selected && !open,
     onHoldChange: setHolding,
     onTap: () => {
       if (open) {
@@ -201,13 +201,12 @@ function SelectDropdownChip({
     },
     onDoubleTap: () => {
       clearDeferOpen();
-      if (!selected) return;
       triggerPulse();
       onIncrement();
     },
     onLongPress: () => {
       clearDeferOpen();
-      if (selected) onDecrement();
+      onDecrement();
     },
   });
 
@@ -315,7 +314,7 @@ function SimpleSelectChip({
   const selected = qty >= 1;
   const { holding, setHolding, pulse, triggerPulse } = useSelectChipFeedback();
   const gestures = useSelectChipGestures({
-    holdFeedback: selected,
+    qtyGestures: selected,
     onHoldChange: setHolding,
     onTap: () => {
       if (!selected) onSelect();
@@ -325,7 +324,7 @@ function SimpleSelectChip({
       onIncrement();
     },
     onLongPress: () => {
-      if (selected) onDecrement();
+      onDecrement();
     },
   });
 

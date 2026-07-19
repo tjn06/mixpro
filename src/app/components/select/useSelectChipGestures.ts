@@ -6,22 +6,24 @@ const MOVE_CANCEL_PX = 10;
 
 /**
  * Tap / double-tap / long-press for quantity chips.
- * - First tap (unselected path handled by caller via onTap)
- * - Double-tap → onDoubleTap
- * - Long-press → onLongPress (skips tap)
- * - Optional hold visual via onHoldChange while pressing toward long-press
+ *
+ * Unselected (`qtyGestures` false): instant tap only — no long-press timer.
+ * Selected (`qtyGestures` true): double-tap (+1) and long-press (−1) with hold feedback.
+ *
+ * Unselected taps do not stamp the double-tap clock — a bounce right after
+ * first select will not fire +1 pulse by accident.
  */
 export function useSelectChipGestures({
   enabled = true,
-  /** When true, pointer-down starts hold feedback until cancel or long-press. */
-  holdFeedback = false,
+  qtyGestures = false,
   onTap,
   onDoubleTap,
   onLongPress,
   onHoldChange,
 }: {
   enabled?: boolean;
-  holdFeedback?: boolean;
+  /** When true, enable double-tap / long-press qty gestures + hold drain. */
+  qtyGestures?: boolean;
   onTap: () => void;
   onDoubleTap: () => void;
   onLongPress: () => void;
@@ -32,8 +34,8 @@ export function useSelectChipGestures({
   const holdingRef = useRef(false);
   const startRef = useRef({ x: 0, y: 0 });
   const lastTapAtRef = useRef(0);
-  const holdFeedbackRef = useRef(holdFeedback);
-  holdFeedbackRef.current = holdFeedback;
+  const qtyGesturesRef = useRef(qtyGestures);
+  qtyGesturesRef.current = qtyGestures;
 
   const stopHoldVisual = useCallback(() => {
     if (!holdingRef.current) return;
@@ -60,10 +62,13 @@ export function useSelectChipGestures({
       longFiredRef.current = false;
       startRef.current = { x: event.clientX, y: event.clientY };
       clearLongTimer();
-      if (holdFeedbackRef.current) {
-        holdingRef.current = true;
-        onHoldChange?.(true);
-      }
+      stopHoldVisual();
+
+      /** Qty gestures only when selected — unselected stays a simple instant tap. */
+      if (!qtyGesturesRef.current) return;
+
+      holdingRef.current = true;
+      onHoldChange?.(true);
       longTimerRef.current = window.setTimeout(() => {
         longFiredRef.current = true;
         longTimerRef.current = null;
@@ -94,7 +99,15 @@ export function useSelectChipGestures({
         return;
       }
       stopHoldVisual();
+
       const now = performance.now();
+
+      if (!qtyGesturesRef.current) {
+        lastTapAtRef.current = 0;
+        onTap();
+        return;
+      }
+
       if (now - lastTapAtRef.current <= DOUBLE_TAP_MS) {
         lastTapAtRef.current = 0;
         navigator.vibrate?.(8);

@@ -3452,10 +3452,7 @@
   touch-action: manipulation;
   user-select: none;
   overflow: visible;
-  transition:
-    color 0.12s ease,
-    border-color 0.12s ease,
-    background-color 0.12s ease;
+  /* No default transition — first select snaps instantly. */
 }
 
 .select-chip__label {
@@ -3491,10 +3488,11 @@
   pointer-events: none;
 }
 
-.select-chip:active {
+/** Press feedback only when already selected — first select stays a hard snap. */
+.select-chip[data-selected]:active:not([data-hold]) {
   background: color-mix(
     in srgb,
-    var(--semantic-text-primary) 6%,
+    var(--select-chip-accent) 12%,
     var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
 }
