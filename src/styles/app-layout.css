@@ -3066,7 +3066,7 @@
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  height: 26px;
+  height: 28px;
   margin: 0;
   padding: 0 0 4px;
   border: none;
@@ -3076,7 +3076,8 @@
   outline: none;
   box-shadow: none;
   font-family: "Outfit", sans-serif;
-  font-size: 13px;
+  /** ≥16px so iOS Safari does not focus-zoom. */
+  font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.01em;
   line-height: 1.2;
@@ -3460,13 +3461,13 @@
 }
 
 /**
- * Qty badge via ::after — no layout width; sits top-left with a bit outside the chip.
+ * Qty badge via ::after — no layout width; sits top-left, mostly on the chip.
  */
 .select-chip[data-qty]::after {
   content: attr(data-qty);
   position: absolute;
-  top: -7px;
-  left: -7px;
+  top: -5px;
+  left: -5px;
   z-index: 2;
   box-sizing: border-box;
   display: inline-flex;
