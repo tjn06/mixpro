@@ -13,6 +13,12 @@ export const SELECT_CHIP_PULSE_MS = 240;
 const MOVE_CANCEL_PX = 10;
 /** Salvage a select-mode tap if the browser cancels a short, still press. */
 const CANCEL_SALVAGE_MS = 280;
+/**
+ * After a long-press that may remove/reflow a chip, ignore chip gestures until
+ * that pointer lifts, then a short cool-off so a neighbor under the finger
+ * does not receive an accidental tap.
+ */
+const SUPPRESS_COOL_OFF_MS = 360;
 
 export type SelectChipGestureMode = "select" | "qty";
 
@@ -21,6 +27,56 @@ type ChipActions = {
   onDoubleTap?: () => void;
   onLongPress?: () => void;
 };
+
+/** Active pointer that must not start/finish chip gestures on other targets. */
+let suppressPointerId: number | null = null;
+/** After lift — block new presses briefly while layout settles. */
+let suppressUntilMs = 0;
+let windowSuppressBound = false;
+
+function isChipGestureSuppressed(pointerId?: number): boolean {
+  if (suppressPointerId != null) {
+    if (pointerId == null || pointerId === suppressPointerId) return true;
+    // Block other fingers too while a destructive press is in flight.
+    return true;
+  }
+  return suppressUntilMs > 0 && performance.now() < suppressUntilMs;
+}
+
+function clearWindowSuppressListeners() {
+  if (!windowSuppressBound) return;
+  window.removeEventListener("pointerup", onWindowSuppressPointerEnd, true);
+  window.removeEventListener("pointercancel", onWindowSuppressPointerEnd, true);
+  window.removeEventListener("click", onWindowSuppressClick, true);
+  windowSuppressBound = false;
+}
+
+function onWindowSuppressPointerEnd(event: PointerEvent) {
+  if (suppressPointerId == null) return;
+  if (event.pointerId !== suppressPointerId) return;
+  event.preventDefault();
+  event.stopPropagation();
+  suppressPointerId = null;
+  suppressUntilMs = performance.now() + SUPPRESS_COOL_OFF_MS;
+  clearWindowSuppressListeners();
+}
+
+function onWindowSuppressClick(event: MouseEvent) {
+  if (!isChipGestureSuppressed()) return;
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+/** Arm after long-press — survives the pressed chip unmounting. */
+function armChipGestureSuppress(pointerId: number) {
+  suppressPointerId = pointerId;
+  suppressUntilMs = 0;
+  if (windowSuppressBound) return;
+  window.addEventListener("pointerup", onWindowSuppressPointerEnd, true);
+  window.addEventListener("pointercancel", onWindowSuppressPointerEnd, true);
+  window.addEventListener("click", onWindowSuppressClick, true);
+  windowSuppressBound = true;
+}
 
 function clearHold(el: HTMLElement | null) {
   if (!el) return;
@@ -54,6 +110,10 @@ function pulseUp(el: HTMLElement) {
  *
  * Hold/pulse feedback writes `data-hold` / `data-pulse` on the event target
  * (no React re-render). Action callbacks are read from a ref each time.
+ *
+ * After long-press, a module-level suppress blocks other chips until the
+ * finger lifts (and a short cool-off), so removing one chip cannot retarget
+ * the still-down pointer onto a neighbor.
  */
 export function useSelectChipGestures({
   enabled = true,
@@ -81,6 +141,7 @@ export function useSelectChipGestures({
   const startRef = useRef({ x: 0, y: 0, t: 0 });
   const movedRef = useRef(false);
   const targetRef = useRef<HTMLElement | null>(null);
+  const pointerIdRef = useRef<number | null>(null);
 
   return useMemo(() => {
     const clearLongTimer = () => {
@@ -97,11 +158,29 @@ export function useSelectChipGestures({
       endHoldVisual();
     };
 
+    const releaseCapture = (
+      el: HTMLElement,
+      pointerId: number,
+    ) => {
+      try {
+        if (el.hasPointerCapture?.(pointerId)) {
+          el.releasePointerCapture(pointerId);
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+
     const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
       if (!enabledRef.current || event.button !== 0) return;
+      if (isChipGestureSuppressed(event.pointerId)) {
+        event.preventDefault();
+        return;
+      }
 
       const el = event.currentTarget;
       targetRef.current = el;
+      pointerIdRef.current = event.pointerId;
       longFiredRef.current = false;
       movedRef.current = false;
       startRef.current = {
@@ -120,17 +199,23 @@ export function useSelectChipGestures({
       if (modeRef.current !== "qty") return;
 
       startHold(el);
+      const pointerId = event.pointerId;
       longTimerRef.current = window.setTimeout(() => {
         longFiredRef.current = true;
         longTimerRef.current = null;
         endHoldVisual();
         navigator.vibrate?.(10);
+        // Suppress before reflow so a neighbor cannot steal the still-down finger.
+        armChipGestureSuppress(pointerId);
         actionsRef.current.onLongPress?.();
       }, SELECT_CHIP_LONG_PRESS_MS);
     };
 
     const onPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
       if (!enabledRef.current) return;
+      if (isChipGestureSuppressed(event.pointerId) && !longFiredRef.current) {
+        return;
+      }
       const dx = event.clientX - startRef.current.x;
       const dy = event.clientY - startRef.current.y;
       if (dx * dx + dy * dy <= MOVE_CANCEL_PX * MOVE_CANCEL_PX) return;
@@ -139,21 +224,21 @@ export function useSelectChipGestures({
     };
 
     const onPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
-      if (!enabledRef.current) return;
       clearLongTimer();
+      releaseCapture(event.currentTarget, event.pointerId);
 
-      try {
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          event.currentTarget.releasePointerCapture(event.pointerId);
-        }
-      } catch {
-        /* ignore */
-      }
-
-      if (longFiredRef.current) {
+      if (longFiredRef.current || isChipGestureSuppressed(event.pointerId)) {
         event.preventDefault();
+        // Window listener also clears suppress; do it here if this target still lives.
+        if (suppressPointerId === event.pointerId) {
+          suppressPointerId = null;
+          suppressUntilMs = performance.now() + SUPPRESS_COOL_OFF_MS;
+          clearWindowSuppressListeners();
+        }
         return;
       }
+
+      if (!enabledRef.current) return;
 
       endHoldVisual();
       if (movedRef.current) return;
@@ -185,15 +270,16 @@ export function useSelectChipGestures({
         modeRef.current === "select" &&
         !movedRef.current &&
         !longFiredRef.current &&
+        !isChipGestureSuppressed(event.pointerId) &&
         elapsed <= CANCEL_SALVAGE_MS;
 
       cancelPress();
-      try {
-        if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
-          event.currentTarget.releasePointerCapture(event.pointerId);
-        }
-      } catch {
-        /* ignore */
+      releaseCapture(event.currentTarget, event.pointerId);
+
+      if (suppressPointerId === event.pointerId) {
+        suppressPointerId = null;
+        suppressUntilMs = performance.now() + SUPPRESS_COOL_OFF_MS;
+        clearWindowSuppressListeners();
       }
 
       if (canSalvageSelect && enabledRef.current) {

@@ -25,6 +25,7 @@ import {
   setFlexSelectQty,
   type FlexSelectSelection,
 } from "../../domain/select/selection";
+import { orderFlexSelectItemsForPack } from "../../domain/select/packOrder";
 import {
   flexSelectItemHasOptions,
   optionIdsForItem,
@@ -608,6 +609,11 @@ export function FlexSelectView({
   const [slotsByParent, setSlotsByParent] = useState<
     Record<string, DropdownSlot[]>
   >({});
+  /** Display order only — widest first so short chips fill leftover row gaps. */
+  const packedItems = useMemo(
+    () => orderFlexSelectItemsForPack(items),
+    [items],
+  );
 
   useEffect(() => {
     setSlotsByParent((prev) => {
@@ -755,7 +761,7 @@ export function FlexSelectView({
       }${className ? ` ${className}` : ""}`}
       aria-label={ariaLabel}
     >
-      {items.map((item) => {
+      {packedItems.map((item) => {
         if (!flexSelectItemHasOptions(item)) {
           const qty = flexSelectQty(selection, item.id);
           return (
