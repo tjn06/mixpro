@@ -26,6 +26,8 @@ import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import { useTickingNow } from "../../hooks/useTickingNow";
 import { BucketMiniature } from "../mixer/MixBucket";
 import { GoToIcon, PanelTopCloseIcon, SavedIcon } from "../shared/ActionIcons";
+import { PageSearchField } from "../shared/PageSearchField";
+import { recipeMatchesQuery } from "../recipe/RecipeLibraryCard";
 import { ScrollEdgeFadeOverlays, useScrollEdgeFades } from "./scrollEdgeFades";
 import { SHEET_LIST_ROW_CLASS } from "./sheetChrome";
 
@@ -402,16 +404,13 @@ function RecipePickerCardDetail({
       <div className="recipe-picker-card__detail">
         <div className="recipe-picker-card__detail-section recipe-picker-card__detail-meta">
           <div className="recipe-picker-card__detail-row recipe-picker-card__detail-row--recipe">
-            <span className="recipe-picker-side-meta__label">Recipe</span>
             <div className="recipe-picker-card__detail-recipe">
-              {recipeSummaryParts.ratio ? (
-                <span className="recipe-picker-side-meta__ratio">{recipeSummaryParts.ratio}</span>
-              ) : null}
-              {recipeSummaryParts.detail ? (
-                <span className="recipe-picker-card__detail-recipe-fill">
-                  {recipeSummaryParts.detail}
-                </span>
-              ) : null}
+              <span className="recipe-picker-side-meta__ratio">
+                {recipeSummaryParts.ratio || "\u00a0"}
+              </span>
+              <span className="recipe-picker-card__detail-recipe-fill">
+                {recipeSummaryParts.detail || "\u00a0"}
+              </span>
             </div>
           </div>
           <div className="recipe-picker-card__detail-row recipe-picker-card__detail-row--batch">
@@ -592,7 +591,7 @@ function RecipePickerCard({
             <span className="min-w-0 recipe-picker-card__title">{title}</span>
             {applied ? (
               <span className="recipe-picker-card__badge" aria-label="Current recipe">
-                <SavedIcon size={12} />
+                <SavedIcon size={14} />
               </span>
             ) : null}
           </span>
@@ -712,6 +711,7 @@ export function RecipePickerSheet({
   const [previewBucketOverrides, setPreviewBucketOverrides] = useState<
     Partial<Record<string, BucketSelection>>
   >({});
+  const [searchQuery, setSearchQuery] = useState("");
   const previewRecipeRef = useRef(value);
   previewRecipeRef.current = previewRecipe;
   const [portal, setPortal] = useState<HTMLElement | null>(null);
@@ -725,11 +725,15 @@ export function RecipePickerSheet({
 
   const recentMixes = useMemo(() => latestSaves(savedMixes), [savedMixes]);
   const showBucketDetail = onBucketChange != null;
+  const filteredRecipes = useMemo(
+    () => recipes.filter((recipe) => recipeMatchesQuery(recipe, searchQuery)),
+    [recipes, searchQuery],
+  );
 
   const scrollEdges = useScrollEdgeFades(
     scrollRef,
     present && phase !== "exit",
-    `${previewRecipe.id}:${showBucketDetail}:${recentMixes.length}:${recipes.length}:${phase}`,
+    `${previewRecipe.id}:${showBucketDetail}:${recentMixes.length}:${filteredRecipes.length}:${searchQuery}:${phase}`,
   );
 
   const resolvePickerBucket = useCallback(
@@ -790,6 +794,7 @@ export function RecipePickerSheet({
     if (open) {
       setPreviewRecipe(value);
       setPreviewBucketOverrides({});
+      setSearchQuery("");
       if (exitTimerRef.current != null) {
         window.clearTimeout(exitTimerRef.current);
         exitTimerRef.current = null;
@@ -881,6 +886,14 @@ export function RecipePickerSheet({
         aria-label="Recipes, bucket, and saved mixes"
         onAnimationEnd={handleMenuAnimationEnd}
       >
+        <div className="recipe-picker-menu__chrome app-gutter-x">
+          <PageSearchField
+            className="recipe-picker-menu__search"
+            placeholder="Search recipes…"
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+        </div>
         <div className="scroll-edge-fade-viewport flex-1 min-h-0 relative flex flex-col">
           <ScrollEdgeFadeOverlays
             fromTop={scrollEdges.fromTop}
@@ -892,7 +905,14 @@ export function RecipePickerSheet({
           >
             <div className="recipe-picker-matrix">
             <div className="recipe-picker-matrix__grid" role="listbox" aria-label="Recipes">
-              {recipes.map((recipe) => {
+              {filteredRecipes.length === 0 ? (
+                <p className="recipe-picker-menu__empty">
+                  {recipes.length === 0
+                    ? "No recipes yet."
+                    : `No recipes match “${searchQuery.trim()}”.`}
+                </p>
+              ) : (
+                filteredRecipes.map((recipe) => {
                 const selected = recipe.id === previewRecipe.id;
                 const applied = recipe.id === value.id;
                 return (
@@ -928,7 +948,8 @@ export function RecipePickerSheet({
                     />
                   </div>
                 );
-              })}
+              })
+              )}
             </div>
 
             {recentMixes.length > 0 ? (

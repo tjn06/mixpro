@@ -71,6 +71,7 @@ import {
   cardReadoutUnitStyle,
   cardReadoutValueStyle,
   entityCardChrome,
+  entitySurfaceLit,
   CARD_CHROME_TRANSITION,
   RECIPE_RATIO_BORDER_COLOR,
   entityValueColor,
@@ -157,17 +158,12 @@ const LOCK_TEXT_TRANSITION = `font-size ${LOCK_EXPAND_MS}ms ${LOCK_EASE}, margin
 
 /** Opaque entity surfaces — kept subtle so white readouts stay crisp. */
 const SWIPE_SURFACE_BASE = MIXER_SWIPE_SURFACE_BASE;
-const ENTITY_TINT_LIT_PCT = ch.entityTintLitPct;
 const SWIPE_ZONE_ACTIVE_PCT = ch.swipeZoneActivePct;
 const SWIPE_STRIPE_A_PCT = ch.swipeStripeAPct;
 const SWIPE_STRIPE_B_PCT = ch.swipeStripeBPct;
 
 function surfaceTint(color: string, pct: number, base: string): string {
   return `color-mix(in srgb, ${color} ${pct}%, ${base})`;
-}
-
-function entitySurfaceLit(color: string): string {
-  return surfaceTint(color, ENTITY_TINT_LIT_PCT, ENTITY_SURFACE_IDLE);
 }
 
 function swipeZoneActive(color: string): string {
@@ -284,7 +280,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
   className = "",
   style,
 }, ref) {
-  const chrome = entityCardChrome(color, cardLit);
+  const chrome = entityCardChrome(color, cardLit, colorScheme);
   const tileStyle = {
     border: chrome.border,
     boxShadow: chrome.boxShadow,
@@ -319,7 +315,8 @@ const TotalTile = forwardRef<HTMLButtonElement, {
           background: color,
           opacity: barOpacity,
           marginBottom: "var(--lock-bar-mb)",
-          boxShadow: cardLit ? `0 0 6px ${color}` : "none",
+          boxShadow:
+            cardLit && colorScheme === "dark" ? `0 0 6px ${color}` : "none",
           transition: LOCK_TEXT_TRANSITION,
         }} />
         <span style={{
@@ -374,7 +371,8 @@ const TotalTile = forwardRef<HTMLButtonElement, {
         background: color,
         opacity: barOpacity,
         marginRight: "var(--total-tile-bar-gap)",
-        boxShadow: cardLit ? `0 0 6px ${color}` : "none",
+        boxShadow:
+          cardLit && colorScheme === "dark" ? `0 0 6px ${color}` : "none",
         transition: CARD_CHROME_TRANSITION,
       }} />
       <div className="flex flex-1 flex-col items-start justify-center min-w-0">
@@ -1416,7 +1414,7 @@ export function BatchMixer({
               const accent  = entityAccentColor(p.id, colorScheme);
               const isAct   = active === pi;
               const cardLit = isLocked || isAct;
-              const chrome  = entityCardChrome(accent, cardLit);
+              const chrome  = entityCardChrome(accent, cardLit, colorScheme);
               const cardBump = dragBlocked && isAct && !isLocked;
               return (
                 <button
@@ -1445,7 +1443,10 @@ export function BatchMixer({
                     background: accent,
                     opacity: cardLit ? 1 : 0.4,
                     marginBottom: "var(--entity-card-bar-mb)",
-                    boxShadow: cardLit ? `0 0 6px ${accent}` : "none",
+                    boxShadow:
+                      cardLit && colorScheme === "dark"
+                        ? `0 0 6px ${accent}`
+                        : "none",
                   }} />
                   <CardReadout
                     name={p.id}
@@ -1482,10 +1483,10 @@ export function BatchMixer({
             height: "var(--swipe-h)",
             minHeight: 120,
             border: `${ch.entityBorderWidth} solid ${col}${ch.entityBorderActiveSuffix}`,
-            boxShadow: dragFocus && !isLocked
-              ? `${mixerEntityActiveRing(col)}, ${mixerEntityCardShadow(col)}`
-              : mixerEntityActiveRing(col),
-            background: SWIPE_SURFACE_BASE,
+            /* Outer glow is box-shadow — paints outside the box, no layout shift. */
+            boxShadow: `${mixerEntityActiveRing(col)}, ${mixerEntityCardShadow(col, colorScheme)}`,
+            /* Same lit fill as the selected entity card (syncs accent across modes). */
+            background: entitySurfaceLit(col, colorScheme),
             transition: CARD_CHROME_TRANSITION,
           }}
           onPointerDown={onSwipeDown}

@@ -16,7 +16,7 @@ import type { CSSProperties } from "react";
 const ch = componentTokens.chrome;
 
 /** Overlap into card/swipe edges so stubs don't float in the gap. */
-const CONNECTOR_OVERLAP_PX = 1;
+const CONNECTOR_OVERLAP_PX = 2;
 
 export type CardConnector = {
   x: number;

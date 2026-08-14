@@ -17,21 +17,35 @@ export const RECIPE_RATIO_BORDER_COLOR = themeColorVar("entityBorderIdle");
 
 export const CARD_CHROME_TRANSITION = componentTokens.entityCard.transition;
 
-function entityCardShadow(color: string): string {
+/** Colored bloom — dark canvases only (reads muddy on light paper). */
+function entityCardGlow(color: string): string {
   return `0 0 14px ${color}55, 0 0 6px ${color}40`;
+}
+
+/** Neutral paper lift — light mode selected/drag emphasis without glow. */
+function entityCardLiftShadow(): string {
+  return "0 1px 2px rgba(0, 0, 0, 0.06), 0 6px 16px rgba(0, 0, 0, 0.08)";
 }
 
 function entityActiveRing(color: string): string {
   return `0 0 0 0.5px ${color}${chrome.entityBorderActiveSuffix}`;
 }
 
-export function entitySurfaceLit(color: string): string {
+export function entitySurfaceLit(
+  color: string,
+  scheme: ColorScheme = "dark",
+): string {
+  if (scheme === "light") {
+    // Accent wash into white → selected stays tinted but lighter than idle gray.
+    return `color-mix(in srgb, ${color} ${chrome.entityTintLitPct}%, #ffffff)`;
+  }
   return `color-mix(in srgb, ${color} ${chrome.entityTintLitPct}%, ${ENTITY_SURFACE_IDLE})`;
 }
 
 export function entityCardChrome(
   color: string,
   lit: boolean,
+  scheme: ColorScheme = "dark",
 ): { border: string; boxShadow: string; background: string } {
   const border = lit
     ? `${chrome.entityBorderWidth} solid ${color}${chrome.entityBorderActiveSuffix}`
@@ -39,10 +53,14 @@ export function entityCardChrome(
   if (!lit) {
     return { border, boxShadow: "none", background: ENTITY_SURFACE_IDLE };
   }
+  const emphasis =
+    scheme === "light"
+      ? `${entityActiveRing(color)}, ${entityCardLiftShadow()}`
+      : `${entityActiveRing(color)}, ${entityCardGlow(color)}`;
   return {
     border,
-    boxShadow: `${entityActiveRing(color)}, ${entityCardShadow(color)}`,
-    background: entitySurfaceLit(color),
+    boxShadow: emphasis,
+    background: entitySurfaceLit(color, scheme),
   };
 }
 

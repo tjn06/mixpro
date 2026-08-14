@@ -3,6 +3,9 @@ import { MIX_PARAMS as PARAMS, formatMixAmount as fmt } from "../../domain/mix/e
 import {
   CARD_CHROME_TRANSITION,
   entityCardChrome,
+  entitySurfaceLit,
+  entityUnitColor,
+  entityValueColor,
 } from "../../presentation/entityCardStyles";
 import {
   MIXER_DRAG_FOCUS_Z,
@@ -10,7 +13,6 @@ import {
   MIXER_ENTITY_BORDER_W,
   MIXER_SWIPE_COLUMN_BORDER,
   MIXER_SWIPE_STEP_IDLE,
-  MIXER_SWIPE_SURFACE_BASE,
   MIXER_SWIPE_ZONES,
   mixerEntityActiveRing,
   mixerEntityCardShadow,
@@ -31,7 +33,6 @@ import {
   MixerSwipeChevronStack,
 } from "./MixerSwipeParts";
 import { entityAccentColor } from "../../presentation/entityAccent";
-import { entityValueColor, entityUnitColor } from "../../presentation/entityCardStyles";
 import { useSettingsStore } from "../../settings/store";
 
 export type MixerInputDeckFooterApi = {
@@ -144,7 +145,7 @@ export function MixerInputDeck({
           const accent = entityAccentColor(p.id, colorScheme);
           const isAct = active === pi;
           const cardLit = isAct && !disabled;
-          const chrome = entityCardChrome(accent, cardLit);
+          const chrome = entityCardChrome(accent, cardLit, colorScheme);
           const cardBump = dragBlocked && isAct && !disabled;
 
           return (
@@ -181,7 +182,10 @@ export function MixerInputDeck({
                   background: accent,
                   opacity: cardLit ? 1 : 0.4,
                   marginBottom: "var(--entity-card-bar-mb)",
-                  boxShadow: cardLit ? `0 0 6px ${accent}` : "none",
+                  boxShadow:
+                    cardLit && colorScheme === "dark"
+                      ? `0 0 6px ${accent}`
+                      : "none",
                 }}
               />
               <MixerCardReadout
@@ -214,11 +218,10 @@ export function MixerInputDeck({
             height: "var(--swipe-h)",
             minHeight: 120,
             border: `${MIXER_ENTITY_BORDER_W} solid ${col}${MIXER_ENTITY_BORDER_ACTIVE}`,
-            boxShadow:
-              dragFocus && !disabled
-                ? `${mixerEntityActiveRing(col)}, ${mixerEntityCardShadow(col)}`
-                : mixerEntityActiveRing(col),
-            background: MIXER_SWIPE_SURFACE_BASE,
+            /* Outer glow is box-shadow — paints outside the box, no layout shift. */
+            boxShadow: `${mixerEntityActiveRing(col)}, ${mixerEntityCardShadow(col, colorScheme)}`,
+            /* Same lit fill as the selected entity card (syncs accent across modes). */
+            background: entitySurfaceLit(col, colorScheme),
             transition: CARD_CHROME_TRANSITION,
           }}
           onPointerDown={onSwipeDown}

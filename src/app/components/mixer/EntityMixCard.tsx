@@ -41,7 +41,7 @@ export function EntityMixCard({
 }: EntityMixCardProps) {
   const colorScheme = useSettingsStore((s) => s.colorScheme);
   const accent = entityAccentColor(id, colorScheme);
-  const chrome = entityCardChrome(accent, lit);
+  const chrome = entityCardChrome(accent, lit, colorScheme);
   const readout = entityCardReadoutStyle(accent, lit, colorScheme);
 
   const metaStyle: CSSProperties = {

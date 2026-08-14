@@ -132,19 +132,6 @@
   position: relative;
 }
 
-/** Session Mode — thin accent under safe-area (distinct from calculator brand chrome). */
-.app-header-chrome--session::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: var(--safe-top);
-  height: 3px;
-  background: var(--session-accent);
-  pointer-events: none;
-  z-index: 2;
-}
-
 .app-header-chrome--session .session-overview__subline,
 .app-header-chrome--session .session-mode-chip {
   color: var(--session-accent);
@@ -1986,6 +1973,19 @@
   gap: 10px;
 }
 
+.recipes-page__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--recipe-picker-card-gap, 10px);
+}
+
+.recipes-page__list-item {
+  min-width: 0;
+}
+
 .destination-page__card {
   display: flex;
   flex-direction: column;
@@ -3372,6 +3372,82 @@
 
 .select-view--session {
   --select-chip-accent: var(--session-accent, #2dd4bf);
+}
+
+/**
+ * Dark session pickers: keep the tinted selected chip look, white label only.
+ */
+[data-theme="dark"] .select-view--session .select-chip[data-selected]:not(
+    .select-chip--wear
+  ):not(.select-chip--clone-plus):not(.select-chip--add):not(
+    .select-chip--add-compose
+  ) {
+  color: #ffffff;
+}
+
+[data-theme="dark"]
+  .select-view--session
+  .select-chip[data-selected]:not(.select-chip--wear):not(
+    .select-chip--clone-plus
+  )
+  .select-chip__bent-arrow {
+  color: #ffffff;
+}
+
+[data-theme="dark"]
+  .select-view--session
+  .select-chip-cluster[data-selected]
+  > .select-chip-anchor
+  > .select-chip {
+  color: #ffffff;
+}
+
+[data-theme="dark"]
+  .select-view--session
+  .select-chip-cluster[data-selected]
+  .select-chip--wear,
+[data-theme="dark"]
+  .select-view--session
+  .select-chip-cluster[data-selected]
+  .select-chip--clone-plus {
+  color: #ffffff;
+}
+
+/** Qty badge + family label: white text only (keep tinted chrome). */
+[data-theme="dark"]
+  .select-view--session
+  .select-chip[data-selected][data-qty]::after,
+[data-theme="dark"]
+  .select-view--session
+  .select-chip--select[data-selected][data-family]::before {
+  color: #ffffff;
+}
+
+/** + Custom standout control. */
+[data-theme="dark"] .select-view--session .select-chip--add {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-view--session .select-chip--add-compose {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-view--session .select-chip__add-confirm {
+  color: #ffffff;
+}
+
+[data-theme="dark"]
+  .select-view--session
+  .select-chip[data-selected][data-hold]:not(.select-chip--wear):not(
+    .select-chip--clone-plus
+  ) {
+  color: var(--semantic-text-primary);
+}
+
+[data-theme="dark"]
+  .select-view--session
+  .select-chip-cluster:has(.select-chip-anchor .select-chip[data-hold]) {
+  color: var(--semantic-text-primary);
 }
 
 /* Anchor sizes to the chip only — menu is portaled (no flex reflow). */

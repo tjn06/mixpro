@@ -36,7 +36,7 @@ export const MixerTotalTile = forwardRef<
   },
   ref,
 ) {
-  const chrome = entityCardChrome(color, cardLit);
+  const chrome = entityCardChrome(color, cardLit, colorScheme);
 
   return (
     <button
@@ -63,7 +63,8 @@ export const MixerTotalTile = forwardRef<
           background: color,
           opacity: cardLit ? 1 : 0.4,
           marginRight: "var(--total-tile-bar-gap)",
-          boxShadow: cardLit ? `0 0 6px ${color}` : "none",
+          boxShadow:
+            cardLit && colorScheme === "dark" ? `0 0 6px ${color}` : "none",
           transition: CARD_CHROME_TRANSITION,
         }}
       />

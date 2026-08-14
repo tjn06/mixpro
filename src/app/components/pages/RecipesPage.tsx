@@ -1,9 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PRESET_RECIPES, recipeMenuLabel } from "../../domain/recipe/types";
-import { formatRecipeFormulaSummary } from "../../domain/recipe/createFromInputs";
-import { recipePlaceholderDescription } from "../../domain/recipe/descriptions";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
 import { DestinationPageChrome } from "./DestinationPageChrome";
+import { PageSearchField } from "../shared/PageSearchField";
+import {
+  RecipeLibraryCard,
+  recipeMatchesQuery,
+} from "../recipe/RecipeLibraryCard";
 import { cv } from "../../ui/tokens";
 
 /** Recipe Library — presets + user-created permanent recipes. */
@@ -22,7 +25,13 @@ export function RecipesPage({
     () => [...PRESET_RECIPES, ...userRecipes],
     [userRecipes],
   );
-  const presetIds = useMemo(() => new Set(PRESET_RECIPES.map((r) => r.id)), []);
+  const [query, setQuery] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const filtered = useMemo(
+    () => library.filter((recipe) => recipeMatchesQuery(recipe, query)),
+    [library, query],
+  );
 
   return (
     <DestinationPageChrome
@@ -44,40 +53,39 @@ export function RecipesPage({
           : " Start with a preset or create your own."}
       </p>
 
-      <ul className="destination-page__list">
-        {library.map((recipe) => {
-          const isPreset = presetIds.has(recipe.id);
-          return (
-            <li key={recipe.id}>
-              <article className="destination-page__card">
-                <div className="destination-page__card-main">
-                  <span className="destination-page__card-title">
-                    {recipeMenuLabel(recipe)}
-                  </span>
-                  <span
-                    className="destination-page__card-meta"
-                    style={{ color: cv.text.muted }}
-                  >
-                    {isPreset
-                      ? recipePlaceholderDescription(recipe.id)
-                      : formatRecipeFormulaSummary(recipe)}
-                  </span>
-                </div>
-                {!isPreset ? (
-                  <button
-                    type="button"
-                    className="destination-page__card-delete"
-                    aria-label={`Delete ${recipeMenuLabel(recipe)}`}
-                    onClick={() => deleteRecipe(recipe.id)}
-                  >
-                    Delete
-                  </button>
-                ) : null}
-              </article>
+      <PageSearchField
+        placeholder="Search recipes…"
+        value={query}
+        onChange={setQuery}
+      />
+
+      {filtered.length === 0 ? (
+        <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
+          {library.length === 0
+            ? "No recipes yet."
+            : `No recipes match “${query.trim()}”.`}
+        </p>
+      ) : (
+        <ul className="recipes-page__list">
+          {filtered.map((recipe) => (
+            <li key={recipe.id} className="recipes-page__list-item">
+              <RecipeLibraryCard
+                recipe={recipe}
+                expanded={expandedId === recipe.id}
+                onExpandedChange={(next) =>
+                  setExpandedId(next ? recipe.id : null)
+                }
+                onDelete={(target) => {
+                  const label = recipeMenuLabel(target);
+                  if (!window.confirm(`Delete “${label}”?`)) return;
+                  deleteRecipe(target.id);
+                  if (expandedId === target.id) setExpandedId(null);
+                }}
+              />
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      )}
     </DestinationPageChrome>
   );
 }

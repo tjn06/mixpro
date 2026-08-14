@@ -5,8 +5,8 @@
  * |-------------------|------------------------|----------------------------------|
  * | Dark + default    | semantic.ts, borders.ts, surfaces.ts | yes (componentTokens) |
  * | Dark + high       | darkHighContrastPalette below        | no  |
- * | Light + default   | lightDefaultPalette below            | no  |
- * | Light + high      | lightHighContrastPalette below       | no  |
+ * | Light + default   | lightDefaultPalette — elevation: darker app, lighter raised |
+ * | Light + high      | lightHighContrastPalette — same elevation model, stronger steps |
  *
  * Sheet chrome: `surfaces.sheetDock` (sticky handle/TOTAL) and `surfaces.sheetBody`
  * (expanded summary) share one sheet plane per appearance.
@@ -55,29 +55,36 @@ export const lightDefaultPalette: ThemePalette = {
     headerButtonActive: borderSolidBlack(0.16),
   },
   surfaces: {
-    raised: paper[650],
+    /**
+     * Light elevation:
+     *   app     = former header paper (lighter field)
+     *   header  = darker than app (chrome sits above the field)
+     *   raised  = idle entity gray (darker than selected white+accent)
+     *   swipe   = well; live fill syncs to selected entity via entitySurfaceLit
+     */
+    raised: paper[850],
     sheetDock: paper[950],
     sheetBody: paper[950],
     button: alphaBlack(0.06),
     buttonActive: alphaBlack(0.1),
     buttonSolid: "#e6e6ec",
     buttonActiveSolid: "#dedee6",
-    input: paper[800],
-    inputSolid: paper[700],
+    input: paper[900],
+    inputSolid: paper[900],
     headerButton: alphaBlack(0.05),
     headerButtonActive: alphaBlack(0.08),
     headerButtonSolid: "#e2e2ea",
     headerButtonActiveSolid: "#d8d8e2",
     app: paper[900],
-    shell: paper[950],
+    shell: paper[900],
     header: paper[850],
     headerSub: paper[800],
-    loadSheetPanel: "rgba(244, 244, 248, 0.88)",
-    loadSheetRow: "rgba(244, 244, 248, 0.94)",
+    loadSheetPanel: "rgba(250, 250, 252, 0.92)",
+    loadSheetRow: "rgba(250, 250, 252, 0.97)",
     outsideDimLight: "rgba(0, 0, 0, 0.18)",
     outsideDimMedium: "rgba(0, 0, 0, 0.28)",
     tooltipLine: alphaBlack(0.16),
-    dropdown: paper[700],
+    dropdown: paper[950],
     swipe: paper[800],
     longPressAction: "#c4c4cc",
     longPressActionActive: "#b4b4bc",
@@ -90,7 +97,7 @@ export const lightDefaultPalette: ThemePalette = {
     longPressFill: alphaBlack(0.06),
   },
   legacy: {
-    entityBorderIdle: alphaBlack(0.14),
+    entityBorderIdle: alphaBlack(0.12),
     fillOutline: alphaBlack(0.2),
     fillEmpty: alphaBlack(0.04),
     actionDisabledLabel: ink[10],
@@ -225,30 +232,33 @@ export const lightHighContrastPalette: ThemePalette = {
     headerButtonActive: borderSolidBlack(0.24),
   },
   surfaces: {
-    raised: paper[600],
+    /**
+     * Same elevation model as light default, stronger steps for contrast mode.
+     */
+    raised: paper[850],
     sheetDock: paper[950],
     sheetBody: paper[950],
     button: alphaBlack(0.1),
     buttonActive: alphaBlack(0.14),
     buttonSolid: "#dedee4",
     buttonActiveSolid: "#d4d4dc",
-    input: paper[750],
-    inputSolid: paper[700],
+    input: paper[900],
+    inputSolid: paper[900],
     headerButton: alphaBlack(0.07),
     headerButtonActive: alphaBlack(0.11),
     headerButtonSolid: "#e0e0e8",
     headerButtonActiveSolid: "#d6d6e0",
     app: paper[900],
-    shell: paper[950],
-    header: paper[850],
-    headerSub: paper[800],
+    shell: paper[900],
+    header: paper[800],
+    headerSub: paper[750],
     loadSheetPanel: "rgba(250, 250, 252, 0.94)",
     loadSheetRow: "rgba(250, 250, 252, 0.98)",
     outsideDimLight: "rgba(0, 0, 0, 0.28)",
     outsideDimMedium: "rgba(0, 0, 0, 0.4)",
     tooltipLine: alphaBlack(0.24),
-    dropdown: paper[650],
-    swipe: paper[750],
+    dropdown: paper[950],
+    swipe: paper[800],
     longPressAction: alphaBlack(0.14),
     longPressActionActive: alphaBlack(0.18),
     longPressLabelIdle: ink[90],
@@ -260,14 +270,14 @@ export const lightHighContrastPalette: ThemePalette = {
     longPressFill: alphaBlack(0.08),
   },
   legacy: {
-    entityBorderIdle: alphaBlack(0.24),
+    entityBorderIdle: alphaBlack(0.2),
     fillOutline: alphaBlack(0.32),
     fillEmpty: alphaBlack(0.05),
     actionDisabledLabel: ink[30],
   },
   chrome: {
     headerBorder: borderSolidBlack(0.16),
-    headerSubBg: paper[800],
+    headerSubBg: paper[750],
     headerSubInset: "inset 0 1px 0 rgba(0, 0, 0, 0.1)",
     outsideDimBlur: "12px",
     outsideDimSaturate: "1.04",

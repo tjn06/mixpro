@@ -8,6 +8,13 @@ import {
 import { MIX_PARAMS } from "../../domain/mix/entities";
 import { recipeMetaVar as meta } from "../../presentation/recipeMetaVars";
 
+/**
+ * Cluster layout trial — identity (id+sublabel) vs measure (value+unit).
+ * Restored to legacy: static ratio text must keep original colors.
+ * Set to `true` to retry cluster spacing only (colors stay matched to legacy).
+ */
+const RECIPE_RATIO_CLUSTER_LAYOUT = false;
+
 const RECIPE_RATIO_BG = "transparent";
 const RECIPE_VALUE_COLOR = meta.value;
 const RECIPE_VALUE_COLOR_MUTED = meta.valueMuted;
@@ -38,7 +45,8 @@ function RecipeRatioGapSeparator() {
   );
 }
 
-function RecipeRatioCard({
+/** Previous layout — even vertical distribution of four lines. */
+function RecipeRatioCardLegacy({
   id,
   sublabel,
   value,
@@ -121,6 +129,114 @@ function RecipeRatioCard({
         {unit}
       </span>
     </div>
+  );
+}
+
+/**
+ * Cluster spacing only — colors / weights / sizes match legacy exactly
+ * (static ratio info must not look muted or recolored).
+ */
+function RecipeRatioCardCluster({
+  id,
+  sublabel,
+  value,
+  unit,
+  muted,
+}: {
+  id: string;
+  sublabel?: string;
+  value: string;
+  unit: string;
+  muted: boolean;
+}) {
+  return (
+    <div
+      aria-hidden
+      className="flex-1 min-w-0 rounded-xl flex flex-col items-center justify-between pointer-events-none"
+      style={{
+        height: "var(--recipe-card-h)",
+        padding: "var(--recipe-card-pt) var(--recipe-card-px) var(--recipe-card-pb)",
+        background: RECIPE_RATIO_BG,
+      }}
+    >
+      <div
+        className="flex flex-col items-center max-w-full min-w-0"
+        style={{ gap: "1px" }}
+      >
+        <span
+          className="uppercase truncate max-w-full"
+          style={{
+            fontSize: "var(--text-recipe-id)",
+            letterSpacing: "0.12em",
+            fontWeight: 700,
+            color: muted ? RECIPE_ID_COLOR_MUTED : RECIPE_ID_COLOR,
+            lineHeight: 1.1,
+          }}
+        >
+          {id}
+        </span>
+        {sublabel ? (
+          <span
+            className="truncate max-w-full capitalize"
+            style={{
+              fontSize: "var(--text-recipe-sublabel)",
+              letterSpacing: "0.02em",
+              fontWeight: 600,
+              color: muted ? RECIPE_UNIT_COLOR : RECIPE_ID_COLOR,
+              opacity: muted ? 0.75 : 0.9,
+              lineHeight: 1.1,
+            }}
+          >
+            {sublabel}
+          </span>
+        ) : null}
+      </div>
+
+      <div
+        className="flex flex-col items-center max-w-full min-w-0"
+        style={{ gap: "1px" }}
+      >
+        <span
+          className="tabular-nums truncate max-w-full"
+          style={{
+            fontSize: "var(--text-recipe-ratio)",
+            letterSpacing: "-0.02em",
+            fontWeight: 600,
+            color: muted ? RECIPE_VALUE_COLOR_MUTED : RECIPE_VALUE_COLOR,
+            lineHeight: 1,
+          }}
+        >
+          {value}
+        </span>
+        <span
+          className="uppercase truncate max-w-full"
+          style={{
+            fontSize: "var(--text-recipe-unit)",
+            letterSpacing: unit.length > 1 ? "0.1em" : "0.05em",
+            fontWeight: 600,
+            color: RECIPE_UNIT_COLOR,
+            opacity: muted ? 0.7 : 1,
+            lineHeight: 1.1,
+          }}
+        >
+          {unit}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function RecipeRatioCard(props: {
+  id: string;
+  sublabel?: string;
+  value: string;
+  unit: string;
+  muted: boolean;
+}) {
+  return RECIPE_RATIO_CLUSTER_LAYOUT ? (
+    <RecipeRatioCardCluster {...props} />
+  ) : (
+    <RecipeRatioCardLegacy {...props} />
   );
 }
 

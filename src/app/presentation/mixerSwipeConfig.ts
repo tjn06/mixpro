@@ -1,6 +1,7 @@
 import { themeColorVar } from "../../theme/cssVars";
 import { mixerVar } from "../../theme/mixerCssVars";
 import { componentTokens } from "../../theme/components";
+import type { ColorScheme } from "../../theme/appearance";
 
 const chrome = componentTokens.chrome;
 
@@ -61,7 +62,14 @@ export function mixerEntityActiveRing(color: string): string {
   return `0 0 0 0.5px ${color}${MIXER_ENTITY_BORDER_ACTIVE}`;
 }
 
-export function mixerEntityCardShadow(color: string): string {
+/** Dark: accent bloom. Light: neutral lift (no colored glow on paper). */
+export function mixerEntityCardShadow(
+  color: string,
+  scheme: ColorScheme = "dark",
+): string {
+  if (scheme === "light") {
+    return "0 1px 2px rgba(0, 0, 0, 0.06), 0 6px 16px rgba(0, 0, 0, 0.08)";
+  }
   return `0 0 14px ${color}55, 0 0 6px ${color}40`;
 }
 
