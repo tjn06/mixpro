@@ -22,8 +22,8 @@
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
-  /** Extra header subline row (saved meta / locked recipe). */
-  --header-subline-stack-gap: 2px;
+  /** Extra header subline row (saved mixname). Keep gap tight — rows sit close. */
+  --header-subline-stack-gap: 0px;
   --header-subline-extra: 0px;
   /** Content inset above home indicator — overridden on .app-frame when --space-4 is known. */
   --app-bottom-inset: max(16px, env(safe-area-inset-bottom, 0px));
@@ -210,11 +210,15 @@
 
 .app-header-sub-stack > .app-header__subline {
   min-height: var(--header-subline-h);
+  height: var(--header-subline-h);
   box-sizing: border-box;
 }
 
+/** Always reserve mixname row height — empty when no saved mix is loaded. */
 .app-header__mixname-slot {
   flex-shrink: 0;
+  min-height: var(--header-subline-h);
+  height: var(--header-subline-h);
 }
 
 .app-header__subline {
@@ -416,8 +420,8 @@
     --header-row-gap: clamp(6px, 1.8cqi, 8px);
     --header-pad-bottom: 4px;
     --header-pad-top: 4px;
-    --header-subline-h: 24px;
-    --header-subline-py: 4px;
+    --header-subline-h: 22px;
+    --header-subline-py: 2px;
     --header-base-h: calc(
       var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px
     );
@@ -579,8 +583,8 @@
       --header-bar-h: clamp(36px, 5.24cqh, 40px);
       --header-row-gap: clamp(4px, 1.05cqh, 8px);
       --header-pad-bottom: clamp(2px, 0.52cqh, 4px);
-      --header-subline-h: clamp(20px, 3.14cqh, 24px);
-      --header-subline-py: clamp(3px, 0.52cqh, 4px);
+      --header-subline-h: clamp(18px, 2.9cqh, 22px);
+      --header-subline-py: clamp(2px, 0.4cqh, 3px);
       --header-base-h: calc(
         var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px
       );
@@ -706,8 +710,8 @@
     --header-row-gap: clamp(6px, 1.8vw, 8px);
     --header-pad-bottom: 4px;
     --header-pad-top: 4px;
-    --header-subline-h: 24px;
-    --header-subline-py: 4px;
+    --header-subline-h: 22px;
+    --header-subline-py: 2px;
     --header-base-h: calc(
       var(--header-pad-top) + var(--header-bar-h) + var(--header-pad-bottom) + 1px
     );

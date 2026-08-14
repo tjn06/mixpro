@@ -96,7 +96,7 @@ export function RecipeHeaderSubline({
   );
 }
 
-/** Two-line header sub strip — mixname slot + recipe row (recipe sits above ratio cards). */
+/** Two-line header sub strip — mixname slot (always reserved) + recipe row. */
 export function RecipeHeaderSublineStack({
   children,
   className = "",

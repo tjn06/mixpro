@@ -1277,6 +1277,10 @@ export function BatchMixer({
               sessionChrome={focusSessionChrome}
               subline={
                 <RecipeHeaderSublineStack>
+                  <RecipeHeaderMixContext
+                    loadedSavedMix={recipeCreateMode ? null : loadedSavedMix}
+                    muted={isLocked}
+                  />
                   {recipeCreateMode ? (
                     <RecipeHeaderSubline>
                       <RecipeHeaderRecipeRow muted={isLocked}>
@@ -1284,14 +1288,11 @@ export function BatchMixer({
                       </RecipeHeaderRecipeRow>
                     </RecipeHeaderSubline>
                   ) : (
-                    <>
-                      <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
-                      <RecipeHeaderSubline>
-                        <RecipeHeaderRecipeRow muted={isLocked}>
-                          {recipeMenuLabel(activeRecipe)}
-                        </RecipeHeaderRecipeRow>
-                      </RecipeHeaderSubline>
-                    </>
+                    <RecipeHeaderSubline>
+                      <RecipeHeaderRecipeRow muted={isLocked}>
+                        {recipeMenuLabel(activeRecipe)}
+                      </RecipeHeaderRecipeRow>
+                    </RecipeHeaderSubline>
                   )}
                 </RecipeHeaderSublineStack>
               }
@@ -1358,35 +1359,34 @@ export function BatchMixer({
               subline={
               <div className={isLocked && !loadedSavedMix ? "pointer-events-none" : "pointer-events-auto"}>
                 <RecipeHeaderSublineStack>
+                  <RecipeHeaderMixContext
+                    loadedSavedMix={nestedFocus ? null : loadedSavedMix}
+                    muted={isLocked}
+                  />
                   {nestedFocus ? (
-                    <>
-                      <RecipeHeaderSubline>
-                        <RecipeHeaderRecipeRow muted={isLocked}>
-                          {recipeCreateMode
-                            ? recipeCreateMode.recipeLabel
-                            : recipeMenuLabel(activeRecipe)}
-                        </RecipeHeaderRecipeRow>
-                      </RecipeHeaderSubline>
-                    </>
+                    <RecipeHeaderSubline>
+                      <RecipeHeaderRecipeRow muted={isLocked}>
+                        {recipeCreateMode
+                          ? recipeCreateMode.recipeLabel
+                          : recipeMenuLabel(activeRecipe)}
+                      </RecipeHeaderRecipeRow>
+                    </RecipeHeaderSubline>
                   ) : (
-                    <>
-                      <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
-                      <RecipeSelect
-                        recipes={recipes}
-                        value={activeRecipe}
-                        onChange={handleRecipeChange}
-                        disabled={isLocked && !loadedSavedMix}
-                        muted={isLocked && !loadedSavedMix}
-                        allowReselectCurrent={loadedSavedMix != null}
-                        bucketSelection={bucketSelection}
-                        onBucketChange={setBucketSelection}
-                        initialBinderSum={initialBinderSum}
-                        sandType={sandType}
-                        savedMixes={savedMixes}
-                        loadedSavedMixId={loadedSavedMixId}
-                        onSavedMixSelect={handleSavedMixSelect}
-                      />
-                    </>
+                    <RecipeSelect
+                      recipes={recipes}
+                      value={activeRecipe}
+                      onChange={handleRecipeChange}
+                      disabled={isLocked && !loadedSavedMix}
+                      muted={isLocked && !loadedSavedMix}
+                      allowReselectCurrent={loadedSavedMix != null}
+                      bucketSelection={bucketSelection}
+                      onBucketChange={setBucketSelection}
+                      initialBinderSum={initialBinderSum}
+                      sandType={sandType}
+                      savedMixes={savedMixes}
+                      loadedSavedMixId={loadedSavedMixId}
+                      onSavedMixSelect={handleSavedMixSelect}
+                    />
                   )}
                 </RecipeHeaderSublineStack>
               </div>
