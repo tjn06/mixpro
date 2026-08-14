@@ -115,8 +115,13 @@ export function RecBatchPanel({
       : "Saved"
     : saveLabelOverride ?? (loadedSavedMix ? "Update mix" : "Save mix");
   const saveConfirm = saveConfirmAction ?? "SAVE MIX";
+  /** Text labels (session / create-recipe) — icon-only would hide the copy. */
   const saveIcon =
-    sessionTone ? undefined : saveFlash || useCommitIcon ? <SavedIcon /> : <SaveIcon />;
+    sessionTone || saveLabelOverride
+      ? undefined
+      : saveFlash || useCommitIcon
+        ? <SavedIcon />
+        : <SaveIcon />;
 
   return (
     <>

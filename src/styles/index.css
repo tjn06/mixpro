@@ -1117,6 +1117,103 @@ body,
     box-shadow 120ms ease;
 }
 
+/* Library cards: column layout (header + optional expand). */
+.recipe-picker-card--library {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* Manage (Recipes): delete / admin strip beside title only. */
+.recipe-picker-card--manage .recipe-picker-card__header {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex: 0 0 auto;
+  min-height: var(--recipe-picker-card-h);
+}
+
+/* Pick (Add mix): Open always in header; tap body to expand formula. */
+.recipe-picker-card--pick .recipe-picker-card__header {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex: 0 0 auto;
+  min-height: var(--recipe-picker-card-h);
+}
+
+.recipe-picker-card--pick .recipe-picker-card__row,
+.recipe-picker-card--manage .recipe-picker-card__row,
+.recipe-picker-menu .recipe-picker-card__row {
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-1);
+}
+
+.recipe-picker-card__chevron {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--semantic-text-muted);
+  transition: transform 160ms ease;
+}
+
+.recipe-picker-card__chevron--open {
+  transform: rotate(180deg);
+}
+
+.recipe-picker-card--session .recipe-picker-card__chevron {
+  color: color-mix(in srgb, var(--session-accent) 70%, var(--semantic-text-muted));
+}
+
+.recipe-picker-card__icon-btn {
+  flex: 0 0 auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 var(--recipe-picker-card-pad-x) 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--semantic-text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.recipe-picker-card__icon-btn--open {
+  color: var(--session-accent);
+}
+
+.recipe-picker-card__icon-btn--open:active {
+  background: color-mix(in srgb, var(--session-accent) 14%, transparent);
+}
+
+.recipe-picker-card__icon-btn--delete {
+  color: var(--component-strip-delete-color, var(--semantic-state-error, #ef4444));
+}
+
+.recipe-picker-card__icon-btn--delete:active {
+  background: color-mix(
+    in srgb,
+    var(--component-strip-delete-color, var(--semantic-state-error, #ef4444)) 14%,
+    transparent
+  );
+}
+
+.recipe-picker-card__icon-btn--admin {
+  pointer-events: none;
+  cursor: default;
+  color: var(--semantic-text-muted);
+}
+
+.recipe-picker-card--session .recipe-picker-card__icon-btn--open {
+  color: var(--session-accent);
+}
+
 .recipe-picker-card--expanded {
   --recipe-picker-bucket-w: 52px;
   --recipe-picker-bucket-w-hero: 2.75rem;
@@ -1200,6 +1297,28 @@ body,
 .recipe-picker-card__go--delete:not(:disabled):active {
   background: var(--component-strip-more-open, var(--semantic-surface-button-active-solid));
   color: var(--component-strip-delete-color, var(--semantic-state-error, #ef4444));
+}
+
+.recipe-picker-card__go--open {
+  color: var(--component-strip-open-color, var(--semantic-text-secondary));
+}
+
+.recipe-picker-card--session {
+  border-color: color-mix(in srgb, var(--session-accent) 40%, transparent);
+}
+
+.recipe-picker-card--session.recipe-picker-card--selected,
+.recipe-picker-card--session.recipe-picker-card--expanded {
+  border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
+  box-shadow: inset 3px 0 0 var(--session-accent);
+}
+
+.recipe-picker-card--session .recipe-picker-card__title {
+  color: var(--session-accent);
+}
+
+.recipe-picker-card--session .recipe-picker-card__go--open {
+  color: var(--session-accent);
 }
 
 .recipe-picker-card__go--admin {
@@ -1516,6 +1635,15 @@ body,
 
 .sheet-field-input--error {
   border: var(--component-field-input-border-error);
+}
+
+.sheet-field-input--error:focus {
+  border: var(--component-field-input-border-error);
+  box-shadow: var(
+    --component-field-input-focus-shadow,
+    inset 0 1px 3px rgba(0, 0, 0, 0.22),
+    0 0 0 2px color-mix(in srgb, var(--semantic-state-error, #f07178) 28%, transparent)
+  );
 }
 
 .sheet-field-input::placeholder {

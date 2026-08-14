@@ -79,7 +79,7 @@ export function CatalogEditPanel({
           />
           <button
             type="submit"
-            className="destination-page__primary-btn catalog-hub__add-btn"
+            className="destination-page__primary-btn destination-page__primary-btn--form catalog-hub__add-btn"
           >
             Add
           </button>

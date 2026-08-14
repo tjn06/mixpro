@@ -7,9 +7,14 @@ export type CreateRecipeEntryContext =
 
 export type RecipeCreateMethod = "weights" | "formula";
 
+/** Card blurb limits — fits recipe list sublabel (similar to preset copy). */
+export const RECIPE_CARD_DESCRIPTION_MAX_CHARS = 72;
+export const RECIPE_CARD_DESCRIPTION_MAX_WORDS = 12;
+
 export type RecipeWeightsInput = {
   name: string;
   nameSubline?: string;
+  description?: string;
   /** Grams */
   a: number;
   b: number;
@@ -20,6 +25,7 @@ export type RecipeWeightsInput = {
 export type RecipeFormulaInput = {
   name: string;
   nameSubline?: string;
+  description?: string;
   aParts: number;
   bParts: number;
   /** Percent of binder (A+B). */
@@ -76,8 +82,35 @@ function binderPercentsFromWeights(
   return list;
 }
 
+export function countDescriptionWords(raw: string): number {
+  const t = raw.trim();
+  if (!t) return 0;
+  return t.split(/\s+/).filter(Boolean).length;
+}
+
+/** Optional card description — empty is fine; enforce max chars / words when set. */
+export function validateRecipeCardDescription(raw: string | undefined): string | null {
+  if (raw == null) return null;
+  const t = raw.trim();
+  if (!t) return null;
+  if (t.length > RECIPE_CARD_DESCRIPTION_MAX_CHARS) {
+    return `Description max ${RECIPE_CARD_DESCRIPTION_MAX_CHARS} characters`;
+  }
+  if (countDescriptionWords(t) > RECIPE_CARD_DESCRIPTION_MAX_WORDS) {
+    return `Description max ${RECIPE_CARD_DESCRIPTION_MAX_WORDS} words`;
+  }
+  return null;
+}
+
+function normalizedDescription(raw: string | undefined): string | undefined {
+  const t = raw?.trim();
+  return t ? t : undefined;
+}
+
 export function validateWeightsInput(input: RecipeWeightsInput): string | null {
   if (!input.name.trim()) return "Name is required";
+  const descErr = validateRecipeCardDescription(input.description);
+  if (descErr) return descErr;
   if (!(input.a > 0) || !(input.b > 0)) return "Resin (A) and Hardener (B) must be greater than 0";
   if (input.filler < 0 || input.thickener < 0) return "Filler and thickener cannot be negative";
   return null;
@@ -85,6 +118,8 @@ export function validateWeightsInput(input: RecipeWeightsInput): string | null {
 
 export function validateFormulaInput(input: RecipeFormulaInput): string | null {
   if (!input.name.trim()) return "Name is required";
+  const descErr = validateRecipeCardDescription(input.description);
+  if (descErr) return descErr;
   if (!(input.aParts > 0) || !(input.bParts > 0)) return "A and B parts must be greater than 0";
   if (input.fillerPercent < 0 || input.thickenerPercent < 0) {
     return "Percents cannot be negative";
@@ -103,6 +138,7 @@ export function blendingRecipeFromWeights(input: RecipeWeightsInput): BlendingRe
     id: crypto.randomUUID(),
     name: input.name.trim(),
     nameSubline: input.nameSubline?.trim() || undefined,
+    description: normalizedDescription(input.description),
     initialBinderSum: Math.round(binderSum),
     binderParts: [
       { id: "A", parts: aParts, label: "Resin" },
@@ -124,12 +160,13 @@ export function blendingRecipeFromFormula(input: RecipeFormulaInput): BlendingRe
   const binder =
     input.initialBinderSum != null && input.initialBinderSum > 0
       ? Math.round(input.initialBinderSum)
-      : 1500;
+      : undefined;
 
   return {
     id: crypto.randomUUID(),
     name: input.name.trim(),
     nameSubline: input.nameSubline?.trim() || undefined,
+    description: normalizedDescription(input.description),
     initialBinderSum: binder,
     binderParts: [
       { id: "A", parts: input.aParts, label: "Resin" },

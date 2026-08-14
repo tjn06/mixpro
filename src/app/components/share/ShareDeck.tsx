@@ -15,6 +15,7 @@ import {
   openSmsWithReport,
 } from "../../domain/batch-totals/share";
 import {
+  CloseIcon,
   CopyIcon,
   MailIcon,
   MessageIcon,
@@ -187,7 +188,7 @@ export function ShareDeck({
               <ShareIconButton
                 label={commentOpen ? labels.closeComment : commentPlaceholder}
                 onClick={() => setCommentOpen((open) => !open)}
-                icon={<RenameIcon />}
+                icon={commentOpen ? <CloseIcon /> : <RenameIcon />}
                 active={commentOpen || hasComment}
               />
             </div>

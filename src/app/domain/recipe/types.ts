@@ -20,6 +20,11 @@ export interface BlendingRecipe {
   name?: string;
   /** Second line under recipe name in the meta card. */
   nameSubline?: string;
+  /**
+   * Optional card blurb (custom recipes). Presets use `recipePlaceholderDescription`.
+   * When omitted, library cards fall back to a generated formula summary.
+   */
+  description?: string;
   /** Binder (A + B) reference in grams for initial mix and REC. BATCH reset. */
   initialBinderSum?: number;
   binderParts: PartRatio[];

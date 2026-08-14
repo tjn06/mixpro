@@ -20,6 +20,10 @@ export const componentCssVarNames = {
   sessionAccent: "--session-accent",
   sessionBtnFg: "--session-btn-fg",
   sessionBtnBgHold: "--session-btn-bg-hold",
+  /** Form-page primary save/submit (library hubs, create recipe) — not mixer chrome. */
+  formPrimaryBg: "--form-primary-bg",
+  formPrimaryFg: "--form-primary-fg",
+  formPrimaryBgActive: "--form-primary-bg-active",
   selectionBorder: "--semantic-selection-border",
   selectionBg: "--semantic-selection-bg",
   stateDisabled: "--semantic-state-disabled",
@@ -282,6 +286,12 @@ export function getExtendedSemanticCssEntries(): [string, string][] {
     [
       componentCssVarNames.sessionBtnBgHold,
       `color-mix(in srgb, ${semanticColors.state.session} 72%, #000)`,
+    ],
+    [componentCssVarNames.formPrimaryBg, semanticColors.text.primary],
+    [componentCssVarNames.formPrimaryFg, semanticColors.surface.app],
+    [
+      componentCssVarNames.formPrimaryBgActive,
+      `color-mix(in srgb, ${semanticColors.text.primary} 88%, ${semanticColors.surface.app})`,
     ],
     [componentCssVarNames.selectionBorder, semanticBorders.strong],
     [componentCssVarNames.selectionBg, semanticSurfaces.buttonActive],

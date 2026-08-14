@@ -576,7 +576,7 @@ function RecipePickerCard({
     <div
       role="option"
       aria-selected={selected}
-      aria-expanded={expanded || undefined}
+      aria-expanded={showDetail ? expanded : undefined}
       className={`${SHEET_LIST_ROW_CLASS} recipe-picker-card w-full flex flex-col items-stretch min-w-0${
         selected ? " recipe-picker-card--selected" : ""
       }${applied ? " recipe-picker-card--applied" : ""}${expanded ? " recipe-picker-card--expanded" : ""}`}
@@ -586,9 +586,16 @@ function RecipePickerCard({
           type="button"
           className="recipe-picker-card__body text-left touch-manipulation flex flex-col items-stretch min-w-0 flex-1"
           onClick={onPreview}
+          aria-expanded={showDetail ? expanded : undefined}
         >
           <span className="recipe-picker-card__row">
-            <span className="min-w-0 recipe-picker-card__title">{title}</span>
+            {showDetail ? (
+              <ChevronDownIcon
+                open={expanded}
+                className="recipe-picker-card__chevron"
+              />
+            ) : null}
+            <span className="min-w-0 flex-1 recipe-picker-card__title">{title}</span>
             {applied ? (
               <span className="recipe-picker-card__badge" aria-label="Current recipe">
                 <SavedIcon size={14} />
@@ -707,12 +714,12 @@ export function RecipePickerSheet({
 }: RecipePickerSheetProps) {
   const [present, setPresent] = useState(false);
   const [phase, setPhase] = useState<MenuPhase>("idle");
-  const [previewRecipe, setPreviewRecipe] = useState(value);
+  const [previewRecipe, setPreviewRecipe] = useState<BlendingRecipe | null>(null);
   const [previewBucketOverrides, setPreviewBucketOverrides] = useState<
     Partial<Record<string, BucketSelection>>
   >({});
   const [searchQuery, setSearchQuery] = useState("");
-  const previewRecipeRef = useRef(value);
+  const previewRecipeRef = useRef<BlendingRecipe | null>(null);
   previewRecipeRef.current = previewRecipe;
   const [portal, setPortal] = useState<HTMLElement | null>(null);
   const [anchorTop, setAnchorTop] = useState<number | null>(null);
@@ -733,7 +740,7 @@ export function RecipePickerSheet({
   const scrollEdges = useScrollEdgeFades(
     scrollRef,
     present && phase !== "exit",
-    `${previewRecipe.id}:${showBucketDetail}:${recentMixes.length}:${filteredRecipes.length}:${searchQuery}:${phase}`,
+    `${previewRecipe?.id ?? ""}:${showBucketDetail}:${recentMixes.length}:${filteredRecipes.length}:${searchQuery}:${phase}`,
   );
 
   const resolvePickerBucket = useCallback(
@@ -745,15 +752,23 @@ export function RecipePickerSheet({
     [previewBucketOverrides, value.id, bucketSelection],
   );
 
-  const handlePreviewRecipe = useCallback((recipe: BlendingRecipe) => {
+  const handleToggleExpand = useCallback((recipe: BlendingRecipe) => {
     setPreviewBucketOverrides((prev) => {
-      const previousId = previewRecipeRef.current.id;
-      if (previousId === recipe.id || !(previousId in prev)) return prev;
+      const previousId = previewRecipeRef.current?.id;
+      if (
+        previousId == null ||
+        previousId === recipe.id ||
+        !(previousId in prev)
+      ) {
+        return prev;
+      }
       const next = { ...prev };
       delete next[previousId];
       return next;
     });
-    setPreviewRecipe(recipe);
+    setPreviewRecipe((current) =>
+      current?.id === recipe.id ? null : recipe,
+    );
   }, []);
 
   const handlePreviewBucketChange = useCallback(
@@ -792,7 +807,7 @@ export function RecipePickerSheet({
 
   useEffect(() => {
     if (open) {
-      setPreviewRecipe(value);
+      setPreviewRecipe(null);
       setPreviewBucketOverrides({});
       setSearchQuery("");
       if (exitTimerRef.current != null) {
@@ -913,7 +928,7 @@ export function RecipePickerSheet({
                 </p>
               ) : (
                 filteredRecipes.map((recipe) => {
-                const selected = recipe.id === previewRecipe.id;
+                const selected = previewRecipe?.id === recipe.id;
                 const applied = recipe.id === value.id;
                 return (
                   <div key={recipe.id} className="recipe-picker-matrix__recipe">
@@ -939,7 +954,7 @@ export function RecipePickerSheet({
                         onSavedMixSelect?.(mix);
                         requestClose();
                       }}
-                      onPreview={() => handlePreviewRecipe(recipe)}
+                      onPreview={() => handleToggleExpand(recipe)}
                       onApply={() => {
                         onBucketChange?.(resolvePickerBucket(recipe.id));
                         onChange(recipe);

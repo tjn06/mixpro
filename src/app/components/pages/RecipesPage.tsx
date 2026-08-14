@@ -41,7 +41,7 @@ export function RecipesPage({
     >
       <button
         type="button"
-        className="destination-page__primary-btn"
+        className="destination-page__primary-btn destination-page__primary-btn--form"
         onClick={onCreateRecipe}
       >
         + Create recipe

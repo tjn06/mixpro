@@ -96,6 +96,12 @@ export function buildThemeCssEntries(
       componentCssVarNames.sessionBtnBgHold,
       `color-mix(in srgb, ${state.session} 72%, #000)`,
     ],
+    [componentCssVarNames.formPrimaryBg, text.primary],
+    [componentCssVarNames.formPrimaryFg, surfaces.app],
+    [
+      componentCssVarNames.formPrimaryBgActive,
+      `color-mix(in srgb, ${text.primary} 88%, ${surfaces.app})`,
+    ],
     [componentCssVarNames.selectionBorder, borders.strong],
     [componentCssVarNames.selectionBg, surfaces.buttonActive],
     [componentCssVarNames.stateDisabled, state.disabled],

@@ -407,6 +407,24 @@ export type BatchMixerSessionMode = {
   onCancel: () => void;
 };
 
+/** Nested calculator while creating a recipe — scale batch / bucket, then save formula. */
+export type RecipeCreateCommitPayload = {
+  recipe: BlendingRecipe;
+  values: number[];
+  /** A + B grams from the scaled mix — store as initialBinderSum when > 0. */
+  binderSum: number;
+  bucketSelection: BucketSelection;
+};
+
+export type BatchMixerRecipeCreateMode = {
+  /** When set, use session teal chrome and `Session · name` title (create from session). */
+  sessionName?: string;
+  /** Draft recipe label for the header subline. */
+  recipeLabel: string;
+  onCommit: (payload: RecipeCreateCommitPayload) => void;
+  onCancel: () => void;
+};
+
 export interface BatchMixerProps {
   /** Initial / preferred recipe (must exist in `recipes`). */
   recipe?: BlendingRecipe;
@@ -429,6 +447,8 @@ export interface BatchMixerProps {
   embedded?: boolean;
   /** Nested calculator for Session Mode — commit/cancel back to session overview. */
   sessionMode?: BatchMixerSessionMode;
+  /** Nested calculator for Create Recipe — commit/cancel back to the create form. */
+  recipeCreateMode?: BatchMixerRecipeCreateMode;
 }
 
 function resolveRecipe(seed: BlendingRecipe | undefined, catalog: BlendingRecipe[]): BlendingRecipe {
@@ -446,7 +466,16 @@ export function BatchMixer({
   onOpenNav,
   embedded = false,
   sessionMode,
+  recipeCreateMode,
 }: BatchMixerProps) {
+  const nestedFocus = sessionMode
+    ? ("session" as const)
+    : recipeCreateMode
+      ? ("recipe-create" as const)
+      : null;
+  const focusSessionChrome = Boolean(
+    sessionMode || (recipeCreateMode && recipeCreateMode.sessionName),
+  );
   const [activeRecipe, setActiveRecipe] = useState<BlendingRecipe>(() =>
     resolveRecipe(initialRecipe, recipes),
   );
@@ -792,13 +821,41 @@ export function BatchMixer({
     });
   }, [sessionMode]);
 
+  const handleRecipeCreateCancel = useCallback(() => {
+    if (!recipeCreateMode) return;
+    const dirty = valuesRef.current.some(
+      (v, i) => Math.abs(v - (sessionBaselineRef.current[i] ?? 0)) > 0.05,
+    );
+    if (dirty) {
+      const ok = window.confirm("Discard batch size changes?");
+      if (!ok) return;
+    }
+    recipeCreateMode.onCancel();
+  }, [recipeCreateMode]);
+
+  const handleRecipeCreateCommit = useCallback(() => {
+    if (!recipeCreateMode) return;
+    const vals = valuesRef.current;
+    const binderSum = Math.round((vals[1] ?? 0) + (vals[2] ?? 0));
+    recipeCreateMode.onCommit({
+      recipe: recipeRef.current,
+      values: [...vals],
+      binderSum,
+      bucketSelection: bucketSelectionRef.current,
+    });
+  }, [recipeCreateMode]);
+
   const handleSaveRequest = useCallback(() => {
     if (sessionMode) {
       handleSessionCommit();
       return;
     }
+    if (recipeCreateMode) {
+      handleRecipeCreateCommit();
+      return;
+    }
     setSaveNameSheetOpen(true);
-  }, [sessionMode, handleSessionCommit]);
+  }, [sessionMode, recipeCreateMode, handleSessionCommit, handleRecipeCreateCommit]);
 
   const handleSaveConfirm = useCallback(
     (metaName?: string, strategy: "update" | "new" = "new") => {
@@ -1056,15 +1113,19 @@ export function BatchMixer({
       handleSessionCancel();
       return;
     }
+    if (recipeCreateMode && screen === "mixer") {
+      handleRecipeCreateCancel();
+      return;
+    }
     setTotalsPanelExpanded(false);
     setScreen("mixer");
-  }, [sessionMode, screen, handleSessionCancel]);
+  }, [sessionMode, recipeCreateMode, screen, handleSessionCancel, handleRecipeCreateCancel]);
 
   const handleForward = useCallback(() => {
-    if (sessionMode) return;
+    if (nestedFocus) return;
     if (screen !== "mixer" || isLocked) return;
     setScreen("totals");
-  }, [sessionMode, screen, isLocked]);
+  }, [nestedFocus, screen, isLocked]);
 
   const forwardTotalsBadge = useMemo(() => {
     if (!hasActiveBatchTotalsPlan(batchMultiplier, extraBatches)) return null;
@@ -1204,20 +1265,34 @@ export function BatchMixer({
               title={
                 sessionMode
                   ? `Session · ${sessionMode.sessionName}`
-                  : "MIXpro"
+                  : recipeCreateMode?.sessionName
+                    ? `Session · ${recipeCreateMode.sessionName}`
+                    : recipeCreateMode
+                      ? "Set rec. batch"
+                      : "MIXpro"
               }
               isLocked={isLocked}
               onMenuClick={onOpenNav}
               onBack={handleBack}
-              sessionChrome={Boolean(sessionMode)}
+              sessionChrome={focusSessionChrome}
               subline={
                 <RecipeHeaderSublineStack>
-                  <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
-                  <RecipeHeaderSubline>
-                    <RecipeHeaderRecipeRow muted={isLocked}>
-                      {recipeMenuLabel(activeRecipe)}
-                    </RecipeHeaderRecipeRow>
-                  </RecipeHeaderSubline>
+                  {recipeCreateMode ? (
+                    <RecipeHeaderSubline>
+                      <RecipeHeaderRecipeRow muted={isLocked}>
+                        {recipeCreateMode.recipeLabel}
+                      </RecipeHeaderRecipeRow>
+                    </RecipeHeaderSubline>
+                  ) : (
+                    <>
+                      <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
+                      <RecipeHeaderSubline>
+                        <RecipeHeaderRecipeRow muted={isLocked}>
+                          {recipeMenuLabel(activeRecipe)}
+                        </RecipeHeaderRecipeRow>
+                      </RecipeHeaderSubline>
+                    </>
+                  )}
                 </RecipeHeaderSublineStack>
               }
             />
@@ -1246,25 +1321,53 @@ export function BatchMixer({
               title={
                 sessionMode
                   ? `Session · ${sessionMode.sessionName}`
-                  : "MIXpro"
+                  : recipeCreateMode?.sessionName
+                    ? `Session · ${recipeCreateMode.sessionName}`
+                    : recipeCreateMode
+                      ? "Set rec. batch"
+                      : "MIXpro"
               }
               isLocked={isLocked}
               onMenuClick={onOpenNav}
-              onBack={sessionMode ? handleSessionCancel : undefined}
-              backLabel={sessionMode ? "Back to session" : "Back"}
-              backConfirmAction={sessionMode ? "BACK TO SESSION" : "GO BACK"}
-              onForward={sessionMode ? undefined : handleForward}
-              forwardBadgeCount={sessionMode ? null : forwardTotalsBadge}
-              sessionChrome={Boolean(sessionMode)}
+              onBack={
+                nestedFocus
+                  ? nestedFocus === "session"
+                    ? handleSessionCancel
+                    : handleRecipeCreateCancel
+                  : undefined
+              }
+              backLabel={
+                nestedFocus === "session"
+                  ? "Back to session"
+                  : nestedFocus === "recipe-create"
+                    ? recipeCreateMode?.sessionName
+                      ? "Back to formula"
+                      : "Back to formula"
+                    : "Back"
+              }
+              backConfirmAction={
+                nestedFocus === "session"
+                  ? "BACK TO SESSION"
+                  : nestedFocus === "recipe-create"
+                    ? "GO BACK"
+                    : "GO BACK"
+              }
+              onForward={nestedFocus ? undefined : handleForward}
+              forwardBadgeCount={nestedFocus ? null : forwardTotalsBadge}
+              sessionChrome={focusSessionChrome}
               subline={
               <div className={isLocked && !loadedSavedMix ? "pointer-events-none" : "pointer-events-auto"}>
                 <RecipeHeaderSublineStack>
-                  {sessionMode ? (
-                    <RecipeHeaderSubline>
-                      <RecipeHeaderRecipeRow muted={isLocked}>
-                        {recipeMenuLabel(activeRecipe)}
-                      </RecipeHeaderRecipeRow>
-                    </RecipeHeaderSubline>
+                  {nestedFocus ? (
+                    <>
+                      <RecipeHeaderSubline>
+                        <RecipeHeaderRecipeRow muted={isLocked}>
+                          {recipeCreateMode
+                            ? recipeCreateMode.recipeLabel
+                            : recipeMenuLabel(activeRecipe)}
+                        </RecipeHeaderRecipeRow>
+                      </RecipeHeaderSubline>
+                    </>
                   ) : (
                     <>
                       <RecipeHeaderMixContext loadedSavedMix={loadedSavedMix} muted={isLocked} />
@@ -1330,7 +1433,9 @@ export function BatchMixer({
             />
             <div ref={recBatchColRef} className="min-w-0 h-full">
             <RecBatchPanel
-              recommendedTotalGrams={recommendedTotalGrams}
+              recommendedTotalGrams={
+                recipeCreateMode ? currentMixTotalGrams : recommendedTotalGrams
+              }
               recommendedForBucketGrams={recommendedForBucketGrams}
               currentMixTotalGrams={currentMixTotalGrams}
               bucketSelection={bucketSelection}
@@ -1346,18 +1451,22 @@ export function BatchMixer({
                   ? sessionMode.mode === "edit"
                     ? "Update in session"
                     : "Save to session"
-                  : undefined
+                  : recipeCreateMode
+                    ? "SAVE TO RECIPE"
+                    : undefined
               }
               saveConfirmAction={
                 sessionMode
                   ? sessionMode.mode === "edit"
                     ? "UPDATE IN SESSION"
                     : "SAVE TO SESSION"
-                  : undefined
+                  : recipeCreateMode
+                    ? "SAVE TO RECIPE"
+                    : undefined
               }
               useCommitIcon={false}
-              sessionTone={Boolean(sessionMode)}
-              hideLoad={Boolean(sessionMode)}
+              sessionTone={focusSessionChrome}
+              hideLoad={Boolean(nestedFocus)}
               disabled={isLocked}
               muted={isLocked}
               saveButtonRef={saveButtonRef}
@@ -1383,24 +1492,30 @@ export function BatchMixer({
                   ? sessionMode.mode === "edit"
                     ? "Update in session"
                     : "Save to session"
-                  : undefined
+                  : recipeCreateMode
+                    ? "SAVE TO RECIPE"
+                    : undefined
               }
               saveConfirmAction={
                 sessionMode
                   ? sessionMode.mode === "edit"
                     ? "UPDATE IN SESSION"
                     : "SAVE TO SESSION"
-                  : undefined
+                  : recipeCreateMode
+                    ? "SAVE TO RECIPE"
+                    : undefined
               }
               saveDescriptionOverride={
                 sessionMode
                   ? sessionMode.mode === "edit"
                     ? "Hold to save changes back to this session"
                     : "Hold to save this mix to the session"
-                  : undefined
+                  : recipeCreateMode
+                    ? "Hold to save this rec. batch to the recipe"
+                    : undefined
               }
               useCommitIcon={false}
-              sessionTone={Boolean(sessionMode)}
+              sessionTone={focusSessionChrome}
               expandMs={LOCK_EXPAND_MS}
               expandEase={LOCK_EASE}
               zIndex={LOCK_UNLOCK_Z}
