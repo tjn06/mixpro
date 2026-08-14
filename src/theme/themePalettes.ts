@@ -56,9 +56,8 @@ export const lightDefaultPalette: ThemePalette = {
   },
   surfaces: {
     /**
-     * Light elevation:
-     *   app     = former header paper (lighter field)
-     *   header  = darker than app (chrome sits above the field)
+     * Light elevation (matches dark calculator approach):
+     *   app / header / headerSub = same plane; depth comes from recipe-context gradient
      *   raised  = idle entity gray (darker than selected white+accent)
      *   swipe   = well; live fill syncs to selected entity via entitySurfaceLit
      */
@@ -77,8 +76,8 @@ export const lightDefaultPalette: ThemePalette = {
     headerButtonActiveSolid: "#d8d8e2",
     app: paper[900],
     shell: paper[900],
-    header: paper[850],
-    headerSub: paper[800],
+    header: paper[900],
+    headerSub: paper[900],
     loadSheetPanel: "rgba(250, 250, 252, 0.92)",
     loadSheetRow: "rgba(250, 250, 252, 0.97)",
     outsideDimLight: "rgba(0, 0, 0, 0.18)",
@@ -104,7 +103,7 @@ export const lightDefaultPalette: ThemePalette = {
   },
   chrome: {
     headerBorder: borderSolidBlack(0.08),
-    headerSubBg: paper[800],
+    headerSubBg: paper[900],
     headerSubInset: "inset 0 1px 0 rgba(0, 0, 0, 0.06)",
     outsideDimBlur: "12px",
     outsideDimSaturate: "1.02",
@@ -250,8 +249,8 @@ export const lightHighContrastPalette: ThemePalette = {
     headerButtonActiveSolid: "#d6d6e0",
     app: paper[900],
     shell: paper[900],
-    header: paper[800],
-    headerSub: paper[750],
+    header: paper[900],
+    headerSub: paper[900],
     loadSheetPanel: "rgba(250, 250, 252, 0.94)",
     loadSheetRow: "rgba(250, 250, 252, 0.98)",
     outsideDimLight: "rgba(0, 0, 0, 0.28)",
@@ -277,7 +276,7 @@ export const lightHighContrastPalette: ThemePalette = {
   },
   chrome: {
     headerBorder: borderSolidBlack(0.16),
-    headerSubBg: paper[750],
+    headerSubBg: paper[900],
     headerSubInset: "inset 0 1px 0 rgba(0, 0, 0, 0.1)",
     outsideDimBlur: "12px",
     outsideDimSaturate: "1.04",
