@@ -22,6 +22,8 @@ import {
   PanelTopClose,
   PanelBottomOpen,
   PanelBottomClose,
+  Scale,
+  ChevronsUpDown,
   type LucideIcon,
 } from "lucide-react";
 
@@ -97,3 +99,9 @@ export const PanelBottomOpenIcon = createActionIcon(PanelBottomOpen);
 export const PanelBottomCloseIcon = createActionIcon(PanelBottomClose);
 
 export const InfoIcon = createActionIcon(Info);
+
+/** Open kg ↔ gram unit helper on weight fields. */
+export const ScaleIcon = createActionIcon(Scale);
+
+/** Open mixer-style swipe adjuster for gram fields. */
+export const SwipeAdjustIcon = createActionIcon(ChevronsUpDown);

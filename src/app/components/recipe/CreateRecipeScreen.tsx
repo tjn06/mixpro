@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   BatchMixer,
   type RecipeCreateCommitPayload,
@@ -26,12 +26,13 @@ import {
 } from "../../domain/recipe/types";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
 import { useSessionsStore } from "../../sessions/store";
-import { InfoIcon } from "../shared/ActionIcons";
+import { CloseIcon, InfoIcon, ScaleIcon, SwipeAdjustIcon } from "../shared/ActionIcons";
 import { AppHeader } from "../shared/AppHeader";
 import {
   RecipeHeaderSubline,
   RecipeHeaderSublineStack,
 } from "../mixer/RecipeZoneMeta";
+import { GramSwipeInputSheet } from "../sheets/GramSwipeInputSheet";
 import {
   SHEET_FIELD_INPUT_CLASS,
   sheetFieldInputStyle,
@@ -40,9 +41,59 @@ import {
 type FieldKey = "name" | "a" | "b" | "filler" | "thickener" | "description";
 
 function parseNum(raw: string): number {
-  const n = Number(String(raw).replace(",", "."));
+  const normalized = String(raw).trim().replace(",", ".");
+  if (normalized === "" || normalized === ".") return NaN;
+  const n = Number(normalized);
   return Number.isFinite(n) ? n : NaN;
 }
+
+/** Trim trailing zeros for display (1.5 → "1.5", 1500 → "1500"). */
+function formatAmount(n: number): string {
+  if (!Number.isFinite(n)) return "";
+  const rounded = Math.round(n * 1000) / 1000;
+  return String(rounded);
+}
+
+function gramsToKgDraft(gramsRaw: string): string {
+  const g = parseNum(gramsRaw);
+  if (!(g >= 0) || gramsRaw.trim() === "") return "";
+  return formatAmount(g / 1000);
+}
+
+/** Digits only; at most one decimal separator (`.` or `,`). */
+function sanitizeKgInput(raw: string): string {
+  let out = "";
+  let seenSep = false;
+  for (const ch of raw) {
+    if (ch >= "0" && ch <= "9") {
+      out += ch;
+      continue;
+    }
+    if ((ch === "." || ch === ",") && !seenSep) {
+      seenSep = true;
+      out += ch;
+    }
+  }
+  return out;
+}
+
+/** True when the draft is a usable kg amount (≥ 0). */
+function isValidKgDraft(raw: string): boolean {
+  const t = raw.trim();
+  if (t === "" || t === "." || t === ",") return false;
+  if (!/^\d+([.,]\d*)?$|^[.,]\d+$/.test(t)) return false;
+  const kg = parseNum(t);
+  return Number.isFinite(kg) && kg >= 0;
+}
+
+function kgDraftToGrams(kgRaw: string): string | null {
+  if (!isValidKgDraft(kgRaw)) return null;
+  const kg = parseNum(kgRaw);
+  return formatAmount(kg * 1000);
+}
+
+const KG_HELPER_MESSAGE =
+  "Enter kilograms here. Closing this converts the value to grams in the field below.";
 
 function Field({
   label,
@@ -52,6 +103,7 @@ function Field({
   inputMode = "decimal",
   required = false,
   invalid = false,
+  kgHelper = false,
 }: {
   label: string;
   value: string;
@@ -60,21 +112,96 @@ function Field({
   inputMode?: "decimal" | "text";
   required?: boolean;
   invalid?: boolean;
+  /** Gram fields: open a kg input that converts into this field. */
+  kgHelper?: boolean;
 }) {
+  const labelId = useId();
+  const kgInputRef = useRef<HTMLInputElement>(null);
+  const [kgOpen, setKgOpen] = useState(false);
+  const [kgDraft, setKgDraft] = useState("");
+  const [swipeOpen, setSwipeOpen] = useState(false);
+
+  useEffect(() => {
+    if (!kgOpen) return;
+    const id = window.requestAnimationFrame(() => {
+      kgInputRef.current?.focus();
+      kgInputRef.current?.select();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [kgOpen]);
+
+  useEffect(() => {
+    if (!kgOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setKgOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [kgOpen]);
+
+  const openKgHelper = () => {
+    setSwipeOpen(false);
+    setKgDraft(gramsToKgDraft(value));
+    setKgOpen(true);
+  };
+
+  const applyKgHelper = () => {
+    if (kgDraft.trim() !== "" && !isValidKgDraft(kgDraft)) return;
+    const grams = kgDraftToGrams(kgDraft);
+    if (grams != null) onChange(grams);
+    setKgOpen(false);
+  };
+
+  const closeKgHelper = () => {
+    if (kgDraft.trim() !== "" && !isValidKgDraft(kgDraft)) {
+      setKgOpen(false);
+      return;
+    }
+    const grams = kgDraftToGrams(kgDraft);
+    if (grams != null) onChange(grams);
+    setKgOpen(false);
+  };
+
+  const openSwipeHelper = () => {
+    setKgOpen(false);
+    setSwipeOpen(true);
+  };
+
+  const gramValue = (() => {
+    const n = parseNum(value);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  })();
+
+  const kgDraftInvalid =
+    kgDraft.trim() !== "" &&
+    kgDraft !== "." &&
+    kgDraft !== "," &&
+    !isValidKgDraft(kgDraft);
+  const kgCanApply = isValidKgDraft(kgDraft);
+
   return (
-    <label className={`create-recipe__field${invalid ? " create-recipe__field--invalid" : ""}`}>
-      <span className="create-recipe__field-label-row">
-        <span className="create-recipe__field-label">{label}</span>
+    <div
+      className={`create-recipe__field${invalid ? " create-recipe__field--invalid" : ""}${
+        kgOpen ? " create-recipe__field--kg-open" : ""
+      }`}
+    >
+      <span className="create-recipe__field-label" id={labelId}>
+        {label}
         {required ? (
           <span className="create-recipe__field-required" aria-hidden>
-            Required
+            *
           </span>
         ) : null}
       </span>
       <span
         className={`create-recipe__control${
           invalid ? " create-recipe__control--invalid" : ""
-        }${suffix ? " create-recipe__control--with-suffix" : ""}`}
+        }${suffix ? " create-recipe__control--with-suffix" : ""}${
+          kgHelper ? " create-recipe__control--with-kg" : ""
+        }`}
       >
         <input
           className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
@@ -82,17 +209,128 @@ function Field({
           value={value}
           inputMode={inputMode}
           required={required}
+          aria-labelledby={labelId}
           aria-invalid={invalid || undefined}
           aria-required={required || undefined}
           onChange={(e) => onChange(e.target.value)}
         />
         {suffix ? (
-          <span className="create-recipe__suffix" aria-hidden>
+          <span
+            className={`create-recipe__suffix${
+              suffix === "gram" ? " create-recipe__suffix--grams" : ""
+            }`}
+            aria-hidden
+          >
             {suffix}
           </span>
         ) : null}
+        {kgHelper ? (
+          <>
+            <button
+              type="button"
+              className="create-recipe__kg-btn"
+              aria-label={`Dial ${label} with swipe`}
+              aria-expanded={swipeOpen}
+              aria-haspopup="dialog"
+              title="Dial with swipe"
+              onClick={openSwipeHelper}
+            >
+              <SwipeAdjustIcon size={16} />
+            </button>
+            <button
+              type="button"
+              className="create-recipe__kg-btn"
+              aria-label={`Enter ${label} in kilograms`}
+              aria-expanded={kgOpen}
+              aria-haspopup="dialog"
+              title="Enter in kilograms"
+              onClick={() => {
+                if (kgOpen) closeKgHelper();
+                else openKgHelper();
+              }}
+            >
+              <ScaleIcon size={16} />
+            </button>
+          </>
+        ) : null}
       </span>
-    </label>
+
+      {kgHelper && kgOpen ? (
+        <>
+          <button
+            type="button"
+            className="create-recipe__kg-backdrop"
+            aria-label="Dismiss kilograms helper"
+            onClick={closeKgHelper}
+          />
+          <div
+            className="create-recipe__kg-popover"
+            role="dialog"
+            aria-label={`${label} in kilograms`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                applyKgHelper();
+              }
+            }}
+          >
+            <p className="create-recipe__kg-message">{KG_HELPER_MESSAGE}</p>
+            <span
+              className={`create-recipe__control create-recipe__control--with-suffix${
+                kgDraftInvalid ? " create-recipe__control--invalid" : ""
+              }`}
+            >
+              <input
+                ref={kgInputRef}
+                className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
+                style={sheetFieldInputStyle({ flex: 1, minWidth: 0 })}
+                value={kgDraft}
+                inputMode="decimal"
+                aria-label={`${label} in kilograms`}
+                aria-invalid={kgDraftInvalid || undefined}
+                onChange={(e) => setKgDraft(sanitizeKgInput(e.target.value))}
+              />
+              <span className="create-recipe__suffix create-recipe__suffix--grams" aria-hidden>
+                kg
+              </span>
+            </span>
+            {kgDraftInvalid ? (
+              <p className="create-recipe__kg-error" role="alert">
+                Use digits and one decimal point (`.` or `,`).
+              </p>
+            ) : null}
+            <div className="create-recipe__kg-actions">
+              <button
+                type="button"
+                className="create-recipe__kg-action create-recipe__kg-action--apply"
+                disabled={!kgCanApply}
+                onClick={applyKgHelper}
+              >
+                Convert to grams
+              </button>
+              <button
+                type="button"
+                className="create-recipe__kg-action create-recipe__kg-action--cancel"
+                aria-label="Cancel"
+                onClick={() => setKgOpen(false)}
+              >
+                <CloseIcon size={16} />
+              </button>
+            </div>
+          </div>
+        </>
+      ) : null}
+
+      {kgHelper ? (
+        <GramSwipeInputSheet
+          open={swipeOpen}
+          onOpenChange={setSwipeOpen}
+          fieldLabel={label}
+          valueGrams={gramValue}
+          onApply={(grams) => onChange(formatAmount(grams))}
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -453,7 +691,7 @@ export function CreateRecipeScreen({
             data-active={method === "weights" ? "" : undefined}
             onClick={() => switchMethod("weights")}
           >
-            Actual weights
+            Actual weights (grams)
           </button>
         </div>
       </div>
@@ -463,7 +701,13 @@ export function CreateRecipeScreen({
           <p className="create-recipe__lede">
             {method === "formula"
               ? "Define A:B parts and filler / thickener as % of binder."
-              : "Enter measured grams — the formula is derived automatically."}
+              : (
+                <>
+                  Enter measured{" "}
+                  <span className="create-recipe__lede-emphasis">grams</span>
+                  {" "}— the formula is derived automatically.
+                </>
+              )}
           </p>
 
           <Field
@@ -522,30 +766,34 @@ export function CreateRecipeScreen({
               <Field
                 label="Resin A"
                 value={a}
-                suffix="g"
+                suffix="gram"
                 required
+                kgHelper
                 invalid={Boolean(fieldErrors.a)}
                 onChange={(v) => updateField("a", v, setA)}
               />
               <Field
                 label="Hardener B"
                 value={b}
-                suffix="g"
+                suffix="gram"
                 required
+                kgHelper
                 invalid={Boolean(fieldErrors.b)}
                 onChange={(v) => updateField("b", v, setB)}
               />
               <Field
                 label="Filler"
                 value={filler}
-                suffix="g"
+                suffix="gram"
+                kgHelper
                 invalid={Boolean(fieldErrors.filler)}
                 onChange={(v) => updateField("filler", v, setFiller)}
               />
               <Field
                 label="Thickener"
                 value={thickener}
-                suffix="g"
+                suffix="gram"
+                kgHelper
                 invalid={Boolean(fieldErrors.thickener)}
                 onChange={(v) => updateField("thickener", v, setThickener)}
               />
@@ -555,7 +803,7 @@ export function CreateRecipeScreen({
           {preview ? (
             <div className="create-recipe__preview-block">
               <div className="create-recipe__preview-head">
-                <span className="create-recipe__field-label">Formula</span>
+                <span className="create-recipe__field-label">Formula result</span>
                 <button
                   type="button"
                   className="create-recipe__preview-info"
@@ -580,6 +828,7 @@ export function CreateRecipeScreen({
               type="button"
               className="create-recipe__advanced-toggle"
               aria-expanded={advancedOpen}
+              aria-label={advancedOpen ? "Hide advanced options" : "Show advanced options"}
               onClick={() => setAdvancedOpen((open) => !open)}
             >
               <span>Advanced</span>
@@ -589,7 +838,16 @@ export function CreateRecipeScreen({
                 }`}
                 aria-hidden
               >
-                ▾
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
               </span>
             </button>
 

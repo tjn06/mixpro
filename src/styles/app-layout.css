@@ -2391,15 +2391,25 @@
   color: var(--semantic-text-muted);
 }
 
+.create-recipe__lede-emphasis {
+  font-weight: 700;
+  color: var(--semantic-text-primary);
+}
+
 .create-recipe__field {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
+.create-recipe__field--kg-open {
+  z-index: 6;
+}
+
 .create-recipe__field-label-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
   min-width: 0;
@@ -2414,15 +2424,144 @@
   color: var(--semantic-text-secondary);
 }
 
-.create-recipe__field-required {
+.create-recipe__control--with-kg .create-recipe__suffix {
+  padding-right: 4px;
+}
+
+.create-recipe__kg-btn {
   flex-shrink: 0;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--semantic-text-primary) 4%, transparent);
+  color: var(--semantic-text-secondary);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.create-recipe__kg-btn:active,
+.create-recipe__field--kg-open .create-recipe__kg-btn[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+  color: var(--semantic-text-primary);
+}
+
+.create-recipe__kg-btn[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+  color: var(--semantic-text-primary);
+}
+
+.create-recipe__kg-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.create-recipe__kg-popover {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+  background: var(--semantic-surface-raised, var(--semantic-surface-app));
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.create-recipe__kg-message {
+  margin: 0;
   font-family: var(--font-ui, "Outfit", sans-serif);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  line-height: 1.4;
+  color: var(--semantic-text-muted);
+}
+
+.create-recipe__kg-error {
+  margin: 0;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--semantic-state-error, #f07178);
+}
+
+.create-recipe__kg-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.create-recipe__kg-action {
+  min-height: 40px;
+  border-radius: 12px;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.create-recipe__kg-action:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.create-recipe__kg-action--apply {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: var(--form-primary-bg, var(--semantic-text-primary));
+  color: var(--form-primary-fg, var(--semantic-surface-app, #fff));
+}
+
+.create-recipe__kg-action--apply:active:not(:disabled) {
+  opacity: 0.92;
+}
+
+.create-recipe__kg-action--cancel {
+  flex: 0 0 40px;
+  width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: var(--semantic-border-default);
+  background: transparent;
+  color: var(--semantic-text-primary);
+}
+
+.create-recipe__kg-action--cancel:active {
+  background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
+}
+
+.create-recipe__field-required {
+  margin-left: 0.2em;
+  font-weight: 700;
+  letter-spacing: 0;
   text-transform: none;
   color: var(--semantic-text-muted);
-  opacity: 0.85;
 }
 
 .create-recipe__field-meta {
@@ -2466,7 +2605,6 @@
 
 .create-recipe__field--invalid .create-recipe__field-required {
   color: var(--semantic-state-error, #f07178);
-  opacity: 1;
 }
 
 .create-recipe__control {
@@ -2534,6 +2672,12 @@
   text-overflow: ellipsis;
   pointer-events: none;
   user-select: none;
+}
+
+.create-recipe__suffix--grams {
+  color: var(--semantic-text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .create-recipe__preview-block {
@@ -2616,6 +2760,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   width: 100%;
   min-height: 44px;
   padding: 0;
@@ -2633,13 +2778,34 @@
 
 .create-recipe__advanced-chevron {
   display: inline-flex;
-  font-size: 14px;
-  color: var(--semantic-text-muted);
-  transition: transform 0.15s ease;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
+  color: var(--semantic-text-primary);
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.create-recipe__advanced-chevron svg {
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 .create-recipe__advanced-chevron--open {
   transform: rotate(180deg);
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+}
+
+.create-recipe__advanced-toggle:active .create-recipe__advanced-chevron {
+  background: color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
 }
 
 .create-recipe__advanced-body {
@@ -2710,8 +2876,6 @@
   width: 100%;
   min-width: 0;
   margin-top: 4px;
-  padding-top: 12px;
-  border-top: var(--semantic-border-subtle);
 }
 
 /** Both session + library saves — share one footer row. */
