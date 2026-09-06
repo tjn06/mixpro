@@ -57,6 +57,7 @@ import { ToolsPicker } from "../tools/ToolsPicker";
 import { PickRecipeForMixSheet } from "./PickRecipeForMixSheet";
 import { SaveSessionNameSheet } from "./SaveSessionNameSheet";
 import { SessionBottomPanel } from "./SessionBottomPanel";
+import { SessionDayFilterBar } from "./SessionDayFilterBar";
 import { SessionMixCard } from "./SessionMixCard";
 
 export function SessionOverviewScreen({
@@ -743,15 +744,18 @@ export function SessionOverviewScreen({
                       touchedStages,
                     );
                     const isNext = stageId === nextStage;
+                    const isFirst = index === 0;
+                    const isLast = index === SESSION_STAGE_ORDER.length - 1;
                     return (
                       <button
                         key={stageId}
                         type="button"
                         className={`session-overview__stage-btn${
+                          isFirst ? " session-overview__stage-btn--first" : ""
+                        }${isLast ? " session-overview__stage-btn--last" : ""}${
                           active ? " session-overview__stage-btn--active" : ""
-                        }${complete && !active ? " session-overview__stage-btn--complete" : ""}${
-                          inShare ? " session-overview__stage-btn--in-share" : ""
-                        }${isNext && !active ? " session-overview__stage-btn--next" : ""}`}
+                        }`}
+                        style={{ zIndex: SESSION_STAGE_ORDER.length - index }}
                         aria-current={active ? "step" : undefined}
                         disabled={!active && !selectable}
                         data-touched={touched ? "" : undefined}
@@ -766,20 +770,26 @@ export function SessionOverviewScreen({
                           setStage(stageId);
                         }}
                       >
-                        <span className="session-overview__stage-index" aria-hidden>
+                        <span
+                          className={`session-overview__stage-label${
+                            complete ? " session-overview__stage-label--modified" : ""
+                          }`}
+                        >
                           {complete ? (
-                            <Check size={12} strokeWidth={2.5} />
-                          ) : (
-                            index + 1
-                          )}
-                        </span>
-                        <span className="session-overview__stage-label">
+                            <Check
+                              className="session-overview__stage-modified-mark"
+                              size={11}
+                              strokeWidth={2.4}
+                              aria-hidden
+                            />
+                          ) : null}
                           {SESSION_STAGE_CARD_LABELS[stageId]}
                         </span>
                       </button>
                     );
                   })}
                 </nav>
+                <SessionDayFilterBar />
               </div>
 
               {stageMain}

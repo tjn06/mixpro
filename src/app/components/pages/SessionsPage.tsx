@@ -29,6 +29,7 @@ function SessionStageSteps({ session }: { session: MixSession }) {
         const active = session.activeStage === stageId && !done;
         const label = SESSION_STAGE_CARD_LABELS[stageId];
         const amount = sessionStageAmountLabel(session, stageId);
+        const isFirst = index === 0;
         const isLast = index === SESSION_STAGE_ORDER.length - 1;
         const stateClass = done
           ? " sessions-page__stage--done"
@@ -39,8 +40,9 @@ function SessionStageSteps({ session }: { session: MixSession }) {
           <li
             key={stageId}
             className={`sessions-page__stage${stateClass}${
-              !isLast && done ? " sessions-page__stage--link-ahead" : ""
-            }`}
+              isFirst ? " sessions-page__stage--first" : ""
+            }${isLast ? " sessions-page__stage--last" : ""}`}
+            style={{ zIndex: SESSION_STAGE_ORDER.length - index }}
             aria-label={
               done
                 ? `${label}, ${amount}, complete`
@@ -57,9 +59,6 @@ function SessionStageSteps({ session }: { session: MixSession }) {
             >
               {amount}
             </span>
-            {!isLast ? (
-              <span className="sessions-page__stage-connector" aria-hidden />
-            ) : null}
           </li>
         );
       })}
