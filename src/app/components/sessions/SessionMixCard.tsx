@@ -216,6 +216,7 @@ export function SessionMixCard({
   onCommentChange,
   onEdit,
   onRemove,
+  readOnly = false,
 }: {
   batch: SessionBatchItem;
   recipe: BlendingRecipe | null;
@@ -226,6 +227,8 @@ export function SessionMixCard({
   onCommentChange: (next: string) => void;
   onEdit: () => void;
   onRemove: () => void;
+  /** When true, day-scoped edits (mult, comment, edit, remove) are blocked. */
+  readOnly?: boolean;
 }) {
   const values = gramsFromSlotValues(batch.values);
   const mult = Math.max(1, batch.multiplier);
@@ -256,17 +259,23 @@ export function SessionMixCard({
   }, [expanded]);
 
   useEffect(() => {
+    if (!readOnly) return;
+    setCommentEditing(false);
+    setDraftComment(savedComment);
+  }, [readOnly, savedComment]);
+
+  useEffect(() => {
     if (!commentEditing) setDraftComment(savedComment);
   }, [savedComment, commentEditing]);
 
   useEffect(() => {
-    if (!commentOpen || !commentEditing) return;
+    if (!commentOpen || !commentEditing || readOnly) return;
     const el = commentInputRef.current;
     if (!el) return;
     el.focus();
     const len = el.value.length;
     el.setSelectionRange(len, len);
-  }, [commentOpen, commentEditing]);
+  }, [commentOpen, commentEditing, readOnly]);
 
   const discardCommentDraft = () => {
     setDraftComment(savedComment);
@@ -274,7 +283,7 @@ export function SessionMixCard({
   };
 
   const saveComment = () => {
-    if (!commentEditing) return;
+    if (readOnly || !commentEditing) return;
     const next = draftComment.trim();
     if (next !== savedComment) onCommentChange(next);
     setDraftComment(next);
@@ -293,6 +302,7 @@ export function SessionMixCard({
   };
 
   const onEditComment = () => {
+    if (readOnly) return;
     if (commentEditing) {
       discardCommentDraft();
       return;
@@ -345,7 +355,7 @@ export function SessionMixCard({
           <StepButton
             label="Decrease batch count"
             onClick={() => onMultiplierChange(Math.max(1, mult - 1))}
-            disabled={mult <= 1}
+            disabled={readOnly || mult <= 1}
             compact
           />
           <span className="tabular-nums session-mix-card__mult-value session-mix-card__mult-value--field">
@@ -357,7 +367,7 @@ export function SessionMixCard({
           <StepButton
             label="Increase batch count"
             onClick={() => onMultiplierChange(Math.min(999, mult + 1))}
-            disabled={mult >= 999}
+            disabled={readOnly || mult >= 999}
             compact
           />
         </div>
@@ -422,6 +432,7 @@ export function SessionMixCard({
                         : `Edit comment on ${batch.name}`
                     }
                     onClick={onEditComment}
+                    disabled={readOnly}
                     color={commentEditing ? cv.text.primary : cv.text.muted}
                   >
                     <ModifyIcon size={HEADER_ICON_SIZE} />
@@ -429,7 +440,7 @@ export function SessionMixCard({
                   <IconHeaderButton
                     label={`Save comment on ${batch.name}`}
                     onClick={saveComment}
-                    disabled={!commentEditing}
+                    disabled={readOnly || !commentEditing}
                     onPointerDown={(e) => {
                       if (commentEditing) e.preventDefault();
                     }}
@@ -439,13 +450,18 @@ export function SessionMixCard({
                 </span>
               </span>
             </div>
-            <IconHeaderButton label={`Edit ${batch.name}`} onClick={onEdit}>
+            <IconHeaderButton
+              label={`Edit ${batch.name}`}
+              onClick={onEdit}
+              disabled={readOnly}
+            >
               <RenameIcon size={HEADER_ICON_SIZE} />
             </IconHeaderButton>
             <LongPressButton
               label={`Hold to remove ${batch.name}`}
               confirmAction="REMOVE MIX"
               onLongPress={onRemove}
+              disabled={readOnly}
               progressVariant="beam"
               compact
               icon={<DeleteIcon size={HEADER_ICON_SIZE} />}

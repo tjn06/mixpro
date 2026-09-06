@@ -2,7 +2,6 @@ import { addDays, format, parse, subDays } from "date-fns";
 import { CalendarClock } from "lucide-react";
 import {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -229,23 +228,9 @@ export function SessionDayFilterBar({
     [badges],
   );
 
-  /**
-   * Only All + Today (or All alone): day filter is meaningless —
-   * keep All dates selected.
-   */
-  const onlyAllAndToday =
-    dayBadges.length === 0 ||
-    (dayBadges.length === 1 && Boolean(dayBadges[0]?.isToday));
-
-  useEffect(() => {
-    if (!onlyAllAndToday || selectedId === "all") return;
-    setSelectedId("all");
-  }, [onlyAllAndToday, selectedId, setSelectedId]);
-
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editingBadgeId, setEditingBadgeId] = useState<string | null>(null);
-  const effectiveSelectedId = onlyAllAndToday ? "all" : selectedId;
-  const allMode = effectiveSelectedId === "all";
+  const allMode = selectedId === "all";
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollEdges = useHorizontalScrollFades(scrollRef, dayBadges.length);
 
@@ -258,17 +243,13 @@ export function SessionDayFilterBar({
     : new Date();
 
   const selectDay = (id: string) => {
-    if (onlyAllAndToday && id !== "all") {
-      setSelectedId("all");
-      return;
-    }
     setSelectedId(id);
   };
 
   const openCalendar = (badge: SessionDayBadge) => {
     if (badge.isAll) return;
     setEditingBadgeId(badge.id);
-    if (!onlyAllAndToday) setSelectedId(badge.id);
+    setSelectedId(badge.id);
     setPickerOpen(true);
   };
 
@@ -322,7 +303,7 @@ export function SessionDayFilterBar({
           <div className="session-day-filter__pinned">
             <SessionDayBadgeChip
               badge={allBadge}
-              selected={effectiveSelectedId === allBadge.id}
+              selected={selectedId === allBadge.id}
               allMode={allMode}
               onSelect={() => selectDay(allBadge.id)}
             />
@@ -351,7 +332,7 @@ export function SessionDayFilterBar({
               <SessionDayBadgeChip
                 key={badge.id}
                 badge={badge}
-                selected={effectiveSelectedId === badge.id}
+                selected={selectedId === badge.id}
                 allMode={allMode}
                 onSelect={() => selectDay(badge.id)}
                 onOpenCalendar={() => openCalendar(badge)}

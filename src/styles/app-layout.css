@@ -3433,12 +3433,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.session-overview__workspace-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
 /* Theme text — secondary create-recipe action. */
 .session-overview__workspace-btn--recipe {
   color: var(--component-text-btn-color, var(--semantic-text-primary));
 }
 
-.session-overview__workspace-btn--recipe:active {
+.session-overview__workspace-btn--recipe:active:not(:disabled) {
   color: var(--component-text-btn-color-active, var(--semantic-text-secondary));
   opacity: 0.82;
 }
@@ -3448,9 +3454,24 @@
   color: var(--session-accent);
 }
 
-.session-overview__workspace-btn--mix:active {
+.session-overview__workspace-btn--mix:active:not(:disabled) {
   color: color-mix(in srgb, var(--session-accent) 78%, #000);
   opacity: 0.9;
+}
+
+.session-overview__day-readonly-hint {
+  margin: 0 0 10px;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-secondary, 14px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+
+.session-overview__day-readonly {
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
 }
 
 .session-overview__stages {
@@ -3817,6 +3838,11 @@
   text-align: left;
   cursor: pointer;
   color: inherit;
+}
+
+.session-overview__summary-mix-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .session-overview__summary-mix-name {

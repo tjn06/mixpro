@@ -25,7 +25,6 @@ import {
   sessionIngredientTotalsGrams,
 } from "../../domain/sessions/totals";
 import {
-  applyDatedQtyAggregateDelta,
   collectSessionWorkDateIds,
   localWorkDateId,
   moveDatedEntriesDay,
@@ -107,7 +106,7 @@ export function SessionOverviewScreen({
   const [renameNameOpen, setRenameNameOpen] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false);
   const [shareScope, setShareScope] = useState<SessionShareScope>("current");
-  const [dayFilterId, setDayFilterId] = useState<string>("all");
+  const [dayFilterId, setDayFilterId] = useState<string>(() => localWorkDateId());
   const [extraDayIds, setExtraDayIds] = useState<string[]>([]);
   const scrollPanelRef = useRef<HTMLDivElement>(null);
 
@@ -120,11 +119,9 @@ export function SessionOverviewScreen({
   const customTools = session?.customTools ?? [];
   const consumableWearByOptionId = session?.consumableWearByOptionId ?? {};
   const customConsumables = session?.customConsumables ?? [];
+  /** Day-scoped writes need a concrete date — "All dates" is view-only. */
+  const dayEditsEnabled = dayFilterId !== "all";
   const todayId = localWorkDateId();
-  const editWorkDate =
-    dayFilterId === "all"
-      ? session?.activeWorkDate || todayId
-      : dayFilterId;
 
   const visibleBatches = useMemo(
     () =>
@@ -200,7 +197,10 @@ export function SessionOverviewScreen({
   }, [activeStage]);
 
   useEffect(() => {
-    setDayFilterId("all");
+    const active =
+      useSessionsStore.getState().sessions.find((s) => s.id === sessionId)
+        ?.activeWorkDate || localWorkDateId();
+    setDayFilterId(active);
     setExtraDayIds([]);
   }, [sessionId]);
 
@@ -244,40 +244,27 @@ export function SessionOverviewScreen({
   };
 
   const patchToolSelection = (next: Record<string, number>) => {
-    if (!session) return;
-    const nextEntries =
-      dayFilterId === "all"
-        ? applyDatedQtyAggregateDelta(
-            toolEntries,
-            editWorkDate,
-            selectedToolQtys,
-            next,
-          )
-        : replaceDatedQtyMapForDay(toolEntries, dayFilterId, next);
+    if (!session || !dayEditsEnabled) return;
     patchSession(session.id, {
-      toolEntries: nextEntries,
-      activeWorkDate: editWorkDate,
+      toolEntries: replaceDatedQtyMapForDay(toolEntries, dayFilterId, next),
+      activeWorkDate: dayFilterId,
     });
   };
 
   const patchConsumableSelection = (next: Record<string, number>) => {
-    if (!session) return;
-    const nextEntries =
-      dayFilterId === "all"
-        ? applyDatedQtyAggregateDelta(
-            consumableEntries,
-            editWorkDate,
-            selectedConsumableQtys,
-            next,
-          )
-        : replaceDatedQtyMapForDay(consumableEntries, dayFilterId, next);
+    if (!session || !dayEditsEnabled) return;
+    const nextEntries = replaceDatedQtyMapForDay(
+      consumableEntries,
+      dayFilterId,
+      next,
+    );
     patchSession(session.id, {
       consumableEntries: nextEntries,
       consumableWearByOptionId: pruneWearByOptionId(
         consumableWearByOptionId,
         qtyMapFromDatedEntries(nextEntries, "all"),
       ),
-      activeWorkDate: editWorkDate,
+      activeWorkDate: dayFilterId,
     });
   };
 
@@ -542,10 +529,18 @@ export function SessionOverviewScreen({
       <ScrollEdgeFadeOverlays fromTop={scrollEdges.fromTop} fromBottom={false} />
       <div ref={scrollPanelRef} className="batch-totals-scroll-panel flex flex-col">
         <div className="batch-totals-scroll-panel__inner session-overview__mix-list">
+          {!dayEditsEnabled ? (
+            <p
+              className="session-overview__day-readonly-hint"
+              style={{ color: cv.text.muted }}
+            >
+              Select a day to add or edit mixes.
+            </p>
+          ) : null}
           {visibleBatches.length === 0 ? (
             <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
               {dayFilterId === "all"
-                ? "No mixes yet. Add a mix to start this session."
+                ? "No mixes yet. Select a day, then add a mix."
                 : "No mixes on this day."}
             </p>
           ) : (
@@ -562,18 +557,27 @@ export function SessionOverviewScreen({
                     [batch.id]: next,
                   }))
                 }
-                onMultiplierChange={(next) =>
+                onMultiplierChange={(next) => {
+                  if (!dayEditsEnabled) return;
                   updateSessionBatch(session.id, batch.id, {
                     multiplier: next,
-                  })
-                }
-                onCommentChange={(next) =>
+                  });
+                }}
+                onCommentChange={(next) => {
+                  if (!dayEditsEnabled) return;
                   updateSessionBatch(session.id, batch.id, {
                     comment: next,
-                  })
-                }
-                onEdit={() => onEditMix(batch.id)}
-                onRemove={() => removeSessionBatch(session.id, batch.id)}
+                  });
+                }}
+                onEdit={() => {
+                  if (!dayEditsEnabled) return;
+                  onEditMix(batch.id);
+                }}
+                onRemove={() => {
+                  if (!dayEditsEnabled) return;
+                  removeSessionBatch(session.id, batch.id);
+                }}
+                readOnly={!dayEditsEnabled}
               />
             ))
           )}
@@ -581,7 +585,16 @@ export function SessionOverviewScreen({
           <div className="session-overview__workspace-actions">
             <button
               type="button"
-              onClick={() => setPickRecipeOpen(true)}
+              disabled={!dayEditsEnabled}
+              title={
+                dayEditsEnabled
+                  ? undefined
+                  : "Select a day before adding a mix"
+              }
+              onClick={() => {
+                if (!dayEditsEnabled) return;
+                setPickRecipeOpen(true);
+              }}
               className="session-overview__workspace-btn session-overview__workspace-btn--mix"
             >
               <span className="batch-totals-add-extra-btn__icon" aria-hidden>
@@ -591,7 +604,16 @@ export function SessionOverviewScreen({
             </button>
             <button
               type="button"
-              onClick={onCreateRecipe}
+              disabled={!dayEditsEnabled}
+              title={
+                dayEditsEnabled
+                  ? undefined
+                  : "Select a day before adding a recipe"
+              }
+              onClick={() => {
+                if (!dayEditsEnabled) return;
+                onCreateRecipe();
+              }}
               className="session-overview__workspace-btn session-overview__workspace-btn--recipe"
             >
               <span className="batch-totals-add-extra-btn__icon" aria-hidden>
@@ -672,7 +694,7 @@ export function SessionOverviewScreen({
             {visibleBatches.length === 0 ? (
               <p className="session-overview__summary-empty" style={{ color: cv.text.dimmed }}>
                 {dayFilterId === "all"
-                  ? "No mixes yet — add them in the Mixes stage."
+                  ? "No mixes yet — select a day in Mixes to add them."
                   : "No mixes on this day."}
               </p>
             ) : (
@@ -685,7 +707,16 @@ export function SessionOverviewScreen({
                       <button
                         type="button"
                         className="session-overview__summary-mix-btn"
-                        onClick={() => onEditMix(batch.id)}
+                        disabled={!dayEditsEnabled}
+                        title={
+                          dayEditsEnabled
+                            ? undefined
+                            : "Select a day before editing a mix"
+                        }
+                        onClick={() => {
+                          if (!dayEditsEnabled) return;
+                          onEditMix(batch.id);
+                        }}
                       >
                         <span className="session-overview__summary-mix-name">
                           {batch.name}
@@ -798,26 +829,41 @@ export function SessionOverviewScreen({
     <div className="scroll-edge-fade-viewport batch-totals-scroll-fade-viewport flex flex-col">
       <div className="batch-totals-scroll-panel flex flex-col">
         <div className="batch-totals-scroll-panel__inner session-overview__tools-pad app-gutter-x">
-          <ToolsPicker
-            selection={selectedToolQtys}
-            onSelectionChange={patchToolSelection}
-            customTools={customTools}
-            onAddCustomTool={(item) => {
-              if (!session) return;
-              patchSession(session.id, {
-                customTools: [...customTools, item],
-                toolEntries: replaceDatedQtyMapForDay(
-                  toolEntries,
-                  editWorkDate,
-                  ensureFlexSelectSelected(
-                    qtyMapFromDatedEntries(toolEntries, editWorkDate),
-                    item.id,
+          {!dayEditsEnabled ? (
+            <p
+              className="session-overview__day-readonly-hint"
+              style={{ color: cv.text.muted }}
+            >
+              Select a day to change tools.
+            </p>
+          ) : null}
+          <div
+            className={
+              dayEditsEnabled ? undefined : "session-overview__day-readonly"
+            }
+            aria-disabled={!dayEditsEnabled}
+          >
+            <ToolsPicker
+              selection={selectedToolQtys}
+              onSelectionChange={patchToolSelection}
+              customTools={customTools}
+              onAddCustomTool={(item) => {
+                if (!session || !dayEditsEnabled) return;
+                patchSession(session.id, {
+                  customTools: [...customTools, item],
+                  toolEntries: replaceDatedQtyMapForDay(
+                    toolEntries,
+                    dayFilterId,
+                    ensureFlexSelectSelected(
+                      qtyMapFromDatedEntries(toolEntries, dayFilterId),
+                      item.id,
+                    ),
                   ),
-                ),
-                activeWorkDate: editWorkDate,
-              });
-            }}
-          />
+                  activeWorkDate: dayFilterId,
+                });
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -827,36 +873,51 @@ export function SessionOverviewScreen({
     <div className="scroll-edge-fade-viewport batch-totals-scroll-fade-viewport flex flex-col">
       <div className="batch-totals-scroll-panel flex flex-col">
         <div className="batch-totals-scroll-panel__inner session-overview__tools-pad app-gutter-x">
-          <ConsumablesPicker
-            selection={selectedConsumableQtys}
-            onSelectionChange={patchConsumableSelection}
-            wearByOptionId={consumableWearByOptionId}
-            onWearChange={(next) => {
-              if (!session) return;
-              patchSession(session.id, { consumableWearByOptionId: next });
-            }}
-            customConsumables={customConsumables}
-            onAddCustomConsumable={(item) => {
-              if (!session) return;
-              const nextEntries = replaceDatedQtyMapForDay(
-                consumableEntries,
-                editWorkDate,
-                ensureFlexSelectSelected(
-                  qtyMapFromDatedEntries(consumableEntries, editWorkDate),
-                  item.id,
-                ),
-              );
-              patchSession(session.id, {
-                customConsumables: [...customConsumables, item],
-                consumableEntries: nextEntries,
-                consumableWearByOptionId: pruneWearByOptionId(
-                  consumableWearByOptionId,
-                  qtyMapFromDatedEntries(nextEntries, "all"),
-                ),
-                activeWorkDate: editWorkDate,
-              });
-            }}
-          />
+          {!dayEditsEnabled ? (
+            <p
+              className="session-overview__day-readonly-hint"
+              style={{ color: cv.text.muted }}
+            >
+              Select a day to change consumables.
+            </p>
+          ) : null}
+          <div
+            className={
+              dayEditsEnabled ? undefined : "session-overview__day-readonly"
+            }
+            aria-disabled={!dayEditsEnabled}
+          >
+            <ConsumablesPicker
+              selection={selectedConsumableQtys}
+              onSelectionChange={patchConsumableSelection}
+              wearByOptionId={consumableWearByOptionId}
+              onWearChange={(next) => {
+                if (!session || !dayEditsEnabled) return;
+                patchSession(session.id, { consumableWearByOptionId: next });
+              }}
+              customConsumables={customConsumables}
+              onAddCustomConsumable={(item) => {
+                if (!session || !dayEditsEnabled) return;
+                const nextEntries = replaceDatedQtyMapForDay(
+                  consumableEntries,
+                  dayFilterId,
+                  ensureFlexSelectSelected(
+                    qtyMapFromDatedEntries(consumableEntries, dayFilterId),
+                    item.id,
+                  ),
+                );
+                patchSession(session.id, {
+                  customConsumables: [...customConsumables, item],
+                  consumableEntries: nextEntries,
+                  consumableWearByOptionId: pruneWearByOptionId(
+                    consumableWearByOptionId,
+                    qtyMapFromDatedEntries(nextEntries, "all"),
+                  ),
+                  activeWorkDate: dayFilterId,
+                });
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
