@@ -66,8 +66,11 @@ function resolveDatedEntries(
   qtyMap: Record<string, number>,
   fallbackDay: string,
 ): SessionDatedQtyEntry[] {
-  const fromEntries = normalizeDatedQtyEntries(entriesRaw);
-  if (fromEntries.length > 0) return fromEntries;
+  // Explicit array (including empty) is source of truth — do not resurrect
+  // cleared selections from the legacy flat qty map.
+  if (Array.isArray(entriesRaw)) {
+    return normalizeDatedQtyEntries(entriesRaw);
+  }
   return datedEntriesFromQtyMap(qtyMap, fallbackDay);
 }
 

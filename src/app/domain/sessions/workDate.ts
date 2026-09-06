@@ -119,7 +119,8 @@ export function moveDatedEntriesDay(
 
 /**
  * When the day filter is "all", pickers show aggregated qty.
- * Apply per-id deltas onto `focusDay` so other days stay intact.
+ * Apply per-id deltas onto `focusDay` first; leftover removals drain
+ * other days so the user can clear a selection completely.
  */
 export function applyDatedQtyAggregateDelta(
   entries: readonly SessionDatedQtyEntry[],
@@ -132,20 +133,53 @@ export function applyDatedQtyAggregateDelta(
     ...Object.keys(nextAggregate),
   ]);
   let next = [...entries];
+
   for (const optionId of ids) {
-    const delta = (nextAggregate[optionId] ?? 0) - (prevAggregate[optionId] ?? 0);
+    const delta =
+      (nextAggregate[optionId] ?? 0) - (prevAggregate[optionId] ?? 0);
     if (delta === 0) continue;
-    const idx = next.findIndex(
+
+    if (delta > 0) {
+      const idx = next.findIndex(
+        (e) => e.optionId === optionId && e.workDate === focusDay,
+      );
+      if (idx >= 0) {
+        next[idx] = { ...next[idx], qty: next[idx].qty + delta };
+      } else {
+        next.push({ optionId, qty: delta, workDate: focusDay });
+      }
+      continue;
+    }
+
+    let remaining = -delta;
+    const focusIdx = next.findIndex(
       (e) => e.optionId === optionId && e.workDate === focusDay,
     );
-    if (idx >= 0) {
-      const qty = next[idx].qty + delta;
-      if (qty < 1) next = next.filter((_, i) => i !== idx);
-      else next[idx] = { ...next[idx], qty };
-    } else if (delta > 0) {
-      next.push({ optionId, qty: delta, workDate: focusDay });
+    if (focusIdx >= 0) {
+      const qty = next[focusIdx].qty;
+      if (qty <= remaining) {
+        remaining -= qty;
+        next = next.filter((_, i) => i !== focusIdx);
+      } else {
+        next[focusIdx] = { ...next[focusIdx], qty: qty - remaining };
+        remaining = 0;
+      }
+    }
+
+    while (remaining > 0) {
+      const idx = next.findIndex((e) => e.optionId === optionId);
+      if (idx < 0) break;
+      const qty = next[idx].qty;
+      if (qty <= remaining) {
+        remaining -= qty;
+        next = next.filter((_, i) => i !== idx);
+      } else {
+        next[idx] = { ...next[idx], qty: qty - remaining };
+        remaining = 0;
+      }
     }
   }
+
   return next;
 }
 
