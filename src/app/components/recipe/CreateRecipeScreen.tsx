@@ -1,4 +1,14 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import { createPortal } from "react-dom";
 import {
   BatchMixer,
   type RecipeCreateCommitPayload,
@@ -40,6 +50,8 @@ import {
   SHEET_FIELD_INPUT_CLASS,
   sheetFieldInputStyle,
 } from "../sheets/sheetChrome";
+
+const UNIT_POPOVER_FRAME_PAD = 8;
 
 /** Prefill name when starting from an existing recipe: "Copy {original}". */
 function copyRecipeName(recipe: BlendingRecipe): string {
@@ -188,14 +200,86 @@ function Field({
   fieldKey?: FieldKey;
 }) {
   const labelId = useId();
+  const slotRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const unitInputRef = useRef<HTMLInputElement>(null);
   const [unitOpen, setUnitOpen] = useState(false);
   const [unitMode, setUnitMode] = useState<UnitConverterMode>("kg");
   const [unitDraft, setUnitDraft] = useState("");
   const [swipeOpen, setSwipeOpen] = useState(false);
+  const [unitPortal, setUnitPortal] = useState<HTMLElement | null>(null);
+  const [popoverStyle, setPopoverStyle] = useState<CSSProperties | null>(null);
 
   const binderReady = binderGrams != null && binderGrams > 0;
   const showPercentTab = percentOfBinderHelper;
+  const unitDraftInvalid =
+    unitDraft.trim() !== "" &&
+    unitDraft !== "." &&
+    unitDraft !== "," &&
+    !isValidUnitDraft(unitDraft);
+
+  const updatePopoverPosition = useCallback(() => {
+    const slot = slotRef.current;
+    const popover = popoverRef.current;
+    const frame = slot?.closest<HTMLElement>(".app-frame");
+    if (!slot || !frame) return;
+
+    const frameR = frame.getBoundingClientRect();
+    const slotR = slot.getBoundingClientRect();
+    const pad = UNIT_POPOVER_FRAME_PAD;
+    const width = slotR.width;
+    const left = slotR.left - frameR.left;
+    const maxH = Math.max(120, frameR.height - pad * 2);
+    const popH = Math.min(popover?.offsetHeight || 168, maxH);
+    const spaceBelow = frameR.bottom - slotR.top - pad;
+    const spaceAbove = slotR.bottom - frameR.top - pad;
+
+    let top: number;
+    if (popH <= spaceBelow) {
+      top = slotR.top - frameR.top;
+    } else if (popH <= spaceAbove) {
+      top = slotR.bottom - frameR.top - popH;
+    } else {
+      top = Math.max(
+        pad,
+        Math.min(slotR.top - frameR.top, frameR.height - pad - popH),
+      );
+    }
+
+    setPopoverStyle({
+      position: "absolute",
+      top,
+      left,
+      width,
+      maxHeight: maxH,
+      zIndex: 36,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!unitOpen) {
+      setUnitPortal(null);
+      setPopoverStyle(null);
+      return;
+    }
+    const slot = slotRef.current;
+    const frame = slot?.closest<HTMLElement>(".app-frame") ?? null;
+    setUnitPortal(frame);
+    updatePopoverPosition();
+    const id = window.requestAnimationFrame(() => updatePopoverPosition());
+    return () => window.cancelAnimationFrame(id);
+  }, [unitOpen, unitMode, unitDraftInvalid, showPercentTab, updatePopoverPosition]);
+
+  useEffect(() => {
+    if (!unitOpen) return;
+    const onReposition = () => updatePopoverPosition();
+    window.addEventListener("resize", onReposition);
+    window.addEventListener("scroll", onReposition, true);
+    return () => {
+      window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
+    };
+  }, [unitOpen, updatePopoverPosition]);
 
   useEffect(() => {
     if (!unitOpen) return;
@@ -281,11 +365,6 @@ function Field({
     return Number.isFinite(n) && n >= 0 ? n : 0;
   })();
 
-  const unitDraftInvalid =
-    unitDraft.trim() !== "" &&
-    unitDraft !== "." &&
-    unitDraft !== "," &&
-    !isValidUnitDraft(unitDraft);
   const unitCanApply =
     isValidUnitDraft(unitDraft) &&
     (unitMode === "kg" || binderReady);
@@ -294,6 +373,8 @@ function Field({
   const scaleTitle = showPercentTab
     ? "Convert from kg or % of binder"
     : "Enter in kilograms";
+  const applyLabel =
+    unitMode === "percent" ? "Convert from %" : "Convert to grams";
   const previewGrams =
     unitMode === "percent"
       ? binderGrams != null
@@ -302,104 +383,20 @@ function Field({
       : kgDraftToGrams(unitDraft);
   const labelKg = kgHelper ? gramsToKgDraft(value) : "";
 
-  return (
-    <div
-      className={`create-recipe__field${invalid ? " create-recipe__field--invalid" : ""}${
-        unitOpen ? " create-recipe__field--kg-open" : ""
-      }`}
-      data-create-field={fieldKey}
-    >
-      <div className="create-recipe__field-label-row">
-        <span className="create-recipe__field-label" id={labelId}>
-          {label}
-          {required ? (
-            <span className="create-recipe__field-required" aria-hidden>
-              *
-            </span>
-          ) : null}
-        </span>
-        {kgHelper && labelKg !== "" ? (
-          <span className="create-recipe__field-kg" aria-live="polite">
-            {labelKg} kg
-          </span>
-        ) : null}
-      </div>
-      <div className="create-recipe__field-input-slot">
-        <span
-          className={`create-recipe__control${
-            invalid ? " create-recipe__control--invalid" : ""
-          }${suffix ? " create-recipe__control--with-suffix" : ""}${
-            kgHelper ? " create-recipe__control--with-kg" : ""
-          }${unitOpen ? " create-recipe__control--unit-covered" : ""}`}
-        >
-          <input
-            className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
-            style={sheetFieldInputStyle({ flex: 1, minWidth: 0 })}
-            value={value}
-            inputMode={inputMode}
-            required={required}
-            aria-labelledby={labelId}
-            aria-invalid={invalid || undefined}
-            aria-required={required || undefined}
-            onChange={(e) => {
-              const next =
-                inputMode === "decimal"
-                  ? sanitizeDecimalInput(e.target.value)
-                  : e.target.value;
-              onChange(next);
-            }}
-          />
-          {suffix ? (
-            <span
-              className={`create-recipe__suffix${
-                suffix === "gram" ? " create-recipe__suffix--grams" : ""
-              }`}
-              aria-hidden
-            >
-              {suffix}
-            </span>
-          ) : null}
-          {kgHelper ? (
-            <>
-              <button
-                type="button"
-                className="create-recipe__kg-btn"
-                aria-label={`Dial ${label} with swipe`}
-                aria-expanded={swipeOpen}
-                aria-haspopup="dialog"
-                title="Dial with swipe"
-                onClick={openSwipeHelper}
-              >
-                <SwipeAdjustIcon size={16} />
-              </button>
-              <button
-                type="button"
-                className="create-recipe__kg-btn"
-                aria-label={scaleTitle}
-                aria-expanded={unitOpen}
-                aria-haspopup="dialog"
-                title={scaleTitle}
-                onClick={() => {
-                  if (unitOpen) closeUnitHelper();
-                  else openUnitHelper();
-                }}
-              >
-                <ScaleIcon size={16} />
-              </button>
-            </>
-          ) : null}
-        </span>
-
-        {kgHelper && unitOpen ? (
+  const unitPopover =
+    kgHelper && unitOpen && unitPortal && popoverStyle
+      ? createPortal(
           <>
             <button
               type="button"
-              className="create-recipe__kg-backdrop"
+              className="create-recipe__kg-backdrop create-recipe__kg-backdrop--portaled"
               aria-label="Dismiss unit converter"
               onClick={closeUnitHelper}
             />
             <div
-              className="create-recipe__kg-popover"
+              ref={popoverRef}
+              className="create-recipe__kg-popover create-recipe__kg-popover--portaled"
+              style={popoverStyle}
               role="dialog"
               aria-label={`Convert ${label}`}
               onKeyDown={(e) => {
@@ -508,7 +505,7 @@ function Field({
                   disabled={!unitCanApply}
                   onClick={applyUnitHelper}
                 >
-                  Convert to grams
+                  {applyLabel}
                 </button>
                 <button
                   type="button"
@@ -520,9 +517,101 @@ function Field({
                 </button>
               </div>
             </div>
-          </>
+          </>,
+          unitPortal,
+        )
+      : null;
+
+  return (
+    <div
+      className={`create-recipe__field${invalid ? " create-recipe__field--invalid" : ""}${
+        unitOpen ? " create-recipe__field--kg-open" : ""
+      }`}
+      data-create-field={fieldKey}
+    >
+      <div className="create-recipe__field-label-row">
+        <span className="create-recipe__field-label" id={labelId}>
+          {label}
+          {required ? (
+            <span className="create-recipe__field-required" aria-hidden>
+              *
+            </span>
+          ) : null}
+        </span>
+        {kgHelper && labelKg !== "" ? (
+          <span className="create-recipe__field-kg" aria-live="polite">
+            {labelKg} kg
+          </span>
         ) : null}
       </div>
+      <div className="create-recipe__field-input-slot" ref={slotRef}>
+        <span
+          className={`create-recipe__control${
+            invalid ? " create-recipe__control--invalid" : ""
+          }${suffix ? " create-recipe__control--with-suffix" : ""}${
+            kgHelper ? " create-recipe__control--with-kg" : ""
+          }${unitOpen ? " create-recipe__control--unit-covered" : ""}`}
+        >
+          <input
+            className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
+            style={sheetFieldInputStyle({ flex: 1, minWidth: 0 })}
+            value={value}
+            inputMode={inputMode}
+            required={required}
+            aria-labelledby={labelId}
+            aria-invalid={invalid || undefined}
+            aria-required={required || undefined}
+            onChange={(e) => {
+              const next =
+                inputMode === "decimal"
+                  ? sanitizeDecimalInput(e.target.value)
+                  : e.target.value;
+              onChange(next);
+            }}
+          />
+          {suffix ? (
+            <span
+              className={`create-recipe__suffix${
+                suffix === "gram" ? " create-recipe__suffix--grams" : ""
+              }`}
+              aria-hidden
+            >
+              {suffix}
+            </span>
+          ) : null}
+          {kgHelper ? (
+            <>
+              <button
+                type="button"
+                className="create-recipe__kg-btn"
+                aria-label={`Dial ${label} with swipe`}
+                aria-expanded={swipeOpen}
+                aria-haspopup="dialog"
+                title="Dial with swipe"
+                onClick={openSwipeHelper}
+              >
+                <SwipeAdjustIcon size={16} />
+              </button>
+              <button
+                type="button"
+                className="create-recipe__kg-btn"
+                aria-label={scaleTitle}
+                aria-expanded={unitOpen}
+                aria-haspopup="dialog"
+                title={scaleTitle}
+                onClick={() => {
+                  if (unitOpen) closeUnitHelper();
+                  else openUnitHelper();
+                }}
+              >
+                <ScaleIcon size={16} />
+              </button>
+            </>
+          ) : null}
+        </span>
+      </div>
+
+      {unitPopover}
 
       {kgHelper ? (
         <GramSwipeInputSheet
@@ -1098,7 +1187,7 @@ export function CreateRecipeScreen({
             data-active={method === "weights" ? "" : undefined}
             onClick={() => switchMethod("weights")}
           >
-            Actual weights (grams)
+            Actual weights
           </button>
         </div>
       </div>
