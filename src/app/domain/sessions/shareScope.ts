@@ -1,11 +1,12 @@
 import {
   SESSION_STAGE_LABELS,
   SESSION_STAGE_ORDER,
+  type MixSession,
   type SessionStageId,
 } from "../../sessions/types";
-import type { MixSession } from "../../sessions/types";
 import type { BatchReportLanguage } from "../batch-totals/report";
 import { flexSelectSelectionTotal } from "../select/selection";
+import { datedEntriesTotal } from "./workDate";
 
 /** What the share payload includes relative to session stages. */
 export type SessionShareScope = "current" | "through" | "all";
@@ -68,7 +69,7 @@ export function stagesForShareScope(
 
 export function shareScopeLabel(
   scope: SessionShareScope,
-  language: BatchReportLanguage = "en",
+  language: BatchReportLanguage = "sv",
 ): string {
   return SCOPE_LABELS[language][scope];
 }
@@ -76,7 +77,7 @@ export function shareScopeLabel(
 export function shareScopeHelperText(
   scope: SessionShareScope,
   activeStage: SessionStageId,
-  language: BatchReportLanguage = "en",
+  language: BatchReportLanguage = "sv",
 ): string {
   const stages = stagesForShareScope(scope, activeStage);
   if (scope === "current") return SCOPE_HELPER[language].current(activeStage);
@@ -84,25 +85,41 @@ export function shareScopeHelperText(
   return SCOPE_HELPER[language].all;
 }
 
-/** True when the scoped stages have something worth copying (mixes/summary with batches). */
+/** True when the scoped stages have something worth copying (respects day filter). */
 export function sessionShareHasContent(
   session: MixSession,
   stages: readonly SessionStageId[],
+  dayFilter: string | "all" = "all",
 ): boolean {
   return stages.some((stage) => {
     if (stage === "mixes" || stage === "summary") {
-      return session.batches.length > 0;
+      const batches =
+        dayFilter === "all"
+          ? session.batches
+          : session.batches.filter((b) => b.workDate === dayFilter);
+      return batches.length > 0;
     }
     if (stage === "consumption-tools") {
-      return flexSelectSelectionTotal(session.selectedToolQtys ?? {}) > 0;
+      const fromEntries = datedEntriesTotal(session.toolEntries ?? [], dayFilter);
+      if ((session.toolEntries?.length ?? 0) > 0) return fromEntries > 0;
+      return dayFilter === "all"
+        ? flexSelectSelectionTotal(session.selectedToolQtys ?? {}) > 0
+        : false;
     }
     if (stage === "consumables") {
-      return flexSelectSelectionTotal(session.selectedConsumableQtys ?? {}) > 0;
+      const fromEntries = datedEntriesTotal(
+        session.consumableEntries ?? [],
+        dayFilter,
+      );
+      if ((session.consumableEntries?.length ?? 0) > 0) return fromEntries > 0;
+      return dayFilter === "all"
+        ? flexSelectSelectionTotal(session.selectedConsumableQtys ?? {}) > 0
+        : false;
     }
     return false;
   });
 }
 
-export function shareScopeEmptyHint(language: BatchReportLanguage = "en"): string {
+export function shareScopeEmptyHint(language: BatchReportLanguage = "sv"): string {
   return SCOPE_HELPER[language].empty;
 }

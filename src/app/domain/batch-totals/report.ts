@@ -28,7 +28,8 @@ const INGREDIENT_LABEL_SV: Record<string, string> = {
   Resin: "Bas",
   Hardener: "Härdare",
   Filler: "Fyllmedel",
-  Thickener: "Tjockningsmedel",
+  Thickener: "Förtjockningsmedel",
+  Tjockningsmedel: "Förtjockningsmedel",
   Sand: "Sand",
 };
 

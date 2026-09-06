@@ -183,11 +183,14 @@ export function AppShell() {
           recipe: payload.recipe,
           values,
           multiplier: 1,
+          workDate:
+            sessions.find((s) => s.id === sessionId)?.activeWorkDate ??
+            undefined,
         });
       }
       setView({ kind: "session-overview", sessionId });
     },
-    [view, addSessionBatch, updateSessionBatch],
+    [view, addSessionBatch, updateSessionBatch, sessions],
   );
 
   const returnFromCreateRecipe = useCallback(() => {

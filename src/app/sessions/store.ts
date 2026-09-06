@@ -3,10 +3,18 @@ import { persist } from "zustand/middleware";
 import type { BlendingRecipe } from "../domain/recipe/types";
 import { normalizeFlexSelectSelection } from "../domain/select/selection";
 import { normalizeWearByOptionId } from "../domain/select/wear";
+import {
+  datedEntriesFromQtyMap,
+  localWorkDateId,
+  normalizeDatedQtyEntries,
+  qtyMapFromDatedEntries,
+  workDateIdFromIso,
+} from "../domain/sessions/workDate";
 import type {
   CreateSessionInput,
   MixSession,
   SessionBatchItem,
+  SessionDatedQtyEntry,
   SessionStageId,
 } from "./types";
 import { SESSION_STAGE_ORDER } from "./types";
@@ -37,8 +45,35 @@ function normalizeTouchedStages(
   return next;
 }
 
+function normalizeBatch(batch: SessionBatchItem): SessionBatchItem {
+  const createdAt = batch.createdAt || nowIso();
+  const comment =
+    typeof batch.comment === "string" ? batch.comment.trim() : "";
+  const next: SessionBatchItem = {
+    ...batch,
+    workDate: batch.workDate || workDateIdFromIso(createdAt),
+    createdAt,
+    updatedAt: batch.updatedAt || createdAt,
+    multiplier: Math.max(1, Math.round(batch.multiplier) || 1),
+  };
+  if (comment) next.comment = comment;
+  else delete next.comment;
+  return next;
+}
+
+function resolveDatedEntries(
+  entriesRaw: unknown,
+  qtyMap: Record<string, number>,
+  fallbackDay: string,
+): SessionDatedQtyEntry[] {
+  const fromEntries = normalizeDatedQtyEntries(entriesRaw);
+  if (fromEntries.length > 0) return fromEntries;
+  return datedEntriesFromQtyMap(qtyMap, fallbackDay);
+}
+
 function createEmptySession(input: CreateSessionInput = {}): MixSession {
   const ts = nowIso();
+  const activeWorkDate = localWorkDateId();
   return {
     id: crypto.randomUUID(),
     name: input.name?.trim() || defaultSessionName(),
@@ -48,10 +83,13 @@ function createEmptySession(input: CreateSessionInput = {}): MixSession {
     batches: [],
     sessionRecipes: [],
     selectedToolQtys: {},
+    toolEntries: [],
     customTools: [],
     selectedConsumableQtys: {},
+    consumableEntries: [],
     consumableWearByOptionId: {},
     customConsumables: [],
+    activeWorkDate,
     createdAt: ts,
     updatedAt: ts,
   };
@@ -59,6 +97,9 @@ function createEmptySession(input: CreateSessionInput = {}): MixSession {
 
 function normalizeSession(session: MixSession): MixSession {
   const activeStage = session.activeStage ?? "mixes";
+  const fallbackDay =
+    session.activeWorkDate ||
+    workDateIdFromIso(session.createdAt || nowIso());
   const selectedToolQtys = normalizeFlexSelectSelection(
     session.selectedToolQtys,
     session.selectedToolIds,
@@ -67,24 +108,62 @@ function normalizeSession(session: MixSession): MixSession {
     session.selectedConsumableQtys,
     session.selectedConsumableIds,
   );
+  const toolEntries = resolveDatedEntries(
+    session.toolEntries,
+    selectedToolQtys,
+    fallbackDay,
+  );
+  const consumableEntries = resolveDatedEntries(
+    session.consumableEntries,
+    selectedConsumableQtys,
+    fallbackDay,
+  );
+  const batches = (session.batches ?? []).map(normalizeBatch);
+  const activeWorkDate =
+    session.activeWorkDate ||
+    batches[0]?.workDate ||
+    fallbackDay;
+
   return {
     ...session,
     activeStage,
     touchedStages: normalizeTouchedStages(session.touchedStages, activeStage),
     sessionRecipes: session.sessionRecipes ?? [],
-    batches: session.batches ?? [],
-    selectedToolQtys,
+    batches,
+    toolEntries,
+    consumableEntries,
+    selectedToolQtys: qtyMapFromDatedEntries(toolEntries, "all"),
     customTools: Array.isArray(session.customTools) ? session.customTools : [],
-    selectedConsumableQtys,
+    selectedConsumableQtys: qtyMapFromDatedEntries(consumableEntries, "all"),
     consumableWearByOptionId: normalizeWearByOptionId(
       session.consumableWearByOptionId,
-      selectedConsumableQtys,
+      qtyMapFromDatedEntries(consumableEntries, "all"),
     ),
     customConsumables: Array.isArray(session.customConsumables)
       ? session.customConsumables
       : [],
+    activeWorkDate,
   };
 }
+
+type SessionPatch = Partial<
+  Pick<
+    MixSession,
+    | "name"
+    | "activeStage"
+    | "touchedStages"
+    | "batches"
+    | "sessionRecipes"
+    | "selectedToolQtys"
+    | "toolEntries"
+    | "customTools"
+    | "selectedConsumableQtys"
+    | "consumableEntries"
+    | "consumableWearByOptionId"
+    | "customConsumables"
+    | "activeWorkDate"
+  >
+>;
 
 interface SessionsState {
   sessions: MixSession[];
@@ -93,28 +172,16 @@ interface SessionsState {
   createSession: (input?: CreateSessionInput) => MixSession;
   setActiveSession: (id: string | null) => void;
   /** Silent draft persistence — bumps updatedAt. */
-  patchSession: (
-    id: string,
-    patch: Partial<
-      Pick<
-        MixSession,
-        | "name"
-        | "activeStage"
-        | "touchedStages"
-        | "batches"
-        | "sessionRecipes"
-        | "selectedToolQtys"
-        | "customTools"
-        | "selectedConsumableQtys"
-        | "consumableWearByOptionId"
-        | "customConsumables"
-      >
-    >,
-  ) => void;
+  patchSession: (id: string, patch: SessionPatch) => void;
   addSessionRecipe: (sessionId: string, recipe: BlendingRecipe) => void;
   addSessionBatch: (
     sessionId: string,
-    batch: Omit<SessionBatchItem, "id" | "createdAt" | "updatedAt">,
+    batch: Omit<
+      SessionBatchItem,
+      "id" | "createdAt" | "updatedAt" | "workDate"
+    > & {
+      workDate?: string;
+    },
   ) => SessionBatchItem | null;
   updateSessionBatch: (
     sessionId: string,
@@ -122,7 +189,14 @@ interface SessionsState {
     patch: Partial<
       Pick<
         SessionBatchItem,
-        "name" | "recipeId" | "recipeName" | "recipe" | "values" | "multiplier"
+        | "name"
+        | "recipeId"
+        | "recipeName"
+        | "recipe"
+        | "values"
+        | "multiplier"
+        | "workDate"
+        | "comment"
       >
     >,
   ) => void;
@@ -163,14 +237,44 @@ function createSessionsStore() {
                 patch.touchedStages ?? normalized.touchedStages,
                 nextActive,
               );
-              return {
+
+              let toolEntries = patch.toolEntries ?? normalized.toolEntries;
+              let consumableEntries =
+                patch.consumableEntries ?? normalized.consumableEntries;
+
+              // Legacy callers that only patch flat qty maps → rewrite active day.
+              if (patch.selectedToolQtys && !patch.toolEntries) {
+                const day = patch.activeWorkDate ?? normalized.activeWorkDate;
+                const kept = normalized.toolEntries.filter(
+                  (e) => e.workDate !== day,
+                );
+                toolEntries = [
+                  ...kept,
+                  ...datedEntriesFromQtyMap(patch.selectedToolQtys, day),
+                ];
+              }
+              if (patch.selectedConsumableQtys && !patch.consumableEntries) {
+                const day = patch.activeWorkDate ?? normalized.activeWorkDate;
+                const kept = normalized.consumableEntries.filter(
+                  (e) => e.workDate !== day,
+                );
+                consumableEntries = [
+                  ...kept,
+                  ...datedEntriesFromQtyMap(patch.selectedConsumableQtys, day),
+                ];
+              }
+
+              const merged: MixSession = {
                 ...normalized,
                 ...patch,
+                toolEntries,
+                consumableEntries,
                 activeStage: nextActive,
                 touchedStages,
                 updatedAt: ts,
                 status: session.status === "saved" ? "saved" : "draft",
               };
+              return normalizeSession(merged);
             }),
           });
         },
@@ -192,22 +296,27 @@ function createSessionsStore() {
 
         addSessionBatch: (sessionId, batch) => {
           const ts = nowIso();
-          const next: SessionBatchItem = {
-            ...batch,
-            id: crypto.randomUUID(),
-            multiplier: Math.max(1, Math.round(batch.multiplier) || 1),
-            createdAt: ts,
-            updatedAt: ts,
-          };
           let created: SessionBatchItem | null = null;
           set({
             sessions: get().sessions.map((session) => {
               if (session.id !== sessionId) return session;
               const normalized = normalizeSession(session);
+              const next: SessionBatchItem = normalizeBatch({
+                ...batch,
+                id: crypto.randomUUID(),
+                workDate:
+                  batch.workDate ||
+                  normalized.activeWorkDate ||
+                  localWorkDateId(),
+                multiplier: Math.max(1, Math.round(batch.multiplier) || 1),
+                createdAt: ts,
+                updatedAt: ts,
+              });
               created = next;
               return {
                 ...normalized,
                 batches: [...normalized.batches, next],
+                activeWorkDate: next.workDate,
                 updatedAt: ts,
                 status: normalized.status === "saved" ? "saved" : "draft",
               };
@@ -226,15 +335,19 @@ function createSessionsStore() {
                 ...normalized,
                 batches: normalized.batches.map((batch) =>
                   batch.id === batchId
-                    ? {
+                    ? normalizeBatch({
                         ...batch,
                         ...patch,
                         multiplier:
                           patch.multiplier != null
                             ? Math.max(1, Math.round(patch.multiplier) || 1)
                             : batch.multiplier,
+                        comment:
+                          patch.comment !== undefined
+                            ? patch.comment
+                            : batch.comment,
                         updatedAt: ts,
-                      }
+                      })
                     : batch,
                 ),
                 updatedAt: ts,
@@ -285,7 +398,7 @@ function createSessionsStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 4,
+        version: 6,
         migrate: (persisted) => {
           const data = persisted as {
             sessions?: MixSession[];

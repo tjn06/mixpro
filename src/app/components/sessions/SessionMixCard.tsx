@@ -1,4 +1,7 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, PointerEvent, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { format } from "date-fns";
+import { ChevronDown } from "lucide-react";
 import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
 import { getEntityMetaLabel, recipeIngredientIndexes } from "../../domain/recipe/calc";
 import type { BlendingRecipe } from "../../domain/recipe/types";
@@ -9,13 +12,58 @@ import {
   entityValueColor,
 } from "../../presentation/entityCardStyles";
 import { entityAccentColor } from "../../presentation/entityAccent";
-import { DeleteIcon, RenameIcon } from "../shared/ActionIcons";
+import {
+  CloseIcon,
+  DeleteIcon,
+  MessageIcon,
+  ModifyIcon,
+  RenameIcon,
+  SaveIcon,
+} from "../shared/ActionIcons";
+import { LongPressButton } from "../shared/LongPressButton";
 import type { ColorScheme } from "../../../theme/appearance";
 import { cv } from "../../ui/tokens";
 import { sessionBatchTotalGrams } from "../../domain/sessions/totals";
 
 const bt = cv.batchTotals;
 const HEADER_ICON_SIZE = 14;
+/** Treat as "updated" only if meaningfully after create (not same write). */
+const UPDATED_SLACK_MS = 1500;
+
+const REMOVE_LONG_PRESS_STYLE: CSSProperties = {
+  width: 28,
+  height: 28,
+  minHeight: 0,
+  borderRadius: 9999,
+  padding: 0,
+  background:
+    "color-mix(in srgb, var(--semantic-text-primary) 8%, transparent)",
+  border: "1px solid var(--semantic-border-default)",
+  color: "var(--semantic-text-muted)",
+};
+
+function formatActivityWhen(iso: string): string | null {
+  const ms = new Date(iso).getTime();
+  if (!Number.isFinite(ms)) return null;
+  return format(new Date(ms), "d MMM yyyy · HH:mm");
+}
+
+function batchActivityStamp(batch: SessionBatchItem): {
+  created: string | null;
+  updated: string | null;
+} {
+  const created = formatActivityWhen(batch.createdAt);
+  const createdMs = new Date(batch.createdAt).getTime();
+  const updatedMs = new Date(batch.updatedAt).getTime();
+  const showUpdated =
+    Number.isFinite(createdMs) &&
+    Number.isFinite(updatedMs) &&
+    updatedMs > createdMs + UPDATED_SLACK_MS;
+  return {
+    created,
+    updated: showUpdated ? formatActivityWhen(batch.updatedAt) : null,
+  };
+}
 
 const TABLE_TEXT: CSSProperties = {
   fontSize: "var(--text-totals-table)",
@@ -101,21 +149,27 @@ function StepButton({
 function IconHeaderButton({
   label,
   onClick,
+  onPointerDown,
   color = cv.text.muted,
+  disabled = false,
   children,
 }: {
   label: string;
   onClick: () => void;
+  onPointerDown?: (e: PointerEvent<HTMLButtonElement>) => void;
   color?: string;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
       aria-label={label}
+      disabled={disabled}
       onClick={onClick}
-      className="batch-totals-card-header-btn flex items-center justify-center shrink-0 transition-colors duration-150 active:scale-95"
-      style={cardRoundBtnStyle(false, color)}
+      onPointerDown={onPointerDown}
+      className="session-mix-card__action-btn flex items-center justify-center shrink-0 transition-colors duration-150 active:scale-95"
+      style={{ color }}
     >
       {children}
     </button>
@@ -159,6 +213,7 @@ export function SessionMixCard({
   expanded,
   onExpandedChange,
   onMultiplierChange,
+  onCommentChange,
   onEdit,
   onRemove,
 }: {
@@ -168,6 +223,7 @@ export function SessionMixCard({
   expanded: boolean;
   onExpandedChange: (next: boolean) => void;
   onMultiplierChange: (next: number) => void;
+  onCommentChange: (next: string) => void;
   onEdit: () => void;
   onRemove: () => void;
 }) {
@@ -183,6 +239,67 @@ export function SessionMixCard({
     ...ingredientIndexes.filter((i) => i !== 0),
     0,
   ];
+  const activityStamp = batchActivityStamp(batch);
+  const savedComment = batch.comment?.trim() ?? "";
+  const hasComment = savedComment.length > 0;
+
+  const [commentOpen, setCommentOpen] = useState(false);
+  const [commentEditing, setCommentEditing] = useState(false);
+  const [draftComment, setDraftComment] = useState(savedComment);
+  const commentInputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!expanded) {
+      setCommentOpen(false);
+      setCommentEditing(false);
+    }
+  }, [expanded]);
+
+  useEffect(() => {
+    if (!commentEditing) setDraftComment(savedComment);
+  }, [savedComment, commentEditing]);
+
+  useEffect(() => {
+    if (!commentOpen || !commentEditing) return;
+    const el = commentInputRef.current;
+    if (!el) return;
+    el.focus();
+    const len = el.value.length;
+    el.setSelectionRange(len, len);
+  }, [commentOpen, commentEditing]);
+
+  const discardCommentDraft = () => {
+    setDraftComment(savedComment);
+    setCommentEditing(false);
+  };
+
+  const saveComment = () => {
+    if (!commentEditing) return;
+    const next = draftComment.trim();
+    if (next !== savedComment) onCommentChange(next);
+    setDraftComment(next);
+    setCommentEditing(false);
+  };
+
+  const openCommentPanel = () => {
+    if (commentOpen) {
+      discardCommentDraft();
+      setCommentOpen(false);
+      return;
+    }
+    setDraftComment(savedComment);
+    setCommentOpen(true);
+    setCommentEditing(false);
+  };
+
+  const onEditComment = () => {
+    if (commentEditing) {
+      discardCommentDraft();
+      return;
+    }
+    setDraftComment(savedComment);
+    setCommentEditing(true);
+  };
 
   return (
     <div className="batch-totals-source-card session-mix-card w-full min-w-0 shrink-0 overflow-hidden">
@@ -202,12 +319,22 @@ export function SessionMixCard({
           aria-expanded={expanded}
         >
           <p className="truncate session-mix-card__title">{batch.name}</p>
-          <span className="session-mix-card__amount app-readout tabular-nums">
-            <AmountCell
-              grams={totalGrams}
-              isKg={totalParam.isKg}
-              colorScheme={colorScheme}
+          <span className="session-mix-card__amount-row">
+            <ChevronDown
+              className={`session-mix-card__chevron${
+                expanded ? " session-mix-card__chevron--open" : ""
+              }`}
+              size={16}
+              strokeWidth={2}
+              aria-hidden
             />
+            <span className="session-mix-card__amount app-readout tabular-nums">
+              <AmountCell
+                grams={totalGrams}
+                isKg={totalParam.isKg}
+                colorScheme={colorScheme}
+              />
+            </span>
           </span>
         </button>
 
@@ -215,9 +342,6 @@ export function SessionMixCard({
           className="session-mix-card__mult-field"
           aria-label={`Batch multiplier, ${mult}`}
         >
-          <span className="session-mix-card__mult-prefix" aria-hidden>
-            ×
-          </span>
           <StepButton
             label="Decrease batch count"
             onClick={() => onMultiplierChange(Math.max(1, mult - 1))}
@@ -225,6 +349,9 @@ export function SessionMixCard({
             compact
           />
           <span className="tabular-nums session-mix-card__mult-value session-mix-card__mult-value--field">
+            <span className="session-mix-card__mult-mark" aria-hidden>
+              ×
+            </span>
             {mult}
           </span>
           <StepButton
@@ -234,20 +361,133 @@ export function SessionMixCard({
             compact
           />
         </div>
-
-        <div className="flex items-center justify-end shrink-0 session-mix-card__actions">
-          <IconHeaderButton label={`Edit ${batch.name}`} onClick={onEdit}>
-            <RenameIcon size={HEADER_ICON_SIZE} />
-          </IconHeaderButton>
-          <IconHeaderButton
-            label={`Remove ${batch.name}`}
-            onClick={onRemove}
-            color={cv.text.muted}
-          >
-            <DeleteIcon size={HEADER_ICON_SIZE} />
-          </IconHeaderButton>
-        </div>
       </div>
+
+      {expanded ? (
+        <div
+          className="session-mix-card__subheader"
+          style={{ background: bt.cardHeaderBackground }}
+        >
+          <div className="session-mix-card__stamp" aria-label="Mix activity">
+            {activityStamp.created ? (
+              <span className="session-mix-card__stamp-line">
+                Created {activityStamp.created}
+              </span>
+            ) : null}
+            {activityStamp.updated ? (
+              <span className="session-mix-card__stamp-line">
+                Updated {activityStamp.updated}
+              </span>
+            ) : null}
+          </div>
+          <div className="session-mix-card__actions">
+            <div
+              className={`session-mix-card__action-group${
+                commentOpen ? " session-mix-card__action-group--open" : ""
+              }`}
+              role="group"
+              aria-label="Mix comment"
+            >
+              <IconHeaderButton
+                label={
+                  commentOpen
+                    ? `Close comment on ${batch.name}`
+                    : hasComment
+                      ? `Comment on ${batch.name}`
+                      : `Add comment to ${batch.name}`
+                }
+                onClick={openCommentPanel}
+                color={commentOpen ? cv.text.primary : cv.text.muted}
+              >
+                {commentOpen ? (
+                  <CloseIcon size={HEADER_ICON_SIZE} />
+                ) : (
+                  <MessageIcon size={HEADER_ICON_SIZE} />
+                )}
+              </IconHeaderButton>
+              <span
+                className={`session-mix-card__action-reveal${
+                  commentOpen ? " session-mix-card__action-reveal--open" : ""
+                }`}
+                aria-hidden={!commentOpen}
+              >
+                <span className="session-mix-card__action-reveal-inner">
+                  <span className="session-mix-card__action-group-label">
+                    Comment
+                  </span>
+                  <IconHeaderButton
+                    label={
+                      commentEditing
+                        ? `Cancel editing comment on ${batch.name}`
+                        : `Edit comment on ${batch.name}`
+                    }
+                    onClick={onEditComment}
+                    color={commentEditing ? cv.text.primary : cv.text.muted}
+                  >
+                    <ModifyIcon size={HEADER_ICON_SIZE} />
+                  </IconHeaderButton>
+                  <IconHeaderButton
+                    label={`Save comment on ${batch.name}`}
+                    onClick={saveComment}
+                    disabled={!commentEditing}
+                    onPointerDown={(e) => {
+                      if (commentEditing) e.preventDefault();
+                    }}
+                  >
+                    <SaveIcon size={HEADER_ICON_SIZE} />
+                  </IconHeaderButton>
+                </span>
+              </span>
+            </div>
+            <IconHeaderButton label={`Edit ${batch.name}`} onClick={onEdit}>
+              <RenameIcon size={HEADER_ICON_SIZE} />
+            </IconHeaderButton>
+            <LongPressButton
+              label={`Hold to remove ${batch.name}`}
+              confirmAction="REMOVE MIX"
+              onLongPress={onRemove}
+              progressVariant="beam"
+              compact
+              icon={<DeleteIcon size={HEADER_ICON_SIZE} />}
+              className="session-mix-card__action-btn session-mix-card__remove-btn"
+              style={REMOVE_LONG_PRESS_STYLE}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {expanded && commentOpen ? (
+        <div
+          className="session-mix-card__comment"
+          style={{ background: bt.cardHeaderBackground }}
+        >
+          {commentEditing ? (
+            <textarea
+              ref={commentInputRef}
+              className="session-mix-card__comment-input"
+              value={draftComment}
+              onChange={(e) => setDraftComment(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  discardCommentDraft();
+                }
+              }}
+              rows={1}
+              placeholder="Add a note for this mix…"
+              aria-label={`Comment on ${batch.name}`}
+            />
+          ) : (
+            <p
+              className={`session-mix-card__comment-text${
+                hasComment ? "" : " session-mix-card__comment-text--empty"
+              }`}
+            >
+              {hasComment ? savedComment : "No comment yet"}
+            </p>
+          )}
+        </div>
+      ) : null}
 
       {expanded ? (
         <div className="batch-totals-source-card__body">

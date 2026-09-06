@@ -1103,16 +1103,6 @@ export function CreateRecipeScreen({
         </div>
       </div>
 
-      <div className="create-recipe__start-from app-gutter-x">
-        <button
-          type="button"
-          className="create-recipe__secondary-btn"
-          onClick={() => setStartFromOpen(true)}
-        >
-          Start from recipe
-        </button>
-      </div>
-
       <div className="create-recipe__scroll flex-1 min-h-0 overflow-y-auto overscroll-none app-gutter-x">
         <div className="create-recipe__body">
           <p className="create-recipe__lede">
@@ -1126,6 +1116,16 @@ export function CreateRecipeScreen({
                 </>
               )}
           </p>
+
+          <div className="create-recipe__start-from">
+            <button
+              type="button"
+              className="create-recipe__secondary-btn"
+              onClick={() => setStartFromOpen(true)}
+            >
+              Start from recipe
+            </button>
+          </div>
 
           <Field
             label="Name"

@@ -256,6 +256,7 @@ export function SessionBottomPanel({
   saveFlash = false,
   toolCount = 0,
   consumableCount = 0,
+  dayFilter = "all",
 }: {
   mixCount: number;
   totalGrams: number;
@@ -271,6 +272,8 @@ export function SessionBottomPanel({
   saveFlash?: boolean;
   toolCount?: number;
   consumableCount?: number;
+  /** Day badge selection — drives share report slice. */
+  dayFilter?: string;
 }) {
   const compactSummaryRef = useRef<HTMLDivElement>(null);
 
@@ -281,7 +284,7 @@ export function SessionBottomPanel({
       expandedBodyLabel="Session summary — total per ingredient"
       sourceExpanded={sourceExpanded}
       onSourceExpandedChange={onSourceExpandedChange}
-      remeasureKey={`${session.activeStage}:${mixCount}:${toolCount}:${consumableCount}:${shareScope}:${session.updatedAt}`}
+      remeasureKey={`${session.activeStage}:${mixCount}:${toolCount}:${consumableCount}:${shareScope}:${dayFilter}:${session.updatedAt}`}
       summary={({ batchesRelocated }) => (
         <SessionSummaryBar
           stage={session.activeStage}
@@ -303,6 +306,7 @@ export function SessionBottomPanel({
           onShareScopeChange={onShareScopeChange}
           onSave={onSaveSession}
           saveFlash={saveFlash}
+          dayFilter={dayFilter}
         />
       }
       expandedBody={expandedBody}

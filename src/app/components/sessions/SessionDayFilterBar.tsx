@@ -1,4 +1,5 @@
-import { addDays, format, subDays } from "date-fns";
+import { addDays, format, parse, subDays } from "date-fns";
+import { CalendarClock } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -8,16 +9,16 @@ import {
   useState,
   type RefObject,
 } from "react";
-import {
-  SELECT_CHIP_DOUBLE_TAP_MS,
-  useSelectChipGestures,
-} from "../select/useSelectChipGestures";
+import { useSelectChipGestures } from "../select/useSelectChipGestures";
+import { SessionDatePickerSheet } from "./SessionDatePickerSheet";
 
 export type SessionDayBadge = {
   id: string;
   /** Main chip text — day + month (+ year when not current year). */
   label: string;
   isToday?: boolean;
+  /** After today — shown with a future cue on the chip. */
+  isFuture?: boolean;
   isAll?: boolean;
 };
 
@@ -28,29 +29,59 @@ function dayMonthLabel(d: Date, thisYear: number): string {
   return d.getFullYear() !== thisYear ? `${base} ${d.getFullYear()}` : base;
 }
 
+export function badgeFromDate(d: Date, now = new Date()): SessionDayBadge {
+  const thisYear = now.getFullYear();
+  const id = format(d, "yyyy-MM-dd");
+  const todayId = format(now, "yyyy-MM-dd");
+  const isToday = id === todayId;
+  return {
+    id,
+    label: isToday ? `Today · ${format(d, "d MMM")}` : dayMonthLabel(d, thisYear),
+    isToday,
+    isFuture: id > todayId,
+  };
+}
+
+function parseBadgeDate(id: string, fallback = new Date()): Date {
+  const parsed = parse(id, "yyyy-MM-dd", fallback);
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed;
+}
+
+/** Keep All pinned first; day chips newest → oldest (yyyy-MM-dd desc). */
+export function sortSessionDayBadges(badges: SessionDayBadge[]): SessionDayBadge[] {
+  const all = badges.filter((b) => b.isAll);
+  const days = badges
+    .filter((b) => !b.isAll)
+    .sort((a, b) => b.id.localeCompare(a.id));
+  return [...all, ...days];
+}
+
+/** Build filter badges from work-date ids (always includes Today + All). */
+export function buildSessionDayFilterBadges(
+  workDateIds: readonly string[],
+  now = new Date(),
+): SessionDayBadge[] {
+  const todayId = format(now, "yyyy-MM-dd");
+  const ids = new Set<string>([todayId, ...workDateIds]);
+  return sortSessionDayBadges([
+    { id: "all", label: "All dates", isAll: true },
+    ...[...ids].map((id) => badgeFromDate(parseBadgeDate(id, now), now)),
+  ]);
+}
+
 /** Mock work days — Today always included; one other-year chip demos year in the label. */
 export function buildMockSessionDayBadges(now = new Date()): SessionDayBadge[] {
-  const thisYear = now.getFullYear();
+  const otherYear = new Date(now.getFullYear() - 1, 11, 18); // 18 Dec previous year
 
-  const entry = (d: Date, opts?: { isToday?: boolean }): SessionDayBadge => ({
-    id: format(d, "yyyy-MM-dd"),
-    label: opts?.isToday
-      ? `Today · ${format(d, "d MMM")}`
-      : dayMonthLabel(d, thisYear),
-    isToday: opts?.isToday,
-  });
-
-  const otherYear = new Date(thisYear - 1, 11, 18); // 18 Dec previous year
-
-  return [
+  return sortSessionDayBadges([
     { id: "all", label: "All dates", isAll: true },
-    entry(now, { isToday: true }),
-    entry(subDays(now, 1)),
-    entry(subDays(now, 2)),
-    entry(addDays(now, 1)),
-    entry(addDays(now, 2)),
-    entry(otherYear),
-  ];
+    badgeFromDate(now, now),
+    badgeFromDate(subDays(now, 1), now),
+    badgeFromDate(subDays(now, 2), now),
+    badgeFromDate(addDays(now, 1), now),
+    badgeFromDate(addDays(now, 2), now),
+    badgeFromDate(otherYear, now),
+  ]);
 }
 
 function useHorizontalScrollFades(
@@ -110,37 +141,28 @@ function SessionDayBadgeChip({
   /** When All filter is on, every day chip looks selected. */
   allMode: boolean;
   onSelect: () => void;
-  onOpenCalendar: () => void;
+  onOpenCalendar?: () => void;
 }) {
   const isAll = Boolean(badge.isAll);
+  const isFuture = Boolean(badge.isFuture);
   const visuallySelected = isAll ? allMode : allMode || selected;
-  const lastTapAtRef = useRef(0);
 
   const gestures = useSelectChipGestures({
     mode: "select",
-    onTap: () => {
-      if (isAll) {
-        onSelect();
-        return;
-      }
-      const now = performance.now();
-      if (selected && !allMode && now - lastTapAtRef.current <= SELECT_CHIP_DOUBLE_TAP_MS) {
-        lastTapAtRef.current = 0;
-        onOpenCalendar();
-        return;
-      }
-      lastTapAtRef.current = now;
-      if (!selected || allMode) onSelect();
-    },
+    onTap: onSelect,
+    onDoubleTap: isAll ? undefined : onOpenCalendar,
   });
 
   const ariaExtra = isAll
     ? allMode
       ? ", selected. Showing all days"
       : ", tap to show all dates"
-    : selected && !allMode
-      ? ", selected. Double-tap to edit date"
-      : ", tap to filter this day";
+    : [
+        isFuture ? ", upcoming" : "",
+        selected && !allMode
+          ? ", selected. Double-tap to edit date"
+          : ", tap to filter this day. Double-tap to edit date",
+      ].join("");
 
   return (
     <button
@@ -151,48 +173,146 @@ function SessionDayBadgeChip({
       }`}
       data-selected={visuallySelected ? "" : undefined}
       data-today={badge.isToday ? "" : undefined}
+      data-future={isFuture ? "" : undefined}
       aria-selected={visuallySelected}
       aria-label={`${badge.label}${ariaExtra}`}
       {...gestures}
     >
-      <span className="select-chip__label">{badge.label}</span>
+      <span className="select-chip__label session-day-filter__chip-label">
+        {isFuture ? (
+          <CalendarClock
+            className="session-day-filter__future-icon"
+            size={12}
+            strokeWidth={2.25}
+            aria-hidden
+          />
+        ) : null}
+        <span>{badge.label}</span>
+      </span>
     </button>
   );
 }
 
 /**
- * Horizontal day filter badges (mock data).
+ * Horizontal day filter badges.
  * All dates stays pinned; day chips scroll with edge fades.
- * Tap = choose All dates or one day · double-tap day = calendar hint (no lib yet).
+ * Tap = choose All dates or one day · double-tap day = date picker sheet.
  */
 export function SessionDayFilterBar({
   badges: badgesProp,
+  selectedId: selectedIdProp,
+  onSelectedIdChange,
+  onConfirmDayChange,
 }: {
   badges?: SessionDayBadge[];
+  selectedId?: string;
+  onSelectedIdChange?: (id: string) => void;
+  /**
+   * Controlled day remap: `fromDayId` double-tapped → `toDate` confirmed.
+   * Today → other day should add/select without rewriting Today.
+   */
+  onConfirmDayChange?: (fromDayId: string, toDate: Date) => void;
 }) {
-  const badges = useMemo(
-    () => badgesProp ?? buildMockSessionDayBadges(),
-    [badgesProp],
-  );
-  const allBadge = badges.find((b) => b.isAll) ?? badges[0];
-  const dayBadges = useMemo(() => badges.filter((b) => !b.isAll), [badges]);
+  const controlled = selectedIdProp != null && onSelectedIdChange != null;
+  const [internalBadges, setInternalBadges] = useState(buildMockSessionDayBadges);
+  const [internalSelectedId, setInternalSelectedId] = useState<string>("all");
+  const badges = badgesProp ?? internalBadges;
+  const selectedId = controlled ? selectedIdProp! : internalSelectedId;
+  const setSelectedId = controlled ? onSelectedIdChange! : setInternalSelectedId;
 
-  /** `all` or a concrete day id. */
-  const [selectedId, setSelectedId] = useState<string>("all");
-  const [calendarHint, setCalendarHint] = useState<string | null>(null);
-  const allMode = selectedId === "all";
+  const allBadge = badges.find((b) => b.isAll) ?? badges[0];
+  const dayBadges = useMemo(
+    () =>
+      badges
+        .filter((b) => !b.isAll)
+        .sort((a, b) => b.id.localeCompare(a.id)),
+    [badges],
+  );
+
+  /**
+   * Only All + Today (or All alone): day filter is meaningless —
+   * keep All dates selected.
+   */
+  const onlyAllAndToday =
+    dayBadges.length === 0 ||
+    (dayBadges.length === 1 && Boolean(dayBadges[0]?.isToday));
+
+  useEffect(() => {
+    if (!onlyAllAndToday || selectedId === "all") return;
+    setSelectedId("all");
+  }, [onlyAllAndToday, selectedId, setSelectedId]);
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [editingBadgeId, setEditingBadgeId] = useState<string | null>(null);
+  const effectiveSelectedId = onlyAllAndToday ? "all" : selectedId;
+  const allMode = effectiveSelectedId === "all";
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollEdges = useHorizontalScrollFades(scrollRef, dayBadges.length);
 
-  useEffect(() => {
-    if (!calendarHint) return;
-    const id = window.setTimeout(() => setCalendarHint(null), 1600);
-    return () => window.clearTimeout(id);
-  }, [calendarHint]);
+  const editingBadge =
+    editingBadgeId != null
+      ? dayBadges.find((b) => b.id === editingBadgeId) ?? null
+      : null;
+  const pickerInitialDate = editingBadge
+    ? parseBadgeDate(editingBadge.id)
+    : new Date();
 
-  const openCalendarMock = (badge: SessionDayBadge) => {
-    setCalendarHint(`Calendar · edit ${badge.label}`);
-    setSelectedId(badge.id);
+  const selectDay = (id: string) => {
+    if (onlyAllAndToday && id !== "all") {
+      setSelectedId("all");
+      return;
+    }
+    setSelectedId(id);
+  };
+
+  const openCalendar = (badge: SessionDayBadge) => {
+    if (badge.isAll) return;
+    setEditingBadgeId(badge.id);
+    if (!onlyAllAndToday) setSelectedId(badge.id);
+    setPickerOpen(true);
+  };
+
+  const applyPickedDate = (date: Date) => {
+    if (!editingBadgeId) {
+      setSelectedId(format(date, "yyyy-MM-dd"));
+      return;
+    }
+
+    if (onConfirmDayChange) {
+      onConfirmDayChange(editingBadgeId, date);
+      return;
+    }
+
+    if (badgesProp) {
+      setSelectedId(format(date, "yyyy-MM-dd"));
+      return;
+    }
+
+    const next = badgeFromDate(date);
+    const editingWasToday =
+      dayBadges.find((b) => b.id === editingBadgeId)?.isToday === true;
+
+    setInternalBadges((prev) => {
+      const collision = prev.find((b) => !b.isAll && b.id === next.id);
+      if (collision) {
+        if (editingBadgeId === next.id || editingWasToday) {
+          return sortSessionDayBadges(prev);
+        }
+        return sortSessionDayBadges(
+          prev.filter((b) => b.isAll || b.id !== editingBadgeId),
+        );
+      }
+
+      if (editingWasToday) {
+        return sortSessionDayBadges([...prev, next]);
+      }
+
+      return sortSessionDayBadges(
+        prev.map((b) => (b.id === editingBadgeId ? next : b)),
+      );
+    });
+    setSelectedId(next.id);
+    setEditingBadgeId(next.id);
   };
 
   return (
@@ -202,10 +322,9 @@ export function SessionDayFilterBar({
           <div className="session-day-filter__pinned">
             <SessionDayBadgeChip
               badge={allBadge}
-              selected={selectedId === allBadge.id}
+              selected={effectiveSelectedId === allBadge.id}
               allMode={allMode}
-              onSelect={() => setSelectedId(allBadge.id)}
-              onOpenCalendar={() => openCalendarMock(allBadge)}
+              onSelect={() => selectDay(allBadge.id)}
             />
           </div>
         ) : null}
@@ -232,23 +351,25 @@ export function SessionDayFilterBar({
               <SessionDayBadgeChip
                 key={badge.id}
                 badge={badge}
-                selected={selectedId === badge.id}
+                selected={effectiveSelectedId === badge.id}
                 allMode={allMode}
-                onSelect={() => setSelectedId(badge.id)}
-                onOpenCalendar={() => openCalendarMock(badge)}
+                onSelect={() => selectDay(badge.id)}
+                onOpenCalendar={() => openCalendar(badge)}
               />
             ))}
           </div>
         </div>
       </div>
-      <p
-        className={`session-day-filter__hint app-gutter-x${
-          calendarHint ? " session-day-filter__hint--visible" : ""
-        }`}
-        aria-live="polite"
-      >
-        {calendarHint ?? ""}
-      </p>
+
+      <SessionDatePickerSheet
+        open={pickerOpen}
+        onOpenChange={(open) => {
+          setPickerOpen(open);
+          if (!open) setEditingBadgeId(null);
+        }}
+        initialDate={pickerInitialDate}
+        onConfirm={applyPickedDate}
+      />
     </div>
   );
 }

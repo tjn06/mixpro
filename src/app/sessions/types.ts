@@ -25,6 +25,9 @@ export const SESSION_STAGE_LABELS: Record<SessionStageId, string> = {
 /**
  * One calculated mix in a session — unique item (no extras merge).
  * Phase 3 fills calculator fields; Phase 1 keeps the shape ready.
+ *
+ * `createdAt` = when the mix row was created (immutable audit).
+ * `workDate` = editable calendar day for day-filter / planning (yyyy-MM-dd).
  */
 export type SessionBatchItem = {
   id: string;
@@ -35,8 +38,23 @@ export type SessionBatchItem = {
   recipe?: BlendingRecipe;
   values: MixSlotValues;
   multiplier: number;
+  /** Local calendar day this mix belongs to (`yyyy-MM-dd`). */
+  workDate: string;
+  /** Optional note on this mix (session save). */
+  comment?: string;
   createdAt: string;
   updatedAt: string;
+};
+
+/**
+ * Tool / consumable quantity scoped to a work day.
+ * Same catalog id may appear on multiple days as separate rows.
+ */
+export type SessionDatedQtyEntry = {
+  optionId: string;
+  qty: number;
+  /** Local calendar day (`yyyy-MM-dd`). */
+  workDate: string;
 };
 
 /** Project container — multiple unique batch items + future stages. */
@@ -53,18 +71,22 @@ export type MixSession = {
   sessionRecipes: BlendingRecipe[];
   /**
    * Selected tools with quantities (id → qty ≥ 1).
-   * Legacy persisted `selectedToolIds` arrays are migrated on load.
+   * Derived aggregate of `toolEntries` (all days) — kept for older readers.
    */
   selectedToolQtys: Record<string, number>;
+  /** Per-day tool quantities — source of truth for day filtering. */
+  toolEntries: SessionDatedQtyEntry[];
   /** @deprecated Migrated into selectedToolQtys — kept optional for old saves. */
   selectedToolIds?: string[];
   /** User-defined simple tools (no dropdown) for this session. */
   customTools: { id: string; label: string }[];
   /**
    * Selected consumables with quantities (id → qty ≥ 1).
-   * Legacy persisted `selectedConsumableIds` arrays are migrated on load.
+   * Derived aggregate of `consumableEntries` (all days).
    */
   selectedConsumableQtys: Record<string, number>;
+  /** Per-day consumable quantities — source of truth for day filtering. */
+  consumableEntries: SessionDatedQtyEntry[];
   /** @deprecated Migrated into selectedConsumableQtys — kept optional for old saves. */
   selectedConsumableIds?: string[];
   /**
@@ -74,6 +96,11 @@ export type MixSession = {
   consumableWearByOptionId: Record<string, "lag" | "medel" | "hog">;
   /** User-defined simple consumables (no dropdown). */
   customConsumables: { id: string; label: string }[];
+  /**
+   * Last concrete day used for new mixes / tool-cons edits (`yyyy-MM-dd`).
+   * Day filter "All" does not clear this.
+   */
+  activeWorkDate: string;
   createdAt: string;
   updatedAt: string;
 };

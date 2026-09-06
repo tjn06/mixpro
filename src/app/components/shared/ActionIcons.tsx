@@ -12,6 +12,7 @@ import {
   Copy,
   Mail,
   MessageSquare,
+  ScrollText,
   Ellipsis,
   X,
   UserRoundCheck,
@@ -86,6 +87,9 @@ export const CopyIcon = createActionIcon(Copy);
 export const MailIcon = createActionIcon(Mail);
 
 export const MessageIcon = createActionIcon(MessageSquare);
+
+/** Edit / revise text content (not the mix pencil). */
+export const ModifyIcon = createActionIcon(ScrollText);
 
 export const CloseIcon = createActionIcon(X);
 

@@ -1914,11 +1914,6 @@
   padding-block: 6px 8px;
 }
 
-.create-recipe__start-from {
-  flex-shrink: 0;
-  padding-block: 8px 0;
-}
-
 .create-recipe__start-from .create-recipe__secondary-btn {
   min-height: 44px;
 }
@@ -3129,6 +3124,7 @@
    */
   --select-chip-accent: var(--semantic-state-accent, #9b8cff);
   --session-day-accent: var(--select-chip-accent);
+  --session-day-future: #5b9fd4;
   display: block;
   flex-wrap: unset;
   align-items: unset;
@@ -3143,6 +3139,8 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
+  /* Match stages / app gutter — All dates sits on the same left inset. */
+  padding-inline-start: max(var(--space-4, 16px), var(--safe-left));
 }
 
 /** Always visible — not part of the horizontal scroll. */
@@ -3269,19 +3267,97 @@
   );
 }
 
-.session-day-filter__hint {
-  display: none;
-  margin: 0;
-  font-family: var(--font-ui, "Outfit", sans-serif);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--session-day-accent);
+.session-day-filter__chip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.session-day-filter__hint--visible {
-  display: block;
-  margin-top: 4px;
+.session-day-filter__future-icon {
+  flex: 0 0 auto;
+  opacity: 0.9;
+}
+
+/**
+ * Future days keep a sky accent even when selected, so upcoming stays obvious
+ * next to violet past/today selection.
+ */
+.session-day-filter
+  .select-chip.session-day-filter__chip[data-future]:not([data-selected]) {
+  color: color-mix(in srgb, var(--session-day-future) 88%, var(--semantic-text-primary));
+  background: color-mix(
+    in srgb,
+    var(--session-day-future) 14%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+.session-day-filter
+  .select-chip.session-day-filter__chip[data-future][data-selected] {
+  color: var(--semantic-text-primary);
+  border-color: var(--session-day-future);
+  background: color-mix(
+    in srgb,
+    var(--session-day-future) 28%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+[data-theme="dark"]
+  .session-day-filter
+  .select-chip.session-day-filter__chip[data-future][data-selected] {
+  color: #ffffff;
+}
+
+.session-day-filter
+  .select-chip.session-day-filter__chip[data-future][data-selected]:active {
+  background: color-mix(
+    in srgb,
+    var(--session-day-future) 36%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+.session-day-filter
+  .select-chip.session-day-filter__chip[data-future][data-selected]
+  .session-day-filter__future-icon {
+  opacity: 1;
+}
+
+.session-date-picker-sheet__body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 12px;
+}
+
+.session-date-picker.rdp-root {
+  --rdp-accent-color: var(--semantic-state-accent, #9b8cff);
+  --rdp-accent-background-color: color-mix(
+    in srgb,
+    var(--semantic-state-accent, #9b8cff) 22%,
+    transparent
+  );
+  --rdp-today-color: var(--semantic-state-accent, #9b8cff);
+  --rdp-day-height: 40px;
+  --rdp-day-width: 40px;
+  --rdp-day_button-height: 38px;
+  --rdp-day_button-width: 38px;
+  margin-inline: auto;
+  color: var(--semantic-text-primary);
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 14px;
+}
+
+.session-date-picker.rdp-root .rdp-caption_label,
+.session-date-picker.rdp-root .rdp-weekday {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.session-date-picker.rdp-root .rdp-button_previous,
+.session-date-picker.rdp-root .rdp-button_next {
+  color: var(--semantic-text-primary);
 }
 
 .session-overview__workspace-actions {
@@ -3350,7 +3426,7 @@
   display: flex;
   align-items: stretch;
   gap: 0;
-  padding: 6px 0 8px;
+  padding: 0 0 8px;
 }
 
 .session-overview__stage-btn {
@@ -3960,15 +4036,36 @@
   min-width: 0;
 }
 
-/* Collapsed header: title | mult field | actions — fits app width without overlap. */
+.session-mix-card__amount-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  margin-top: 2px;
+}
+
+.session-mix-card__chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--semantic-text-muted);
+  transition: transform 160ms ease;
+}
+
+.session-mix-card__chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Collapsed header: title | mult field — stamp/actions in expanded subheader. */
 .session-mix-card__header--collapsed {
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 8px;
   align-items: center;
 }
 
 .session-mix-card__title {
   margin: 0;
+  min-width: 0;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -3979,7 +4076,7 @@
 
 .session-mix-card__amount {
   display: block;
-  margin-top: 2px;
+  margin-top: 0;
   font-size: var(--text-totals-mult, 14px);
   font-weight: 700;
   line-height: 1.2;
@@ -3995,37 +4092,255 @@
   font-size: 10px;
 }
 
-.session-mix-card__actions {
-  gap: 4px;
+.session-mix-card__subheader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 0;
+  border-top: none;
+  border-bottom: 1px solid var(--semantic-border-subtle);
 }
 
-.session-mix-card__actions .batch-totals-card-header-btn {
+.session-mix-card__stamp {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  margin: 0;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding:
+    8px
+    0
+    8px
+    var(--batch-totals-content-gutter, var(--totals-card-header-px));
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  color: var(--semantic-text-muted);
+}
+
+.session-mix-card__stamp-line {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-mix-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 0 0 auto;
+  align-self: stretch;
+  padding:
+    8px
+    var(--batch-totals-content-gutter, var(--totals-card-header-px))
+    8px
+    0;
+}
+
+.session-mix-card__action-group {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: 0;
+  flex: 0 0 auto;
+  min-height: 28px;
+  height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  transition:
+    background 160ms ease,
+    gap 160ms ease,
+    padding 160ms ease;
+}
+
+.session-mix-card__action-group--open {
+  gap: 10px;
+  padding: 0 6px;
+  background: var(--semantic-surface-input, var(--component-sheet-panel-list-row-bg));
+}
+
+.session-mix-card__action-group--open .session-mix-card__action-btn {
+  background: transparent;
+  border-color: transparent;
+}
+
+.session-mix-card__action-group--open .session-mix-card__action-btn:active {
+  background: color-mix(in srgb, var(--session-accent) 12%, transparent);
+  border-color: transparent;
+}
+
+.session-mix-card__action-reveal {
+  display: grid;
+  grid-template-columns: 0fr;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    grid-template-columns 180ms ease,
+    opacity 140ms ease;
+}
+
+.session-mix-card__action-reveal--open {
+  grid-template-columns: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.session-mix-card__action-reveal-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.session-mix-card__action-group-label {
+  flex: 0 0 auto;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+.session-mix-card__action-btn {
+  box-sizing: border-box;
   width: 28px;
   height: 28px;
-  min-height: 0;
+  min-width: 28px;
+  min-height: 28px;
+  max-width: 28px;
+  max-height: 28px;
+  flex: 0 0 28px;
+  padding: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
+  border: 1px solid var(--semantic-border-default);
+  cursor: pointer;
+}
+
+.session-mix-card__action-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+.session-mix-card__action-btn:active {
+  color: var(--session-accent);
+  border-color: color-mix(in srgb, var(--session-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--session-accent) 12%, transparent);
+}
+
+.session-mix-card__remove-btn {
+  flex: 0 0 auto;
+  border-radius: 999px !important;
+}
+
+.session-mix-card__comment {
+  --session-mix-comment-h: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  padding:
+    0
+    var(--batch-totals-content-gutter, var(--totals-card-header-px))
+    var(--totals-cell-py, 8px);
+  border-bottom: 1px solid var(--semantic-border-subtle);
+}
+
+.session-mix-card__comment-text {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: 0;
+  min-width: 0;
+  min-height: var(--session-mix-comment-h);
+  padding: var(--totals-cell-py, 8px) 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-totals-item-meta, 12px);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  color: var(--semantic-text-secondary);
+}
+
+.session-mix-card__comment-text--empty {
+  color: var(--semantic-text-muted);
+  font-style: italic;
+}
+
+.session-mix-card__comment-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--session-mix-comment-h);
+  min-height: var(--session-mix-comment-h);
+  resize: vertical;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--semantic-border-default);
+  background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
+  color: var(--semantic-text-primary);
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-totals-item-meta, 12px);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  outline: none;
+}
+
+.session-mix-card__comment-input::placeholder {
+  color: var(--semantic-text-muted);
+}
+
+.session-mix-card__comment-input:focus {
+  border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
+}
+
+/* Opened mix card: less air between chrome and first table row. */
+.session-mix-card .batch-totals-source-card__body {
+  padding-top: 0;
+}
+
+.session-mix-card .batch-totals-source-table thead th {
+  padding-top: 6px;
 }
 
 .session-mix-card__mult-field {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 10px;
   flex-shrink: 0;
-  min-height: 32px;
-  padding: 2px 4px 2px 6px;
-  border: 1px solid var(--semantic-border-default);
-  border-radius: 10px;
-  background: var(--semantic-surface-input, var(--component-sheet-panel-list-row-bg));
-}
-
-.session-mix-card__mult-prefix {
-  font-family: var(--font-ui, "Outfit", sans-serif);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--semantic-text-muted);
-  line-height: 1;
-  padding-inline-end: 1px;
+  min-height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .session-mix-card__mult-value {
@@ -4040,23 +4355,37 @@
 }
 
 .session-mix-card__mult-value--field {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: auto;
+  min-width: 28px;
+  height: 28px;
   font-size: 15px;
   font-weight: 600;
-  min-width: 1.4em;
-  padding-inline: 2px;
+  padding-inline: 0;
+  letter-spacing: -0.02em;
+}
+
+.session-mix-card__mult-mark {
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .session-mix-card__step-btn {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   min-height: 0;
   border-radius: 999px;
   padding: 0;
-  background: var(--component-sheet-panel-list-row-bg, transparent);
-  border: 1px solid var(--semantic-border-subtle);
-  color: var(--semantic-text-secondary);
-  font-size: 14px;
-  font-weight: 400;
+  background: color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
+  border: 1px solid var(--semantic-border-default);
+  color: var(--semantic-text-primary);
+  font-size: 15px;
+  font-weight: 500;
   line-height: 1;
 }
 
@@ -4068,6 +4397,7 @@
 .session-mix-card__step-btn:not(:disabled):active {
   color: var(--session-accent);
   border-color: color-mix(in srgb, var(--session-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--session-accent) 12%, transparent);
 }
 
 /* Pick recipe for session mix — session accent chrome (matches header / nav). */

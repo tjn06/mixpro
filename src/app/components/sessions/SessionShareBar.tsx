@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { BatchReportLanguage } from "../../domain/batch-totals/report";
 import {
+  SESSION_REPORT_LANGUAGE,
   buildSessionReportText,
   sessionReportSubject,
 } from "../../domain/sessions/report";
@@ -30,7 +31,9 @@ export function SessionShareBar({
   onShareScopeChange,
   onSave,
   saveFlash = false,
-  language = "en",
+  /** Report + share-chrome language. Default Swedish; pass `"en"` when switch is added. */
+  language = SESSION_REPORT_LANGUAGE,
+  dayFilter = "all",
 }: {
   session: MixSession;
   libraryRecipes: BlendingRecipe[];
@@ -39,6 +42,8 @@ export function SessionShareBar({
   onSave?: () => void;
   saveFlash?: boolean;
   language?: BatchReportLanguage;
+  /** `"all"` or `yyyy-MM-dd` — matches the session day filter badges. */
+  dayFilter?: string;
 }) {
   const [comment, setComment] = useState("");
   const scopeLabels = SCOPE_LABELS[language];
@@ -47,7 +52,7 @@ export function SessionShareBar({
     () => stagesForShareScope(shareScope, activeStage),
     [shareScope, activeStage],
   );
-  const canShare = sessionShareHasContent(session, scopedStages);
+  const canShare = sessionShareHasContent(session, scopedStages, dayFilter);
 
   const reportText = useMemo(
     () =>
@@ -58,14 +63,22 @@ export function SessionShareBar({
         comment,
         shareScope,
         activeStage,
+        dayFilter,
       ),
-    [session, libraryRecipes, language, comment, shareScope, activeStage],
+    [session, libraryRecipes, language, comment, shareScope, activeStage, dayFilter],
   );
 
   const reportSubject = useMemo(
     () =>
-      sessionReportSubject(session, language, comment, shareScope, activeStage),
-    [session, language, comment, shareScope, activeStage],
+      sessionReportSubject(
+        session,
+        language,
+        comment,
+        shareScope,
+        activeStage,
+        dayFilter,
+      ),
+    [session, language, comment, shareScope, activeStage, dayFilter],
   );
 
   return (

@@ -105,7 +105,8 @@ function pulseUp(el: HTMLElement) {
 /**
  * Pointer gestures for select chips.
  *
- * - `select`: instant tap only (first pick / open). No long-press timer.
+ * - `select`: instant tap (first pick / open). Optional `onDoubleTap` /
+ *   `onLongPress` (no hold drain on long-press).
  * - `qty`: double-tap (+1 + pulse), long-press (−1 + hold drain).
  *
  * Hold/pulse feedback writes `data-hold` / `data-pulse` on the event target
@@ -196,9 +197,13 @@ export function useSelectChipGestures({
         /* ignore — not all targets support capture */
       }
 
-      if (modeRef.current !== "qty") return;
+      const modeNow = modeRef.current;
+      const wantsLongPress =
+        modeNow === "qty" ||
+        (modeNow === "select" && actionsRef.current.onLongPress != null);
+      if (!wantsLongPress) return;
 
-      startHold(el);
+      if (modeNow === "qty") startHold(el);
       const pointerId = event.pointerId;
       longTimerRef.current = window.setTimeout(() => {
         longFiredRef.current = true;
@@ -247,7 +252,16 @@ export function useSelectChipGestures({
       const now = performance.now();
 
       if (modeNow === "select") {
-        lastTapAtRef.current = 0;
+        if (
+          actionsRef.current.onDoubleTap &&
+          now - lastTapAtRef.current <= SELECT_CHIP_DOUBLE_TAP_MS
+        ) {
+          lastTapAtRef.current = 0;
+          navigator.vibrate?.(8);
+          actionsRef.current.onDoubleTap();
+          return;
+        }
+        lastTapAtRef.current = actionsRef.current.onDoubleTap ? now : 0;
         actionsRef.current.onTap();
         return;
       }

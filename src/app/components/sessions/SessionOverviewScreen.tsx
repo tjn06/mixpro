@@ -24,6 +24,14 @@ import {
   sessionGrandTotalGrams,
   sessionIngredientTotalsGrams,
 } from "../../domain/sessions/totals";
+import {
+  applyDatedQtyAggregateDelta,
+  collectSessionWorkDateIds,
+  localWorkDateId,
+  moveDatedEntriesDay,
+  qtyMapFromDatedEntries,
+  replaceDatedQtyMapForDay,
+} from "../../domain/sessions/workDate";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
 import { useSessionsStore } from "../../sessions/store";
 import {
@@ -57,8 +65,12 @@ import { ToolsPicker } from "../tools/ToolsPicker";
 import { PickRecipeForMixSheet } from "./PickRecipeForMixSheet";
 import { SaveSessionNameSheet } from "./SaveSessionNameSheet";
 import { SessionBottomPanel } from "./SessionBottomPanel";
-import { SessionDayFilterBar } from "./SessionDayFilterBar";
+import {
+  SessionDayFilterBar,
+  buildSessionDayFilterBadges,
+} from "./SessionDayFilterBar";
 import { SessionMixCard } from "./SessionMixCard";
+import { format } from "date-fns";
 
 export function SessionOverviewScreen({
   sessionId,
@@ -95,22 +107,68 @@ export function SessionOverviewScreen({
   const [renameNameOpen, setRenameNameOpen] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false);
   const [shareScope, setShareScope] = useState<SessionShareScope>("current");
+  const [dayFilterId, setDayFilterId] = useState<string>("all");
+  const [extraDayIds, setExtraDayIds] = useState<string[]>([]);
   const scrollPanelRef = useRef<HTMLDivElement>(null);
 
   const batches = session?.batches ?? [];
   const sessionRecipes = session?.sessionRecipes ?? [];
   const toolsCatalog = useToolsLibraryStore((s) => s.items);
   const consumablesCatalog = useConsumablesLibraryStore((s) => s.items);
-  const selectedToolQtys = session?.selectedToolQtys ?? {};
+  const toolEntries = session?.toolEntries ?? [];
+  const consumableEntries = session?.consumableEntries ?? [];
   const customTools = session?.customTools ?? [];
-  const selectedConsumableQtys = session?.selectedConsumableQtys ?? {};
   const consumableWearByOptionId = session?.consumableWearByOptionId ?? {};
   const customConsumables = session?.customConsumables ?? [];
+  const todayId = localWorkDateId();
+  const editWorkDate =
+    dayFilterId === "all"
+      ? session?.activeWorkDate || todayId
+      : dayFilterId;
+
+  const visibleBatches = useMemo(
+    () =>
+      dayFilterId === "all"
+        ? batches
+        : batches.filter((b) => b.workDate === dayFilterId),
+    [batches, dayFilterId],
+  );
+
+  const selectedToolQtys = useMemo(
+    () => qtyMapFromDatedEntries(toolEntries, dayFilterId),
+    [toolEntries, dayFilterId],
+  );
+  const selectedConsumableQtys = useMemo(
+    () => qtyMapFromDatedEntries(consumableEntries, dayFilterId),
+    [consumableEntries, dayFilterId],
+  );
+
   const toolCount = flexSelectSelectionTotal(selectedToolQtys);
   const consumableCount = flexSelectSelectionTotal(selectedConsumableQtys);
   const activeStage = session?.activeStage ?? "mixes";
   const touchedStages = session?.touchedStages ?? ["mixes"];
   const nextStage = nextSessionStage(activeStage);
+
+  const dayBadges = useMemo(
+    () =>
+      buildSessionDayFilterBadges(
+        collectSessionWorkDateIds({
+          batches,
+          toolEntries,
+          consumableEntries,
+          activeWorkDate: session?.activeWorkDate,
+          extraDayIds,
+        }),
+      ),
+    [
+      batches,
+      toolEntries,
+      consumableEntries,
+      session?.activeWorkDate,
+      extraDayIds,
+    ],
+  );
+
   const selectedToolLabels = useMemo(
     () =>
       listSelectedToolLabelEntries(
@@ -141,6 +199,11 @@ export function SessionOverviewScreen({
     setPanelExpanded(false);
   }, [activeStage]);
 
+  useEffect(() => {
+    setDayFilterId("all");
+    setExtraDayIds([]);
+  }, [sessionId]);
+
   const stagesInShare = useMemo(
     () => stagesForShareScope(shareScope, activeStage),
     [shareScope, activeStage],
@@ -152,24 +215,108 @@ export function SessionOverviewScreen({
     return resolveSessionBatchRecipe(batch, sessionRecipes, libraryRecipes);
   };
 
-  const grandTotal = useMemo(() => sessionGrandTotalGrams(batches), [batches]);
+  const grandTotal = useMemo(
+    () => sessionGrandTotalGrams(visibleBatches),
+    [visibleBatches],
+  );
   const ingredientTotals = useMemo(
-    () => sessionIngredientTotalsGrams(batches),
-    [batches],
+    () => sessionIngredientTotalsGrams(visibleBatches),
+    [visibleBatches],
   );
   const entityIndexes = useMemo(
     () =>
-      sessionEntityIndexes(batches, (batch) =>
+      sessionEntityIndexes(visibleBatches, (batch) =>
         resolveSessionBatchRecipe(batch, sessionRecipes, libraryRecipes),
       ),
-    [batches, sessionRecipes, libraryRecipes],
+    [visibleBatches, sessionRecipes, libraryRecipes],
   );
 
   const scrollEdges = useScrollEdgeFades(
     scrollPanelRef,
     true,
-    `${batches.length}:${activeStage}`,
+    `${visibleBatches.length}:${activeStage}:${dayFilterId}`,
   );
+
+  const setDayFilter = (id: string) => {
+    setDayFilterId(id);
+    if (!session || id === "all") return;
+    patchSession(session.id, { activeWorkDate: id });
+  };
+
+  const patchToolSelection = (next: Record<string, number>) => {
+    if (!session) return;
+    const nextEntries =
+      dayFilterId === "all"
+        ? applyDatedQtyAggregateDelta(
+            toolEntries,
+            editWorkDate,
+            selectedToolQtys,
+            next,
+          )
+        : replaceDatedQtyMapForDay(toolEntries, dayFilterId, next);
+    patchSession(session.id, {
+      toolEntries: nextEntries,
+      activeWorkDate: editWorkDate,
+    });
+  };
+
+  const patchConsumableSelection = (next: Record<string, number>) => {
+    if (!session) return;
+    const nextEntries =
+      dayFilterId === "all"
+        ? applyDatedQtyAggregateDelta(
+            consumableEntries,
+            editWorkDate,
+            selectedConsumableQtys,
+            next,
+          )
+        : replaceDatedQtyMapForDay(consumableEntries, dayFilterId, next);
+    patchSession(session.id, {
+      consumableEntries: nextEntries,
+      consumableWearByOptionId: pruneWearByOptionId(
+        consumableWearByOptionId,
+        qtyMapFromDatedEntries(nextEntries, "all"),
+      ),
+      activeWorkDate: editWorkDate,
+    });
+  };
+
+  const confirmDayChange = (fromDayId: string, toDate: Date) => {
+    if (!session) return;
+    const toId = format(toDate, "yyyy-MM-dd");
+    const fromIsToday = fromDayId === todayId;
+
+    if (fromIsToday) {
+      setExtraDayIds((prev) =>
+        prev.includes(toId) || toId === todayId ? prev : [...prev, toId],
+      );
+      setDayFilter(toId);
+      return;
+    }
+
+    if (fromDayId === toId) {
+      setDayFilter(toId);
+      return;
+    }
+
+    patchSession(session.id, {
+      batches: batches.map((batch) =>
+        batch.workDate === fromDayId ? { ...batch, workDate: toId } : batch,
+      ),
+      toolEntries: moveDatedEntriesDay(toolEntries, fromDayId, toId),
+      consumableEntries: moveDatedEntriesDay(
+        consumableEntries,
+        fromDayId,
+        toId,
+      ),
+      activeWorkDate: toId,
+    });
+    setExtraDayIds((prev) => {
+      const withoutFrom = prev.filter((id) => id !== fromDayId);
+      return withoutFrom.includes(toId) ? withoutFrom : [...withoutFrom, toId];
+    });
+    setDayFilterId(toId);
+  };
 
   if (!session) {
     const missing = (
@@ -234,7 +381,7 @@ export function SessionOverviewScreen({
             <span className="batch-totals-entity-summary__chip">
               Mixes{" "}
               <span className="batch-totals-entity-summary__chip-mult">
-                ×{batches.length}
+                ×{visibleBatches.length}
               </span>
             </span>
             {activeStage === "summary" ? (
@@ -395,12 +542,14 @@ export function SessionOverviewScreen({
       <ScrollEdgeFadeOverlays fromTop={scrollEdges.fromTop} fromBottom={false} />
       <div ref={scrollPanelRef} className="batch-totals-scroll-panel flex flex-col">
         <div className="batch-totals-scroll-panel__inner session-overview__mix-list">
-          {batches.length === 0 ? (
+          {visibleBatches.length === 0 ? (
             <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
-              No mixes yet. Add a mix to start this session.
+              {dayFilterId === "all"
+                ? "No mixes yet. Add a mix to start this session."
+                : "No mixes on this day."}
             </p>
           ) : (
-            batches.map((batch) => (
+            visibleBatches.map((batch) => (
               <SessionMixCard
                 key={batch.id}
                 batch={batch}
@@ -416,6 +565,11 @@ export function SessionOverviewScreen({
                 onMultiplierChange={(next) =>
                   updateSessionBatch(session.id, batch.id, {
                     multiplier: next,
+                  })
+                }
+                onCommentChange={(next) =>
+                  updateSessionBatch(session.id, batch.id, {
+                    comment: next,
                   })
                 }
                 onEdit={() => onEditMix(batch.id)}
@@ -492,8 +646,8 @@ export function SessionOverviewScreen({
             </div>
             <div className="session-overview__summary-snapshot-facts">
               <span>
-                <strong>{batches.length}</strong>{" "}
-                {batches.length === 1 ? "mix" : "mixes"}
+                <strong>{visibleBatches.length}</strong>{" "}
+                {visibleBatches.length === 1 ? "mix" : "mixes"}
               </span>
               <span aria-hidden>·</span>
               <span>
@@ -512,16 +666,18 @@ export function SessionOverviewScreen({
             <div className="session-overview__summary-section-head">
               <h3 id="summary-mixes-heading">Mixes</h3>
               <span className="session-overview__summary-section-count">
-                {batches.length}
+                {visibleBatches.length}
               </span>
             </div>
-            {batches.length === 0 ? (
+            {visibleBatches.length === 0 ? (
               <p className="session-overview__summary-empty" style={{ color: cv.text.dimmed }}>
-                No mixes yet — add them in the Mixes stage.
+                {dayFilterId === "all"
+                  ? "No mixes yet — add them in the Mixes stage."
+                  : "No mixes on this day."}
               </p>
             ) : (
               <ul className="session-overview__summary-mixes">
-                {batches.map((batch) => {
+                {visibleBatches.map((batch) => {
                   const recipe = resolveRecipe(batch.id);
                   const total = sessionGrandTotalGrams([batch]);
                   return (
@@ -644,19 +800,21 @@ export function SessionOverviewScreen({
         <div className="batch-totals-scroll-panel__inner session-overview__tools-pad app-gutter-x">
           <ToolsPicker
             selection={selectedToolQtys}
-            onSelectionChange={(next) => {
-              if (!session) return;
-              patchSession(session.id, { selectedToolQtys: next });
-            }}
+            onSelectionChange={patchToolSelection}
             customTools={customTools}
             onAddCustomTool={(item) => {
               if (!session) return;
               patchSession(session.id, {
                 customTools: [...customTools, item],
-                selectedToolQtys: ensureFlexSelectSelected(
-                  selectedToolQtys,
-                  item.id,
+                toolEntries: replaceDatedQtyMapForDay(
+                  toolEntries,
+                  editWorkDate,
+                  ensureFlexSelectSelected(
+                    qtyMapFromDatedEntries(toolEntries, editWorkDate),
+                    item.id,
+                  ),
                 ),
+                activeWorkDate: editWorkDate,
               });
             }}
           />
@@ -671,16 +829,7 @@ export function SessionOverviewScreen({
         <div className="batch-totals-scroll-panel__inner session-overview__tools-pad app-gutter-x">
           <ConsumablesPicker
             selection={selectedConsumableQtys}
-            onSelectionChange={(next) => {
-              if (!session) return;
-              patchSession(session.id, {
-                selectedConsumableQtys: next,
-                consumableWearByOptionId: pruneWearByOptionId(
-                  consumableWearByOptionId,
-                  next,
-                ),
-              });
-            }}
+            onSelectionChange={patchConsumableSelection}
             wearByOptionId={consumableWearByOptionId}
             onWearChange={(next) => {
               if (!session) return;
@@ -689,12 +838,22 @@ export function SessionOverviewScreen({
             customConsumables={customConsumables}
             onAddCustomConsumable={(item) => {
               if (!session) return;
-              patchSession(session.id, {
-                customConsumables: [...customConsumables, item],
-                selectedConsumableQtys: ensureFlexSelectSelected(
-                  selectedConsumableQtys,
+              const nextEntries = replaceDatedQtyMapForDay(
+                consumableEntries,
+                editWorkDate,
+                ensureFlexSelectSelected(
+                  qtyMapFromDatedEntries(consumableEntries, editWorkDate),
                   item.id,
                 ),
+              );
+              patchSession(session.id, {
+                customConsumables: [...customConsumables, item],
+                consumableEntries: nextEntries,
+                consumableWearByOptionId: pruneWearByOptionId(
+                  consumableWearByOptionId,
+                  qtyMapFromDatedEntries(nextEntries, "all"),
+                ),
+                activeWorkDate: editWorkDate,
               });
             }}
           />
@@ -789,13 +948,18 @@ export function SessionOverviewScreen({
                     );
                   })}
                 </nav>
-                <SessionDayFilterBar />
+                <SessionDayFilterBar
+                  badges={dayBadges}
+                  selectedId={dayFilterId}
+                  onSelectedIdChange={setDayFilter}
+                  onConfirmDayChange={confirmDayChange}
+                />
               </div>
 
               {stageMain}
 
               <SessionBottomPanel
-                mixCount={batches.length}
+                mixCount={visibleBatches.length}
                 totalGrams={grandTotal}
                 colorScheme={colorScheme}
                 sourceExpanded={panelExpanded}
@@ -809,6 +973,7 @@ export function SessionOverviewScreen({
                 saveFlash={saveFlash}
                 toolCount={toolCount}
                 consumableCount={consumableCount}
+                dayFilter={dayFilterId}
               />
             </div>
           </div>

@@ -4,6 +4,7 @@ import {
   type MixSession,
   type SessionStageId,
 } from "../../sessions/types";
+import { datedEntriesTotal } from "./workDate";
 
 /** Index in `SESSION_STAGE_ORDER`, or -1 if unknown. */
 export function sessionStageIndex(stage: SessionStageId): number {
@@ -63,14 +64,31 @@ export function sessionCardTitle(session: MixSession): string {
 export function sessionStageItemCount(
   session: MixSession,
   stage: SessionStageId,
+  dayFilter: string | "all" = "all",
 ): number | null {
   switch (stage) {
     case "mixes":
-      return session.batches.length;
-    case "consumption-tools":
-      return flexSelectSelectionTotal(session.selectedToolQtys ?? {});
-    case "consumables":
-      return flexSelectSelectionTotal(session.selectedConsumableQtys ?? {});
+      return dayFilter === "all"
+        ? session.batches.length
+        : session.batches.filter((b) => b.workDate === dayFilter).length;
+    case "consumption-tools": {
+      const entries = session.toolEntries;
+      if (entries && entries.length > 0) {
+        return datedEntriesTotal(entries, dayFilter);
+      }
+      return dayFilter === "all"
+        ? flexSelectSelectionTotal(session.selectedToolQtys ?? {})
+        : 0;
+    }
+    case "consumables": {
+      const entries = session.consumableEntries;
+      if (entries && entries.length > 0) {
+        return datedEntriesTotal(entries, dayFilter);
+      }
+      return dayFilter === "all"
+        ? flexSelectSelectionTotal(session.selectedConsumableQtys ?? {})
+        : 0;
+    }
     case "summary":
       return null;
   }
