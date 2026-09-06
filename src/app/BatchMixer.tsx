@@ -421,6 +421,11 @@ export type BatchMixerRecipeCreateMode = {
   sessionName?: string;
   /** Draft recipe label for the header subline. */
   recipeLabel: string;
+  /**
+   * `rec-batch` — scale recommended binder (default).
+   * `edit-weights` — dial absolute grams and write them back to the create form.
+   */
+  purpose?: "rec-batch" | "edit-weights";
   onCommit: (payload: RecipeCreateCommitPayload) => void;
   onCancel: () => void;
 };
@@ -454,6 +459,15 @@ export interface BatchMixerProps {
 function resolveRecipe(seed: BlendingRecipe | undefined, catalog: BlendingRecipe[]): BlendingRecipe {
   const pick = seed ?? catalog[0];
   return catalog.find((r) => r.id === pick.id) ?? catalog[0];
+}
+
+function recipeCreateHeaderTitle(
+  mode: BatchMixerRecipeCreateMode | undefined,
+): string {
+  if (!mode) return "MIXpro";
+  if (mode.sessionName) return `Session · ${mode.sessionName}`;
+  if (mode.purpose === "edit-weights") return "Adjust weights";
+  return "Set rec. batch";
 }
 
 export function BatchMixer({
@@ -827,7 +841,11 @@ export function BatchMixer({
       (v, i) => Math.abs(v - (sessionBaselineRef.current[i] ?? 0)) > 0.05,
     );
     if (dirty) {
-      const ok = window.confirm("Discard batch size changes?");
+      const ok = window.confirm(
+        recipeCreateMode.purpose === "edit-weights"
+          ? "Discard weight changes?"
+          : "Discard batch size changes?",
+      );
       if (!ok) return;
     }
     recipeCreateMode.onCancel();
@@ -1265,11 +1283,7 @@ export function BatchMixer({
               title={
                 sessionMode
                   ? `Session · ${sessionMode.sessionName}`
-                  : recipeCreateMode?.sessionName
-                    ? `Session · ${recipeCreateMode.sessionName}`
-                    : recipeCreateMode
-                      ? "Set rec. batch"
-                      : "MIXpro"
+                  : recipeCreateHeaderTitle(recipeCreateMode)
               }
               isLocked={isLocked}
               onMenuClick={onOpenNav}
@@ -1322,11 +1336,7 @@ export function BatchMixer({
               title={
                 sessionMode
                   ? `Session · ${sessionMode.sessionName}`
-                  : recipeCreateMode?.sessionName
-                    ? `Session · ${recipeCreateMode.sessionName}`
-                    : recipeCreateMode
-                      ? "Set rec. batch"
-                      : "MIXpro"
+                  : recipeCreateHeaderTitle(recipeCreateMode)
               }
               isLocked={isLocked}
               onMenuClick={onOpenNav}
@@ -1341,8 +1351,8 @@ export function BatchMixer({
                 nestedFocus === "session"
                   ? "Back to session"
                   : nestedFocus === "recipe-create"
-                    ? recipeCreateMode?.sessionName
-                      ? "Back to formula"
+                    ? recipeCreateMode?.purpose === "edit-weights"
+                      ? "Back to weights"
                       : "Back to formula"
                     : "Back"
               }

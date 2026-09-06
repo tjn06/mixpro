@@ -23,15 +23,24 @@ export function PickRecipeForMixSheet({
   open,
   onOpenChange,
   libraryRecipes,
-  sessionRecipes,
+  sessionRecipes = [],
   onPick,
+  title = "Add mix",
+  openLabelFor,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   libraryRecipes: BlendingRecipe[];
-  sessionRecipes: BlendingRecipe[];
-  onPick: (recipe: BlendingRecipe) => void;
+  sessionRecipes?: BlendingRecipe[];
+  onPick: (recipe: BlendingRecipe) => void | boolean;
+  /** Sheet heading (default: Add mix). */
+  title?: string;
+  /** Card open/select label; default Open {menu label}. */
+  openLabelFor?: (recipe: BlendingRecipe) => string;
 }) {
+  const pickLabel =
+    openLabelFor ??
+    ((recipe: BlendingRecipe) => `Open ${recipeMenuLabel(recipe)}`);
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -64,7 +73,8 @@ export function PickRecipeForMixSheet({
   if (!open) return null;
 
   const pick = (recipe: BlendingRecipe) => {
-    onPick(recipe);
+    const accepted = onPick(recipe);
+    if (accepted === false) return;
     onOpenChange(false);
   };
 
@@ -80,7 +90,7 @@ export function PickRecipeForMixSheet({
         style={SHEET_COVER_FORM_HEADER_STYLE}
       >
         <h2 id="pick-recipe-for-mix-title" className={SHEET_TITLE_CLASS}>
-          Add mix
+          {title}
         </h2>
       </header>
 
@@ -126,7 +136,7 @@ export function PickRecipeForMixSheet({
                           }
                           sessionTone
                           onOpen={pick}
-                          openLabel={`Open ${recipeMenuLabel(recipe)}`}
+                          openLabel={pickLabel(recipe)}
                         />
                       </li>
                     ))}
@@ -149,7 +159,7 @@ export function PickRecipeForMixSheet({
                             setExpandedId(next ? `lib-${recipe.id}` : null)
                           }
                           onOpen={pick}
-                          openLabel={`Open ${recipeMenuLabel(recipe)}`}
+                          openLabel={pickLabel(recipe)}
                         />
                       </li>
                     ))}

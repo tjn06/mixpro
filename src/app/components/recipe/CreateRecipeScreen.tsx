@@ -20,7 +20,9 @@ import {
   type CreateRecipeEntryContext,
   type RecipeCreateMethod,
 } from "../../domain/recipe/createFromInputs";
+import { initialMixValues } from "../../domain/recipe/calc";
 import {
+  PRESET_RECIPES,
   recipeMenuLabel,
   type BlendingRecipe,
 } from "../../domain/recipe/types";
@@ -32,11 +34,18 @@ import {
   RecipeHeaderSubline,
   RecipeHeaderSublineStack,
 } from "../mixer/RecipeZoneMeta";
+import { PickRecipeForMixSheet } from "../sessions/PickRecipeForMixSheet";
 import { GramSwipeInputSheet } from "../sheets/GramSwipeInputSheet";
 import {
   SHEET_FIELD_INPUT_CLASS,
   sheetFieldInputStyle,
 } from "../sheets/sheetChrome";
+
+/** Prefill name when starting from an existing recipe: "Copy {original}". */
+function copyRecipeName(recipe: BlendingRecipe): string {
+  const original = recipe.name?.trim() || recipe.id;
+  return `Copy ${original}`;
+}
 
 type FieldKey = "name" | "a" | "b" | "filler" | "thickener" | "description";
 
@@ -61,7 +70,7 @@ function gramsToKgDraft(gramsRaw: string): string {
 }
 
 /** Digits only; at most one decimal separator (`.` or `,`). */
-function sanitizeKgInput(raw: string): string {
+function sanitizeDecimalInput(raw: string): string {
   let out = "";
   let seenSep = false;
   for (const ch of raw) {
@@ -76,6 +85,9 @@ function sanitizeKgInput(raw: string): string {
   }
   return out;
 }
+
+/** @deprecated alias — unit converter uses the same rules. */
+const sanitizeKgInput = sanitizeDecimalInput;
 
 /** True when the draft is a usable kg amount (≥ 0). */
 function isValidKgDraft(raw: string): boolean {
@@ -92,8 +104,59 @@ function kgDraftToGrams(kgRaw: string): string | null {
   return formatAmount(kg * 1000);
 }
 
-const KG_HELPER_MESSAGE =
-  "Enter kilograms here. Closing this converts the value to grams in the field below.";
+/** Same digit rules as kg — used for % of binder drafts too. */
+const sanitizeUnitInput = sanitizeKgInput;
+const isValidUnitDraft = isValidKgDraft;
+
+function gramsToPercentDraft(gramsRaw: string, binderGrams: number): string {
+  const g = parseNum(gramsRaw);
+  if (!(binderGrams > 0) || !(g >= 0) || gramsRaw.trim() === "") return "";
+  return formatAmount((g / binderGrams) * 100);
+}
+
+function percentDraftToGrams(pctRaw: string, binderGrams: number): string | null {
+  if (!(binderGrams > 0) || !isValidUnitDraft(pctRaw)) return null;
+  const pct = parseNum(pctRaw);
+  return formatAmount((pct / 100) * binderGrams);
+}
+
+type UnitConverterMode = "kg" | "percent";
+
+const PERCENT_NEEDS_BINDER =
+  "Enter Resin A and Hardener B first to use % of binder.";
+
+const FIELD_FOCUS_ORDER: FieldKey[] = [
+  "name",
+  "a",
+  "b",
+  "filler",
+  "thickener",
+  "description",
+];
+
+function focusCreateField(key: FieldKey) {
+  window.requestAnimationFrame(() => {
+    const root = document.querySelector<HTMLElement>(
+      `[data-create-field="${key}"]`,
+    );
+    if (!root) return;
+    root.scrollIntoView({ block: "center", behavior: "smooth" });
+    const focusable =
+      root.matches("input, textarea, button")
+        ? root
+        : root.querySelector<HTMLElement>("input, textarea");
+    focusable?.focus?.();
+  });
+}
+
+function firstInvalidFieldKey(
+  errors: Partial<Record<FieldKey, true>>,
+): FieldKey | null {
+  for (const key of FIELD_FOCUS_ORDER) {
+    if (errors[key]) return key;
+  }
+  return null;
+}
 
 function Field({
   label,
@@ -104,6 +167,9 @@ function Field({
   required = false,
   invalid = false,
   kgHelper = false,
+  percentOfBinderHelper = false,
+  binderGrams = null,
+  fieldKey,
 }: {
   label: string;
   value: string;
@@ -112,61 +178,101 @@ function Field({
   inputMode?: "decimal" | "text";
   required?: boolean;
   invalid?: boolean;
-  /** Gram fields: open a kg input that converts into this field. */
+  /** Gram fields: open a unit converter that writes grams into this field. */
   kgHelper?: boolean;
+  /** Filler/thickener: also offer % of binder in the converter sheet. */
+  percentOfBinderHelper?: boolean;
+  /** A+B grams when both are complete; null disables % mode. */
+  binderGrams?: number | null;
+  /** For scroll/focus on validation errors. */
+  fieldKey?: FieldKey;
 }) {
   const labelId = useId();
-  const kgInputRef = useRef<HTMLInputElement>(null);
-  const [kgOpen, setKgOpen] = useState(false);
-  const [kgDraft, setKgDraft] = useState("");
+  const unitInputRef = useRef<HTMLInputElement>(null);
+  const [unitOpen, setUnitOpen] = useState(false);
+  const [unitMode, setUnitMode] = useState<UnitConverterMode>("kg");
+  const [unitDraft, setUnitDraft] = useState("");
   const [swipeOpen, setSwipeOpen] = useState(false);
 
-  useEffect(() => {
-    if (!kgOpen) return;
-    const id = window.requestAnimationFrame(() => {
-      kgInputRef.current?.focus();
-      kgInputRef.current?.select();
-    });
-    return () => window.cancelAnimationFrame(id);
-  }, [kgOpen]);
+  const binderReady = binderGrams != null && binderGrams > 0;
+  const showPercentTab = percentOfBinderHelper;
 
   useEffect(() => {
-    if (!kgOpen) return;
+    if (!unitOpen) return;
+    const id = window.requestAnimationFrame(() => {
+      unitInputRef.current?.focus();
+      unitInputRef.current?.select();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [unitOpen, unitMode]);
+
+  useEffect(() => {
+    if (!unitOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        setKgOpen(false);
+        setUnitOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [kgOpen]);
+  }, [unitOpen]);
 
-  const openKgHelper = () => {
+  useEffect(() => {
+    if (!unitOpen) return;
+    if (unitMode === "percent" && !binderReady) {
+      setUnitMode("kg");
+      setUnitDraft(gramsToKgDraft(value));
+    }
+  }, [unitOpen, unitMode, binderReady, value]);
+
+  const openUnitHelper = () => {
     setSwipeOpen(false);
-    setKgDraft(gramsToKgDraft(value));
-    setKgOpen(true);
+    setUnitMode("kg");
+    setUnitDraft(gramsToKgDraft(value));
+    setUnitOpen(true);
   };
 
-  const applyKgHelper = () => {
-    if (kgDraft.trim() !== "" && !isValidKgDraft(kgDraft)) return;
-    const grams = kgDraftToGrams(kgDraft);
+  const selectUnitMode = (next: UnitConverterMode) => {
+    if (next === unitMode) return;
+    if (next === "percent" && !binderReady) return;
+    if (next === "percent" && binderGrams != null) {
+      setUnitDraft(gramsToPercentDraft(value, binderGrams));
+    } else {
+      setUnitDraft(gramsToKgDraft(value));
+    }
+    setUnitMode(next);
+  };
+
+  const applyUnitHelper = () => {
+    if (unitDraft.trim() !== "" && !isValidUnitDraft(unitDraft)) return;
+    const grams =
+      unitMode === "percent"
+        ? binderGrams != null
+          ? percentDraftToGrams(unitDraft, binderGrams)
+          : null
+        : kgDraftToGrams(unitDraft);
     if (grams != null) onChange(grams);
-    setKgOpen(false);
+    setUnitOpen(false);
   };
 
-  const closeKgHelper = () => {
-    if (kgDraft.trim() !== "" && !isValidKgDraft(kgDraft)) {
-      setKgOpen(false);
+  const closeUnitHelper = () => {
+    if (unitDraft.trim() !== "" && !isValidUnitDraft(unitDraft)) {
+      setUnitOpen(false);
       return;
     }
-    const grams = kgDraftToGrams(kgDraft);
+    const grams =
+      unitMode === "percent"
+        ? binderGrams != null
+          ? percentDraftToGrams(unitDraft, binderGrams)
+          : null
+        : kgDraftToGrams(unitDraft);
     if (grams != null) onChange(grams);
-    setKgOpen(false);
+    setUnitOpen(false);
   };
 
   const openSwipeHelper = () => {
-    setKgOpen(false);
+    setUnitOpen(false);
     setSwipeOpen(true);
   };
 
@@ -175,151 +281,248 @@ function Field({
     return Number.isFinite(n) && n >= 0 ? n : 0;
   })();
 
-  const kgDraftInvalid =
-    kgDraft.trim() !== "" &&
-    kgDraft !== "." &&
-    kgDraft !== "," &&
-    !isValidKgDraft(kgDraft);
-  const kgCanApply = isValidKgDraft(kgDraft);
+  const unitDraftInvalid =
+    unitDraft.trim() !== "" &&
+    unitDraft !== "." &&
+    unitDraft !== "," &&
+    !isValidUnitDraft(unitDraft);
+  const unitCanApply =
+    isValidUnitDraft(unitDraft) &&
+    (unitMode === "kg" || binderReady);
+
+  const unitSuffix = unitMode === "percent" ? "% of binder" : "kg";
+  const scaleTitle = showPercentTab
+    ? "Convert from kg or % of binder"
+    : "Enter in kilograms";
+  const previewGrams =
+    unitMode === "percent"
+      ? binderGrams != null
+        ? percentDraftToGrams(unitDraft, binderGrams)
+        : null
+      : kgDraftToGrams(unitDraft);
+  const labelKg = kgHelper ? gramsToKgDraft(value) : "";
 
   return (
     <div
       className={`create-recipe__field${invalid ? " create-recipe__field--invalid" : ""}${
-        kgOpen ? " create-recipe__field--kg-open" : ""
+        unitOpen ? " create-recipe__field--kg-open" : ""
       }`}
+      data-create-field={fieldKey}
     >
-      <span className="create-recipe__field-label" id={labelId}>
-        {label}
-        {required ? (
-          <span className="create-recipe__field-required" aria-hidden>
-            *
+      <div className="create-recipe__field-label-row">
+        <span className="create-recipe__field-label" id={labelId}>
+          {label}
+          {required ? (
+            <span className="create-recipe__field-required" aria-hidden>
+              *
+            </span>
+          ) : null}
+        </span>
+        {kgHelper && labelKg !== "" ? (
+          <span className="create-recipe__field-kg" aria-live="polite">
+            {labelKg} kg
           </span>
         ) : null}
-      </span>
-      <span
-        className={`create-recipe__control${
-          invalid ? " create-recipe__control--invalid" : ""
-        }${suffix ? " create-recipe__control--with-suffix" : ""}${
-          kgHelper ? " create-recipe__control--with-kg" : ""
-        }`}
-      >
-        <input
-          className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
-          style={sheetFieldInputStyle({ flex: 1, minWidth: 0 })}
-          value={value}
-          inputMode={inputMode}
-          required={required}
-          aria-labelledby={labelId}
-          aria-invalid={invalid || undefined}
-          aria-required={required || undefined}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        {suffix ? (
-          <span
-            className={`create-recipe__suffix${
-              suffix === "gram" ? " create-recipe__suffix--grams" : ""
-            }`}
-            aria-hidden
-          >
-            {suffix}
-          </span>
-        ) : null}
-        {kgHelper ? (
+      </div>
+      <div className="create-recipe__field-input-slot">
+        <span
+          className={`create-recipe__control${
+            invalid ? " create-recipe__control--invalid" : ""
+          }${suffix ? " create-recipe__control--with-suffix" : ""}${
+            kgHelper ? " create-recipe__control--with-kg" : ""
+          }${unitOpen ? " create-recipe__control--unit-covered" : ""}`}
+        >
+          <input
+            className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
+            style={sheetFieldInputStyle({ flex: 1, minWidth: 0 })}
+            value={value}
+            inputMode={inputMode}
+            required={required}
+            aria-labelledby={labelId}
+            aria-invalid={invalid || undefined}
+            aria-required={required || undefined}
+            onChange={(e) => {
+              const next =
+                inputMode === "decimal"
+                  ? sanitizeDecimalInput(e.target.value)
+                  : e.target.value;
+              onChange(next);
+            }}
+          />
+          {suffix ? (
+            <span
+              className={`create-recipe__suffix${
+                suffix === "gram" ? " create-recipe__suffix--grams" : ""
+              }`}
+              aria-hidden
+            >
+              {suffix}
+            </span>
+          ) : null}
+          {kgHelper ? (
+            <>
+              <button
+                type="button"
+                className="create-recipe__kg-btn"
+                aria-label={`Dial ${label} with swipe`}
+                aria-expanded={swipeOpen}
+                aria-haspopup="dialog"
+                title="Dial with swipe"
+                onClick={openSwipeHelper}
+              >
+                <SwipeAdjustIcon size={16} />
+              </button>
+              <button
+                type="button"
+                className="create-recipe__kg-btn"
+                aria-label={scaleTitle}
+                aria-expanded={unitOpen}
+                aria-haspopup="dialog"
+                title={scaleTitle}
+                onClick={() => {
+                  if (unitOpen) closeUnitHelper();
+                  else openUnitHelper();
+                }}
+              >
+                <ScaleIcon size={16} />
+              </button>
+            </>
+          ) : null}
+        </span>
+
+        {kgHelper && unitOpen ? (
           <>
             <button
               type="button"
-              className="create-recipe__kg-btn"
-              aria-label={`Dial ${label} with swipe`}
-              aria-expanded={swipeOpen}
-              aria-haspopup="dialog"
-              title="Dial with swipe"
-              onClick={openSwipeHelper}
-            >
-              <SwipeAdjustIcon size={16} />
-            </button>
-            <button
-              type="button"
-              className="create-recipe__kg-btn"
-              aria-label={`Enter ${label} in kilograms`}
-              aria-expanded={kgOpen}
-              aria-haspopup="dialog"
-              title="Enter in kilograms"
-              onClick={() => {
-                if (kgOpen) closeKgHelper();
-                else openKgHelper();
+              className="create-recipe__kg-backdrop"
+              aria-label="Dismiss unit converter"
+              onClick={closeUnitHelper}
+            />
+            <div
+              className="create-recipe__kg-popover"
+              role="dialog"
+              aria-label={`Convert ${label}`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  applyUnitHelper();
+                }
               }}
             >
-              <ScaleIcon size={16} />
-            </button>
+              {showPercentTab ? (
+                <div
+                  className="create-recipe__unit-tabs"
+                  role="tablist"
+                  aria-label="Converter type"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={unitMode === "kg"}
+                    className={`create-recipe__unit-tab${
+                      unitMode === "kg" ? " create-recipe__unit-tab--active" : ""
+                    }`}
+                    onClick={() => selectUnitMode("kg")}
+                  >
+                    kg
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={unitMode === "percent"}
+                    aria-disabled={!binderReady}
+                    disabled={!binderReady}
+                    className={`create-recipe__unit-tab${
+                      unitMode === "percent" ? " create-recipe__unit-tab--active" : ""
+                    }${!binderReady ? " create-recipe__unit-tab--disabled" : ""}`}
+                    title={binderReady ? "% of binder" : PERCENT_NEEDS_BINDER}
+                    onClick={() => selectUnitMode("percent")}
+                  >
+                    % of binder
+                  </button>
+                </div>
+              ) : null}
+
+              <div className="create-recipe__unit-row">
+                <span
+                  className={`create-recipe__control create-recipe__control--with-suffix create-recipe__unit-source${
+                    unitDraftInvalid ? " create-recipe__control--invalid" : ""
+                  }${
+                    unitMode === "kg"
+                      ? " create-recipe__control--unit-kg"
+                      : " create-recipe__control--unit-percent"
+                  }`}
+                >
+                  <input
+                    ref={unitInputRef}
+                    className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
+                    style={sheetFieldInputStyle({ flex: 1, minWidth: 0 })}
+                    value={unitDraft}
+                    inputMode="decimal"
+                    aria-label={
+                      unitMode === "percent"
+                        ? `${label} as percent of binder`
+                        : `${label} in kilograms`
+                    }
+                    aria-invalid={unitDraftInvalid || undefined}
+                    onChange={(e) => setUnitDraft(sanitizeUnitInput(e.target.value))}
+                  />
+                  <span
+                    className={`create-recipe__suffix create-recipe__suffix--grams${
+                      unitMode === "percent" ? " create-recipe__suffix--percent" : ""
+                    }`}
+                    aria-hidden
+                  >
+                    {unitSuffix}
+                  </span>
+                </span>
+
+                <span
+                  className="create-recipe__control create-recipe__control--with-suffix create-recipe__unit-result"
+                  aria-live="polite"
+                >
+                  <input
+                    className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
+                    style={sheetFieldInputStyle({ flex: 1, minWidth: 0 })}
+                    value={previewGrams ?? ""}
+                    disabled
+                    readOnly
+                    tabIndex={-1}
+                    aria-label={`${label} in grams (computed)`}
+                    placeholder="—"
+                  />
+                  <span className="create-recipe__suffix create-recipe__suffix--grams" aria-hidden>
+                    g
+                  </span>
+                </span>
+              </div>
+              {unitDraftInvalid ? (
+                <p className="create-recipe__kg-error" role="alert">
+                  Use digits and one decimal point (`.` or `,`).
+                </p>
+              ) : null}
+              <div className="create-recipe__kg-actions">
+                <button
+                  type="button"
+                  className="create-recipe__kg-action create-recipe__kg-action--apply"
+                  disabled={!unitCanApply}
+                  onClick={applyUnitHelper}
+                >
+                  Convert to grams
+                </button>
+                <button
+                  type="button"
+                  className="create-recipe__kg-action create-recipe__kg-action--cancel"
+                  aria-label="Cancel"
+                  onClick={() => setUnitOpen(false)}
+                >
+                  <CloseIcon size={16} />
+                </button>
+              </div>
+            </div>
           </>
         ) : null}
-      </span>
-
-      {kgHelper && kgOpen ? (
-        <>
-          <button
-            type="button"
-            className="create-recipe__kg-backdrop"
-            aria-label="Dismiss kilograms helper"
-            onClick={closeKgHelper}
-          />
-          <div
-            className="create-recipe__kg-popover"
-            role="dialog"
-            aria-label={`${label} in kilograms`}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                applyKgHelper();
-              }
-            }}
-          >
-            <p className="create-recipe__kg-message">{KG_HELPER_MESSAGE}</p>
-            <span
-              className={`create-recipe__control create-recipe__control--with-suffix${
-                kgDraftInvalid ? " create-recipe__control--invalid" : ""
-              }`}
-            >
-              <input
-                ref={kgInputRef}
-                className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
-                style={sheetFieldInputStyle({ flex: 1, minWidth: 0 })}
-                value={kgDraft}
-                inputMode="decimal"
-                aria-label={`${label} in kilograms`}
-                aria-invalid={kgDraftInvalid || undefined}
-                onChange={(e) => setKgDraft(sanitizeKgInput(e.target.value))}
-              />
-              <span className="create-recipe__suffix create-recipe__suffix--grams" aria-hidden>
-                kg
-              </span>
-            </span>
-            {kgDraftInvalid ? (
-              <p className="create-recipe__kg-error" role="alert">
-                Use digits and one decimal point (`.` or `,`).
-              </p>
-            ) : null}
-            <div className="create-recipe__kg-actions">
-              <button
-                type="button"
-                className="create-recipe__kg-action create-recipe__kg-action--apply"
-                disabled={!kgCanApply}
-                onClick={applyKgHelper}
-              >
-                Convert to grams
-              </button>
-              <button
-                type="button"
-                className="create-recipe__kg-action create-recipe__kg-action--cancel"
-                aria-label="Cancel"
-                onClick={() => setKgOpen(false)}
-              >
-                <CloseIcon size={16} />
-              </button>
-            </div>
-          </div>
-        </>
-      ) : null}
+      </div>
 
       {kgHelper ? (
         <GramSwipeInputSheet
@@ -390,6 +593,7 @@ export function CreateRecipeScreen({
   onSaved: (recipe: BlendingRecipe, via: "library" | "session") => void;
 }) {
   const addLibraryRecipe = useRecipeLibraryStore((s) => s.addRecipe);
+  const userRecipes = useRecipeLibraryStore((s) => s.userRecipes);
   const addSessionRecipe = useSessionsStore((s) => s.addSessionRecipe);
   const sessions = useSessionsStore((s) => s.sessions);
 
@@ -399,6 +603,16 @@ export function CreateRecipeScreen({
     sessionId != null
       ? sessions.find((s) => s.id === sessionId)?.name ?? "Session"
       : undefined;
+
+  const libraryRecipes = useMemo(() => {
+    const user = Array.isArray(userRecipes) ? userRecipes : [];
+    return [...PRESET_RECIPES, ...user];
+  }, [userRecipes]);
+
+  const sessionRecipesForPicker = useMemo(() => {
+    if (sessionId == null) return [];
+    return sessions.find((s) => s.id === sessionId)?.sessionRecipes ?? [];
+  }, [sessionId, sessions]);
 
   const [method, setMethod] = useState<RecipeCreateMethod>("formula");
   const [name, setName] = useState("");
@@ -413,6 +627,7 @@ export function CreateRecipeScreen({
   const [submitted, setSubmitted] = useState(false);
   const [formulaInfoOpen, setFormulaInfoOpen] = useState(false);
   const [bucketInfoOpen, setBucketInfoOpen] = useState(false);
+  const [startFromOpen, setStartFromOpen] = useState(false);
 
   /** Advanced: untouched = unlimited bucket, no binder baseline. */
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -420,9 +635,51 @@ export function CreateRecipeScreen({
   const [scaledBinderSum, setScaledBinderSum] = useState<number | undefined>(undefined);
 
   const [phase, setPhase] = useState<"form" | "scale">("form");
+  const [scalePurpose, setScalePurpose] = useState<"rec-batch" | "edit-weights">(
+    "rec-batch",
+  );
   const [draft, setDraft] = useState<BlendingRecipe | null>(null);
+  const [draftMixValues, setDraftMixValues] = useState<number[] | undefined>(
+    undefined,
+  );
 
   const markDirty = () => setDirty(true);
+
+  const applyRecipeAsCopy = (recipe: BlendingRecipe): boolean => {
+    if (dirty) {
+      const ok = window.confirm(
+        "Replace the current form with a copy of this recipe?",
+      );
+      if (!ok) return false;
+    }
+    const aParts = recipe.binderParts.find((p) => p.id === "A")?.parts ?? 2;
+    const bParts = recipe.binderParts.find((p) => p.id === "B")?.parts ?? 1;
+    const sandPct = recipe.binderPercents.find((p) => p.id === "SAND")?.percent;
+    const tixPct = recipe.binderPercents.find((p) => p.id === "TIX")?.percent;
+    const binder =
+      recipe.initialBinderSum != null &&
+      Number.isFinite(recipe.initialBinderSum) &&
+      recipe.initialBinderSum > 0
+        ? Math.round(recipe.initialBinderSum)
+        : undefined;
+
+    setMethod("formula");
+    setName(copyRecipeName(recipe));
+    setNameSubline(recipe.nameSubline?.trim() || "Epoxy");
+    setDescription(recipe.description?.trim() ?? "");
+    setA(formatAmount(aParts));
+    setB(formatAmount(bParts));
+    setFiller(sandPct != null && sandPct > 0 ? formatAmount(sandPct) : "");
+    setThickener(tixPct != null && tixPct > 0 ? formatAmount(tixPct) : "");
+    setScaledBinderSum(binder);
+    if (binder != null || (recipe.description?.trim() ?? "") !== "") {
+      setAdvancedOpen(true);
+    }
+    setError(null);
+    setSubmitted(false);
+    markDirty();
+    return true;
+  };
 
   const descriptionWordCount = countDescriptionWords(description);
   const descriptionLimitError = validateRecipeCardDescription(description);
@@ -435,6 +692,14 @@ export function CreateRecipeScreen({
     if (!submitted) return {} as Partial<Record<FieldKey, true>>;
     return collectFieldErrors(method, name, a, b, filler, thickener, description);
   }, [submitted, method, name, a, b, filler, thickener, description]);
+
+  /** Actual-weights binder (A+B) — required for filler/thickener % converter. */
+  const weightsBinderGrams = useMemo(() => {
+    const aNum = parseNum(a);
+    const bNum = parseNum(b);
+    if (!(aNum > 0) || !(bNum > 0)) return null;
+    return aNum + bNum;
+  }, [a, b]);
 
   const preview = useMemo(() => {
     if (method === "weights") {
@@ -468,14 +733,92 @@ export function CreateRecipeScreen({
   }, [method, name, nameSubline, description, a, b, filler, thickener, scaledBinderSum]);
 
   const switchMethod = (next: RecipeCreateMethod) => {
+    if (next === method) return;
+
+    const aNum = parseNum(a);
+    const bNum = parseNum(b);
+    const fillNum = parseNum(filler);
+    const tixNum = parseNum(thickener);
+    const hasComponentInput =
+      a.trim() !== "" ||
+      b.trim() !== "" ||
+      filler.trim() !== "" ||
+      thickener.trim() !== "";
+
+    if (next === "formula") {
+      // Actual weights → Formula: convert grams to parts / % when A+B are valid.
+      if (aNum > 0 && bNum > 0) {
+        const recipe = blendingRecipeFromWeights({
+          name: name.trim() || "Draft",
+          nameSubline,
+          description,
+          a: aNum,
+          b: bNum,
+          filler: Number.isFinite(fillNum) && fillNum > 0 ? fillNum : 0,
+          thickener: Number.isFinite(tixNum) && tixNum > 0 ? tixNum : 0,
+        });
+        const aParts = recipe.binderParts.find((p) => p.id === "A")?.parts ?? 2;
+        const bParts = recipe.binderParts.find((p) => p.id === "B")?.parts ?? 1;
+        const sandPct = recipe.binderPercents.find((p) => p.id === "SAND")?.percent;
+        const tixPct = recipe.binderPercents.find((p) => p.id === "TIX")?.percent;
+        setA(String(aParts));
+        setB(String(bParts));
+        setFiller(sandPct != null && sandPct > 0 ? formatAmount(sandPct) : "");
+        setThickener(tixPct != null && tixPct > 0 ? formatAmount(tixPct) : "");
+      } else if (hasComponentInput) {
+        const ok = window.confirm(
+          "Switch to Formula? Resin A and Hardener B must be set to convert grams — other component values will be reset.",
+        );
+        if (!ok) return;
+        setA("2");
+        setB("1");
+        setFiller("");
+        setThickener("");
+      } else {
+        setA((v) => v || "2");
+        setB((v) => v || "1");
+      }
+    } else {
+      // Formula → Actual weights: convert with rec. batch binder when available.
+      if (
+        aNum > 0 &&
+        bNum > 0 &&
+        scaledBinderSum != null &&
+        scaledBinderSum > 0
+      ) {
+        const recipe = blendingRecipeFromFormula({
+          name: name.trim() || "Draft",
+          nameSubline,
+          description,
+          aParts: aNum,
+          bParts: bNum,
+          fillerPercent: Number.isFinite(fillNum) && fillNum > 0 ? fillNum : 0,
+          thickenerPercent: Number.isFinite(tixNum) && tixNum > 0 ? tixNum : 0,
+          initialBinderSum: scaledBinderSum,
+        });
+        const vals = initialMixValues(recipe, scaledBinderSum);
+        setA(formatAmount(vals[1] ?? 0));
+        setB(formatAmount(vals[2] ?? 0));
+        setThickener((vals[3] ?? 0) > 0 ? formatAmount(vals[3] ?? 0) : "");
+        setFiller((vals[4] ?? 0) > 0 ? formatAmount(vals[4] ?? 0) : "");
+      } else if (hasComponentInput) {
+        const ok = window.confirm(
+          scaledBinderSum == null || !(scaledBinderSum > 0)
+            ? "Switch to Actual weights? Without a rec. batch size, parts/% cannot be converted to grams and component fields will be cleared. Cancel and set rec. batch first to convert."
+            : "Switch to Actual weights? Component values that cannot be converted will be cleared.",
+        );
+        if (!ok) return;
+        setA("");
+        setB("");
+        setFiller("");
+        setThickener("");
+      }
+    }
+
     setMethod(next);
     setError(null);
     setSubmitted(false);
     markDirty();
-    if (next === "formula") {
-      setA((v) => v || "2");
-      setB((v) => v || "1");
-    }
   };
 
   const buildRecipe = (): BlendingRecipe | null => {
@@ -497,6 +840,8 @@ export function CreateRecipeScreen({
             "Check the description field",
         );
         setAdvancedOpen(true);
+        window.setTimeout(() => focusCreateField("description"), 50);
+        return null;
       } else if (localErrors.a || localErrors.b) {
         setError(
           method === "formula"
@@ -512,6 +857,8 @@ export function CreateRecipeScreen({
       } else {
         setError("Check the highlighted fields");
       }
+      const focusKey = firstInvalidFieldKey(localErrors);
+      if (focusKey && focusKey !== "description") focusCreateField(focusKey);
       return null;
     }
 
@@ -528,6 +875,9 @@ export function CreateRecipeScreen({
       const err = validateWeightsInput(input);
       if (err) {
         setError(err);
+        focusCreateField(
+          !(parseNum(a) > 0) ? "a" : !(parseNum(b) > 0) ? "b" : "name",
+        );
         return null;
       }
       setError(null);
@@ -550,6 +900,9 @@ export function CreateRecipeScreen({
     const err = validateFormulaInput(input);
     if (err) {
       setError(err);
+      focusCreateField(
+        !(parseNum(a) > 0) ? "a" : !(parseNum(b) > 0) ? "b" : "name",
+      );
       return null;
     }
     setError(null);
@@ -572,7 +925,40 @@ export function CreateRecipeScreen({
         ? { ...recipe, initialBinderSum: undefined }
         : recipe;
     setError(null);
+    setScalePurpose("rec-batch");
+    setDraftMixValues(undefined);
     setDraft(next);
+    setPhase("scale");
+  };
+
+  const openEditWeightsCalculator = () => {
+    if (method !== "weights") return;
+    const aNum = parseNum(a);
+    const bNum = parseNum(b);
+    if (!(aNum > 0) || !(bNum > 0)) {
+      setSubmitted(true);
+      setError("Resin (A) and Hardener (B) must be greater than 0");
+      focusCreateField(!(aNum > 0) ? "a" : "b");
+      return;
+    }
+    const fillNum = parseNum(filler);
+    const tixNum = parseNum(thickener);
+    const fillerG = Number.isFinite(fillNum) && fillNum > 0 ? fillNum : 0;
+    const tixG = Number.isFinite(tixNum) && tixNum > 0 ? tixNum : 0;
+    const recipe = blendingRecipeFromWeights({
+      name: name.trim() || "Draft",
+      nameSubline,
+      description,
+      a: aNum,
+      b: bNum,
+      filler: fillerG,
+      thickener: tixG,
+    });
+    const total = aNum + bNum + fillerG + tixG;
+    setError(null);
+    setScalePurpose("edit-weights");
+    setDraftMixValues([total, aNum, bNum, tixG, fillerG]);
+    setDraft(recipe);
     setPhase("scale");
   };
 
@@ -593,12 +979,30 @@ export function CreateRecipeScreen({
   };
 
   const handleRecipeCreateCommit = (payload: RecipeCreateCommitPayload) => {
+    if (scalePurpose === "edit-weights") {
+      const vals = payload.values;
+      const nextA = Math.max(0, Math.round(vals[1] ?? 0));
+      const nextB = Math.max(0, Math.round(vals[2] ?? 0));
+      const nextTix = Math.max(0, Math.round(vals[3] ?? 0));
+      const nextFill = Math.max(0, Math.round(vals[4] ?? 0));
+      setA(formatAmount(nextA));
+      setB(formatAmount(nextB));
+      setThickener(nextTix > 0 ? formatAmount(nextTix) : "");
+      setFiller(nextFill > 0 ? formatAmount(nextFill) : "");
+      setBucketSelection(payload.bucketSelection);
+      setPhase("form");
+      setDraft(null);
+      setDraftMixValues(undefined);
+      markDirty();
+      return;
+    }
     const binderSum = payload.binderSum > 0 ? payload.binderSum : undefined;
     setScaledBinderSum(binderSum);
     setBucketSelection(payload.bucketSelection);
     setAdvancedOpen(true);
     setPhase("form");
     setDraft(null);
+    setDraftMixValues(undefined);
     markDirty();
   };
 
@@ -615,15 +1019,18 @@ export function CreateRecipeScreen({
         recipe={draft}
         recipes={[draft]}
         initialBinderSum={draft.initialBinderSum ?? 1000}
+        initialValues={draftMixValues}
         initialBucketSelection={bucketSelection}
         onOpenNav={onMenuClick}
         recipeCreateMode={{
           sessionName:
             context.source === "session" ? sessionName : undefined,
           recipeLabel: recipeMenuLabel(draft),
+          purpose: scalePurpose,
           onCancel: () => {
             setPhase("form");
             setDraft(null);
+            setDraftMixValues(undefined);
           },
           onCommit: handleRecipeCreateCommit,
         }}
@@ -696,6 +1103,16 @@ export function CreateRecipeScreen({
         </div>
       </div>
 
+      <div className="create-recipe__start-from app-gutter-x">
+        <button
+          type="button"
+          className="create-recipe__secondary-btn"
+          onClick={() => setStartFromOpen(true)}
+        >
+          Start from recipe
+        </button>
+      </div>
+
       <div className="create-recipe__scroll flex-1 min-h-0 overflow-y-auto overscroll-none app-gutter-x">
         <div className="create-recipe__body">
           <p className="create-recipe__lede">
@@ -715,6 +1132,7 @@ export function CreateRecipeScreen({
             value={name}
             inputMode="text"
             required
+            fieldKey="name"
             invalid={Boolean(fieldErrors.name)}
             onChange={(v) => updateField("name", v, setName)}
           />
@@ -735,6 +1153,7 @@ export function CreateRecipeScreen({
                 value={a}
                 suffix="parts"
                 required
+                fieldKey="a"
                 invalid={Boolean(fieldErrors.a)}
                 onChange={(v) => updateField("a", v, setA)}
               />
@@ -743,6 +1162,7 @@ export function CreateRecipeScreen({
                 value={b}
                 suffix="parts"
                 required
+                fieldKey="b"
                 invalid={Boolean(fieldErrors.b)}
                 onChange={(v) => updateField("b", v, setB)}
               />
@@ -750,6 +1170,7 @@ export function CreateRecipeScreen({
                 label="Filler"
                 value={filler}
                 suffix="% of binder"
+                fieldKey="filler"
                 invalid={Boolean(fieldErrors.filler)}
                 onChange={(v) => updateField("filler", v, setFiller)}
               />
@@ -757,6 +1178,7 @@ export function CreateRecipeScreen({
                 label="Thickener"
                 value={thickener}
                 suffix="% of binder"
+                fieldKey="thickener"
                 invalid={Boolean(fieldErrors.thickener)}
                 onChange={(v) => updateField("thickener", v, setThickener)}
               />
@@ -769,6 +1191,7 @@ export function CreateRecipeScreen({
                 suffix="gram"
                 required
                 kgHelper
+                fieldKey="a"
                 invalid={Boolean(fieldErrors.a)}
                 onChange={(v) => updateField("a", v, setA)}
               />
@@ -778,6 +1201,7 @@ export function CreateRecipeScreen({
                 suffix="gram"
                 required
                 kgHelper
+                fieldKey="b"
                 invalid={Boolean(fieldErrors.b)}
                 onChange={(v) => updateField("b", v, setB)}
               />
@@ -786,6 +1210,9 @@ export function CreateRecipeScreen({
                 value={filler}
                 suffix="gram"
                 kgHelper
+                percentOfBinderHelper
+                binderGrams={weightsBinderGrams}
+                fieldKey="filler"
                 invalid={Boolean(fieldErrors.filler)}
                 onChange={(v) => updateField("filler", v, setFiller)}
               />
@@ -794,9 +1221,34 @@ export function CreateRecipeScreen({
                 value={thickener}
                 suffix="gram"
                 kgHelper
+                percentOfBinderHelper
+                binderGrams={weightsBinderGrams}
+                fieldKey="thickener"
                 invalid={Boolean(fieldErrors.thickener)}
                 onChange={(v) => updateField("thickener", v, setThickener)}
               />
+              <div className="create-recipe__weights-tools">
+                <button
+                  type="button"
+                  className="create-recipe__secondary-btn"
+                  disabled={weightsBinderGrams == null}
+                  title={
+                    weightsBinderGrams == null
+                      ? "Enter Resin A and Hardener B first"
+                      : "Dial form grams in the calculator (does not set rec. batch)"
+                  }
+                  onClick={openEditWeightsCalculator}
+                >
+                  Dial form grams
+                </button>
+                <p className="create-recipe__weights-tools-hint">
+                  {weightsBinderGrams == null
+                    ? "Enter Resin A and Hardener B to unlock the calculator."
+                    : parseNum(filler) > 0 || parseNum(thickener) > 0
+                      ? "Opens the mixer to scale this batch, then writes grams back here. Does not set rec. batch."
+                      : "Opens the mixer to scale A:B. Add filler/thickener grams first if you want to dial those too. Does not set rec. batch."}
+                </p>
+              </div>
             </>
           )}
 
@@ -859,6 +1311,7 @@ export function CreateRecipeScreen({
                       ? " create-recipe__field--invalid"
                       : ""
                   }`}
+                  data-create-field="description"
                 >
                   <span className="create-recipe__field-label-row">
                     <span className="create-recipe__field-label">Card description</span>
@@ -939,7 +1392,7 @@ export function CreateRecipeScreen({
                     className="create-recipe__secondary-btn"
                     onClick={openRecBatchCalculator}
                   >
-                    Set rec. batch in calculator
+                    Set recommended batch
                   </button>
                   {scaledBinderSum != null ? (
                     <p className="create-recipe__advanced-status">
@@ -990,6 +1443,16 @@ export function CreateRecipeScreen({
           </div>
         </div>
       </div>
+
+      <PickRecipeForMixSheet
+        open={startFromOpen}
+        onOpenChange={setStartFromOpen}
+        libraryRecipes={libraryRecipes}
+        sessionRecipes={sessionRecipesForPicker}
+        title="Start from recipe"
+        openLabelFor={(recipe) => `Use ${recipeMenuLabel(recipe)}`}
+        onPick={applyRecipeAsCopy}
+      />
     </div>
   );
 

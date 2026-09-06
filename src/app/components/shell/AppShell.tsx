@@ -275,6 +275,7 @@ export function AppShell() {
         {view.kind === "destination" && view.id === "calculator" ? (
           <BatchMixer
             recipe={DEFAULT_RECIPE}
+            recipes={libraryRecipes}
             embedded
             onOpenNav={openNav}
           />
