@@ -64,7 +64,7 @@ export function DestinationPageChrome({
   );
 
   const subnavRow = subnav ? (
-    <div className="destination-page__subnav app-gutter-x">{subnav}</div>
+    <div className="destination-page__subnav">{subnav}</div>
   ) : null;
 
   /** Hub layout: header + optional subnav + screen (sheet and/or fill content). */

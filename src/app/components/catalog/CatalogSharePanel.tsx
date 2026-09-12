@@ -6,9 +6,12 @@ import { ShareDeck } from "../share/ShareDeck";
 export function CatalogSharePanel({
   title,
   selectedLabels,
+  workDateId = null,
 }: {
   title: string;
   selectedLabels: readonly string[];
+  /** Optional report date — omitted from share text when unset. */
+  workDateId?: string | null;
 }) {
   const [comment, setComment] = useState("");
   const canShare = selectedLabels.length > 0;
@@ -19,8 +22,9 @@ export function CatalogSharePanel({
         title,
         labels: selectedLabels,
         comment,
+        workDateId,
       }),
-    [title, selectedLabels, comment],
+    [title, selectedLabels, comment, workDateId],
   );
 
   const reportSubject = useMemo(() => {

@@ -3,6 +3,7 @@ import {
   formatFlexSelectLabelEntries,
   listSelectedFlexSelectEntries,
   listSelectedFlexSelectLabels,
+  type FlexSelectLabelEntry,
 } from "../select/catalogLookup";
 import type { FlexSelectSelection } from "../select/selection";
 import type { ToolItem } from "./types";
@@ -83,4 +84,13 @@ export function listSelectedToolLabelEntries(
   return formatFlexSelectLabelEntries(
     listSelectedFlexSelectEntries(selection, catalog, customTools),
   );
+}
+
+/** Structured tool lines (owned + rented) for UI chips. */
+export function listSelectedToolEntries(
+  selection: FlexSelectSelection,
+  catalog: readonly ToolItem[] = TOOLS_CATALOG,
+  customTools: readonly ToolItem[] = [],
+): FlexSelectLabelEntry[] {
+  return listSelectedFlexSelectEntries(selection, catalog, customTools);
 }

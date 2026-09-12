@@ -13,6 +13,10 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import {
+  selectionLineKey,
+  type ItemAcquisition,
+} from "../../domain/select/acquisition";
+import {
   headSlotId,
   newCloneSlotId,
   reconcileDropdownSlots,
@@ -33,14 +37,20 @@ import {
 } from "../../domain/select/types";
 import {
   WEAR_LEVEL_A11Y_LABELS,
-  WEAR_LEVELS,
   WEAR_LEVEL_LABELS,
+  WEAR_LEVELS,
   WEAR_PLACEHOLDER_LABEL,
   pruneWearByOptionId,
   setWearForOption,
   type WearByOptionId,
   type WearLevel,
 } from "../../domain/select/wear";
+import { DeleteIcon } from "../shared/ActionIcons";
+import { ConfirmDeleteSheet } from "../sheets/ConfirmDeleteSheet";
+import {
+  RentalCommentButton,
+  ToolRentalCommentSheet,
+} from "../sheets/ToolRentalCommentSheet";
 import {
   SELECT_CHIP_DOUBLE_TAP_MS,
   useSelectChipGestures,
@@ -279,42 +289,159 @@ function SelectDropdownChip({
   );
 }
 
+function CustomDeleteButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="select-chip__delete-btn"
+      aria-label={`Delete ${label}`}
+      title={`Delete ${label}`}
+      onPointerDown={(event) => event.stopPropagation()}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+    >
+      <DeleteIcon size={14} />
+    </button>
+  );
+}
+
 function SimpleSelectChip({
   label,
   qty,
+  rented = false,
+  allowRetapSelect = false,
+  disabled = false,
+  hasComment = false,
+  onCommentClick,
+  onRemove,
   onSelect,
   onIncrement,
   onDecrement,
 }: {
   label: string;
   qty: number;
+  rented?: boolean;
+  /** When true, tap still runs onSelect even if this chip looks selected. */
+  allowRetapSelect?: boolean;
+  /**
+   * Owned catalog copy beside a rented selection — muted + non-interactive
+   * while rental arm is on.
+   */
+  disabled?: boolean;
+  hasComment?: boolean;
+  onCommentClick?: () => void;
+  /** Custom session/report items — fused trailing delete. */
+  onRemove?: () => void;
   onSelect: () => void;
   onIncrement: () => void;
   onDecrement: () => void;
 }) {
   const selected = qty >= 1;
+  const qtyGestures = selected && !allowRetapSelect && !disabled;
   const gestures = useSelectChipGestures({
-    mode: selected ? "qty" : "select",
+    enabled: !disabled,
+    mode: qtyGestures ? "qty" : "select",
     onTap: () => {
-      if (!selected) onSelect();
+      if (disabled) return;
+      if (!selected || allowRetapSelect) onSelect();
     },
-    onDoubleTap: onIncrement,
-    onLongPress: onDecrement,
+    onDoubleTap: disabled ? () => {} : onIncrement,
+    onLongPress: disabled ? () => {} : onDecrement,
   });
 
-  return (
+  const ariaName = rented ? `${label}, rented` : label;
+  const showComment = Boolean(rented && selected && onCommentClick);
+  const showDelete = Boolean(onRemove);
+  const fused = showComment || showDelete;
+
+  const main = (
     <button
       type="button"
-      className="select-chip"
+      className={
+        fused ? "select-chip select-chip--rental-main" : "select-chip"
+      }
       data-selected={selected ? "" : undefined}
-      data-qty={qty > 1 ? String(qty) : undefined}
+      data-qty={!fused && qty > 1 ? String(qty) : undefined}
+      data-rented={rented && !fused ? "" : undefined}
+      data-arm-muted={disabled ? "" : undefined}
+      data-comment={
+        !fused && hasComment && rented ? "\u2713" : undefined
+      }
       aria-pressed={selected}
+      aria-disabled={disabled || undefined}
       aria-label={
-        selected ? (qty > 1 ? `${label}, quantity ${qty}` : label) : label
+        selected
+          ? qty > 1
+            ? `${ariaName}, quantity ${qty}`
+            : ariaName
+          : ariaName
       }
       {...gestures}
     >
       <span className="select-chip__label">{label}</span>
+    </button>
+  );
+
+  if (!fused) return main;
+
+  return (
+    <div
+      className={
+        rented || showComment
+          ? "select-chip-rental"
+          : "select-chip-deletable"
+      }
+      data-selected={selected ? "" : undefined}
+      data-rented={rented ? "" : undefined}
+      data-qty={qty > 1 ? String(qty) : undefined}
+      data-comment={hasComment ? "\u2713" : undefined}
+    >
+      {main}
+      {showComment ? (
+        <RentalCommentButton
+          hasComment={hasComment}
+          onClick={onCommentClick!}
+        />
+      ) : null}
+      {showDelete ? <CustomDeleteButton label={label} onClick={onRemove!} /> : null}
+    </div>
+  );
+}
+
+function RentedArmControl({
+  armed,
+  onArmedChange,
+}: {
+  armed: boolean;
+  onArmedChange: (next: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      className="select-chip select-chip--rented-arm"
+      data-selected={armed ? "" : undefined}
+      aria-checked={armed}
+      aria-label={
+        armed
+          ? "Rented mode on. Next picks are rented"
+          : "Rented mode off. Tap to mark next picks as rented"
+      }
+      title={armed ? "Rented mode on" : "Rented mode off"}
+      onClick={() => onArmedChange(!armed)}
+    >
+      <span className="select-chip__rented-arm-label">Rented</span>
+      <span className="select-chip__rented-switch" aria-hidden>
+        <span className="select-chip__rented-switch-thumb" />
+      </span>
     </button>
   );
 }
@@ -584,6 +711,11 @@ export function FlexSelectView({
   addSimpleLabel = "Custom",
   addSimplePlaceholder = "Custom item name",
   onAddSimpleItem,
+  customItemIds,
+  onRemoveCustomItem,
+  acquisitionEnabled = false,
+  commentsByLineKey,
+  onRentalCommentChange,
   "aria-label": ariaLabel = "Select items",
 }: {
   items: readonly FlexSelectItem[];
@@ -597,14 +729,38 @@ export function FlexSelectView({
   tone?: "default" | "session";
   unselectLabel?: string;
   /** When set, shows a standout control to add a simple (non-dropdown) item. */
-  onAddSimpleItem?: (label: string) => void;
+  onAddSimpleItem?: (label: string, acquisition: ItemAcquisition) => void;
   addSimpleLabel?: string;
   addSimplePlaceholder?: string;
+  /** Session / Report custom item ids — fused delete when `onRemoveCustomItem` set. */
+  customItemIds?: ReadonlySet<string>;
+  onRemoveCustomItem?: (id: string) => void;
+  /**
+   * Tools session: dashed Rented arm after Custom. Armed picks write rented
+   * lines; the clicked chip becomes yellow in place and an owned catalog copy
+   * is appended after (disabled while the rental arm is on).
+   */
+  acquisitionEnabled?: boolean;
+  /** Rental-line comments keyed by selection line id (`acq:rented:…`). */
+  commentsByLineKey?: Readonly<Record<string, string>>;
+  onRentalCommentChange?: (lineKey: string, comment: string | null) => void;
   "aria-label"?: string;
 }) {
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
   const [openWearOptionId, setOpenWearOptionId] = useState<string | null>(null);
+  const [rentalArmed, setRentalArmed] = useState(false);
+  const [commentTarget, setCommentTarget] = useState<{
+    lineKey: string;
+    label: string;
+  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    label: string;
+  } | null>(null);
   const wearEnabled = onWearChange != null;
+  const commentsEnabled = onRentalCommentChange != null;
+  const acquisition: ItemAcquisition =
+    acquisitionEnabled && rentalArmed ? "rented" : "owned";
   /** Linked clone chips live here — never added to catalog `items` / sort. */
   const [slotsByParent, setSlotsByParent] = useState<
     Record<string, DropdownSlot[]>
@@ -614,6 +770,14 @@ export function FlexSelectView({
     () => orderFlexSelectItemsForPack(items),
     [items],
   );
+
+  const openRentalComment = useCallback((lineKey: string, label: string) => {
+    setCommentTarget({ lineKey, label });
+  }, []);
+
+  useEffect(() => {
+    if (!acquisitionEnabled && rentalArmed) setRentalArmed(false);
+  }, [acquisitionEnabled, rentalArmed]);
 
   useEffect(() => {
     setSlotsByParent((prev) => {
@@ -662,6 +826,13 @@ export function FlexSelectView({
       prevOptionId: string | null,
       optionId: string,
     ) => {
+      if (acquisition === "rented") {
+        const rentedKey = selectionLineKey(optionId, "rented");
+        onSelectionChange(ensureFlexSelectSelected(selection, rentedKey));
+        setOpenSlotId(null);
+        return;
+      }
+
       setSlotsByParent((prev) => {
         const slots = prev[parent.id] ?? [];
         return {
@@ -693,6 +864,7 @@ export function FlexSelectView({
       }
     },
     [
+      acquisition,
       onSelectionChange,
       onWearChange,
       selection,
@@ -755,6 +927,7 @@ export function FlexSelectView({
   }, []);
 
   return (
+    <>
     <section
       className={`select-view${
         tone === "session" ? " select-view--session" : ""
@@ -763,28 +936,97 @@ export function FlexSelectView({
     >
       {packedItems.map((item) => {
         if (!flexSelectItemHasOptions(item)) {
-          const qty = flexSelectQty(selection, item.id);
+          const ownedKey = selectionLineKey(item.id, "owned");
+          const rentedKey = selectionLineKey(item.id, "rented");
+          const ownedQty = flexSelectQty(selection, ownedKey);
+          const rentedQty = acquisitionEnabled
+            ? flexSelectQty(selection, rentedKey)
+            : 0;
+          const selectKey = selectionLineKey(item.id, acquisition);
+          const primaryIsRented = rentedQty >= 1;
+          const primaryKey = primaryIsRented ? rentedKey : ownedKey;
+          const primaryQty = primaryIsRented ? rentedQty : ownedQty;
+          const canRemoveCustom =
+            onRemoveCustomItem != null && customItemIds?.has(item.id) === true;
+
           return (
-            <SimpleSelectChip
-              key={item.id}
-              label={item.label}
-              qty={qty}
-              onSelect={() =>
-                onSelectionChange(ensureFlexSelectSelected(selection, item.id))
-              }
-              onIncrement={() =>
-                onSelectionChange(
-                  bumpFlexSelectQty(
-                    ensureFlexSelectSelected(selection, item.id),
-                    item.id,
-                    1,
-                  ),
-                )
-              }
-              onDecrement={() =>
-                onSelectionChange(bumpFlexSelectQty(selection, item.id, -1))
-              }
-            />
+            <Fragment key={item.id}>
+              {/**
+               * Stable `-slot` key: catalog chip becomes yellow rental in place
+               * (no jump). Owned copy mounts after when a rental exists.
+               */}
+              <SimpleSelectChip
+                key={`${item.id}-slot`}
+                label={item.label}
+                qty={primaryQty}
+                rented={primaryIsRented}
+                hasComment={
+                  primaryIsRented
+                    ? Boolean(commentsByLineKey?.[rentedKey]?.trim())
+                    : false
+                }
+                onCommentClick={
+                  primaryIsRented && commentsEnabled
+                    ? () => openRentalComment(rentedKey, item.label)
+                    : undefined
+                }
+                onRemove={
+                  canRemoveCustom
+                    ? () =>
+                        setDeleteTarget({ id: item.id, label: item.label })
+                    : undefined
+                }
+                onSelect={() =>
+                  onSelectionChange(
+                    ensureFlexSelectSelected(
+                      selection,
+                      primaryIsRented ? rentedKey : selectKey,
+                    ),
+                  )
+                }
+                onIncrement={() =>
+                  onSelectionChange(
+                    bumpFlexSelectQty(
+                      ensureFlexSelectSelected(selection, primaryKey),
+                      primaryKey,
+                      1,
+                    ),
+                  )
+                }
+                onDecrement={() =>
+                  onSelectionChange(
+                    bumpFlexSelectQty(selection, primaryKey, -1),
+                  )
+                }
+              />
+              {primaryIsRented ? (
+                <SimpleSelectChip
+                  key={`${item.id}-owned-copy`}
+                  label={item.label}
+                  qty={ownedQty}
+                  disabled={acquisition === "rented"}
+                  onSelect={() =>
+                    onSelectionChange(
+                      ensureFlexSelectSelected(selection, ownedKey),
+                    )
+                  }
+                  onIncrement={() =>
+                    onSelectionChange(
+                      bumpFlexSelectQty(
+                        ensureFlexSelectSelected(selection, ownedKey),
+                        ownedKey,
+                        1,
+                      ),
+                    )
+                  }
+                  onDecrement={() =>
+                    onSelectionChange(
+                      bumpFlexSelectQty(selection, ownedKey, -1),
+                    )
+                  }
+                />
+              ) : null}
+            </Fragment>
           );
         }
 
@@ -792,14 +1034,60 @@ export function FlexSelectView({
           slotsByParent[item.id] ??
           reconcileDropdownSlots(item, selection, undefined);
         const takenOptionIds = new Set(
-          slots
-            .map((slot) => slot.optionId)
-            .filter((id): id is string => id != null),
+          acquisition === "rented"
+            ? optionIdsForItem(item).filter(
+                (id) =>
+                  flexSelectQty(selection, selectionLineKey(id, "rented")) >= 1,
+              )
+            : slots
+                .map((slot) => slot.optionId)
+                .filter((id): id is string => id != null),
         );
         const freeOptionCount = optionIdsForItem(item).filter(
           (id) => !takenOptionIds.has(id),
         ).length;
         const awaitingPick = slots.some((slot) => slot.optionId == null);
+        const rentedOptionChips = acquisitionEnabled
+          ? (item.children ?? []).flatMap((child) => {
+              const rentedKey = selectionLineKey(child.id, "rented");
+              const rentedQty = flexSelectQty(selection, rentedKey);
+              if (rentedQty < 1) return [];
+              const rentedLabel = `${item.label} · ${child.label}`;
+              return [
+                <SimpleSelectChip
+                  key={rentedKey}
+                  label={rentedLabel}
+                  qty={rentedQty}
+                  rented
+                  hasComment={Boolean(commentsByLineKey?.[rentedKey]?.trim())}
+                  onCommentClick={
+                    commentsEnabled
+                      ? () => openRentalComment(rentedKey, rentedLabel)
+                      : undefined
+                  }
+                  onSelect={() =>
+                    onSelectionChange(
+                      ensureFlexSelectSelected(selection, rentedKey),
+                    )
+                  }
+                  onIncrement={() =>
+                    onSelectionChange(
+                      bumpFlexSelectQty(
+                        ensureFlexSelectSelected(selection, rentedKey),
+                        rentedKey,
+                        1,
+                      ),
+                    )
+                  }
+                  onDecrement={() =>
+                    onSelectionChange(
+                      bumpFlexSelectQty(selection, rentedKey, -1),
+                    )
+                  }
+                />,
+              ];
+            })
+          : [];
 
         return (
           <Fragment key={item.id}>
@@ -908,6 +1196,9 @@ export function FlexSelectView({
                 return <Fragment key={slot.id}>{chip}</Fragment>;
               }
 
+              const showCloneOnSlot =
+                isLastInGroup && rentedOptionChips.length === 0;
+
               /** Wear and/or + fused to the chip — separate hit targets. */
               return (
                 <div
@@ -918,16 +1209,32 @@ export function FlexSelectView({
                 >
                   {chip}
                   {wearControl}
-                  {isLastInGroup ? (
+                  {showCloneOnSlot ? (
                     <DropdownClonePlusButton
                       familyLabel={item.label}
-                      disabled={freeOptionCount < 1 || awaitingPick}
+                      disabled={
+                        acquisition === "rented" ||
+                        freeOptionCount < 1 ||
+                        awaitingPick
+                      }
                       onClick={() => addCloneSlot(item)}
                     />
                   ) : null}
                 </div>
               );
             })}
+            {rentedOptionChips}
+            {rentedOptionChips.length > 0 ? (
+              <DropdownClonePlusButton
+                familyLabel={item.label}
+                disabled={
+                  acquisition === "rented" ||
+                  freeOptionCount < 1 ||
+                  awaitingPick
+                }
+                onClick={() => addCloneSlot(item)}
+              />
+            ) : null}
           </Fragment>
         );
       })}
@@ -937,10 +1244,45 @@ export function FlexSelectView({
           placeholder={addSimplePlaceholder}
           onAdd={(name) => {
             setOpenSlotId(null);
-            onAddSimpleItem(name);
+            onAddSimpleItem(name, acquisition);
           }}
         />
       ) : null}
+      {acquisitionEnabled ? (
+        <RentedArmControl armed={rentalArmed} onArmedChange={setRentalArmed} />
+      ) : null}
     </section>
+      {commentsEnabled ? (
+        <ToolRentalCommentSheet
+          open={commentTarget != null}
+          onOpenChange={(next) => {
+            if (!next) setCommentTarget(null);
+          }}
+          toolLabel={commentTarget?.label ?? ""}
+          initialComment={
+            commentTarget
+              ? (commentsByLineKey?.[commentTarget.lineKey] ?? "")
+              : ""
+          }
+          onSave={(comment) => {
+            if (!commentTarget || !onRentalCommentChange) return;
+            onRentalCommentChange(commentTarget.lineKey, comment);
+          }}
+        />
+      ) : null}
+      {onRemoveCustomItem ? (
+        <ConfirmDeleteSheet
+          open={deleteTarget != null}
+          onOpenChange={(next) => {
+            if (!next) setDeleteTarget(null);
+          }}
+          itemLabel={deleteTarget?.label ?? ""}
+          onConfirm={() => {
+            if (!deleteTarget) return;
+            onRemoveCustomItem(deleteTarget.id);
+          }}
+        />
+      ) : null}
+    </>
   );
 }

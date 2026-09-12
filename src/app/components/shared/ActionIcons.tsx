@@ -25,6 +25,7 @@ import {
   PanelBottomClose,
   Scale,
   ChevronsUpDown,
+  Smartphone,
   type LucideIcon,
 } from "lucide-react";
 
@@ -109,3 +110,6 @@ export const ScaleIcon = createActionIcon(Scale);
 
 /** Open mixer-style swipe adjuster for gram fields. */
 export const SwipeAdjustIcon = createActionIcon(ChevronsUpDown);
+
+/** Keep phone screen awake (Wake Lock) while locked calculator is open. */
+export const KeepAwakeIcon = createActionIcon(Smartphone);

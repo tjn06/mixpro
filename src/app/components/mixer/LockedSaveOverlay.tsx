@@ -1,12 +1,14 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { LongPressButton } from "../shared/LongPressButton";
-import { SavedIcon, SaveIcon } from "../shared/ActionIcons";
+import { SavedIcon, SaveIcon, KeepAwakeIcon } from "../shared/ActionIcons";
 import {
   crossfadeLayerStyles,
   LOCKED_ACTION_ICON_SIZE,
   PRIMARY_BORDER,
 } from "../shared/lockedActionCrossfade";
 import { localRect, saveCoverTargetRect, type Rect } from "../shared/lockedOverlayMeasure";
+import { useScreenWakeLock, formatWakeLockRemaining } from "../../hooks/useScreenWakeLock";
+import { cv, componentTokens } from "../../ui/tokens";
 
 export { LOCKED_ACTION_ICON_SIZE } from "../shared/lockedActionCrossfade";
 
@@ -47,6 +49,103 @@ function readSectionGap(anchor: HTMLElement): number {
   return Number.isFinite(n) && n > 0 ? n : 12;
 }
 
+const lp = componentTokens.longPress;
+
+function KeepAwakeToggle({
+  active,
+  supported,
+  failed,
+  remainingMs,
+  armed,
+  onToggle,
+}: {
+  active: boolean;
+  supported: boolean;
+  failed: boolean;
+  remainingMs: number;
+  armed: boolean;
+  onToggle: () => void;
+}) {
+  const title = active ? "Screen awake" : "Keep awake";
+  const description = !supported
+    ? "Not supported"
+    : failed && armed
+      ? "Wake failed — tap retry"
+      : active
+        ? `${formatWakeLockRemaining(remainingMs)} left`
+        : armed
+          ? "Starting…"
+          : "Keep mobile screen on";
+
+  const lit = active;
+  const borderAlpha = lit ? lp.borderAlpha.litSheet : lp.borderAlpha.primaryIdle;
+  const labelColor = supported ? cv.longPress.labelIdle : cv.longPress.labelDisabled;
+
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={
+        active
+          ? `Keep screen on, ${formatWakeLockRemaining(remainingMs)} remaining. Tap to turn off`
+          : "Keep mobile screen alive"
+      }
+      disabled={!supported}
+      className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-xl touch-none transition-colors duration-150"
+      style={{
+        cursor: supported ? "pointer" : "default",
+        background: lit ? cv.action.longPressActive : cv.action.longPressIdle,
+        border: `${lp.borderWidthSheet}px solid rgba(var(--ui-long-press-border-rgb), ${borderAlpha})`,
+        opacity: supported ? 1 : cv.longPress.disabledOpacity,
+        color: labelColor,
+      }}
+      onClick={() => {
+        if (!supported) return;
+        onToggle();
+      }}
+    >
+      <span
+        className="relative z-[1] flex items-center text-left"
+        style={{ gap: 12, maxWidth: "92%", padding: "0 12px" }}
+      >
+        <span
+          className="flex shrink-0 items-center justify-center"
+          style={{ color: labelColor }}
+          aria-hidden
+        >
+          <KeepAwakeIcon size={LOCKED_ACTION_ICON_SIZE} />
+        </span>
+        <span className="flex min-w-0 flex-col" style={{ gap: 5 }}>
+          <span
+            className="uppercase"
+            style={{
+              fontSize: "var(--text-ui-sm)",
+              letterSpacing: "0.14em",
+              fontWeight: 600,
+              color: labelColor,
+              lineHeight: 1.15,
+            }}
+          >
+            {title}
+          </span>
+          <span
+            style={{
+              fontSize: 10,
+              letterSpacing: "0.04em",
+              fontWeight: 500,
+              color: labelColor,
+              opacity: 0.72,
+              lineHeight: 1.2,
+            }}
+          >
+            {description}
+          </span>
+        </span>
+      </span>
+    </button>
+  );
+}
+
 export function LockedSaveOverlay({
   isLocked,
   anchorRef,
@@ -70,6 +169,16 @@ export function LockedSaveOverlay({
 }: LockedSaveOverlayProps) {
   const [overlay, setOverlay] = useState<OverlayState | null>(null);
   const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [keepAwakeArmed, setKeepAwakeArmed] = useState(false);
+
+  const { supported, active, remainingMs, failed } = useScreenWakeLock({
+    armed: isLocked && keepAwakeArmed,
+    onExpire: () => setKeepAwakeArmed(false),
+  });
+
+  useLayoutEffect(() => {
+    if (!isLocked) setKeepAwakeArmed(false);
+  }, [isLocked]);
 
   useLayoutEffect(() => {
     if (collapseTimer.current) {
@@ -107,11 +216,14 @@ export function LockedSaveOverlay({
       }));
     };
 
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => {
-      if (!isLocked) return;
-      const next = measure();
-      if (next) apply(next, true);
-    }) : null;
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => {
+            if (!isLocked) return;
+            const next = measure();
+            if (next) apply(next, true);
+          })
+        : null;
 
     const observe = (el: HTMLElement | null) => {
       if (el && ro) ro.observe(el);
@@ -168,6 +280,8 @@ export function LockedSaveOverlay({
 
   const transition = `top ${expandMs}ms ${expandEase}, left ${expandMs}ms ${expandEase}, width ${expandMs}ms ${expandEase}, height ${expandMs}ms ${expandEase}, border-color ${expandMs}ms ${expandEase}`;
 
+  const expanded = overlay.expanded;
+
   const shellStyle: CSSProperties = {
     position: "absolute",
     zIndex,
@@ -180,8 +294,8 @@ export function LockedSaveOverlay({
     borderRadius: 12,
     overflow: "hidden",
     boxSizing: "border-box",
-    background: surfaceBg,
-    border: overlay.expanded ? PRIMARY_BORDER : "1.5px solid transparent",
+    background: expanded ? "transparent" : surfaceBg,
+    border: expanded ? "1.5px solid transparent" : PRIMARY_BORDER,
   };
 
   const saveLabel = saveFlash
@@ -210,25 +324,37 @@ export function LockedSaveOverlay({
       : saveFlash || useCommitIcon
         ? <SavedIcon />
         : <SaveIcon />;
-  const expanded = overlay.expanded;
 
   return (
     <div style={shellStyle}>
       <div style={crossfadeLayerStyles(expanded, expandEase, true)}>
-        <LongPressButton
-          label={saveLabel}
-          description={saveDescription}
-          confirmAction={confirmAction}
-          onLongPress={onSave}
-          variant="primary"
-          sessionTone={sessionTone}
-          progressVariant="water"
-          stacked
-          labelSize="var(--text-ui-sm)"
-          descriptionSize={10}
-          icon={saveIcon}
-          className="w-full h-full"
-        />
+        <div
+          className="flex h-full w-full min-w-0"
+          style={{ gap: "var(--action-row-gap)" }}
+        >
+          <KeepAwakeToggle
+            active={active}
+            supported={supported}
+            failed={failed}
+            remainingMs={remainingMs}
+            armed={keepAwakeArmed}
+            onToggle={() => setKeepAwakeArmed((v) => !v)}
+          />
+          <LongPressButton
+            label={saveLabel}
+            description={saveDescription}
+            confirmAction={confirmAction}
+            onLongPress={onSave}
+            variant="primary"
+            sessionTone={sessionTone}
+            progressVariant="water"
+            stacked
+            labelSize="var(--text-ui-sm)"
+            descriptionSize={10}
+            icon={saveIcon}
+            className="h-full min-w-0 flex-1"
+          />
+        </div>
       </div>
       <div style={crossfadeLayerStyles(expanded, expandEase, false)}>
         <LongPressButton
@@ -239,7 +365,7 @@ export function LockedSaveOverlay({
           sessionTone={sessionTone}
           progressVariant="water"
           icon={compactIcon}
-          className="w-full h-full"
+          className="h-full w-full"
         />
       </div>
     </div>

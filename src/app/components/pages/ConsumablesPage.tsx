@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ConsumableItem } from "../../domain/consumables/types";
+import { omitCatalogIdFromSelection } from "../../domain/select/acquisition";
 import { pruneWearByOptionId, type WearLevel } from "../../domain/select/wear";
 import { useConsumablesLibraryStore } from "../../consumables/libraryStore";
 import { CatalogHub } from "../catalog/CatalogHub";
@@ -39,6 +40,12 @@ export function ConsumablesPage({
       onWearChange={setWearByOptionId}
       onAddCustomItem={(item) => {
         setCustomConsumables((prev) => [...prev, item]);
+      }}
+      onRemoveCustomItem={(id) => {
+        const nextSelection = omitCatalogIdFromSelection(selection, id);
+        setCustomConsumables((prev) => prev.filter((item) => item.id !== id));
+        setSelection(nextSelection);
+        setWearByOptionId((prev) => pruneWearByOptionId(prev, nextSelection));
       }}
       onAddGlobalItem={addItem}
       onRenameGlobalItem={renameItem}

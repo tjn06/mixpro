@@ -15,11 +15,15 @@ export function SessionDatePickerSheet({
   onOpenChange,
   initialDate,
   onConfirm,
+  title = "Edit date",
+  subtitle = "Choose the work day for this session filter.",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialDate: Date;
   onConfirm: (date: Date) => void;
+  title?: string;
+  subtitle?: string;
 }) {
   const [selected, setSelected] = useState<Date | undefined>(initialDate);
 
@@ -44,11 +48,9 @@ export function SessionDatePickerSheet({
         style={SHEET_COVER_FORM_HEADER_STYLE}
       >
         <h2 id="session-date-picker-title" className={SHEET_TITLE_CLASS}>
-          Edit date
+          {title}
         </h2>
-        <p className={SHEET_SUBTITLE_CLASS}>
-          Choose the work day for this session filter.
-        </p>
+        <p className={SHEET_SUBTITLE_CLASS}>{subtitle}</p>
       </header>
 
       <div className="session-date-picker-sheet__body app-gutter-x flex-1 min-h-0 overflow-y-auto overscroll-none">

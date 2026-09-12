@@ -1355,6 +1355,17 @@
   color: var(--semantic-extra-batch-label, var(--semantic-text-secondary));
 }
 
+.batch-totals-entity-summary__chip[data-rented] {
+  border-color: color-mix(in srgb, #d4a017 55%, transparent);
+  background: color-mix(in srgb, #d4a017 18%, transparent);
+  color: #ffffff;
+}
+
+.batch-totals-entity-summary__chip[data-rented]
+  .batch-totals-entity-summary__chip-mult {
+  color: #ffffff;
+}
+
 .batch-totals-entity-summary__chip-mult {
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
@@ -3173,6 +3184,148 @@
   border-top: 1px solid var(--semantic-border-subtle);
 }
 
+/**
+ * Hub Tools / Consumables Report — one full-width optional date (same top inset /
+ * 28px height as session day chips; not the multi-day session filter).
+ */
+.catalog-report-date-bar.select-view {
+  --select-chip-accent: var(--semantic-state-accent, #9b8cff);
+  display: block;
+  flex-wrap: unset;
+  align-items: unset;
+  gap: 0;
+  padding: 8px 0 0;
+  overflow: visible;
+  border-top: 1px solid var(--semantic-border-subtle);
+}
+
+.catalog-report-date-bar__row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-inline-start: max(var(--space-4, 16px), var(--safe-left));
+  padding-inline-end: max(var(--space-4, 16px), var(--safe-right));
+}
+
+.catalog-report-date-bar__chip {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  height: 28px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: color-mix(
+    in srgb,
+    var(--semantic-text-primary) 7%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+  overflow: visible;
+  color: var(--semantic-text-primary);
+}
+
+.catalog-report-date-bar__chip[data-empty] {
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 22%, transparent);
+  background: transparent;
+}
+
+.catalog-report-date-bar__chip[data-selected] {
+  border-color: var(--select-chip-accent);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+  color: #ffffff;
+}
+
+.catalog-report-date-bar__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 9px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.catalog-report-date-bar__main:active {
+  transform: scale(0.98);
+  background: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+}
+
+.catalog-report-date-bar__chip[data-selected] .catalog-report-date-bar__main {
+  border-radius: 6px 0 0 6px;
+}
+
+.catalog-report-date-bar__chip[data-selected] .catalog-report-date-bar__main:active {
+  background: color-mix(in srgb, var(--select-chip-accent) 28%, transparent);
+}
+
+.catalog-report-date-bar__chip[data-empty] .catalog-report-date-bar__main:active {
+  background: color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
+}
+
+.catalog-report-date-bar__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalog-report-date-bar__delete {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-width: 28px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--select-chip-accent) 40%, transparent);
+  border-radius: 0 6px 6px 0;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.catalog-report-date-bar__delete:active {
+  transform: scale(0.96);
+  background: color-mix(in srgb, var(--select-chip-accent) 28%, transparent);
+}
+
+[data-theme="dark"] .catalog-report-date-bar__chip[data-selected] {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .catalog-report-date-bar__chip[data-empty] {
+  color: #ffffff;
+}
+
 .session-day-filter__row {
   display: flex;
   align-items: center;
@@ -3186,6 +3339,9 @@
 .session-day-filter__pinned {
   flex: 0 0 auto;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .session-day-filter__scroll-shell {
@@ -3269,13 +3425,49 @@
   );
 }
 
-/** All dates — same selected look as day chips when active. */
-.session-day-filter__chip--all:not([data-selected]) {
-  border-color: transparent;
+.session-day-filter .select-chip.session-day-filter__chip--icon {
+  width: 28px;
+  min-width: 28px;
+  max-width: 28px;
+  padding: 0;
+  justify-content: center;
+  color: var(--semantic-text-secondary);
 }
 
-.session-day-filter__chip[data-today]:not([data-selected]) {
-  border-color: transparent;
+.session-day-filter .select-chip.session-day-filter__chip--add:not([data-selected]) {
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 22%, transparent);
+  background: transparent;
+  color: var(--semantic-text-primary);
+}
+
+.session-day-filter .select-chip.session-day-filter__chip--add:active {
+  background: color-mix(
+    in srgb,
+    var(--semantic-text-primary) 8%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+/**
+ * Provisional Today — dashed outline until that day has session content.
+ */
+.session-day-filter .select-chip.session-day-filter__chip[data-provisional] {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 34%, transparent);
+  background: transparent;
+  color: var(--semantic-text-secondary);
+}
+
+.session-day-filter
+  .select-chip.session-day-filter__chip[data-provisional][data-selected] {
+  border-style: dashed;
+  border-color: var(--session-day-accent);
+  background: color-mix(
+    in srgb,
+    var(--session-day-accent) 14%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+  color: var(--semantic-text-primary);
 }
 
 /**
@@ -3288,6 +3480,16 @@
   background: color-mix(
     in srgb,
     var(--session-day-accent) 22%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+.session-day-filter
+  .select-chip.session-day-filter__chip[data-provisional][data-selected] {
+  border-style: dashed;
+  background: color-mix(
+    in srgb,
+    var(--session-day-accent) 14%,
     var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
 }
@@ -3779,6 +3981,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.session-overview__summary-chip[data-rented] {
+  border-color: color-mix(in srgb, #d4a017 55%, transparent);
+  background: color-mix(in srgb, #d4a017 18%, transparent);
+  color: #ffffff;
 }
 
 .session-overview__summary-jump {
@@ -4527,6 +4735,7 @@
 .select-view {
   /* Default = app selection (hubs). Session stages opt into --session via modifier. */
   --select-chip-accent: var(--ui-recipe-value, var(--semantic-text-primary));
+  --select-chip-rented: #d4a017;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -4545,18 +4754,490 @@
 }
 
 /**
- * Dark session pickers: keep the tinted selected chip look, white label only.
+ * Rented selection — same yellow chrome in session + Tools hub.
+ * Label stays white.
  */
-[data-theme="dark"] .select-view--session .select-chip[data-selected]:not(
+.select-view .select-chip[data-rented][data-selected]:not([data-hold]) {
+  color: #ffffff;
+  border-color: var(--select-chip-rented, #d4a017);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 22%,
+    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+  );
+}
+
+.select-view .select-chip[data-rented][data-selected]:active:not([data-hold]) {
+  color: #ffffff;
+  border-color: var(--select-chip-rented, #d4a017);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 30%,
+    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+  );
+}
+
+.select-view .select-chip[data-rented][data-selected][data-hold] {
+  transition:
+    border-color var(--select-chip-hold-ms, 420ms) linear,
+    background-color var(--select-chip-hold-ms, 420ms) linear;
+  color: #ffffff;
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+}
+
+/**
+ * Rented chip + fused comment control (session tools + Tools hub).
+ */
+.select-chip-rental {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  flex: 0 1 auto;
+  max-width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  border-radius: 7px;
+  border: 1px solid var(--select-chip-rented, #d4a017);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 22%,
+    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+  );
+  overflow: visible;
+  color: #ffffff;
+}
+
+.select-chip-rental:has(.select-chip--rental-main:active):not(
+    :has([data-hold])
+  ) {
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 30%,
+    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+  );
+}
+
+.select-chip-rental > .select-chip--rental-main {
+  border: none;
+  border-radius: 7px 0 0 7px;
+  background: transparent;
+  color: #ffffff;
+  height: 100%;
+  max-width: none;
+}
+
+.select-chip-rental > .select-chip--rental-main[data-selected] {
+  border: none;
+  background: transparent;
+  color: #ffffff;
+}
+
+.select-chip__comment-btn {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 34px;
+  align-self: stretch;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--select-chip-rented, #d4a017) 45%, transparent);
+  border-radius: 0 7px 7px 0;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.select-chip__comment-btn:active:not(:disabled) {
+  background: color-mix(in srgb, var(--select-chip-rented, #d4a017) 22%, transparent);
+}
+
+.select-chip__comment-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/**
+ * Custom item fuse (owned) — same layout as rental, accent chrome when selected.
+ */
+.select-chip-deletable {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  flex: 0 1 auto;
+  max-width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  overflow: visible;
+  color: var(--semantic-text-primary);
+}
+
+.select-chip-deletable[data-selected] {
+  color: #ffffff;
+  border-color: var(--select-chip-accent);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+.select-chip-deletable:has(.select-chip--rental-main:active):not(
+    :has([data-hold])
+  ) {
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent) 12%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+.select-chip-deletable[data-selected]:has(.select-chip--rental-main:active):not(
+    :has([data-hold])
+  ) {
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent) 26%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+.select-chip-deletable > .select-chip--rental-main {
+  border: none;
+  border-radius: 7px 0 0 7px;
+  background: transparent;
+  color: inherit;
+  height: 100%;
+  max-width: none;
+}
+
+.select-chip-deletable > .select-chip--rental-main[data-selected] {
+  border: none;
+  background: transparent;
+  color: #ffffff;
+}
+
+.select-chip__delete-btn {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+  border-radius: 0 7px 7px 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--semantic-text-primary) 55%, transparent);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.select-chip-deletable[data-selected] .select-chip__delete-btn,
+.select-chip-rental .select-chip__delete-btn {
+  border-left-color: color-mix(in srgb, var(--select-chip-accent) 40%, transparent);
+  color: #ffffff;
+}
+
+.select-chip-rental .select-chip__delete-btn {
+  border-left-color: color-mix(in srgb, var(--select-chip-rented, #d4a017) 45%, transparent);
+}
+
+.select-chip__delete-btn:active {
+  background: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+}
+
+.select-chip-deletable[data-selected] .select-chip__delete-btn:active,
+.select-chip-rental .select-chip__delete-btn:active {
+  background: color-mix(in srgb, var(--select-chip-accent) 22%, transparent);
+}
+
+.select-chip-rental .select-chip__delete-btn:active {
+  background: color-mix(in srgb, var(--select-chip-rented, #d4a017) 22%, transparent);
+}
+
+/**
+ * Corner badges — one shared recipe (count + comment).
+ * Only differences: corner side, and attr value (digit vs ✓).
+ */
+.select-chip[data-qty]::after,
+.select-chip-rental[data-qty]::after,
+.select-chip-deletable[data-qty]::after,
+.select-chip-rental[data-comment]::before,
+.select-chip-deletable[data-comment]::before,
+.select-chip[data-rented][data-comment]::before {
+  position: absolute;
+  top: -5px;
+  z-index: 3;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  width: 16px;
+  height: 16px;
+  max-height: 16px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1.5px solid var(--select-chip-accent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  color: var(--select-chip-accent);
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/** Multi-digit qty may widen; height stays locked at 16px. */
+.select-chip[data-qty]::after,
+.select-chip-rental[data-qty]::after,
+.select-chip-deletable[data-qty]::after {
+  content: attr(data-qty);
+  left: -5px;
+  width: auto;
+  padding: 0 4px;
+}
+
+.select-chip-rental[data-comment]::before,
+.select-chip-deletable[data-comment]::before,
+.select-chip[data-rented][data-comment]::before {
+  content: attr(data-comment);
+  right: -5px;
+}
+
+.select-chip-rental[data-qty]::after,
+.select-view .select-chip[data-rented][data-qty]::after,
+.select-chip-rental[data-comment]::before,
+.select-chip[data-rented][data-comment]::before {
+  border-color: var(--select-chip-rented, #d4a017);
+  color: #ffffff;
+}
+
+.select-chip-deletable[data-selected][data-qty]::after {
+  border-color: var(--select-chip-accent);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip-rental {
+  border-color: #f5c84c;
+  background: color-mix(in srgb, #f5c84c 22%, #0a0a14);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip-deletable {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip-deletable[data-selected] {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip-rental:has(.select-chip--rental-main:active):not(
+    :has([data-hold])
+  ) {
+  background: color-mix(in srgb, #f5c84c 30%, #0a0a14);
+}
+
+[data-theme="dark"] .select-chip__comment-btn {
+  border-left-color: color-mix(in srgb, #f5c84c 45%, transparent);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip-rental .select-chip__delete-btn {
+  border-left-color: color-mix(in srgb, #f5c84c 45%, transparent);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip-rental[data-comment]::before,
+[data-theme="dark"] .select-chip[data-rented][data-comment]::before,
+[data-theme="dark"] .select-chip-rental[data-qty]::after,
+[data-theme="dark"] .select-view .select-chip[data-rented][data-qty]::after {
+  border-color: #f5c84c;
+  color: #ffffff;
+}
+
+/**
+ * Owned catalog copy beside a rented selection — muted chrome only;
+ * label stays white.
+ */
+.select-view .select-chip[data-arm-muted] {
+  opacity: 0.38;
+  color: #ffffff;
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #0a0a14));
+}
+
+.select-view .select-chip[data-arm-muted][data-selected] {
+  opacity: 0.42;
+  color: #ffffff;
+  border-color: color-mix(in srgb, var(--select-chip-accent) 35%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent) 8%,
+    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+  );
+}
+
+.select-view .select-chip-cluster:has(.select-chip[data-arm-muted]) {
+  opacity: 0.42;
+}
+
+[data-theme="dark"] .select-view .select-chip[data-arm-muted],
+[data-theme="dark"] .select-view .select-chip[data-arm-muted][data-selected] {
+  opacity: 0.38;
+  color: #ffffff;
+  border-color: color-mix(in srgb, #ffffff 14%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #0a0a14));
+}
+
+[data-theme="dark"] .select-view .select-chip[data-arm-muted][data-selected] {
+  border-color: color-mix(in srgb, var(--select-chip-accent) 32%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent) 8%,
+    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+  );
+}
+
+/**
+ * Rented arm — dashed yellow border always; only the switch changes on/off.
+ */
+.select-chip--rented-arm {
+  gap: 8px;
+  padding-inline: 10px 8px;
+  border-style: dashed;
+  border-color: var(--select-chip-rented, #d4a017);
+  background: color-mix(in srgb, var(--select-chip-accent) 12%, transparent);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.select-chip__rented-arm-label {
+  line-height: 1;
+  color: #ffffff;
+}
+
+.select-chip__rented-switch {
+  box-sizing: border-box;
+  position: relative;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 28%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--semantic-text-primary) 10%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.select-chip__rented-switch-thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 55%, transparent);
+  transition: transform 140ms ease, background-color 140ms ease;
+}
+
+/** Armed: only the switch lights yellow; chip border/label/bg unchanged. */
+.select-chip--rented-arm[data-selected] .select-chip__rented-switch {
+  border-color: var(--select-chip-rented, #d4a017);
+  background: color-mix(in srgb, var(--select-chip-rented, #d4a017) 70%, #5a4200);
+}
+
+.select-chip--rented-arm[data-selected] .select-chip__rented-switch-thumb {
+  transform: translateX(12px);
+  background: #ffffff;
+}
+
+.select-chip--rented-arm:active {
+  background: color-mix(in srgb, var(--select-chip-accent) 20%, transparent);
+}
+
+[data-theme="dark"]
+  .select-view
+  .select-chip[data-rented][data-selected]:not([data-hold]) {
+  color: #ffffff;
+  border-color: #f5c84c;
+  background: color-mix(in srgb, #f5c84c 22%, #0a0a14);
+}
+
+[data-theme="dark"]
+  .select-view
+  .select-chip[data-rented][data-selected]:active:not([data-hold]) {
+  color: #ffffff;
+  border-color: #f5c84c;
+  background: color-mix(in srgb, #f5c84c 30%, #0a0a14);
+}
+
+[data-theme="dark"]
+  .select-view
+  .select-chip[data-rented][data-selected][data-hold] {
+  transition:
+    border-color var(--select-chip-hold-ms, 420ms) linear,
+    background-color var(--select-chip-hold-ms, 420ms) linear;
+  color: #ffffff;
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #0a0a14));
+}
+
+[data-theme="dark"] .select-chip--rented-arm,
+[data-theme="dark"] .select-chip--rented-arm[data-selected] {
+  border-color: #f5c84c;
+  background: color-mix(in srgb, var(--select-chip-accent) 12%, transparent);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip--rented-arm .select-chip__rented-arm-label {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip--rented-arm:active {
+  background: color-mix(in srgb, var(--select-chip-accent) 20%, transparent);
+}
+
+[data-theme="dark"] .select-chip--rented-arm[data-selected] .select-chip__rented-switch {
+  border-color: #f5c84c;
+  background: color-mix(in srgb, #f5c84c 70%, #5a4200);
+}
+
+/**
+ * Dark pickers (session + Tools/Consumables hubs): tinted chrome preserved,
+ * label/badge text white for readability.
+ */
+[data-theme="dark"] .select-view .select-chip[data-selected]:not(
     .select-chip--wear
   ):not(.select-chip--clone-plus):not(.select-chip--add):not(
     .select-chip--add-compose
-  ) {
+  ):not(.select-chip--rented-arm):not([data-rented]) {
   color: #ffffff;
 }
 
 [data-theme="dark"]
-  .select-view--session
+  .select-view
   .select-chip[data-selected]:not(.select-chip--wear):not(
     .select-chip--clone-plus
   )
@@ -4565,7 +5246,7 @@
 }
 
 [data-theme="dark"]
-  .select-view--session
+  .select-view
   .select-chip-cluster[data-selected]
   > .select-chip-anchor
   > .select-chip {
@@ -4573,11 +5254,11 @@
 }
 
 [data-theme="dark"]
-  .select-view--session
+  .select-view
   .select-chip-cluster[data-selected]
   .select-chip--wear,
 [data-theme="dark"]
-  .select-view--session
+  .select-view
   .select-chip-cluster[data-selected]
   .select-chip--clone-plus {
   color: #ffffff;
@@ -4585,39 +5266,40 @@
 
 /** Qty badge + family label: white text only (keep tinted chrome). */
 [data-theme="dark"]
-  .select-view--session
+  .select-view
   .select-chip[data-selected][data-qty]::after,
 [data-theme="dark"]
-  .select-view--session
+  .select-view
   .select-chip--select[data-selected][data-family]::before {
   color: #ffffff;
 }
 
-/** + Custom standout control. */
-[data-theme="dark"] .select-view--session .select-chip--add {
+/** + Custom / Rented arm standout controls — white labels. */
+[data-theme="dark"] .select-view .select-chip--add,
+[data-theme="dark"] .select-view .select-chip--rented-arm {
   color: #ffffff;
 }
 
-[data-theme="dark"] .select-view--session .select-chip--add-compose {
+[data-theme="dark"] .select-view .select-chip--add-compose {
   color: #ffffff;
 }
 
-[data-theme="dark"] .select-view--session .select-chip__add-confirm {
+[data-theme="dark"] .select-view .select-chip__add-confirm {
   color: #ffffff;
 }
 
 [data-theme="dark"]
-  .select-view--session
+  .select-view
   .select-chip[data-selected][data-hold]:not(.select-chip--wear):not(
     .select-chip--clone-plus
   ) {
-  color: var(--semantic-text-primary);
+  color: #ffffff;
 }
 
 [data-theme="dark"]
-  .select-view--session
+  .select-view
   .select-chip-cluster:has(.select-chip-anchor .select-chip[data-hold]) {
-  color: var(--semantic-text-primary);
+  color: #ffffff;
 }
 
 /* Anchor sizes to the chip only — menu is portaled (no flex reflow). */
@@ -4694,33 +5376,8 @@
 }
 
 /**
- * Qty badge via ::after — no layout width; sits top-left, mostly on the chip.
+ * Qty / comment corner badges are defined once above (shared 16px box).
  */
-.select-chip[data-qty]::after {
-  content: attr(data-qty);
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  z-index: 3;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 999px;
-  border: 1.5px solid var(--select-chip-accent);
-  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
-  color: var(--select-chip-accent);
-  font-family: "Outfit", sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-}
 
 /** Press feedback only when already selected — first select stays a hard snap. */
 .select-chip[data-selected]:active:not([data-hold]) {
@@ -4741,13 +5398,25 @@
   );
 }
 
-/** Long-press drain toward unselected colors (duration matches gesture). */
+/** Rented arm: never inherit selected-chip teal — yellow dashed border stays fixed. */
+.select-chip--rented-arm,
+.select-chip--rented-arm[data-selected] {
+  border-style: dashed;
+  border-color: var(--select-chip-rented, #d4a017);
+  background: color-mix(in srgb, var(--select-chip-accent) 12%, transparent);
+  color: #ffffff;
+}
+
+.select-chip--rented-arm:active,
+.select-chip--rented-arm[data-selected]:active:not([data-hold]) {
+  background: color-mix(in srgb, var(--select-chip-accent) 20%, transparent);
+}
+
+/** Long-press drain toward unselected chrome (label stays white). */
 .select-chip[data-selected][data-hold] {
   transition:
-    color var(--select-chip-hold-ms, 420ms) linear,
     border-color var(--select-chip-hold-ms, 420ms) linear,
     background-color var(--select-chip-hold-ms, 420ms) linear;
-  color: var(--semantic-text-primary);
   border-color: color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
   background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
 }
@@ -5122,9 +5791,33 @@
   background: color-mix(in srgb, var(--select-chip-accent) 14%, transparent);
 }
 
-.select-chip--clone-plus:disabled {
-  opacity: 0.35;
+/** Trailing + after rented chips (not fused to a dropdown cluster). */
+.select-view > .select-chip--clone-plus {
+  flex: 0 0 40px;
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  height: 40px;
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  border-radius: 7px;
+  color: color-mix(in srgb, var(--semantic-text-primary) 55%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+}
+
+.select-chip--clone-plus:disabled,
+.select-chip-cluster[data-selected] .select-chip--clone-plus:disabled,
+[data-theme="dark"]
+  .select-view--session
+  .select-chip-cluster[data-selected]
+  .select-chip--clone-plus:disabled,
+.select-view > .select-chip--clone-plus:disabled {
+  opacity: 0.28;
+  color: color-mix(in srgb, var(--semantic-text-primary) 28%, transparent);
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+  border-left-color: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+  background: transparent;
   cursor: default;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5239,13 +5932,25 @@
 }
 
 /* Catalog hub (Tools / Consumables): compact Select · Edit under header */
+.catalog-hub__chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
 .catalog-hub__tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 3px;
   padding: 3px;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--semantic-text-primary) 6%,
+    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+  );
+  box-sizing: border-box;
   border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
 }
 

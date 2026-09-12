@@ -1,3 +1,4 @@
+import type { ItemAcquisition } from "../../domain/select/acquisition";
 import type { FlexSelectSelection } from "../../domain/select/selection";
 import type { ToolItem } from "../../domain/tools/types";
 import { useToolsLibraryStore } from "../../tools/libraryStore";
@@ -10,16 +11,25 @@ export function ToolsPicker({
   customTools = [],
   onCustomToolsChange,
   onAddCustomTool,
+  onRemoveCustomTool,
   catalog: catalogProp,
   className,
+  acquisitionEnabled = false,
+  commentsByLineKey,
+  onRentalCommentChange,
 }: {
   selection: FlexSelectSelection;
   onSelectionChange: (next: Record<string, number>) => void;
   customTools?: readonly ToolItem[];
   onCustomToolsChange?: (next: ToolItem[]) => void;
-  onAddCustomTool?: (item: ToolItem) => void;
+  onAddCustomTool?: (item: ToolItem, acquisition: ItemAcquisition) => void;
+  onRemoveCustomTool?: (id: string) => void;
   catalog?: readonly ToolItem[];
   className?: string;
+  /** Session tools stage — owned/rented arm after Custom. */
+  acquisitionEnabled?: boolean;
+  commentsByLineKey?: Readonly<Record<string, string>>;
+  onRentalCommentChange?: (lineKey: string, comment: string | null) => void;
 }) {
   const libraryItems = useToolsLibraryStore((s) => s.items);
   const catalog = catalogProp ?? libraryItems;
@@ -32,12 +42,16 @@ export function ToolsPicker({
       onSelectionChange={onSelectionChange}
       onCustomItemsChange={onCustomToolsChange}
       onAddCustomItem={onAddCustomTool}
+      onRemoveCustomItem={onRemoveCustomTool}
       className={className}
       tone="session"
       ariaLabel="Tools"
       addSimpleLabel="Custom"
       addSimplePlaceholder="Custom tool name"
       customIdPrefix="custom-tool"
+      acquisitionEnabled={acquisitionEnabled}
+      commentsByLineKey={commentsByLineKey}
+      onRentalCommentChange={onRentalCommentChange}
     />
   );
 }

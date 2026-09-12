@@ -1,3 +1,5 @@
+import { format, parse } from "date-fns";
+import { sv } from "date-fns/locale";
 import type { FlexSelectItem } from "./types";
 
 export function cloneFlexSelectItems(
@@ -82,11 +84,20 @@ export function buildCatalogSelectionReport(args: {
   title: string;
   labels: readonly string[];
   comment?: string;
+  /** Optional `yyyy-MM-dd` — omitted from the report when unset. */
+  workDateId?: string | null;
 }): string {
   const lines: string[] = [];
   const trimmed = args.comment?.trim();
   if (trimmed) lines.push(trimmed, "");
   lines.push(args.title);
+  const dateId = args.workDateId?.trim();
+  if (dateId && /^\d{4}-\d{2}-\d{2}$/.test(dateId)) {
+    const parsed = parse(dateId, "yyyy-MM-dd", new Date());
+    if (!Number.isNaN(parsed.getTime())) {
+      lines.push(`Datum: ${format(parsed, "d MMM yyyy", { locale: sv })}`);
+    }
+  }
   if (args.labels.length === 0) {
     lines.push("No items selected.");
   } else {

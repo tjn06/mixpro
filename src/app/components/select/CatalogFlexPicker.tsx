@@ -1,5 +1,10 @@
 import { useMemo } from "react";
 import {
+  omitCatalogIdFromSelection,
+  selectionLineKey,
+  type ItemAcquisition,
+} from "../../domain/select/acquisition";
+import {
   ensureFlexSelectSelected,
   type FlexSelectSelection,
 } from "../../domain/select/selection";
@@ -21,6 +26,7 @@ export function CatalogFlexPicker({
   onWearChange,
   onCustomItemsChange,
   onAddCustomItem,
+  onRemoveCustomItem,
   className,
   tone = "default",
   ariaLabel,
@@ -28,6 +34,9 @@ export function CatalogFlexPicker({
   addSimplePlaceholder = "Custom item name",
   customIdPrefix = "custom",
   unselectLabel,
+  acquisitionEnabled = false,
+  commentsByLineKey,
+  onRentalCommentChange,
 }: {
   catalog: readonly FlexSelectItem[];
   customItems?: readonly FlexSelectItem[];
@@ -37,7 +46,12 @@ export function CatalogFlexPicker({
   onWearChange?: (next: Record<string, WearLevel>) => void;
   onCustomItemsChange?: (next: FlexSelectItem[]) => void;
   /** Preferred atomic add + select. */
-  onAddCustomItem?: (item: FlexSelectItem) => void;
+  onAddCustomItem?: (
+    item: FlexSelectItem,
+    acquisition: ItemAcquisition,
+  ) => void;
+  /** Preferred atomic remove (also clears owned/rented selection keys). */
+  onRemoveCustomItem?: (id: string) => void;
   className?: string;
   tone?: "default" | "session";
   ariaLabel: string;
@@ -45,13 +59,23 @@ export function CatalogFlexPicker({
   addSimplePlaceholder?: string;
   customIdPrefix?: string;
   unselectLabel?: string;
+  /** Session tools: enable owned/rented acquisition arm. */
+  acquisitionEnabled?: boolean;
+  commentsByLineKey?: Readonly<Record<string, string>>;
+  onRentalCommentChange?: (lineKey: string, comment: string | null) => void;
 }) {
   const items = useMemo(
     () => [...catalog, ...customItems],
     [catalog, customItems],
   );
 
+  const customItemIds = useMemo(
+    () => new Set(customItems.map((item) => item.id)),
+    [customItems],
+  );
+
   const canAdd = Boolean(onAddCustomItem || onCustomItemsChange);
+  const canRemove = Boolean(onRemoveCustomItem || onCustomItemsChange);
 
   return (
     <FlexSelectView
@@ -66,19 +90,42 @@ export function CatalogFlexPicker({
       unselectLabel={unselectLabel}
       addSimpleLabel={addSimpleLabel}
       addSimplePlaceholder={addSimplePlaceholder}
+      acquisitionEnabled={acquisitionEnabled}
+      commentsByLineKey={commentsByLineKey}
+      onRentalCommentChange={onRentalCommentChange}
+      customItemIds={canRemove ? customItemIds : undefined}
+      onRemoveCustomItem={
+        canRemove
+          ? (id) => {
+              if (onRemoveCustomItem) {
+                onRemoveCustomItem(id);
+                return;
+              }
+              onSelectionChange(omitCatalogIdFromSelection(selection, id));
+              onCustomItemsChange?.(
+                customItems.filter((item) => item.id !== id),
+              );
+            }
+          : undefined
+      }
       onAddSimpleItem={
         canAdd
-          ? (label) => {
+          ? (label, acquisition) => {
               const item: FlexSelectItem = {
                 id: `${customIdPrefix}-${crypto.randomUUID()}`,
                 label,
               };
               if (onAddCustomItem) {
-                onAddCustomItem(item);
+                onAddCustomItem(item, acquisition);
                 return;
               }
               onCustomItemsChange?.([...customItems, item]);
-              onSelectionChange(ensureFlexSelectSelected(selection, item.id));
+              onSelectionChange(
+                ensureFlexSelectSelected(
+                  selection,
+                  selectionLineKey(item.id, acquisition),
+                ),
+              );
             }
           : undefined
       }

@@ -26,11 +26,15 @@ import {
 } from "../../domain/sessions/totals";
 import {
   collectSessionWorkDateIds,
+  commentMapFromDatedEntries,
   localWorkDateId,
   moveDatedEntriesDay,
+  omitCatalogIdFromDatedEntries,
   qtyMapFromDatedEntries,
   replaceDatedQtyMapForDay,
+  setDatedEntryComment,
 } from "../../domain/sessions/workDate";
+import { selectionLineKey } from "../../domain/select/acquisition";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
 import { useSessionsStore } from "../../sessions/store";
 import {
@@ -57,7 +61,7 @@ import {
   flexSelectSelectionTotal,
 } from "../../domain/select/selection";
 import { pruneWearByOptionId } from "../../domain/select/wear";
-import { listSelectedToolLabelEntries } from "../../domain/tools/catalog";
+import { listSelectedToolEntries, listSelectedToolLabelEntries } from "../../domain/tools/catalog";
 import { useToolsLibraryStore } from "../../tools/libraryStore";
 import { ConsumablesPicker } from "../consumables/ConsumablesPicker";
 import { ToolsPicker } from "../tools/ToolsPicker";
@@ -135,6 +139,10 @@ export function SessionOverviewScreen({
     () => qtyMapFromDatedEntries(toolEntries, dayFilterId),
     [toolEntries, dayFilterId],
   );
+  const toolRentalComments = useMemo(
+    () => commentMapFromDatedEntries(toolEntries, dayFilterId),
+    [toolEntries, dayFilterId],
+  );
   const selectedConsumableQtys = useMemo(
     () => qtyMapFromDatedEntries(consumableEntries, dayFilterId),
     [consumableEntries, dayFilterId],
@@ -146,26 +154,45 @@ export function SessionOverviewScreen({
   const touchedStages = session?.touchedStages ?? ["mixes"];
   const nextStage = nextSessionStage(activeStage);
 
-  const dayBadges = useMemo(
-    () =>
-      buildSessionDayFilterBadges(
-        collectSessionWorkDateIds({
-          batches,
-          toolEntries,
-          consumableEntries,
-          activeWorkDate: session?.activeWorkDate,
-          extraDayIds,
-        }),
-      ),
-    [
-      batches,
-      toolEntries,
-      consumableEntries,
-      session?.activeWorkDate,
-      extraDayIds,
-    ],
-  );
+  const dayBadges = useMemo(() => {
+    const populatedDayIds = new Set<string>();
+    for (const batch of batches) {
+      if (batch.workDate) populatedDayIds.add(batch.workDate);
+    }
+    for (const entry of toolEntries) {
+      if (entry.workDate) populatedDayIds.add(entry.workDate);
+    }
+    for (const entry of consumableEntries) {
+      if (entry.workDate) populatedDayIds.add(entry.workDate);
+    }
+    return buildSessionDayFilterBadges(
+      collectSessionWorkDateIds({
+        batches,
+        toolEntries,
+        consumableEntries,
+        activeWorkDate: session?.activeWorkDate,
+        extraDayIds,
+      }),
+      new Date(),
+      populatedDayIds,
+    );
+  }, [
+    batches,
+    toolEntries,
+    consumableEntries,
+    session?.activeWorkDate,
+    extraDayIds,
+  ]);
 
+  const selectedToolEntries = useMemo(
+    () =>
+      listSelectedToolEntries(
+        selectedToolQtys,
+        toolsCatalog,
+        customTools,
+      ),
+    [selectedToolQtys, toolsCatalog, customTools],
+  );
   const selectedToolLabels = useMemo(
     () =>
       listSelectedToolLabelEntries(
@@ -305,6 +332,14 @@ export function SessionOverviewScreen({
     setDayFilterId(toId);
   };
 
+  const addSessionDay = (date: Date) => {
+    const toId = format(date, "yyyy-MM-dd");
+    setExtraDayIds((prev) =>
+      prev.includes(toId) || toId === todayId ? prev : [...prev, toId],
+    );
+    setDayFilter(toId);
+  };
+
   if (!session) {
     const missing = (
       <div
@@ -389,11 +424,15 @@ export function SessionOverviewScreen({
             ) : null}
           </div>
         ) : null}
-        {activeStage === "consumption-tools" && selectedToolLabels.length > 0 ? (
+        {activeStage === "consumption-tools" && selectedToolEntries.length > 0 ? (
           <div className="batch-totals-entity-summary__chips" aria-label="Selected tools">
-            {selectedToolLabels.map((label) => (
-              <span key={label} className="batch-totals-entity-summary__chip">
-                {label}
+            {selectedToolEntries.map((entry) => (
+              <span
+                key={entry.id}
+                className="batch-totals-entity-summary__chip"
+                data-rented={entry.rented ? "" : undefined}
+              >
+                {entry.qty > 1 ? `${entry.label} ×${entry.qty}` : entry.label}
               </span>
             ))}
           </div>
@@ -410,11 +449,15 @@ export function SessionOverviewScreen({
             ))}
           </div>
         ) : null}
-        {activeStage === "summary" && selectedToolLabels.length > 0 ? (
+        {activeStage === "summary" && selectedToolEntries.length > 0 ? (
           <div className="batch-totals-entity-summary__chips" aria-label="Selected tools">
-            {selectedToolLabels.map((label) => (
-              <span key={`tool-${label}`} className="batch-totals-entity-summary__chip">
-                {label}
+            {selectedToolEntries.map((entry) => (
+              <span
+                key={`tool-${entry.id}`}
+                className="batch-totals-entity-summary__chip"
+                data-rented={entry.rented ? "" : undefined}
+              >
+                {entry.qty > 1 ? `${entry.label} ×${entry.qty}` : entry.label}
               </span>
             ))}
           </div>
@@ -754,11 +797,15 @@ export function SessionOverviewScreen({
                 {toolCount}
               </span>
             </div>
-            {selectedToolLabels.length > 0 ? (
+            {selectedToolEntries.length > 0 ? (
               <div className="session-overview__summary-chips" aria-label="Selected tools">
-                {selectedToolLabels.map((label) => (
-                  <span key={label} className="session-overview__summary-chip">
-                    {label}
+                {selectedToolEntries.map((entry) => (
+                  <span
+                    key={entry.id}
+                    className="session-overview__summary-chip"
+                    data-rented={entry.rented ? "" : undefined}
+                  >
+                    {entry.qty > 1 ? `${entry.label} ×${entry.qty}` : entry.label}
                   </span>
                 ))}
               </div>
@@ -847,7 +894,24 @@ export function SessionOverviewScreen({
               selection={selectedToolQtys}
               onSelectionChange={patchToolSelection}
               customTools={customTools}
-              onAddCustomTool={(item) => {
+              acquisitionEnabled
+              commentsByLineKey={toolRentalComments}
+              onRentalCommentChange={
+                dayEditsEnabled
+                  ? (lineKey, comment) => {
+                      if (!session || dayFilterId === "all") return;
+                      patchSession(session.id, {
+                        toolEntries: setDatedEntryComment(
+                          toolEntries,
+                          dayFilterId,
+                          lineKey,
+                          comment,
+                        ),
+                      });
+                    }
+                  : undefined
+              }
+              onAddCustomTool={(item, acquisition) => {
                 if (!session || !dayEditsEnabled) return;
                 patchSession(session.id, {
                   customTools: [...customTools, item],
@@ -856,12 +920,28 @@ export function SessionOverviewScreen({
                     dayFilterId,
                     ensureFlexSelectSelected(
                       qtyMapFromDatedEntries(toolEntries, dayFilterId),
-                      item.id,
+                      selectionLineKey(item.id, acquisition),
                     ),
                   ),
                   activeWorkDate: dayFilterId,
                 });
               }}
+              onRemoveCustomTool={
+                dayEditsEnabled
+                  ? (id) => {
+                      if (!session) return;
+                      patchSession(session.id, {
+                        customTools: customTools.filter(
+                          (item) => item.id !== id,
+                        ),
+                        toolEntries: omitCatalogIdFromDatedEntries(
+                          toolEntries,
+                          id,
+                        ),
+                      });
+                    }
+                  : undefined
+              }
             />
           </div>
         </div>
@@ -916,6 +996,28 @@ export function SessionOverviewScreen({
                   activeWorkDate: dayFilterId,
                 });
               }}
+              onRemoveCustomConsumable={
+                dayEditsEnabled
+                  ? (id) => {
+                      if (!session) return;
+                      const nextEntries = omitCatalogIdFromDatedEntries(
+                        consumableEntries,
+                        id,
+                      );
+                      patchSession(session.id, {
+                        customConsumables: customConsumables.filter(
+                          (item) => item.id !== id,
+                        ),
+                        consumableEntries: nextEntries,
+                        consumableWearByOptionId: pruneWearByOptionId(
+                          consumableWearByOptionId,
+                          qtyMapFromDatedEntries(nextEntries, "all"),
+                          [id],
+                        ),
+                      });
+                    }
+                  : undefined
+              }
             />
           </div>
         </div>
@@ -1014,6 +1116,7 @@ export function SessionOverviewScreen({
                   selectedId={dayFilterId}
                   onSelectedIdChange={setDayFilter}
                   onConfirmDayChange={confirmDayChange}
+                  onAddDay={addSessionDay}
                 />
               </div>
 

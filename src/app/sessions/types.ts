@@ -55,6 +55,8 @@ export type SessionDatedQtyEntry = {
   qty: number;
   /** Local calendar day (`yyyy-MM-dd`). */
   workDate: string;
+  /** Optional note — used for rented tool lines. */
+  comment?: string;
 };
 
 /** Project container — multiple unique batch items + future stages. */

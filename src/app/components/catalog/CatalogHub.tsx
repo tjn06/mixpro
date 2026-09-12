@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { listSelectedFlexSelectEntries } from "../../domain/select/catalogLookup";
+import {
+  selectionLineKey,
+  type ItemAcquisition,
+} from "../../domain/select/acquisition";
+import { listSelectedFlexSelectEntries, formatFlexSelectLabelEntries } from "../../domain/select/catalogLookup";
 import {
   ensureFlexSelectSelected,
   flexSelectSelectionTotal,
@@ -11,8 +15,10 @@ import {
   type WearByOptionId,
   type WearLevel,
 } from "../../domain/select/wear";
+import { localWorkDateId } from "../../domain/sessions/workDate";
 import { useSettingsStore } from "../../settings/store";
 import { CatalogFlexPicker } from "../select/CatalogFlexPicker";
+import { CatalogReportDateBar } from "./CatalogReportDateBar";
 import { DestinationPageChrome } from "../pages/DestinationPageChrome";
 import { InventoryStageSummaryBar } from "../shell/InventoryStageSummaryBar";
 import { StageBottomSheet } from "../shell/StageBottomSheet";
@@ -39,6 +45,7 @@ export function CatalogHub({
   wearByOptionId,
   onWearChange,
   onAddCustomItem,
+  onRemoveCustomItem,
   onAddGlobalItem,
   onRenameGlobalItem,
   onRemoveGlobalItem,
@@ -49,6 +56,9 @@ export function CatalogHub({
   customPlaceholder,
   inventoryNounSingular,
   inventoryNounPlural,
+  acquisitionEnabled = false,
+  commentsByLineKey,
+  onRentalCommentChange,
 }: {
   title: string;
   catalog: readonly FlexSelectItem[];
@@ -58,7 +68,11 @@ export function CatalogHub({
   wearByOptionId?: WearByOptionId;
   onWearChange?: (next: Record<string, WearLevel>) => void;
   /** Session-style custom add on Report tab (optional). */
-  onAddCustomItem?: (item: FlexSelectItem) => void;
+  onAddCustomItem?: (
+    item: FlexSelectItem,
+    acquisition: ItemAcquisition,
+  ) => void;
+  onRemoveCustomItem?: (id: string) => void;
   onAddGlobalItem: (label: string) => void;
   onRenameGlobalItem: (id: string, label: string) => void;
   onRemoveGlobalItem: (id: string) => void;
@@ -69,9 +83,16 @@ export function CatalogHub({
   customPlaceholder: string;
   inventoryNounSingular: string;
   inventoryNounPlural: string;
+  /** Tools Report only — owned/rented arm (same as session tools). */
+  acquisitionEnabled?: boolean;
+  commentsByLineKey?: Readonly<Record<string, string>>;
+  onRentalCommentChange?: (lineKey: string, comment: string | null) => void;
 }) {
   const [tab, setTab] = useState<CatalogHubTab>("report");
   const [panelExpanded, setPanelExpanded] = useState(false);
+  const [workDateId, setWorkDateId] = useState<string | null>(() =>
+    localWorkDateId(),
+  );
   const colorScheme = useSettingsStore((s) => s.colorScheme);
   const selectedEntries = useMemo(
     () =>
@@ -85,6 +106,16 @@ export function CatalogHub({
           entry.qty > 1 ? `${entry.label} ×${entry.qty}` : entry.label;
         return `${base}${wearLabelSuffix(wearByOptionId?.[entry.id])}`;
       }),
+    [selectedEntries, wearByOptionId],
+  );
+  const shareLabels = useMemo(
+    () =>
+      formatFlexSelectLabelEntries(
+        selectedEntries.map((entry) => ({
+          ...entry,
+          label: `${entry.label}${wearLabelSuffix(wearByOptionId?.[entry.id])}`,
+        })),
+      ),
     [selectedEntries, wearByOptionId],
   );
   const selectedTotal = flexSelectSelectionTotal(selection);
@@ -102,16 +133,25 @@ export function CatalogHub({
             ? `${title} selected for this list.`
             : `No ${inventoryNounPlural} selected yet.`}
         </p>
-        {selectedLabels.length > 0 ? (
+        {selectedEntries.length > 0 ? (
           <div
             className="batch-totals-entity-summary__chips"
             aria-label={`Selected ${inventoryNounPlural}`}
           >
-            {selectedLabels.map((label) => (
-              <span key={label} className="batch-totals-entity-summary__chip">
-                {label}
-              </span>
-            ))}
+            {selectedEntries.map((entry) => {
+              const base =
+                entry.qty > 1 ? `${entry.label} ×${entry.qty}` : entry.label;
+              const label = `${base}${wearLabelSuffix(wearByOptionId?.[entry.id])}`;
+              return (
+                <span
+                  key={entry.id}
+                  className="batch-totals-entity-summary__chip"
+                  data-rented={entry.rented ? "" : undefined}
+                >
+                  {label}
+                </span>
+              );
+            })}
           </div>
         ) : null}
       </header>
@@ -119,24 +159,34 @@ export function CatalogHub({
   );
 
   const subnav = (
-    <div
-      className="catalog-hub__tabs"
-      role="tablist"
-      aria-label={`${title} sections`}
-    >
-      {TABS.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          role="tab"
-          aria-selected={tab === item.id}
-          className="catalog-hub__tab"
-          data-active={tab === item.id ? "" : undefined}
-          onClick={() => setTab(item.id)}
-        >
-          {item.label}
-        </button>
-      ))}
+    <div className="catalog-hub__chrome">
+      <div
+        className="catalog-hub__tabs app-gutter-x"
+        role="tablist"
+        aria-label={`${title} sections`}
+      >
+        {TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === item.id}
+            className="catalog-hub__tab"
+            data-active={tab === item.id ? "" : undefined}
+            onClick={() => setTab(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      {tab === "report" ? (
+        <CatalogReportDateBar
+          workDateId={workDateId}
+          onWorkDateChange={setWorkDateId}
+          ariaLabel={`${title} report date`}
+          pickerSubtitle={`Optional work day for this ${title.toLowerCase()} report.`}
+        />
+      ) : null}
     </div>
   );
 
@@ -154,7 +204,7 @@ export function CatalogHub({
             expandedBodyLabel={`${title} selection`}
             sourceExpanded={panelExpanded}
             onSourceExpandedChange={setPanelExpanded}
-            remeasureKey={`${selectedTotal}:${selectedLabels.join("|")}`}
+            remeasureKey={`${selectedTotal}:${selectedLabels.join("|")}:${workDateId ?? ""}`}
             summary={
               <InventoryStageSummaryBar
                 label={title}
@@ -167,7 +217,8 @@ export function CatalogHub({
             shareActions={
               <CatalogSharePanel
                 title={reportTitle}
-                selectedLabels={selectedLabels}
+                selectedLabels={shareLabels}
+                workDateId={workDateId}
               />
             }
             expandedBody={expandedBody}
@@ -184,16 +235,24 @@ export function CatalogHub({
             onSelectionChange={onSelectionChange}
             wearByOptionId={wearByOptionId}
             onWearChange={onWearChange}
+            acquisitionEnabled={acquisitionEnabled}
+            commentsByLineKey={commentsByLineKey}
+            onRentalCommentChange={onRentalCommentChange}
+            tone="default"
             onAddCustomItem={
               onAddCustomItem
-                ? (item) => {
-                    onAddCustomItem(item);
+                ? (item, acquisition) => {
+                    onAddCustomItem(item, acquisition);
                     onSelectionChange(
-                      ensureFlexSelectSelected(selection, item.id),
+                      ensureFlexSelectSelected(
+                        selection,
+                        selectionLineKey(item.id, acquisition),
+                      ),
                     );
                   }
                 : undefined
             }
+            onRemoveCustomItem={onRemoveCustomItem}
             className="tools-page__picker"
             ariaLabel={title}
             addSimpleLabel="Custom"

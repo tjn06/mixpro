@@ -1,4 +1,5 @@
 import { format, parse } from "date-fns";
+import { catalogSelectionKeys } from "../select/acquisition";
 import type { SessionDatedQtyEntry } from "../../sessions/types";
 
 /** Calendar day key used for session filtering (local timezone). */
@@ -39,7 +40,14 @@ export function normalizeDatedQtyEntries(raw: unknown): SessionDatedQtyEntry[] {
     const qtyRaw = (row as { qty?: unknown }).qty;
     const qty = typeof qtyRaw === "number" ? qtyRaw : Number(qtyRaw);
     if (!optionId || !workDate || !Number.isFinite(qty) || qty < 1) continue;
-    out.push({ optionId, workDate, qty: Math.floor(qty) });
+    const commentRaw = (row as { comment?: unknown }).comment;
+    const comment =
+      typeof commentRaw === "string" ? commentRaw.trim() : "";
+    out.push(
+      comment
+        ? { optionId, workDate, qty: Math.floor(qty), comment }
+        : { optionId, workDate, qty: Math.floor(qty) },
+    );
   }
   return out;
 }
@@ -85,15 +93,74 @@ export function datedEntriesTotal(
 
 /**
  * Replace all entries for `workDate` with `nextMap`.
- * Other days are left untouched.
+ * Other days are left untouched. Preserves comments for matching option ids.
  */
 export function replaceDatedQtyMapForDay(
   entries: readonly SessionDatedQtyEntry[],
   workDate: SessionWorkDateId,
   nextMap: Record<string, number>,
 ): SessionDatedQtyEntry[] {
+  const prevComments = new Map<string, string>();
+  for (const entry of entries) {
+    if (entry.workDate !== workDate) continue;
+    const comment = entry.comment?.trim();
+    if (comment) prevComments.set(entry.optionId, comment);
+  }
   const kept = entries.filter((e) => e.workDate !== workDate);
-  return [...kept, ...datedEntriesFromQtyMap(nextMap, workDate)];
+  const next: SessionDatedQtyEntry[] = [];
+  for (const [optionId, qty] of Object.entries(nextMap)) {
+    if (!optionId || qty < 1) continue;
+    const comment = prevComments.get(optionId);
+    next.push(
+      comment
+        ? { optionId, workDate, qty: Math.floor(qty), comment }
+        : { optionId, workDate, qty: Math.floor(qty) },
+    );
+  }
+  return [...kept, ...next];
+}
+
+/** Comments for lines on a day (or any day when filter is `all`). */
+export function commentMapFromDatedEntries(
+  entries: readonly SessionDatedQtyEntry[],
+  dayFilter: SessionWorkDateId | "all",
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const entry of entries) {
+    if (dayFilter !== "all" && entry.workDate !== dayFilter) continue;
+    const comment = entry.comment?.trim();
+    if (!comment) continue;
+    out[entry.optionId] = comment;
+  }
+  return out;
+}
+
+/** Remove owned + rented lines for a catalog / custom item across all days. */
+export function omitCatalogIdFromDatedEntries(
+  entries: readonly SessionDatedQtyEntry[],
+  catalogId: string,
+): SessionDatedQtyEntry[] {
+  const keys = new Set(catalogSelectionKeys(catalogId));
+  return entries.filter((entry) => !keys.has(entry.optionId));
+}
+
+/** Set or clear a comment on one day-scoped line. */
+export function setDatedEntryComment(
+  entries: readonly SessionDatedQtyEntry[],
+  workDate: SessionWorkDateId,
+  optionId: string,
+  comment: string | null,
+): SessionDatedQtyEntry[] {
+  const trimmed = comment?.trim() ?? "";
+  return entries.map((entry) => {
+    if (entry.workDate !== workDate || entry.optionId !== optionId) return entry;
+    if (!trimmed) {
+      if (entry.comment == null) return entry;
+      return { optionId: entry.optionId, qty: entry.qty, workDate: entry.workDate };
+    }
+    if (entry.comment === trimmed) return entry;
+    return { ...entry, comment: trimmed };
+  });
 }
 
 /** Move every entry from `fromDay` → `toDay` (merge qty on collision). */
@@ -109,7 +176,14 @@ export function moveDatedEntriesDay(
     const key = `${workDate}::${entry.optionId}`;
     const prev = map.get(key);
     if (prev) {
-      map.set(key, { ...prev, qty: prev.qty + entry.qty });
+      const comment =
+        prev.comment?.trim() || entry.comment?.trim() || undefined;
+      map.set(key, {
+        optionId: prev.optionId,
+        workDate,
+        qty: prev.qty + entry.qty,
+        ...(comment ? { comment } : {}),
+      });
     } else {
       map.set(key, { ...entry, workDate });
     }

@@ -1,4 +1,5 @@
 import type { ConsumableItem } from "../../domain/consumables/types";
+import type { ItemAcquisition } from "../../domain/select/acquisition";
 import type { FlexSelectSelection } from "../../domain/select/selection";
 import type { WearByOptionId, WearLevel } from "../../domain/select/wear";
 import { useConsumablesLibraryStore } from "../../consumables/libraryStore";
@@ -13,6 +14,7 @@ export function ConsumablesPicker({
   customConsumables = [],
   onCustomConsumablesChange,
   onAddCustomConsumable,
+  onRemoveCustomConsumable,
   catalog: catalogProp,
   className,
 }: {
@@ -22,7 +24,11 @@ export function ConsumablesPicker({
   onWearChange?: (next: Record<string, WearLevel>) => void;
   customConsumables?: readonly ConsumableItem[];
   onCustomConsumablesChange?: (next: ConsumableItem[]) => void;
-  onAddCustomConsumable?: (item: ConsumableItem) => void;
+  onAddCustomConsumable?: (
+    item: ConsumableItem,
+    acquisition?: ItemAcquisition,
+  ) => void;
+  onRemoveCustomConsumable?: (id: string) => void;
   catalog?: readonly ConsumableItem[];
   className?: string;
 }) {
@@ -39,6 +45,7 @@ export function ConsumablesPicker({
       onWearChange={onWearChange}
       onCustomItemsChange={onCustomConsumablesChange}
       onAddCustomItem={onAddCustomConsumable}
+      onRemoveCustomItem={onRemoveCustomConsumable}
       className={className}
       tone="session"
       ariaLabel="Consumables"

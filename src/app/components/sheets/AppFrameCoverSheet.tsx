@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useLayoutEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { APP_FRAME_COVER_SHEET_CLASS } from "./sheetChrome";
 import { useAppFrameCoverTop } from "./useAppFrameCoverTop";
 
@@ -10,7 +11,11 @@ export interface AppFrameCoverSheetProps {
   className?: string;
 }
 
-/** Full-bleed sheet from below the main header bar — covers subline and recipe zone. */
+/**
+ * Full-bleed sheet from below the main header bar — covers subline and recipe
+ * zone. Always portaled into `.app-frame` so nested callers (pickers, etc.)
+ * still cover the whole screen with opaque chrome.
+ */
 export function AppFrameCoverSheet({
   open,
   zIndex,
@@ -19,10 +24,19 @@ export function AppFrameCoverSheet({
   className = "",
 }: AppFrameCoverSheetProps) {
   const coverTop = useAppFrameCoverTop(open);
+  const [portal, setPortal] = useState<HTMLElement | null>(null);
 
-  if (!open || coverTop == null) return null;
+  useLayoutEffect(() => {
+    if (!open) {
+      setPortal(null);
+      return;
+    }
+    setPortal(document.querySelector<HTMLElement>(".app-frame"));
+  }, [open]);
 
-  return (
+  if (!open || coverTop == null || !portal) return null;
+
+  return createPortal(
     <div
       className="absolute inset-x-0 bottom-0 flex flex-col pointer-events-auto app-frame-cover-anchor"
       style={{ top: coverTop, zIndex }}
@@ -36,6 +50,7 @@ export function AppFrameCoverSheet({
       >
         {children}
       </div>
-    </div>
+    </div>,
+    portal,
   );
 }
