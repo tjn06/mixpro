@@ -280,3 +280,23 @@ export function collectSessionWorkDateIds(input: {
   }
   return [...ids];
 }
+
+/**
+ * Sessions hub date filter: match if the session was created that calendar day
+ * or has any mix / tool / consumable activity on that work date.
+ */
+export function sessionMatchesHubDateFilter(
+  session: {
+    createdAt?: string;
+    batches?: readonly { workDate?: string }[];
+    toolEntries?: readonly SessionDatedQtyEntry[];
+    consumableEntries?: readonly SessionDatedQtyEntry[];
+    activeWorkDate?: string;
+  },
+  dayId: SessionWorkDateId,
+): boolean {
+  if (session.createdAt && workDateIdFromIso(session.createdAt) === dayId) {
+    return true;
+  }
+  return collectSessionWorkDateIds(session).includes(dayId);
+}

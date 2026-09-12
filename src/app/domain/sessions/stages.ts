@@ -46,15 +46,28 @@ export const SESSION_STAGE_CARD_LABELS: Record<SessionStageId, string> = {
   summary: "Sum.",
 };
 
-const DEFAULT_SESSION_NAME = "Untitled session";
+/** Current default for new sessions. */
+const DEFAULT_SESSION_NAME = "Untitled";
+/** Legacy placeholder still treated as untitled for draft hint. */
+const LEGACY_DEFAULT_SESSION_NAME = "Untitled session";
 
-/** Card title — avoid showing the placeholder untitled name for now. */
+export function isDefaultSessionName(name: string): boolean {
+  const trimmed = name.trim();
+  return (
+    !trimmed ||
+    trimmed === DEFAULT_SESSION_NAME ||
+    trimmed === LEGACY_DEFAULT_SESSION_NAME
+  );
+}
+
+/** Card title — show the stored name as-is. */
 export function sessionCardTitle(session: MixSession): string {
-  const name = session.name.trim();
-  if (!name || name === DEFAULT_SESSION_NAME) {
-    return session.status === "saved" ? "Saved session" : "Draft session";
-  }
-  return name;
+  return session.name.trim() || DEFAULT_SESSION_NAME;
+}
+
+/** Default name + still draft — surface draft next to the title. */
+export function sessionCardShowsDraftHint(session: MixSession): boolean {
+  return session.status === "draft" && isDefaultSessionName(session.name);
 }
 
 /**

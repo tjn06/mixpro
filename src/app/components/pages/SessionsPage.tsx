@@ -6,13 +6,16 @@ import { useSessionsStore } from "../../sessions/store";
 import {
   SESSION_STAGE_CARD_LABELS,
   isSessionStageComplete,
+  sessionCardShowsDraftHint,
   sessionCardTitle,
   sessionStageAmountLabel,
 } from "../../domain/sessions/stages";
+import { sessionMatchesHubDateFilter } from "../../domain/sessions/workDate";
 import type { MixSession } from "../../sessions/types";
 import { SESSION_STAGE_ORDER } from "../../sessions/types";
 import { cv } from "../../ui/tokens";
-import { DeleteIcon, RenameIcon } from "../shared/ActionIcons";
+import { CatalogReportDateBar } from "../catalog/CatalogReportDateBar";
+import { DeleteIcon, FilterIcon, RenameIcon } from "../shared/ActionIcons";
 import { PageSearchField } from "../shared/PageSearchField";
 import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
 import { SaveSessionNameSheet } from "../sessions/SaveSessionNameSheet";
@@ -20,6 +23,8 @@ import { DestinationPageChrome } from "./DestinationPageChrome";
 
 const ACTION_ICON = 18;
 const PLAY_ICON = 30;
+const DATE_FILTER_ICON = 14;
+const SHEET_CONFIRM_ICON = 18;
 
 function SessionStageSteps({ session }: { session: MixSession }) {
   return (
@@ -93,7 +98,12 @@ function SessionCard({
         <div className="sessions-page__card-head min-w-0">
           <div className="sessions-page__card-meta min-w-0">
             <p className="sessions-page__card-title truncate min-w-0">
-              {sessionCardTitle(session)}
+              <span className="sessions-page__card-title-text truncate min-w-0">
+                {sessionCardTitle(session)}
+              </span>
+              {sessionCardShowsDraftHint(session) ? (
+                <span className="sessions-page__card-draft">Draft</span>
+              ) : null}
             </p>
             <p className="sessions-page__card-time tabular-nums">
               {savedTime.comment ? (
@@ -158,14 +168,20 @@ export function SessionsPage({
   const deleteSession = useSessionsStore((s) => s.deleteSession);
   const patchSession = useSessionsStore((s) => s.patchSession);
   const [query, setQuery] = useState("");
+  const [filterDateId, setFilterDateId] = useState<string | null>(null);
   const [renameSession, setRenameSession] = useState<MixSession | null>(null);
   const now = useTickingNow(true);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return sessions;
-    return sessions.filter((s) => s.name.toLowerCase().includes(q));
-  }, [sessions, query]);
+    return sessions.filter((s) => {
+      if (filterDateId && !sessionMatchesHubDateFilter(s, filterDateId)) {
+        return false;
+      }
+      if (q && !s.name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [sessions, query, filterDateId]);
 
   const handleNewSession = () => {
     const session = createSession();
@@ -176,6 +192,16 @@ export function SessionsPage({
     setActiveSession(session.id);
     onOpenSession?.(session.id);
   };
+
+  const emptyFilterMessage = (() => {
+    const q = query.trim();
+    if (filterDateId && q) {
+      return `No sessions match “${q}” on that date.`;
+    }
+    if (filterDateId) return "No sessions on that date.";
+    if (q) return `No sessions match “${q}”.`;
+    return "No sessions match.";
+  })();
 
   return (
     <DestinationPageChrome
@@ -197,13 +223,27 @@ export function SessionsPage({
         onChange={setQuery}
       />
 
+      <CatalogReportDateBar
+        className="sessions-page__date-bar"
+        workDateId={filterDateId}
+        onWorkDateChange={setFilterDateId}
+        ariaLabel="Filter sessions by date"
+        emptyLabel="Filter by date"
+        changeTitle="Change filter date"
+        formatSelectedLabel={(date) => `Filter: ${date}`}
+        leadingIcon={<FilterIcon size={DATE_FILTER_ICON} />}
+        confirmIcon={<FilterIcon size={SHEET_CONFIRM_ICON} />}
+        confirmLabel="Apply filter"
+        pickerSubtitle="Show sessions created or with activity on this day."
+      />
+
       {sessions.length === 0 ? (
         <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
           No sessions yet. Start with + New session.
         </p>
       ) : filtered.length === 0 ? (
         <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
-          No sessions match “{query.trim()}”.
+          {emptyFilterMessage}
         </p>
       ) : (
         <ul className="sessions-page__list">

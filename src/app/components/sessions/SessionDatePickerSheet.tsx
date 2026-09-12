@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
-import { CloseIcon, SaveIcon } from "../shared/ActionIcons";
+import { CloseIcon, CalendarIcon } from "../shared/ActionIcons";
 import { AppFrameCoverSheet } from "../sheets/AppFrameCoverSheet";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "../sheets/SheetCloseButton";
 import {
@@ -9,6 +9,7 @@ import {
   SHEET_SUBTITLE_CLASS,
   SHEET_TITLE_CLASS,
 } from "../sheets/sheetChrome";
+import type { ReactNode } from "react";
 
 export function SessionDatePickerSheet({
   open,
@@ -17,6 +18,8 @@ export function SessionDatePickerSheet({
   onConfirm,
   title = "Edit date",
   subtitle = "Choose the work day for this session filter.",
+  confirmLabel = "Apply",
+  confirmIcon,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -24,6 +27,9 @@ export function SessionDatePickerSheet({
   onConfirm: (date: Date) => void;
   title?: string;
   subtitle?: string;
+  confirmLabel?: string;
+  /** Footer confirm affordance — defaults to calendar (not save). */
+  confirmIcon?: ReactNode;
 }) {
   const [selected, setSelected] = useState<Date | undefined>(initialDate);
 
@@ -35,6 +41,9 @@ export function SessionDatePickerSheet({
   if (!open) return null;
 
   const canConfirm = selected != null;
+  const applyIcon = confirmIcon ?? (
+    <CalendarIcon size={SHEET_FOOTER_ICON_SIZE} />
+  );
 
   return (
     <AppFrameCoverSheet
@@ -74,8 +83,8 @@ export function SessionDatePickerSheet({
           },
           {
             key: "apply",
-            label: "Apply",
-            icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
+            label: confirmLabel,
+            icon: applyIcon,
             onClick: () => {
               if (!selected) return;
               onConfirm(selected);

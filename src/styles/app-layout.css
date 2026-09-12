@@ -2156,6 +2156,16 @@
   appearance: none;
 }
 
+/** Hub date filter — same control as Tools; flush inside page gutter. */
+.sessions-page__date-bar.catalog-report-date-bar.select-view {
+  padding-top: 0;
+  border-top: none;
+}
+
+.sessions-page__date-bar .catalog-report-date-bar__row {
+  padding-inline: 0;
+}
+
 /** Stay in `.app-gutter-x` — same edge padding as New session / search. */
 .sessions-page__list {
   --sessions-card-pad-x: 12px;
@@ -2228,6 +2238,10 @@
 }
 
 .sessions-page__card-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
   font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: 13px;
   font-weight: 600;
@@ -2236,6 +2250,19 @@
   color: var(--semantic-text-primary);
   min-width: 0;
   max-width: 100%;
+}
+
+.sessions-page__card-title-text {
+  min-width: 0;
+}
+
+.sessions-page__card-draft {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--session-accent, #2dd4bf);
 }
 
 .sessions-page__card-time {
@@ -3264,6 +3291,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 7px;
   margin: 0;
   padding: 0 9px;
   border: none;
@@ -3304,6 +3332,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.catalog-report-date-bar__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
 }
 
 .catalog-report-date-bar__delete {

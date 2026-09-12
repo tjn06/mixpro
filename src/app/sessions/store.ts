@@ -28,7 +28,7 @@ function nowIso(): string {
 }
 
 function defaultSessionName(): string {
-  return "Untitled session";
+  return "Untitled";
 }
 
 function normalizeTouchedStages(

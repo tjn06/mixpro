@@ -26,6 +26,8 @@ import {
   Scale,
   ChevronsUpDown,
   Smartphone,
+  CalendarDays,
+  ListFilter,
   type LucideIcon,
 } from "lucide-react";
 
@@ -113,3 +115,9 @@ export const SwipeAdjustIcon = createActionIcon(ChevronsUpDown);
 
 /** Keep phone screen awake (Wake Lock) while locked calculator is open. */
 export const KeepAwakeIcon = createActionIcon(Smartphone);
+
+/** Date / calendar day control. */
+export const CalendarIcon = createActionIcon(CalendarDays);
+
+/** Apply or set a list filter (e.g. session date filter). */
+export const FilterIcon = createActionIcon(ListFilter);
