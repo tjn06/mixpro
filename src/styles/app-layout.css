@@ -1357,11 +1357,18 @@
 
 .batch-totals-entity-summary__chip[data-rented] {
   border-color: color-mix(in srgb, #d4a017 55%, transparent);
-  background: color-mix(in srgb, #d4a017 18%, transparent);
-  color: #ffffff;
+  background: color-mix(in srgb, #d4a017 14%, var(--semantic-surface-app, #f4f4f8));
+  color: var(--semantic-text-primary);
 }
 
 .batch-totals-entity-summary__chip[data-rented]
+  .batch-totals-entity-summary__chip-mult {
+  color: inherit;
+}
+
+[data-theme="dark"] .batch-totals-entity-summary__chip[data-rented],
+[data-theme="dark"]
+  .batch-totals-entity-summary__chip[data-rented]
   .batch-totals-entity-summary__chip-mult {
   color: #ffffff;
 }
@@ -1923,6 +1930,15 @@
 .destination-page__subnav {
   flex-shrink: 0;
   padding-block: 6px 8px;
+}
+
+/** Hub date bar → chip grid: avoid stacking subnav + body + select padding. */
+.destination-page__subnav:has(.catalog-report-date-bar) {
+  padding-bottom: 4px;
+}
+
+.destination-page__body--in-sheet:has(.catalog-hub__select) {
+  padding-block-start: 4px;
 }
 
 .create-recipe__start-from .create-recipe__secondary-btn {
@@ -3239,7 +3255,7 @@
     var(--select-chip-accent) 18%,
     var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
-  color: #ffffff;
+  color: var(--semantic-text-primary);
 }
 
 .catalog-report-date-bar__main {
@@ -3306,7 +3322,7 @@
   border-left: 1px solid color-mix(in srgb, var(--select-chip-accent) 40%, transparent);
   border-radius: 0 6px 6px 0;
   background: transparent;
-  color: #ffffff;
+  color: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -3323,6 +3339,10 @@
 }
 
 [data-theme="dark"] .catalog-report-date-bar__chip[data-empty] {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .catalog-report-date-bar__delete {
   color: #ffffff;
 }
 
@@ -3985,7 +4005,11 @@
 
 .session-overview__summary-chip[data-rented] {
   border-color: color-mix(in srgb, #d4a017 55%, transparent);
-  background: color-mix(in srgb, #d4a017 18%, transparent);
+  background: color-mix(in srgb, #d4a017 14%, var(--semantic-surface-app, #f4f4f8));
+  color: var(--semantic-text-primary);
+}
+
+[data-theme="dark"] .session-overview__summary-chip[data-rented] {
   color: #ffffff;
 }
 
@@ -4754,26 +4778,96 @@
 }
 
 /**
- * Rented selection — same yellow chrome in session + Tools hub.
- * Label stays white.
+ * DENSE SELECT EXPERIMENT — Tools/Consumables chip packing.
+ * Restore: set SELECT_CHIPS_DENSE=false in denseChips.ts, or delete this block
+ * and the dense wiring in FlexSelectView.
+ *
+ * - Stays inside parent .app-gutter-x (same side inset as tabs / date bar)
+ * - Tighter chip pad + denser gaps; adaptive font; row leftover → gaps (JS)
+ */
+.select-view--dense {
+  --select-chip-pad-x: 8px;
+  margin-inline: 0;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  padding-top: 10px;
+  /* Match base .select-view — room for qty/family badges to hang. */
+  padding-left: 6px;
+  padding-right: 0;
+  /* Base gaps; JS may raise column gap via margins to fill each row. */
+  gap: 14px 7px;
+}
+
+.select-view--dense .select-chip {
+  padding-left: var(--select-chip-pad-x);
+  padding-right: var(--select-chip-pad-x);
+}
+
+.select-view--dense .select-chip--select {
+  padding-right: 8px;
+}
+
+.select-view--dense .select-chip--clone-plus {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.select-view--dense .select-chip--add:not(.select-chip--add-compose) {
+  padding-left: var(--select-chip-pad-x);
+  padding-right: var(--select-chip-pad-x);
+}
+
+.select-view--dense .select-chip--rented-arm {
+  padding-inline: 8px 6px;
+}
+
+.select-view--dense .select-chip--add-compose {
+  padding-left: 8px;
+  padding-right: 6px;
+}
+
+/**
+ * Dropdown chips must not shrink below the widest option (width-sizer @ 14px).
+ * Prefer wrapping to the next row over clipping menu labels.
+ */
+.select-view--dense .select-chip-anchor,
+.select-view--dense .select-chip-cluster {
+  flex-shrink: 0;
+  max-width: none;
+}
+
+.select-view--dense .select-chip--select {
+  flex-shrink: 0;
+  max-width: none;
+}
+
+.select-view--dense .select-chip__width-sizer {
+  /* Match .select-chip-menu__option font so chip ≥ longest dropdown label. */
+  font-size: 14px;
+}
+
+/**
+ * Rented selection — yellow chrome in session + Tools/Consumables hubs.
+ * Light: primary label on gold tint. Dark: white label (theme overrides below).
  */
 .select-view .select-chip[data-rented][data-selected]:not([data-hold]) {
-  color: #ffffff;
+  color: var(--semantic-text-primary);
   border-color: var(--select-chip-rented, #d4a017);
   background: color-mix(
     in srgb,
-    var(--select-chip-rented, #d4a017) 22%,
-    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+    var(--select-chip-rented, #d4a017) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
 }
 
 .select-view .select-chip[data-rented][data-selected]:active:not([data-hold]) {
-  color: #ffffff;
+  color: var(--semantic-text-primary);
   border-color: var(--select-chip-rented, #d4a017);
   background: color-mix(
     in srgb,
-    var(--select-chip-rented, #d4a017) 30%,
-    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+    var(--select-chip-rented, #d4a017) 26%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
 }
 
@@ -4781,7 +4875,7 @@
   transition:
     border-color var(--select-chip-hold-ms, 420ms) linear,
     background-color var(--select-chip-hold-ms, 420ms) linear;
-  color: #ffffff;
+  color: var(--semantic-text-primary);
   border-color: color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
   background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
 }
@@ -4801,11 +4895,11 @@
   border: 1px solid var(--select-chip-rented, #d4a017);
   background: color-mix(
     in srgb,
-    var(--select-chip-rented, #d4a017) 22%,
-    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+    var(--select-chip-rented, #d4a017) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
   overflow: visible;
-  color: #ffffff;
+  color: var(--semantic-text-primary);
 }
 
 .select-chip-rental:has(.select-chip--rental-main:active):not(
@@ -4813,8 +4907,8 @@
   ) {
   background: color-mix(
     in srgb,
-    var(--select-chip-rented, #d4a017) 30%,
-    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+    var(--select-chip-rented, #d4a017) 26%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
 }
 
@@ -4822,7 +4916,7 @@
   border: none;
   border-radius: 7px 0 0 7px;
   background: transparent;
-  color: #ffffff;
+  color: inherit;
   height: 100%;
   max-width: none;
 }
@@ -4830,7 +4924,7 @@
 .select-chip-rental > .select-chip--rental-main[data-selected] {
   border: none;
   background: transparent;
-  color: #ffffff;
+  color: inherit;
 }
 
 .select-chip__comment-btn {
@@ -4850,7 +4944,7 @@
   border-left: 1px solid color-mix(in srgb, var(--select-chip-rented, #d4a017) 45%, transparent);
   border-radius: 0 7px 7px 0;
   background: transparent;
-  color: #ffffff;
+  color: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -4950,7 +5044,7 @@
 .select-chip-deletable[data-selected] .select-chip__delete-btn,
 .select-chip-rental .select-chip__delete-btn {
   border-left-color: color-mix(in srgb, var(--select-chip-accent) 40%, transparent);
-  color: #ffffff;
+  color: inherit;
 }
 
 .select-chip-rental .select-chip__delete-btn {
@@ -5028,7 +5122,7 @@
 .select-chip-rental[data-comment]::before,
 .select-chip[data-rented][data-comment]::before {
   border-color: var(--select-chip-rented, #d4a017);
-  color: #ffffff;
+  color: var(--select-chip-rented, #d4a017);
 }
 
 .select-chip-deletable[data-selected][data-qty]::after {
@@ -5039,6 +5133,11 @@
 [data-theme="dark"] .select-chip-rental {
   border-color: #f5c84c;
   background: color-mix(in srgb, #f5c84c 22%, #0a0a14);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip-rental > .select-chip--rental-main,
+[data-theme="dark"] .select-chip-rental > .select-chip--rental-main[data-selected] {
   color: #ffffff;
 }
 
@@ -5075,24 +5174,24 @@
 }
 
 /**
- * Owned catalog copy beside a rented selection — muted chrome only;
- * label stays white.
+ * Owned catalog copy beside a rented selection — muted chrome only.
+ * Light: primary label. Dark: white (theme overrides below).
  */
 .select-view .select-chip[data-arm-muted] {
   opacity: 0.38;
-  color: #ffffff;
+  color: var(--semantic-text-primary);
   border-color: color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
-  background: var(--semantic-surface-app, var(--ui-app-bg, #0a0a14));
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
 }
 
 .select-view .select-chip[data-arm-muted][data-selected] {
   opacity: 0.42;
-  color: #ffffff;
+  color: var(--semantic-text-primary);
   border-color: color-mix(in srgb, var(--select-chip-accent) 35%, transparent);
   background: color-mix(
     in srgb,
     var(--select-chip-accent) 8%,
-    var(--semantic-surface-app, var(--ui-app-bg, #0a0a14))
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
 }
 
@@ -5119,20 +5218,25 @@
 
 /**
  * Rented arm — dashed yellow border always; only the switch changes on/off.
+ * Light: primary label on tinted surface. Dark: white label (below).
  */
 .select-chip--rented-arm {
   gap: 8px;
   padding-inline: 10px 8px;
   border-style: dashed;
   border-color: var(--select-chip-rented, #d4a017);
-  background: color-mix(in srgb, var(--select-chip-accent) 12%, transparent);
-  color: #ffffff;
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 10%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+  color: var(--semantic-text-primary);
   font-weight: 600;
 }
 
 .select-chip__rented-arm-label {
   line-height: 1;
-  color: #ffffff;
+  color: inherit;
 }
 
 .select-chip__rented-switch {
@@ -5174,7 +5278,11 @@
 }
 
 .select-chip--rented-arm:active {
-  background: color-mix(in srgb, var(--select-chip-accent) 20%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
 }
 
 [data-theme="dark"]
@@ -5207,7 +5315,7 @@
 [data-theme="dark"] .select-chip--rented-arm,
 [data-theme="dark"] .select-chip--rented-arm[data-selected] {
   border-color: #f5c84c;
-  background: color-mix(in srgb, var(--select-chip-accent) 12%, transparent);
+  background: color-mix(in srgb, #f5c84c 12%, var(--semantic-surface-app, #0a0a14));
   color: #ffffff;
 }
 
@@ -5216,7 +5324,7 @@
 }
 
 [data-theme="dark"] .select-chip--rented-arm:active {
-  background: color-mix(in srgb, var(--select-chip-accent) 20%, transparent);
+  background: color-mix(in srgb, #f5c84c 20%, var(--semantic-surface-app, #0a0a14));
 }
 
 [data-theme="dark"] .select-chip--rented-arm[data-selected] .select-chip__rented-switch {
@@ -5274,8 +5382,7 @@
   color: #ffffff;
 }
 
-/** + Custom / Rented arm standout controls — white labels. */
-[data-theme="dark"] .select-view .select-chip--add,
+/** Rented arm standout — white label. Custom add matches catalog chips. */
 [data-theme="dark"] .select-view .select-chip--rented-arm {
   color: #ffffff;
 }
@@ -5403,13 +5510,33 @@
 .select-chip--rented-arm[data-selected] {
   border-style: dashed;
   border-color: var(--select-chip-rented, #d4a017);
-  background: color-mix(in srgb, var(--select-chip-accent) 12%, transparent);
-  color: #ffffff;
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 10%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+  color: var(--semantic-text-primary);
 }
 
 .select-chip--rented-arm:active,
 .select-chip--rented-arm[data-selected]:active:not([data-hold]) {
-  background: color-mix(in srgb, var(--select-chip-accent) 20%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+[data-theme="dark"] .select-chip--rented-arm,
+[data-theme="dark"] .select-chip--rented-arm[data-selected] {
+  border-color: #f5c84c;
+  background: color-mix(in srgb, #f5c84c 12%, var(--semantic-surface-app, #0a0a14));
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip--rented-arm:active,
+[data-theme="dark"] .select-chip--rented-arm[data-selected]:active:not([data-hold]) {
+  background: color-mix(in srgb, #f5c84c 20%, var(--semantic-surface-app, #0a0a14));
 }
 
 /** Long-press drain toward unselected chrome (label stays white). */
@@ -5519,7 +5646,7 @@
     0 10px 28px color-mix(in srgb, #000 28%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--semantic-text-inverse, #fff) 6%, transparent);
   max-height: min(240px, 50vh);
-  overflow-x: hidden;
+  overflow-x: visible;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -5549,6 +5676,9 @@
   font-weight: 500;
   letter-spacing: 0.01em;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -5826,18 +5956,22 @@
   }
 }
 
-/* Standout control — add simple custom item (no dropdown). */
+/* Add custom item — dashed border affordance; otherwise catalog chip chrome. */
 .select-chip--add {
   gap: 5px;
   border-style: dashed;
-  border-color: color-mix(in srgb, var(--select-chip-accent) 55%, transparent);
-  background: color-mix(in srgb, var(--select-chip-accent) 12%, transparent);
-  color: var(--select-chip-accent);
-  font-weight: 600;
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 28%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  color: var(--semantic-text-primary);
+  font-weight: 500;
 }
 
 .select-chip--add:active {
-  background: color-mix(in srgb, var(--select-chip-accent) 20%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--semantic-text-primary) 6%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
 }
 
 .select-chip--add-compose {
@@ -5921,6 +6055,24 @@
   .select-chip__add-input {
     width: 11rem;
   }
+
+  /** Dense experiment keeps tighter pad/gap on wider viewports too. */
+  .select-view--dense {
+    gap: 14px 7px;
+  }
+
+  .select-view--dense .select-chip {
+    padding-left: var(--select-chip-pad-x, 8px);
+    padding-right: var(--select-chip-pad-x, 8px);
+  }
+
+  .select-view--dense .select-chip--select {
+    padding-right: 8px;
+  }
+
+  .select-view--dense .select-chip--clone-plus {
+    padding: 0;
+  }
 }
 
 .session-overview__tools-pad {
@@ -5929,6 +6081,15 @@
 
 .tools-page__picker {
   margin-top: 2px;
+}
+
+.catalog-hub__select .tools-page__picker {
+  margin-top: 0;
+}
+
+/** Hub report grid — only enough top pad for hanging qty/family badges. */
+.catalog-hub__select .select-view--dense {
+  padding-top: 6px;
 }
 
 /* Catalog hub (Tools / Consumables): compact Select · Edit under header */

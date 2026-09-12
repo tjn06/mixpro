@@ -29,7 +29,12 @@ import {
   setFlexSelectQty,
   type FlexSelectSelection,
 } from "../../domain/select/selection";
-import { orderFlexSelectItemsForPack } from "../../domain/select/packOrder";
+import {
+  SELECT_CHIPS_DENSE,
+  applyDenseSelectRowGaps,
+  clearDenseSelectRowGaps,
+  denseChipFontStyle,
+} from "../../domain/select/denseChips";
 import {
   flexSelectItemHasOptions,
   optionIdsForItem,
@@ -361,6 +366,7 @@ function SimpleSelectChip({
   const showComment = Boolean(rented && selected && onCommentClick);
   const showDelete = Boolean(onRemove);
   const fused = showComment || showDelete;
+  const denseFontStyle = denseChipFontStyle(label);
 
   const main = (
     <button
@@ -384,6 +390,7 @@ function SimpleSelectChip({
             : ariaName
           : ariaName
       }
+      style={denseFontStyle}
       {...gestures}
     >
       <span className="select-chip__label">{label}</span>
@@ -765,11 +772,27 @@ export function FlexSelectView({
   const [slotsByParent, setSlotsByParent] = useState<
     Record<string, DropdownSlot[]>
   >({});
-  /** Display order only — widest first so short chips fill leftover row gaps. */
-  const packedItems = useMemo(
-    () => orderFlexSelectItemsForPack(items),
-    [items],
-  );
+  /** Catalog / library order — do not re-sort by label length. */
+  const displayItems = items;
+  const viewRef = useRef<HTMLSectionElement>(null);
+
+  /** Dense experiment: redistribute leftover row width into horizontal gaps. */
+  useLayoutEffect(() => {
+    const root = viewRef.current;
+    if (!root || !SELECT_CHIPS_DENSE) return;
+
+    const run = () => applyDenseSelectRowGaps(root);
+    run();
+    const ro =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(run) : null;
+    ro?.observe(root);
+    window.addEventListener("resize", run);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", run);
+      clearDenseSelectRowGaps(root);
+    };
+  }, [displayItems, selection, slotsByParent, rentalArmed, wearByOptionId]);
 
   const openRentalComment = useCallback((lineKey: string, label: string) => {
     setCommentTarget({ lineKey, label });
@@ -929,12 +952,15 @@ export function FlexSelectView({
   return (
     <>
     <section
+      ref={viewRef}
       className={`select-view${
         tone === "session" ? " select-view--session" : ""
-      }${className ? ` ${className}` : ""}`}
+      }${SELECT_CHIPS_DENSE ? " select-view--dense" : ""}${
+        className ? ` ${className}` : ""
+      }`}
       aria-label={ariaLabel}
     >
-      {packedItems.map((item) => {
+      {displayItems.map((item) => {
         if (!flexSelectItemHasOptions(item)) {
           const ownedKey = selectionLineKey(item.id, "owned");
           const rentedKey = selectionLineKey(item.id, "rented");
