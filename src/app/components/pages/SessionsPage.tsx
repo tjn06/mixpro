@@ -1,17 +1,18 @@
 import { useMemo, useState } from "react";
 import { CirclePlay } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useTickingNow } from "../../hooks/useTickingNow";
 import { getHumanSavedTime } from "../../saved-mixes/humanSavedTime";
 import { useSessionsStore } from "../../sessions/store";
+import { useSettingsStore } from "../../settings/store";
 import {
-  SESSION_STAGE_CARD_LABELS,
   isSessionStageComplete,
   sessionCardShowsDraftHint,
   sessionCardTitle,
   sessionStageAmountLabel,
 } from "../../domain/sessions/stages";
 import { sessionMatchesHubDateFilter } from "../../domain/sessions/workDate";
-import type { MixSession } from "../../sessions/types";
+import type { MixSession, SessionStageId } from "../../sessions/types";
 import { SESSION_STAGE_ORDER } from "../../sessions/types";
 import { cv } from "../../ui/tokens";
 import { CatalogReportDateBar } from "../catalog/CatalogReportDateBar";
@@ -26,14 +27,25 @@ const PLAY_ICON = 30;
 const DATE_FILTER_ICON = 14;
 const SHEET_CONFIRM_ICON = 18;
 
+function stageShortKey(stageId: SessionStageId): string {
+  return `sessions.stageShort.${stageId}`;
+}
+
 function SessionStageSteps({ session }: { session: MixSession }) {
+  const { t } = useTranslation("common");
   return (
-    <ol className="sessions-page__stages" aria-label="Session stages">
+    <ol className="sessions-page__stages" aria-label={t("sessions.stagesAria")}>
       {SESSION_STAGE_ORDER.map((stageId, index) => {
         const done = isSessionStageComplete(session, stageId);
         const active = session.activeStage === stageId && !done;
-        const label = SESSION_STAGE_CARD_LABELS[stageId];
-        const amount = sessionStageAmountLabel(session, stageId);
+        const label = t(stageShortKey(stageId));
+        const rawAmount = sessionStageAmountLabel(session, stageId);
+        const amount =
+          stageId === "summary"
+            ? rawAmount === "Saved"
+              ? t("sessions.saved")
+              : t("sessions.draft")
+            : rawAmount;
         const isFirst = index === 0;
         const isLast = index === SESSION_STAGE_ORDER.length - 1;
         const stateClass = done
@@ -50,10 +62,10 @@ function SessionStageSteps({ session }: { session: MixSession }) {
             style={{ zIndex: SESSION_STAGE_ORDER.length - index }}
             aria-label={
               done
-                ? `${label}, ${amount}, complete`
+                ? t("sessions.stageComplete", { label, amount })
                 : active
-                  ? `${label}, ${amount}, current step`
-                  : `${label}, ${amount}`
+                  ? t("sessions.stageCurrent", { label, amount })
+                  : t("sessions.stageAmount", { label, amount })
             }
           >
             <span className="sessions-page__stage-name">{label}</span>
@@ -86,7 +98,13 @@ function SessionCard({
   onDelete: () => void;
   onRename: () => void;
 }) {
-  const savedTime = getHumanSavedTime(new Date(session.updatedAt), now);
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
+  const savedTime = getHumanSavedTime(
+    new Date(session.updatedAt),
+    now,
+    uiLanguage,
+  );
 
   return (
     <article
@@ -102,7 +120,9 @@ function SessionCard({
                 {sessionCardTitle(session)}
               </span>
               {sessionCardShowsDraftHint(session) ? (
-                <span className="sessions-page__card-draft">Draft</span>
+                <span className="sessions-page__card-draft">
+                  {t("sessions.draft")}
+                </span>
               ) : null}
             </p>
             <p className="sessions-page__card-time tabular-nums">
@@ -122,7 +142,7 @@ function SessionCard({
             <button
               type="button"
               className="sessions-page__card-action"
-              aria-label="Edit session name"
+              aria-label={t("sessions.editName")}
               onClick={onRename}
             >
               <RenameIcon size={ACTION_ICON} />
@@ -130,7 +150,7 @@ function SessionCard({
             <button
               type="button"
               className="sessions-page__card-action sessions-page__card-action--danger"
-              aria-label="Delete session"
+              aria-label={t("sessions.deleteSession")}
               onClick={onDelete}
             >
               <DeleteIcon size={ACTION_ICON} />
@@ -138,7 +158,7 @@ function SessionCard({
             <button
               type="button"
               className="sessions-page__card-action sessions-page__card-action--play"
-              aria-label="Open session"
+              aria-label={t("sessions.openSession")}
               onClick={onOpen}
             >
               <CirclePlay size={PLAY_ICON} strokeWidth={2} aria-hidden />
@@ -161,6 +181,7 @@ export function SessionsPage({
   onOpenSession?: (sessionId: string) => void;
   embedded?: boolean;
 }) {
+  const { t } = useTranslation("common");
   const sessions = useSessionsStore((s) => s.sessions);
   const activeSessionId = useSessionsStore((s) => s.activeSessionId);
   const createSession = useSessionsStore((s) => s.createSession);
@@ -196,16 +217,16 @@ export function SessionsPage({
   const emptyFilterMessage = (() => {
     const q = query.trim();
     if (filterDateId && q) {
-      return `No sessions match “${q}” on that date.`;
+      return t("sessions.noMatchQueryDate", { query: q });
     }
-    if (filterDateId) return "No sessions on that date.";
-    if (q) return `No sessions match “${q}”.`;
-    return "No sessions match.";
+    if (filterDateId) return t("sessions.noMatchDate");
+    if (q) return t("sessions.noMatchQuery", { query: q });
+    return t("sessions.noMatch");
   })();
 
   return (
     <DestinationPageChrome
-      title="Sessions"
+      title={t("sessions.title")}
       onMenuClick={onMenuClick}
       embedded={embedded}
     >
@@ -214,11 +235,11 @@ export function SessionsPage({
         className="destination-page__primary-btn destination-page__primary-btn--session"
         onClick={handleNewSession}
       >
-        + New session
+        {t("sessions.new")}
       </button>
 
       <PageSearchField
-        placeholder="Search sessions…"
+        placeholder={t("sessions.search")}
         value={query}
         onChange={setQuery}
       />
@@ -227,19 +248,19 @@ export function SessionsPage({
         className="sessions-page__date-bar"
         workDateId={filterDateId}
         onWorkDateChange={setFilterDateId}
-        ariaLabel="Filter sessions by date"
-        emptyLabel="Filter by date"
-        changeTitle="Change filter date"
-        formatSelectedLabel={(date) => `Filter: ${date}`}
+        ariaLabel={t("sessions.filterAria")}
+        emptyLabel={t("sessions.filterEmpty")}
+        changeTitle={t("sessions.filterChange")}
+        formatSelectedLabel={(date) => t("sessions.filterSelected", { date })}
         leadingIcon={<FilterIcon size={DATE_FILTER_ICON} />}
         confirmIcon={<FilterIcon size={SHEET_CONFIRM_ICON} />}
-        confirmLabel="Apply filter"
-        pickerSubtitle="Show sessions created or with activity on this day."
+        confirmLabel={t("sessions.filterApply")}
+        pickerSubtitle={t("sessions.filterSubtitle")}
       />
 
       {sessions.length === 0 ? (
         <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
-          No sessions yet. Start with + New session.
+          {t("sessions.empty")}
         </p>
       ) : filtered.length === 0 ? (
         <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
@@ -255,7 +276,11 @@ export function SessionsPage({
                 now={now}
                 onOpen={() => openSession(session)}
                 onDelete={() => {
-                  if (window.confirm(`Delete “${session.name}”?`)) {
+                  if (
+                    window.confirm(
+                      t("sessions.confirmDelete", { name: session.name }),
+                    )
+                  ) {
                     deleteSession(session.id);
                   }
                 }}
@@ -272,9 +297,9 @@ export function SessionsPage({
           if (!open) setRenameSession(null);
         }}
         initialName={renameSession?.name ?? ""}
-        title="Rename session"
-        subtitle="Update the name shown in your session list."
-        confirmLabel="Save"
+        title={t("sessions.renameTitle")}
+        subtitle={t("sessions.renameSubtitle")}
+        confirmLabel={t("common.save")}
         onConfirm={(name) => {
           if (!renameSession) return;
           patchSession(renameSession.id, { name });

@@ -16,7 +16,8 @@ export const CONTRAST_MODE_ATTR = "data-contrast";
 export const CONTRAST_MODE_HIGH = "high";
 
 export const SETTINGS_STORAGE_KEY = "mixpro-settings";
-export const SETTINGS_STORAGE_VERSION = 2;
+/** v3 — adds persisted `uiLanguage` (default Swedish). */
+export const SETTINGS_STORAGE_VERSION = 3;
 
 export const DEFAULT_APPEARANCE: ThemeAppearance = {
   colorScheme: "light",
@@ -107,6 +108,7 @@ export function migratePersistedSettings(
       contrast: prev.contrast ?? "default",
     };
   }
+  // v2 / v3+: appearance fields only (uiLanguage handled in settings store).
   const current = persistedState as ThemeAppearance;
   return {
     colorScheme: current.colorScheme ?? "light",
