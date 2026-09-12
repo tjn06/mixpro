@@ -12,6 +12,7 @@ import {
   type FormEvent,
 } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
   selectionLineKey,
   type ItemAcquisition,
@@ -41,7 +42,6 @@ import {
   type FlexSelectItem,
 } from "../../domain/select/types";
 import {
-  WEAR_LEVEL_A11Y_LABELS,
   WEAR_LEVEL_LABELS,
   WEAR_LEVELS,
   WEAR_PLACEHOLDER_LABEL,
@@ -50,6 +50,12 @@ import {
   type WearByOptionId,
   type WearLevel,
 } from "../../domain/select/wear";
+import type { AppLanguage } from "../../i18n/language";
+import {
+  displayLabel,
+  type ItemLabel,
+} from "../../i18n/localizedLabel";
+import { useSettingsStore } from "../../settings/store";
 import { DeleteIcon } from "../shared/ActionIcons";
 import { ConfirmDeleteSheet } from "../sheets/ConfirmDeleteSheet";
 import {
@@ -68,12 +74,14 @@ const MENU_GAP_PX = 4;
 
 /** Widest label by character length (stable closed-chip width for number suffixes). */
 function widestOptionLabel(
-  familyLabel: string,
+  familyLabel: ItemLabel,
   options: readonly FlexSelectItem[] | undefined,
+  language: AppLanguage,
 ): string {
-  let widest = familyLabel;
+  let widest = displayLabel(familyLabel, language);
   for (const option of options ?? []) {
-    if (option.label.length > widest.length) widest = option.label;
+    const text = displayLabel(option.label, language);
+    if (text.length > widest.length) widest = text;
   }
   return widest;
 }
@@ -104,6 +112,12 @@ function SelectDropdownChip({
   /** Variant ids already used by sibling slots (disabled in menu). */
   takenOptionIds: ReadonlySet<string>;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
+  const itemText = displayLabel(item.label, uiLanguage);
+  const selectedOptionText = selectedOption
+    ? displayLabel(selectedOption.label, uiLanguage)
+    : null;
   const anchorRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const deferOpenRef = useRef<number | null>(null);
@@ -111,8 +125,8 @@ function SelectDropdownChip({
   const listboxId = useId();
   const selected = selectedOption != null;
   const widthSizerLabel = useMemo(
-    () => widestOptionLabel(item.label, item.children),
-    [item.label, item.children],
+    () => widestOptionLabel(item.label, item.children, uiLanguage),
+    [item.label, item.children, uiLanguage],
   );
 
   const clearDeferOpen = useCallback(() => {
@@ -216,11 +230,12 @@ function SelectDropdownChip({
             className="select-chip-menu"
             style={menuStyle}
             role="listbox"
-            aria-label={item.label}
+            aria-label={itemText}
           >
             {item.children?.map((option) => {
               const active = selectedOption?.id === option.id;
               const taken = !active && takenOptionIds.has(option.id);
+              const optionText = displayLabel(option.label, uiLanguage);
               return (
                 <button
                   key={option.id}
@@ -237,7 +252,7 @@ function SelectDropdownChip({
                     onPickOption(option.id);
                   }}
                 >
-                  {option.label}
+                  {optionText}
                 </button>
               );
             })}
@@ -256,11 +271,18 @@ function SelectDropdownChip({
         )
       : null;
 
-  const ariaLabel = selectedOption
+  const ariaLabel = selectedOption && selectedOptionText
     ? qty > 1
-      ? `${item.label}, ${selectedOption.label}, quantity ${qty}`
-      : `${item.label}, ${selectedOption.label}`
-    : item.label;
+      ? t("select.optionQtyAria", {
+          item: itemText,
+          option: selectedOptionText,
+          qty,
+        })
+      : t("select.optionAria", {
+          item: itemText,
+          option: selectedOptionText,
+        })
+    : itemText;
 
   return (
     <div className="select-chip-anchor" ref={anchorRef}>
@@ -268,7 +290,7 @@ function SelectDropdownChip({
         type="button"
         className="select-chip select-chip--select"
         data-selected={selected ? "" : undefined}
-        data-family={selectedOption ? item.label : undefined}
+        data-family={selectedOption ? itemText : undefined}
         data-qty={qty > 1 ? String(qty) : undefined}
         data-open={open ? "" : undefined}
         aria-label={ariaLabel}
@@ -282,7 +304,7 @@ function SelectDropdownChip({
             {widthSizerLabel}
           </span>
           <span className="select-chip__group-label">
-            {selectedOption?.label ?? item.label}
+            {selectedOptionText ?? itemText}
           </span>
         </span>
         <span className="select-chip__chevron" aria-hidden>
@@ -301,12 +323,14 @@ function CustomDeleteButton({
   label: string;
   onClick: () => void;
 }) {
+  const { t } = useTranslation("common");
+  const deleteLabel = t("select.deleteAria", { name: label });
   return (
     <button
       type="button"
       className="select-chip__delete-btn"
-      aria-label={`Delete ${label}`}
-      title={`Delete ${label}`}
+      aria-label={deleteLabel}
+      title={deleteLabel}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => {
         event.stopPropagation();
@@ -349,6 +373,7 @@ function SimpleSelectChip({
   onIncrement: () => void;
   onDecrement: () => void;
 }) {
+  const { t } = useTranslation("common");
   const selected = qty >= 1;
   const qtyGestures = selected && !allowRetapSelect && !disabled;
   const gestures = useSelectChipGestures({
@@ -362,7 +387,13 @@ function SimpleSelectChip({
     onLongPress: disabled ? () => {} : onDecrement,
   });
 
-  const ariaName = rented ? `${label}, rented` : label;
+  const ariaName = rented
+    ? `${label}, ${t("select.rented")}`
+    : label;
+  const chipAria =
+    selected && qty > 1
+      ? t("select.qtyAria", { label: ariaName, qty })
+      : ariaName;
   const showComment = Boolean(rented && selected && onCommentClick);
   const showDelete = Boolean(onRemove);
   const fused = showComment || showDelete;
@@ -383,13 +414,7 @@ function SimpleSelectChip({
       }
       aria-pressed={selected}
       aria-disabled={disabled || undefined}
-      aria-label={
-        selected
-          ? qty > 1
-            ? `${ariaName}, quantity ${qty}`
-            : ariaName
-          : ariaName
-      }
+      aria-label={chipAria}
       style={denseFontStyle}
       {...gestures}
     >
@@ -430,6 +455,7 @@ function RentedArmControl({
   armed: boolean;
   onArmedChange: (next: boolean) => void;
 }) {
+  const { t } = useTranslation("common");
   return (
     <button
       type="button"
@@ -438,14 +464,12 @@ function RentedArmControl({
       data-selected={armed ? "" : undefined}
       aria-checked={armed}
       aria-label={
-        armed
-          ? "Rented mode on. Next picks are rented"
-          : "Rented mode off. Tap to mark next picks as rented"
+        armed ? t("select.rentedOnAria") : t("select.rentedOffAria")
       }
-      title={armed ? "Rented mode on" : "Rented mode off"}
+      title={armed ? t("select.rentedOn") : t("select.rentedOff")}
       onClick={() => onArmedChange(!armed)}
     >
-      <span className="select-chip__rented-arm-label">Rented</span>
+      <span className="select-chip__rented-arm-label">{t("select.rented")}</span>
       <span className="select-chip__rented-switch" aria-hidden>
         <span className="select-chip__rented-switch-thumb" />
       </span>
@@ -462,6 +486,7 @@ function AddSimpleItemControl({
   placeholder: string;
   onAdd: (name: string) => void;
 }) {
+  const { t } = useTranslation("common");
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -529,7 +554,7 @@ function AddSimpleItemControl({
         }}
       />
       <button type="submit" className="select-chip__add-confirm">
-        Add
+        {t("select.add")}
       </button>
     </form>
   );
@@ -545,12 +570,13 @@ function DropdownClonePlusButton({
   disabled: boolean;
   onClick: () => void;
 }) {
+  const { t } = useTranslation("common");
   return (
     <button
       type="button"
       className="select-chip select-chip--clone-plus"
       disabled={disabled}
-      aria-label={`Add another ${familyLabel}`}
+      aria-label={t("select.addAnother", { family: familyLabel })}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={onClick}
     >
@@ -573,6 +599,7 @@ function WearSelectControl({
   onOpenChange: (next: boolean) => void;
   onPick: (level: WearLevel) => void;
 }) {
+  const { t } = useTranslation("common");
   const anchorRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
@@ -633,6 +660,7 @@ function WearSelectControl({
     };
   }, [open, onOpenChange]);
 
+  const wearTitle = t("wear.title");
   const menu =
     open && !disabled && typeof document !== "undefined"
       ? createPortal(
@@ -642,7 +670,7 @@ function WearSelectControl({
             className="select-chip-menu select-chip-menu--wear"
             style={menuStyle}
             role="listbox"
-            aria-label="Slitage"
+            aria-label={wearTitle}
           >
             {WEAR_LEVELS.map((level) => {
               const active = value === level;
@@ -652,7 +680,7 @@ function WearSelectControl({
                   type="button"
                   role="option"
                   aria-selected={active}
-                  aria-label={WEAR_LEVEL_A11Y_LABELS[level]}
+                  aria-label={t(`wear.${level}`)}
                   className="select-chip-menu__option"
                   data-active={active ? "" : undefined}
                   onClick={() => {
@@ -675,15 +703,15 @@ function WearSelectControl({
         ref={anchorRef}
         type="button"
         className="select-chip select-chip--wear"
-        data-wear-title={disabled ? undefined : "Slitage"}
+        data-wear-title={disabled ? undefined : wearTitle}
         data-selected={value ? "" : undefined}
         data-open={open ? "" : undefined}
         data-reserved={!value && !disabled ? "" : undefined}
         disabled={disabled}
         aria-label={
           value
-            ? `Slitage ${WEAR_LEVEL_A11Y_LABELS[value]}`
-            : "Välj slitage"
+            ? t("wear.withLevel", { level: t(`wear.${value}`) })
+            : t("wear.choose")
         }
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -714,16 +742,16 @@ export function FlexSelectView({
   onWearChange,
   className,
   tone = "default",
-  unselectLabel = "Unselect",
-  addSimpleLabel = "Custom",
-  addSimplePlaceholder = "Custom item name",
+  unselectLabel,
+  addSimpleLabel,
+  addSimplePlaceholder,
   onAddSimpleItem,
   customItemIds,
   onRemoveCustomItem,
   acquisitionEnabled = false,
   commentsByLineKey,
   onRentalCommentChange,
-  "aria-label": ariaLabel = "Select items",
+  "aria-label": ariaLabel,
 }: {
   items: readonly FlexSelectItem[];
   selection: FlexSelectSelection;
@@ -753,6 +781,13 @@ export function FlexSelectView({
   onRentalCommentChange?: (lineKey: string, comment: string | null) => void;
   "aria-label"?: string;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
+  const resolvedUnselectLabel = unselectLabel ?? t("select.unselect");
+  const resolvedAddSimpleLabel = addSimpleLabel ?? t("catalog.custom");
+  const resolvedAddSimplePlaceholder =
+    addSimplePlaceholder ?? t("select.customPlaceholder");
+  const resolvedAriaLabel = ariaLabel ?? t("select.selectItems");
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
   const [openWearOptionId, setOpenWearOptionId] = useState<string | null>(null);
   const [rentalArmed, setRentalArmed] = useState(false);
@@ -774,7 +809,7 @@ export function FlexSelectView({
   >({});
   /** Catalog / library order — do not re-sort by label length. */
   const displayItems = items;
-  const viewRef = useRef<HTMLSectionElement>(null);
+  const viewRef = useRef<HTMLElement>(null);
 
   /** Dense experiment: redistribute leftover row width into horizontal gaps. */
   useLayoutEffect(() => {
@@ -958,9 +993,10 @@ export function FlexSelectView({
       }${SELECT_CHIPS_DENSE ? " select-view--dense" : ""}${
         className ? ` ${className}` : ""
       }`}
-      aria-label={ariaLabel}
+      aria-label={resolvedAriaLabel}
     >
       {displayItems.map((item) => {
+        const itemText = displayLabel(item.label, uiLanguage);
         if (!flexSelectItemHasOptions(item)) {
           const ownedKey = selectionLineKey(item.id, "owned");
           const rentedKey = selectionLineKey(item.id, "rented");
@@ -983,7 +1019,7 @@ export function FlexSelectView({
                */}
               <SimpleSelectChip
                 key={`${item.id}-slot`}
-                label={item.label}
+                label={itemText}
                 qty={primaryQty}
                 rented={primaryIsRented}
                 hasComment={
@@ -993,13 +1029,13 @@ export function FlexSelectView({
                 }
                 onCommentClick={
                   primaryIsRented && commentsEnabled
-                    ? () => openRentalComment(rentedKey, item.label)
+                    ? () => openRentalComment(rentedKey, itemText)
                     : undefined
                 }
                 onRemove={
                   canRemoveCustom
                     ? () =>
-                        setDeleteTarget({ id: item.id, label: item.label })
+                        setDeleteTarget({ id: item.id, label: itemText })
                     : undefined
                 }
                 onSelect={() =>
@@ -1028,7 +1064,7 @@ export function FlexSelectView({
               {primaryIsRented ? (
                 <SimpleSelectChip
                   key={`${item.id}-owned-copy`}
-                  label={item.label}
+                  label={itemText}
                   qty={ownedQty}
                   disabled={acquisition === "rented"}
                   onSelect={() =>
@@ -1078,7 +1114,7 @@ export function FlexSelectView({
               const rentedKey = selectionLineKey(child.id, "rented");
               const rentedQty = flexSelectQty(selection, rentedKey);
               if (rentedQty < 1) return [];
-              const rentedLabel = `${item.label} · ${child.label}`;
+              const rentedLabel = `${itemText} · ${displayLabel(child.label, uiLanguage)}`;
               return [
                 <SimpleSelectChip
                   key={rentedKey}
@@ -1183,7 +1219,7 @@ export function FlexSelectView({
                       bumpFlexSelectQty(selection, selectedOption.id, -1),
                     );
                   }}
-                  unselectLabel={unselectLabel}
+                  unselectLabel={resolvedUnselectLabel}
                   takenOptionIds={slotTaken}
                 />
               );
@@ -1237,7 +1273,7 @@ export function FlexSelectView({
                   {wearControl}
                   {showCloneOnSlot ? (
                     <DropdownClonePlusButton
-                      familyLabel={item.label}
+                      familyLabel={itemText}
                       disabled={
                         acquisition === "rented" ||
                         freeOptionCount < 1 ||
@@ -1252,7 +1288,7 @@ export function FlexSelectView({
             {rentedOptionChips}
             {rentedOptionChips.length > 0 ? (
               <DropdownClonePlusButton
-                familyLabel={item.label}
+                familyLabel={itemText}
                 disabled={
                   acquisition === "rented" ||
                   freeOptionCount < 1 ||
@@ -1266,8 +1302,8 @@ export function FlexSelectView({
       })}
       {onAddSimpleItem ? (
         <AddSimpleItemControl
-          label={addSimpleLabel}
-          placeholder={addSimplePlaceholder}
+          label={resolvedAddSimpleLabel}
+          placeholder={resolvedAddSimplePlaceholder}
           onAdd={(name) => {
             setOpenSlotId(null);
             onAddSimpleItem(name, acquisition);

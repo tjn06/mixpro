@@ -9,6 +9,7 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
   BatchMixer,
   type RecipeCreateCommitPayload,
@@ -36,7 +37,10 @@ import {
   recipeMenuLabel,
   type BlendingRecipe,
 } from "../../domain/recipe/types";
+import type { AppLanguage } from "../../i18n/language";
+import { displayLabel } from "../../i18n/localizedLabel";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
+import { useSettingsStore } from "../../settings/store";
 import { useSessionsStore } from "../../sessions/store";
 import { CloseIcon, InfoIcon, ScaleIcon, SwipeAdjustIcon } from "../shared/ActionIcons";
 import { AppHeader } from "../shared/AppHeader";
@@ -54,9 +58,13 @@ import {
 const UNIT_POPOVER_FRAME_PAD = 8;
 
 /** Prefill name when starting from an existing recipe: "Copy {original}". */
-function copyRecipeName(recipe: BlendingRecipe): string {
-  const original = recipe.name?.trim() || recipe.id;
-  return `Copy ${original}`;
+function copyRecipeName(
+  recipe: BlendingRecipe,
+  formatCopy: (name: string) => string,
+  language?: AppLanguage,
+): string {
+  const original = displayLabel(recipe.name, language).trim() || recipe.id;
+  return formatCopy(original);
 }
 
 type FieldKey = "name" | "a" | "b" | "filler" | "thickener" | "description";
@@ -134,9 +142,6 @@ function percentDraftToGrams(pctRaw: string, binderGrams: number): string | null
 
 type UnitConverterMode = "kg" | "percent";
 
-const PERCENT_NEEDS_BINDER =
-  "Enter Resin A and Hardener B first to use % of binder.";
-
 const FIELD_FOCUS_ORDER: FieldKey[] = [
   "name",
   "a",
@@ -199,6 +204,7 @@ function Field({
   /** For scroll/focus on validation errors. */
   fieldKey?: FieldKey;
 }) {
+  const { t } = useTranslation("common");
   const labelId = useId();
   const slotRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -209,6 +215,8 @@ function Field({
   const [swipeOpen, setSwipeOpen] = useState(false);
   const [unitPortal, setUnitPortal] = useState<HTMLElement | null>(null);
   const [popoverStyle, setPopoverStyle] = useState<CSSProperties | null>(null);
+  const binderHint = t("recipe.binderHint");
+  const dialSwipeLabel = t("recipe.dialSwipe");
 
   const binderReady = binderGrams != null && binderGrams > 0;
   const showPercentTab = percentOfBinderHelper;
@@ -369,12 +377,15 @@ function Field({
     isValidUnitDraft(unitDraft) &&
     (unitMode === "kg" || binderReady);
 
-  const unitSuffix = unitMode === "percent" ? "% of binder" : "kg";
+  const unitSuffix =
+    unitMode === "percent" ? t("recipe.percentOfBinder") : "kg";
   const scaleTitle = showPercentTab
-    ? "Convert from kg or % of binder"
-    : "Enter in kilograms";
+    ? t("recipe.convertFromKgOrPercent")
+    : t("recipe.enterInKg");
   const applyLabel =
-    unitMode === "percent" ? "Convert from %" : "Convert to grams";
+    unitMode === "percent"
+      ? t("recipe.convertFromPercent")
+      : t("recipe.convertToGrams");
   const previewGrams =
     unitMode === "percent"
       ? binderGrams != null
@@ -390,7 +401,7 @@ function Field({
             <button
               type="button"
               className="create-recipe__kg-backdrop create-recipe__kg-backdrop--portaled"
-              aria-label="Dismiss unit converter"
+              aria-label={t("recipe.dismissConverter")}
               onClick={closeUnitHelper}
             />
             <div
@@ -398,7 +409,7 @@ function Field({
               className="create-recipe__kg-popover create-recipe__kg-popover--portaled"
               style={popoverStyle}
               role="dialog"
-              aria-label={`Convert ${label}`}
+              aria-label={t("recipe.convertAria", { label })}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -410,7 +421,7 @@ function Field({
                 <div
                   className="create-recipe__unit-tabs"
                   role="tablist"
-                  aria-label="Converter type"
+                  aria-label={t("recipe.converterType")}
                 >
                   <button
                     type="button"
@@ -432,10 +443,12 @@ function Field({
                     className={`create-recipe__unit-tab${
                       unitMode === "percent" ? " create-recipe__unit-tab--active" : ""
                     }${!binderReady ? " create-recipe__unit-tab--disabled" : ""}`}
-                    title={binderReady ? "% of binder" : PERCENT_NEEDS_BINDER}
+                    title={
+                      binderReady ? t("recipe.percentOfBinder") : binderHint
+                    }
                     onClick={() => selectUnitMode("percent")}
                   >
-                    % of binder
+                    {t("recipe.percentOfBinder")}
                   </button>
                 </div>
               ) : null}
@@ -485,7 +498,7 @@ function Field({
                     disabled
                     readOnly
                     tabIndex={-1}
-                    aria-label={`${label} in grams (computed)`}
+                    aria-label={t("recipe.gramsComputedAria", { label })}
                     placeholder="—"
                   />
                   <span className="create-recipe__suffix create-recipe__suffix--grams" aria-hidden>
@@ -495,7 +508,7 @@ function Field({
               </div>
               {unitDraftInvalid ? (
                 <p className="create-recipe__kg-error" role="alert">
-                  Use digits and one decimal point (`.` or `,`).
+                  {t("recipe.unitError")}
                 </p>
               ) : null}
               <div className="create-recipe__kg-actions">
@@ -510,7 +523,7 @@ function Field({
                 <button
                   type="button"
                   className="create-recipe__kg-action create-recipe__kg-action--cancel"
-                  aria-label="Cancel"
+                  aria-label={t("recipe.cancel")}
                   onClick={() => setUnitOpen(false)}
                 >
                   <CloseIcon size={16} />
@@ -584,10 +597,10 @@ function Field({
               <button
                 type="button"
                 className="create-recipe__kg-btn"
-                aria-label={`Dial ${label} with swipe`}
+                aria-label={`${dialSwipeLabel}: ${label}`}
                 aria-expanded={swipeOpen}
                 aria-haspopup="dialog"
-                title="Dial with swipe"
+                title={dialSwipeLabel}
                 onClick={openSwipeHelper}
               >
                 <SwipeAdjustIcon size={16} />
@@ -626,8 +639,11 @@ function Field({
   );
 }
 
-function bucketOptionLabel(option: BucketSelection): string {
-  return option === "none" ? "Unlimited" : `${option} L`;
+function bucketOptionLabel(
+  option: BucketSelection,
+  unlimitedLabel: string,
+): string {
+  return option === "none" ? unlimitedLabel : `${option} L`;
 }
 
 function collectFieldErrors(
@@ -663,10 +679,6 @@ function collectFieldErrors(
 }
 
 const CREATE_BUCKET_OPTIONS: BucketSelection[] = ["none", ...BUCKET_SIZES];
-const FORMULA_INFO =
-  "Locked mix ratio for this recipe. Filler and thickener are percent of binder (A + B), not of total mix weight.";
-const BUCKET_INFO =
-  "Pick a bucket for volume guidance, or leave unlimited. You can set a recommended batch size in the calculator either way.";
 
 export function CreateRecipeScreen({
   context,
@@ -681,6 +693,8 @@ export function CreateRecipeScreen({
   onBack: () => void;
   onSaved: (recipe: BlendingRecipe, via: "library" | "session") => void;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const addLibraryRecipe = useRecipeLibraryStore((s) => s.addRecipe);
   const userRecipes = useRecipeLibraryStore((s) => s.userRecipes);
   const addSessionRecipe = useSessionsStore((s) => s.addSessionRecipe);
@@ -690,7 +704,7 @@ export function CreateRecipeScreen({
   const showSessionSave = context.source === "session";
   const sessionName =
     sessionId != null
-      ? sessions.find((s) => s.id === sessionId)?.name ?? "Session"
+      ? sessions.find((s) => s.id === sessionId)?.name ?? t("nav.sessionChip")
       : undefined;
 
   const libraryRecipes = useMemo(() => {
@@ -705,7 +719,7 @@ export function CreateRecipeScreen({
 
   const [method, setMethod] = useState<RecipeCreateMethod>("formula");
   const [name, setName] = useState("");
-  const [nameSubline, setNameSubline] = useState("Epoxy");
+  const [nameSubline, setNameSubline] = useState(() => t("recipe.defaultSubline"));
   const [description, setDescription] = useState("");
   const [a, setA] = useState(method === "formula" ? "2" : "");
   const [b, setB] = useState(method === "formula" ? "1" : "");
@@ -736,9 +750,7 @@ export function CreateRecipeScreen({
 
   const applyRecipeAsCopy = (recipe: BlendingRecipe): boolean => {
     if (dirty) {
-      const ok = window.confirm(
-        "Replace the current form with a copy of this recipe?",
-      );
+      const ok = window.confirm(t("recipe.replaceConfirm"));
       if (!ok) return false;
     }
     const aParts = recipe.binderParts.find((p) => p.id === "A")?.parts ?? 2;
@@ -753,15 +765,21 @@ export function CreateRecipeScreen({
         : undefined;
 
     setMethod("formula");
-    setName(copyRecipeName(recipe));
-    setNameSubline(recipe.nameSubline?.trim() || "Epoxy");
-    setDescription(recipe.description?.trim() ?? "");
+    setName(
+      copyRecipeName(recipe, (n) => t("recipe.copyName", { name: n }), uiLanguage),
+    );
+    setNameSubline(
+      displayLabel(recipe.nameSubline, uiLanguage).trim() ||
+        t("recipe.defaultSubline"),
+    );
+    const copiedDescription = displayLabel(recipe.description, uiLanguage).trim();
+    setDescription(copiedDescription);
     setA(formatAmount(aParts));
     setB(formatAmount(bParts));
     setFiller(sandPct != null && sandPct > 0 ? formatAmount(sandPct) : "");
     setThickener(tixPct != null && tixPct > 0 ? formatAmount(tixPct) : "");
     setScaledBinderSum(binder);
-    if (binder != null || (recipe.description?.trim() ?? "") !== "") {
+    if (binder != null || copiedDescription !== "") {
       setAdvancedOpen(true);
     }
     setError(null);
@@ -793,7 +811,7 @@ export function CreateRecipeScreen({
   const preview = useMemo(() => {
     if (method === "weights") {
       const input = {
-        name: name.trim() || "Preview",
+        name: name.trim() || t("recipe.previewName"),
         nameSubline,
         description,
         a: parseNum(a),
@@ -807,7 +825,7 @@ export function CreateRecipeScreen({
       return blendingRecipeFromWeights(input);
     }
     const input = {
-      name: name.trim() || "Preview",
+      name: name.trim() || t("recipe.previewName"),
       nameSubline,
       description,
       aParts: parseNum(a),
@@ -819,7 +837,7 @@ export function CreateRecipeScreen({
     if (!(input.aParts > 0) || !(input.bParts > 0)) return null;
     if (input.fillerPercent < 0 || input.thickenerPercent < 0) return null;
     return blendingRecipeFromFormula(input);
-  }, [method, name, nameSubline, description, a, b, filler, thickener, scaledBinderSum]);
+  }, [method, name, nameSubline, description, a, b, filler, thickener, scaledBinderSum, t]);
 
   const switchMethod = (next: RecipeCreateMethod) => {
     if (next === method) return;
@@ -838,7 +856,7 @@ export function CreateRecipeScreen({
       // Actual weights → Formula: convert grams to parts / % when A+B are valid.
       if (aNum > 0 && bNum > 0) {
         const recipe = blendingRecipeFromWeights({
-          name: name.trim() || "Draft",
+          name: name.trim() || t("recipe.draftName"),
           nameSubline,
           description,
           a: aNum,
@@ -855,9 +873,7 @@ export function CreateRecipeScreen({
         setFiller(sandPct != null && sandPct > 0 ? formatAmount(sandPct) : "");
         setThickener(tixPct != null && tixPct > 0 ? formatAmount(tixPct) : "");
       } else if (hasComponentInput) {
-        const ok = window.confirm(
-          "Switch to Formula? Resin A and Hardener B must be set to convert grams — other component values will be reset.",
-        );
+        const ok = window.confirm(t("recipe.switchToFormulaConfirm"));
         if (!ok) return;
         setA("2");
         setB("1");
@@ -876,7 +892,7 @@ export function CreateRecipeScreen({
         scaledBinderSum > 0
       ) {
         const recipe = blendingRecipeFromFormula({
-          name: name.trim() || "Draft",
+          name: name.trim() || t("recipe.draftName"),
           nameSubline,
           description,
           aParts: aNum,
@@ -891,11 +907,7 @@ export function CreateRecipeScreen({
         setThickener((vals[3] ?? 0) > 0 ? formatAmount(vals[3] ?? 0) : "");
         setFiller((vals[4] ?? 0) > 0 ? formatAmount(vals[4] ?? 0) : "");
       } else if (hasComponentInput) {
-        const ok = window.confirm(
-          scaledBinderSum == null || !(scaledBinderSum > 0)
-            ? "Switch to Actual weights? Without a rec. batch size, parts/% cannot be converted to grams and component fields will be cleared. Cancel and set rec. batch first to convert."
-            : "Switch to Actual weights? Component values that cannot be converted will be cleared.",
-        );
+        const ok = window.confirm(t("recipe.switchToWeightsConfirm"));
         if (!ok) return;
         setA("");
         setB("");
@@ -922,11 +934,11 @@ export function CreateRecipeScreen({
       description,
     );
     if (Object.keys(localErrors).length > 0) {
-      if (localErrors.name) setError("Name is required");
+      if (localErrors.name) setError(t("recipe.errors.nameRequired"));
       else if (localErrors.description) {
         setError(
           validateRecipeCardDescription(description) ??
-            "Check the description field",
+            t("recipe.errors.checkDescription"),
         );
         setAdvancedOpen(true);
         window.setTimeout(() => focusCreateField("description"), 50);
@@ -934,17 +946,17 @@ export function CreateRecipeScreen({
       } else if (localErrors.a || localErrors.b) {
         setError(
           method === "formula"
-            ? "A and B parts must be greater than 0"
-            : "Resin (A) and Hardener (B) must be greater than 0",
+            ? t("recipe.errors.partsPositive")
+            : t("recipe.errors.abPositive"),
         );
       } else if (localErrors.filler || localErrors.thickener) {
         setError(
           method === "formula"
-            ? "Percents cannot be negative"
-            : "Filler and thickener cannot be negative",
+            ? t("recipe.errors.percentsNegative")
+            : t("recipe.errors.fillersNegative"),
         );
       } else {
-        setError("Check the highlighted fields");
+        setError(t("recipe.errors.checkFields"));
       }
       const focusKey = firstInvalidFieldKey(localErrors);
       if (focusKey && focusKey !== "description") focusCreateField(focusKey);
@@ -1000,7 +1012,7 @@ export function CreateRecipeScreen({
 
   const handleBack = () => {
     if (dirty) {
-      const ok = window.confirm("Discard this recipe?");
+      const ok = window.confirm(t("recipe.discard"));
       if (!ok) return;
     }
     onBack();
@@ -1026,7 +1038,7 @@ export function CreateRecipeScreen({
     const bNum = parseNum(b);
     if (!(aNum > 0) || !(bNum > 0)) {
       setSubmitted(true);
-      setError("Resin (A) and Hardener (B) must be greater than 0");
+      setError(t("recipe.errors.abPositive"));
       focusCreateField(!(aNum > 0) ? "a" : "b");
       return;
     }
@@ -1035,7 +1047,7 @@ export function CreateRecipeScreen({
     const fillerG = Number.isFinite(fillNum) && fillNum > 0 ? fillNum : 0;
     const tixG = Number.isFinite(tixNum) && tixNum > 0 ? tixNum : 0;
     const recipe = blendingRecipeFromWeights({
-      name: name.trim() || "Draft",
+      name: name.trim() || t("recipe.draftName"),
       nameSubline,
       description,
       a: aNum,
@@ -1053,7 +1065,7 @@ export function CreateRecipeScreen({
 
   const persistRecipe = (via: "library" | "session") => {
     if (via === "session" && !sessionId) {
-      setError("No active session — create or open a session first");
+      setError(t("recipe.errors.noSession"));
       return;
     }
     const recipe = buildRecipe();
@@ -1114,7 +1126,7 @@ export function CreateRecipeScreen({
         recipeCreateMode={{
           sessionName:
             context.source === "session" ? sessionName : undefined,
-          recipeLabel: recipeMenuLabel(draft),
+          recipeLabel: recipeMenuLabel(draft, uiLanguage),
           purpose: scalePurpose,
           onCancel: () => {
             setPhase("form");
@@ -1139,14 +1151,18 @@ export function CreateRecipeScreen({
       style={{ background: "var(--semantic-surface-app)" }}
     >
       <AppHeader
-        title="Create recipe"
+        title={t("recipe.createTitle")}
         onMenuClick={onMenuClick}
         onBack={handleBack}
         backLabel={
-          context.source === "session" ? "Back to session" : "Back"
+          context.source === "session"
+            ? t("mixer.backToSession")
+            : t("common.back")
         }
         backConfirmAction={
-          context.source === "session" ? "BACK TO SESSION" : "GO BACK"
+          context.source === "session"
+            ? t("mixer.backToSessionConfirm")
+            : t("common.goBack")
         }
         sessionChrome={context.source === "session"}
         subline={
@@ -1155,7 +1171,7 @@ export function CreateRecipeScreen({
               <RecipeHeaderSubline>
                 <span className="session-mode-chip">
                   <span className="session-mode-chip__dot" aria-hidden />
-                  Session recipe
+                  {t("recipe.sessionChip")}
                 </span>
               </RecipeHeaderSubline>
             </RecipeHeaderSublineStack>
@@ -1167,7 +1183,7 @@ export function CreateRecipeScreen({
         <div
           className="catalog-hub__tabs"
           role="tablist"
-          aria-label="Recipe method"
+          aria-label={t("recipe.methodAria")}
         >
           <button
             type="button"
@@ -1177,7 +1193,7 @@ export function CreateRecipeScreen({
             data-active={method === "formula" ? "" : undefined}
             onClick={() => switchMethod("formula")}
           >
-            Formula
+            {t("recipe.formula")}
           </button>
           <button
             type="button"
@@ -1187,7 +1203,7 @@ export function CreateRecipeScreen({
             data-active={method === "weights" ? "" : undefined}
             onClick={() => switchMethod("weights")}
           >
-            Actual weights
+            {t("recipe.actualWeights")}
           </button>
         </div>
       </div>
@@ -1196,14 +1212,8 @@ export function CreateRecipeScreen({
         <div className="create-recipe__body">
           <p className="create-recipe__lede">
             {method === "formula"
-              ? "Define A:B parts and filler / thickener as % of binder."
-              : (
-                <>
-                  Enter measured{" "}
-                  <span className="create-recipe__lede-emphasis">grams</span>
-                  {" "}— the formula is derived automatically.
-                </>
-              )}
+              ? t("recipe.formulaLede")
+              : t("recipe.weightsLede")}
           </p>
 
           <div className="create-recipe__start-from">
@@ -1212,12 +1222,12 @@ export function CreateRecipeScreen({
               className="create-recipe__secondary-btn"
               onClick={() => setStartFromOpen(true)}
             >
-              Start from recipe
+              {t("recipe.startFrom")}
             </button>
           </div>
 
           <Field
-            label="Name"
+            label={t("recipe.name")}
             value={name}
             inputMode="text"
             required
@@ -1226,7 +1236,7 @@ export function CreateRecipeScreen({
             onChange={(v) => updateField("name", v, setName)}
           />
           <Field
-            label="Subline"
+            label={t("recipe.subline")}
             value={nameSubline}
             inputMode="text"
             onChange={(v) => {
@@ -1238,7 +1248,7 @@ export function CreateRecipeScreen({
           {method === "formula" ? (
             <>
               <Field
-                label="Resin A"
+                label={t("recipe.resinA")}
                 value={a}
                 suffix="parts"
                 required
@@ -1247,7 +1257,7 @@ export function CreateRecipeScreen({
                 onChange={(v) => updateField("a", v, setA)}
               />
               <Field
-                label="Hardener B"
+                label={t("recipe.hardenerB")}
                 value={b}
                 suffix="parts"
                 required
@@ -1256,17 +1266,17 @@ export function CreateRecipeScreen({
                 onChange={(v) => updateField("b", v, setB)}
               />
               <Field
-                label="Filler"
+                label={t("recipe.filler")}
                 value={filler}
-                suffix="% of binder"
+                suffix={t("recipe.percentOfBinder")}
                 fieldKey="filler"
                 invalid={Boolean(fieldErrors.filler)}
                 onChange={(v) => updateField("filler", v, setFiller)}
               />
               <Field
-                label="Thickener"
+                label={t("recipe.thickener")}
                 value={thickener}
-                suffix="% of binder"
+                suffix={t("recipe.percentOfBinder")}
                 fieldKey="thickener"
                 invalid={Boolean(fieldErrors.thickener)}
                 onChange={(v) => updateField("thickener", v, setThickener)}
@@ -1275,7 +1285,7 @@ export function CreateRecipeScreen({
           ) : (
             <>
               <Field
-                label="Resin A"
+                label={t("recipe.resinA")}
                 value={a}
                 suffix="gram"
                 required
@@ -1285,7 +1295,7 @@ export function CreateRecipeScreen({
                 onChange={(v) => updateField("a", v, setA)}
               />
               <Field
-                label="Hardener B"
+                label={t("recipe.hardenerB")}
                 value={b}
                 suffix="gram"
                 required
@@ -1295,7 +1305,7 @@ export function CreateRecipeScreen({
                 onChange={(v) => updateField("b", v, setB)}
               />
               <Field
-                label="Filler"
+                label={t("recipe.filler")}
                 value={filler}
                 suffix="gram"
                 kgHelper
@@ -1306,7 +1316,7 @@ export function CreateRecipeScreen({
                 onChange={(v) => updateField("filler", v, setFiller)}
               />
               <Field
-                label="Thickener"
+                label={t("recipe.thickener")}
                 value={thickener}
                 suffix="gram"
                 kgHelper
@@ -1323,8 +1333,8 @@ export function CreateRecipeScreen({
                   disabled={weightsBinderGrams == null}
                   title={
                     weightsBinderGrams == null
-                      ? "Enter Resin A and Hardener B first"
-                      : "Dial form grams in the calculator (does not set rec. batch)"
+                      ? t("recipe.enterABFirst")
+                      : t("recipe.dialFormGrams")
                   }
                   onClick={openEditWeightsCalculator}
                 >
@@ -1332,10 +1342,10 @@ export function CreateRecipeScreen({
                 </button>
                 <p className="create-recipe__weights-tools-hint">
                   {weightsBinderGrams == null
-                    ? "Enter Resin A and Hardener B to unlock the calculator."
+                    ? t("recipe.enterABUnlock")
                     : parseNum(filler) > 0 || parseNum(thickener) > 0
-                      ? "Opens the mixer to scale this batch, then writes grams back here. Does not set rec. batch."
-                      : "Opens the mixer to scale A:B. Add filler/thickener grams first if you want to dial those too. Does not set rec. batch."}
+                      ? t("recipe.weightsScaleHintFull")
+                      : t("recipe.weightsScaleHintAB")}
                 </p>
               </div>
             </>
@@ -1344,11 +1354,11 @@ export function CreateRecipeScreen({
           {preview ? (
             <div className="create-recipe__preview-block">
               <div className="create-recipe__preview-head">
-                <span className="create-recipe__field-label">Formula result</span>
+                <span className="create-recipe__field-label">{t("recipe.formulaResult")}</span>
                 <button
                   type="button"
                   className="create-recipe__preview-info"
-                  aria-label="About formula summary"
+                  aria-label={t("recipe.aboutFormula")}
                   aria-expanded={formulaInfoOpen}
                   onClick={() => setFormulaInfoOpen((open) => !open)}
                 >
@@ -1356,10 +1366,10 @@ export function CreateRecipeScreen({
                 </button>
               </div>
               <p className="create-recipe__preview">
-                {formatRecipeFormulaSummary(preview)}
+                {formatRecipeFormulaSummary(preview, uiLanguage)}
               </p>
               {formulaInfoOpen ? (
-                <p className="create-recipe__preview-hint">{FORMULA_INFO}</p>
+                <p className="create-recipe__preview-hint">{t("recipe.formulaInfo")}</p>
               ) : null}
             </div>
           ) : null}
@@ -1369,10 +1379,14 @@ export function CreateRecipeScreen({
               type="button"
               className="create-recipe__advanced-toggle"
               aria-expanded={advancedOpen}
-              aria-label={advancedOpen ? "Hide advanced options" : "Show advanced options"}
+              aria-label={
+                advancedOpen
+                  ? t("recipe.hideAdvanced")
+                  : t("recipe.showAdvanced")
+              }
               onClick={() => setAdvancedOpen((open) => !open)}
             >
-              <span>Advanced</span>
+              <span>{t("recipe.advanced")}</span>
               <span
                 className={`create-recipe__advanced-chevron${
                   advancedOpen ? " create-recipe__advanced-chevron--open" : ""
@@ -1403,7 +1417,7 @@ export function CreateRecipeScreen({
                   data-create-field="description"
                 >
                   <span className="create-recipe__field-label-row">
-                    <span className="create-recipe__field-label">Card description</span>
+                    <span className="create-recipe__field-label">{t("recipe.cardDescription")}</span>
                     <span className="create-recipe__field-meta" aria-live="polite">
                       {descriptionWordCount}/{RECIPE_CARD_DESCRIPTION_MAX_WORDS} words ·{" "}
                       {description.length}/{RECIPE_CARD_DESCRIPTION_MAX_CHARS}
@@ -1414,7 +1428,7 @@ export function CreateRecipeScreen({
                     value={description}
                     rows={2}
                     maxLength={RECIPE_CARD_DESCRIPTION_MAX_CHARS}
-                    placeholder="Short blurb on the recipe card (optional)"
+                    placeholder={t("recipe.blurbPlaceholder")}
                     aria-invalid={
                       descriptionInvalid || fieldErrors.description || undefined
                     }
@@ -1432,12 +1446,12 @@ export function CreateRecipeScreen({
                 <div className="create-recipe__field">
                   <div className="create-recipe__preview-head">
                     <span className="create-recipe__field-label" id="create-recipe-bucket-label">
-                      Bucket
+                      {t("recipe.bucket")}
                     </span>
                     <button
                       type="button"
                       className="create-recipe__preview-info"
-                      aria-label="About bucket and rec. batch"
+                      aria-label={t("recipe.aboutBucket")}
                       aria-expanded={bucketInfoOpen}
                       onClick={() => setBucketInfoOpen((open) => !open)}
                     >
@@ -1445,7 +1459,7 @@ export function CreateRecipeScreen({
                     </button>
                   </div>
                   {bucketInfoOpen ? (
-                    <p className="create-recipe__preview-hint">{BUCKET_INFO}</p>
+                    <p className="create-recipe__preview-hint">{t("recipe.bucketInfo")}</p>
                   ) : null}
                   <div
                     className="create-recipe__bucket-options"
@@ -1468,7 +1482,7 @@ export function CreateRecipeScreen({
                             markDirty();
                           }}
                         >
-                          {bucketOptionLabel(option)}
+                          {bucketOptionLabel(option, t("recipe.unlimited"))}
                         </button>
                       );
                     })}
@@ -1481,16 +1495,20 @@ export function CreateRecipeScreen({
                     className="create-recipe__secondary-btn"
                     onClick={openRecBatchCalculator}
                   >
-                    Set recommended batch
+                    {t("recipe.setRecommendedBatch")}
                   </button>
                   {scaledBinderSum != null ? (
                     <p className="create-recipe__advanced-status">
-                      Rec. batch binder set: {scaledBinderSum} g
-                      {bucketSelection === "none" ? " · Unlimited bucket" : null}
+                      {t("recipe.recBatchBinderSet", {
+                        amount: `${scaledBinderSum} g`,
+                      })}
+                      {bucketSelection === "none"
+                        ? t("recipe.unlimitedBucket")
+                        : null}
                     </p>
                   ) : (
                     <p className="create-recipe__advanced-status create-recipe__advanced-status--muted">
-                      No rec. batch size set yet
+                      {t("recipe.noRecBatchYet")}
                     </p>
                   )}
                 </div>
@@ -1515,7 +1533,7 @@ export function CreateRecipeScreen({
                 className="destination-page__primary-btn destination-page__primary-btn--session"
                 onClick={() => persistRecipe("session")}
               >
-                Save in session
+                {t("recipe.saveInSession")}
               </button>
             ) : null}
             <button
@@ -1527,7 +1545,7 @@ export function CreateRecipeScreen({
               }
               onClick={() => persistRecipe("library")}
             >
-              Save to library
+              {t("recipe.saveToLibrary")}
             </button>
           </div>
         </div>
@@ -1538,8 +1556,12 @@ export function CreateRecipeScreen({
         onOpenChange={setStartFromOpen}
         libraryRecipes={libraryRecipes}
         sessionRecipes={sessionRecipesForPicker}
-        title="Start from recipe"
-        openLabelFor={(recipe) => `Use ${recipeMenuLabel(recipe)}`}
+        title={t("recipe.startFrom")}
+        openLabelFor={(recipe) =>
+          t("sheets.recipePicker.useRecipe", {
+            title: recipeMenuLabel(recipe, uiLanguage),
+          })
+        }
         onPick={applyRecipeAsCopy}
       />
     </div>

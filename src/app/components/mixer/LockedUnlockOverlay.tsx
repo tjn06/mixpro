@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useTranslation } from "react-i18next";
 import { LongPressButton } from "../shared/LongPressButton";
 import { LockIcon } from "./RecBatchPanel";
 import {
@@ -52,6 +53,7 @@ export function LockedUnlockOverlay({
   actionColRef,
   onOverlayActiveChange,
 }: LockedUnlockOverlayProps) {
+  const { t } = useTranslation("common");
   const [overlay, setOverlay] = useState<OverlayState | null>(null);
   const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -160,9 +162,9 @@ export function LockedUnlockOverlay({
     <div style={shellStyle}>
       <div style={crossfadeLayerStyles(expanded, expandEase, true)}>
         <LongPressButton
-          label="Unlock"
-          description="Hold to edit mix again"
-          confirmAction="UNLOCK"
+          label={t("mixer.unlock")}
+          description={t("mixer.unlockHint")}
+          confirmAction={t("mixer.unlockConfirm")}
           onLongPress={onUnlock}
           variant="primary"
           progressVariant="water"
@@ -175,8 +177,8 @@ export function LockedUnlockOverlay({
       </div>
       <div style={{ ...crossfadeLayerStyles(expanded, expandEase, false), pointerEvents: "none" }}>
         <LongPressButton
-          label="Lock screen"
-          confirmAction="LOCK SCREEN"
+          label={t("mixer.lockScreen")}
+          confirmAction={t("mixer.lockScreenConfirm")}
           onLongPress={() => {}}
           variant="primary"
           progressVariant="water"

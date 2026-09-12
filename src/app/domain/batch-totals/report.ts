@@ -23,16 +23,6 @@ const REPORT_COPY = {
   },
 } as const;
 
-/** Common ingredient labels → Swedish for shared reports. */
-const INGREDIENT_LABEL_SV: Record<string, string> = {
-  Resin: "Bas",
-  Hardener: "Härdare",
-  Filler: "Fyllmedel",
-  Thickener: "Förtjockningsmedel",
-  Tjockningsmedel: "Förtjockningsmedel",
-  Sand: "Sand",
-};
-
 function reportMetaLabel(
   recipe: BlendingRecipe,
   id: string,
@@ -42,14 +32,7 @@ function reportMetaLabel(
     return REPORT_COPY[language].totalMeta;
   }
 
-  const label = getIngredientLabel(recipe, id) ?? getEntityMetaLabel(recipe, id);
-  if (!label) return undefined;
-
-  if (language === "sv") {
-    return INGREDIENT_LABEL_SV[label] ?? label;
-  }
-
-  return label;
+  return getIngredientLabel(recipe, id, language) ?? getEntityMetaLabel(recipe, id, language);
 }
 
 export function buildBatchTotalsReportText(
@@ -70,7 +53,11 @@ export function buildBatchTotalsReportText(
     lines.push(trimmedComment, "");
   }
 
-  lines.push(copy.heading, `${copy.recipe}: ${recipeMenuLabel(recipe)}`, "");
+  lines.push(
+    copy.heading,
+    `${copy.recipe}: ${recipeMenuLabel(recipe, language)}`,
+    "",
+  );
 
   if (hasExtraBatches(extraBatches)) {
     const batchLabel =
@@ -106,7 +93,7 @@ export function batchTotalsReportSubject(
   const trimmedComment = comment?.trim();
   if (trimmedComment) return trimmedComment;
 
-  return `${REPORT_COPY[language].heading} — ${recipeMenuLabel(recipe)}`;
+  return `${REPORT_COPY[language].heading} — ${recipeMenuLabel(recipe, language)}`;
 }
 
 export function batchReportCommentPlaceholder(language: BatchReportLanguage): string {

@@ -7,6 +7,7 @@ import {
 } from "../../domain/recipe/calc";
 import { MIX_PARAMS } from "../../domain/mix/entities";
 import { recipeMetaVar as meta } from "../../presentation/recipeMetaVars";
+import { useSettingsStore } from "../../settings/store";
 
 /**
  * Cluster layout trial — identity (id+sublabel) vs measure (value+unit).
@@ -246,8 +247,9 @@ export interface RecipeRatioRowProps {
   className?: string;
 }
 
-/** Locked recipe ratio cards (read-only) — A Resin 2 PARTS : B Hardener 1 PARTS : … */
+/** Locked recipe ratio cards (read-only) — A Bas 2 DELAR : B Härdare 1 DELAR : … */
 export function RecipeRatioRow({ recipe, muted = false, className = "" }: RecipeRatioRowProps) {
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const ingredientIndexes = recipeIngredientIndexes(recipe);
 
   return (
@@ -262,13 +264,13 @@ export function RecipeRatioRow({ recipe, muted = false, className = "" }: Recipe
       <div className="flex items-stretch pointer-events-none">
         {ingredientIndexes.map((pi, i) => {
           const p = MIX_PARAMS[pi];
-          const { value, unit } = getLockedRatioDisplay(recipe, p.id);
+          const { value, unit } = getLockedRatioDisplay(recipe, p.id, uiLanguage);
           return (
             <React.Fragment key={`recipe-${p.id}`}>
               {i > 0 && <RecipeRatioGapSeparator />}
               <RecipeRatioCard
                 id={p.id}
-                sublabel={getIngredientLabel(recipe, p.id)}
+                sublabel={getIngredientLabel(recipe, p.id, uiLanguage)}
                 value={value}
                 unit={unit}
                 muted={muted}

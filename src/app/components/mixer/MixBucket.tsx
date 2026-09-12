@@ -1,5 +1,6 @@
 import React, { useId, useMemo, useRef, useState, useEffect, useLayoutEffect, useCallback, forwardRef } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
   BUCKET_SIZES,
   bucketFits,
@@ -12,7 +13,7 @@ import {
   type BucketSelection,
   type BucketSize,
 } from "../../domain/bucket/types";
-import { LongPressProgress, useLongPress, LongPressButton } from "../shared/LongPressButton";
+import { LongPressProgress, useLongPress } from "../shared/LongPressButton";
 import {
   DEFAULT_SAND_BULK_DENSITY,
   estimateMixVolume,
@@ -50,8 +51,6 @@ export const DEFAULT_BUCKET_CAPACITY_LITERS = DEFAULT_BUCKET_SIZE;
 
 /** Menu wide enough for size label + ⇣ FORCE FIT on locked rows. */
 const DROPDOWN_MENU_MIN_W = 200;
-
-const BUCKET_SIZE_LABEL = "Bucket size";
 
 function bucketSelectionLabel(selection: BucketSelection, context: "trigger" | "menu" = "trigger"): string {
   if (selection === "none") return context === "menu" ? "∞" : "∞ L";
@@ -91,6 +90,7 @@ function BucketFeaturePanel({
   panelRef?: React.Ref<HTMLDivElement>;
   readoutRef?: React.Ref<HTMLDivElement>;
 }) {
+  const { t } = useTranslation("common");
   return (
     <div
       ref={panelRef}
@@ -110,7 +110,7 @@ function BucketFeaturePanel({
         className="shrink-0 w-full"
         style={disabled ? { position: "relative", zIndex: 8 } : undefined}
       >
-        <FeatureReadoutStack label={BUCKET_SIZE_LABEL} muted={muted}>
+        <FeatureReadoutStack label={t("mixer.bucket.size")} muted={muted}>
           <BucketSizeValue
             bucketSelection={bucketSelection}
             onBucketChange={onBucketChange}
@@ -408,8 +408,11 @@ function BucketSelectOptionRow({
   onSelect: () => void;
   onForceFit: () => void;
 }) {
+  const { t } = useTranslation("common");
   const { progress, holding, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } =
-    useLongPress(onForceFit, !locked, { confirmAction: `FORCE FIT TO ${size} L` });
+    useLongPress(onForceFit, !locked, {
+      confirmAction: t("mixer.bucket.forceFitConfirm", { size }),
+    });
 
   return (
     <button
@@ -418,7 +421,7 @@ function BucketSelectOptionRow({
       aria-selected={active}
       aria-label={
         locked
-          ? `Hold to force fit mix to ${size} liter bucket at ${RECOMMENDED_MAX_FILL_PERCENT} percent`
+          ? t("mixer.forceFitAria", { size })
           : undefined
       }
       onClick={() => {
@@ -470,7 +473,7 @@ function BucketSelectOptionRow({
             transition: "color 0.15s ease",
           }}
         >
-          ⇣ FORCE FIT
+          {t("mixer.bucket.forceFit")}
         </span>
       )}
     </button>
@@ -492,6 +495,7 @@ function BucketSelectDropdown({
   disabled?: boolean;
   muted?: boolean;
 }) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [menuLayout, setMenuLayout] = useState<{ top: number; left: number; minWidth: number } | null>(null);
   const [portal, setPortal] = useState<HTMLElement | null>(null);
@@ -544,7 +548,7 @@ function BucketSelectDropdown({
       <ul
         ref={menuRef}
         role="listbox"
-        aria-label="Bucket size"
+        aria-label={t("mixer.bucket.size")}
         className="rounded-xl overflow-hidden shadow-lg"
         style={{
           position: "absolute",
@@ -684,6 +688,7 @@ export const MixBucket = forwardRef<HTMLDivElement, MixBucketProps>(function Mix
   },
   ref,
 ) {
+  const { t } = useTranslation("common");
   const clipId = useId();
   const hasBucket = bucketSelection !== "none";
   const capacityLiters = hasBucket ? bucketSelection : null;
@@ -712,9 +717,15 @@ export const MixBucket = forwardRef<HTMLDivElement, MixBucketProps>(function Mix
   const ariaLabel =
     capacityLiters != null
       ? bucketFull
-        ? `Bucket full at ${RECOMMENDED_MAX_FILL_PERCENT}% of ${capacityLiters} liter bucket`
-        : `Estimated ${displayPercent}% fill of ${capacityLiters} liter bucket`
-      : "Infinite, no bucket limit";
+        ? t("mixer.bucket.fullAria", {
+            percent: RECOMMENDED_MAX_FILL_PERCENT,
+            size: capacityLiters,
+          })
+        : t("mixer.bucket.fillAria", {
+            percent: displayPercent,
+            size: capacityLiters,
+          })
+      : t("mixer.bucket.infinite");
 
   const noBucket = !hasBucket;
 

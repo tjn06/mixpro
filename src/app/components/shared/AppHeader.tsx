@@ -1,4 +1,5 @@
 import React, { type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { LongPressButton } from "./LongPressButton";
 import { componentTokens, cv } from "../../ui/tokens";
 
@@ -110,17 +111,21 @@ export function AppHeader({
   isLocked = false,
   onMenuClick,
   onBack,
-  backConfirmAction = "GO BACK",
-  backLabel = "Back",
+  backConfirmAction,
+  backLabel,
   backImmediate = false,
   onForward,
-  forwardConfirmAction = "GO FORWARD",
+  forwardConfirmAction,
   forwardBadgeCount = null,
   sessionChrome = false,
   onTitleClick,
   titleClickLabel,
   subline,
 }: AppHeaderProps) {
+  const { t } = useTranslation("common");
+  const resolvedBackLabel = backLabel ?? t("common.back");
+  const resolvedBackConfirm = backConfirmAction ?? t("common.goBack");
+  const resolvedForwardConfirm = forwardConfirmAction ?? t("common.goForward");
   const showForward = onForward != null && !isLocked;
   const showForwardBadge =
     showForward && forwardBadgeCount != null && forwardBadgeCount > 0;
@@ -144,7 +149,7 @@ export function AppHeader({
           <div className="app-header__leading flex items-center shrink-0" style={{ gap: 4 }}>
             {onMenuClick ? (
               <HeaderIconButton
-                label="Menu"
+                label={t("common.menu")}
                 onClick={onMenuClick}
                 disabled={isLocked}
               >
@@ -155,7 +160,7 @@ export function AppHeader({
               <div className="app-header__nav-slot">
                 {backImmediate ? (
                   <HeaderIconButton
-                    label={backLabel}
+                    label={resolvedBackLabel}
                     onClick={onBack}
                     disabled={isLocked}
                   >
@@ -163,8 +168,8 @@ export function AppHeader({
                   </HeaderIconButton>
                 ) : (
                   <LongPressButton
-                    label={backLabel}
-                    confirmAction={backConfirmAction}
+                    label={resolvedBackLabel}
+                    confirmAction={resolvedBackConfirm}
                     variant="header"
                     sessionTone={sessionChrome}
                     onLongPress={onBack}
@@ -183,7 +188,7 @@ export function AppHeader({
               type="button"
               className="app-header__title-btn flex-1 min-w-0 truncate text-center px-1"
               style={titleStyle}
-              aria-label={titleClickLabel ?? `Rename, ${title}`}
+              aria-label={titleClickLabel ?? `${t("common.rename")}, ${title}`}
               onClick={onTitleClick}
             >
               {title}
@@ -200,8 +205,8 @@ export function AppHeader({
           {showForward ? (
             <div className="app-header__nav-slot">
               <LongPressButton
-                label="Forward"
-                confirmAction={forwardConfirmAction}
+                label={t("common.forward")}
+                confirmAction={resolvedForwardConfirm}
                 variant="header"
                 onLongPress={onForward}
                 disabled={isLocked}

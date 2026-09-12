@@ -1,5 +1,6 @@
 import { format, isYesterday, isToday, parse } from "date-fns";
 import { useMemo, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { CalendarIcon, DeleteIcon } from "../shared/ActionIcons";
 import { SessionDatePickerSheet } from "../sessions/SessionDatePickerSheet";
 
@@ -11,13 +12,15 @@ function dayMonthLabel(d: Date, thisYear: number): string {
 /** Label: Today/Yesterday prefix + weekday date, or plain date. */
 export function formatCatalogReportDateLabel(
   workDateId: string,
+  todayLabel: string,
+  yesterdayLabel: string,
   now = new Date(),
 ): string {
   const parsed = parse(workDateId, "yyyy-MM-dd", now);
   if (Number.isNaN(parsed.getTime())) return workDateId;
   const datePart = dayMonthLabel(parsed, now.getFullYear());
-  if (isToday(parsed)) return `Today, ${datePart}`;
-  if (isYesterday(parsed)) return `Yesterday, ${datePart}`;
+  if (isToday(parsed)) return `${todayLabel}, ${datePart}`;
+  if (isYesterday(parsed)) return `${yesterdayLabel}, ${datePart}`;
   return datePart;
 }
 
@@ -28,10 +31,10 @@ export function formatCatalogReportDateLabel(
 export function CatalogReportDateBar({
   workDateId,
   onWorkDateChange,
-  ariaLabel = "Report date",
-  pickerSubtitle = "Optional work day for this report.",
-  emptyLabel = "Add date",
-  changeTitle = "Change date",
+  ariaLabel,
+  pickerSubtitle,
+  emptyLabel,
+  changeTitle,
   formatSelectedLabel,
   leadingIcon,
   confirmIcon,
@@ -58,13 +61,23 @@ export function CatalogReportDateBar({
   /** Extra class on the outer bar (e.g. sessions hub flush inset). */
   className?: string;
 }) {
+  const { t } = useTranslation("common");
+  const resolvedAria = ariaLabel ?? t("common.reportDate");
+  const resolvedSubtitle =
+    pickerSubtitle ?? t("sessions.datePickerSubtitle");
+  const resolvedEmpty = emptyLabel ?? t("common.addDate");
+  const resolvedChange = changeTitle ?? t("common.changeDate");
   const [pickerOpen, setPickerOpen] = useState(false);
   const hasDate = Boolean(workDateId);
   const label = useMemo(() => {
-    if (!workDateId) return emptyLabel;
-    const formatted = formatCatalogReportDateLabel(workDateId);
+    if (!workDateId) return resolvedEmpty;
+    const formatted = formatCatalogReportDateLabel(
+      workDateId,
+      t("common.today"),
+      t("common.yesterday"),
+    );
     return formatSelectedLabel ? formatSelectedLabel(formatted) : formatted;
-  }, [workDateId, emptyLabel, formatSelectedLabel]);
+  }, [workDateId, resolvedEmpty, formatSelectedLabel, t]);
   const initialDate = useMemo(() => {
     if (!workDateId) return new Date();
     const parsed = parse(workDateId, "yyyy-MM-dd", new Date());
@@ -82,7 +95,7 @@ export function CatalogReportDateBar({
         ]
           .filter(Boolean)
           .join(" ")}
-        aria-label={ariaLabel}
+        aria-label={resolvedAria}
       >
         <div className="catalog-report-date-bar__row">
           <div
@@ -93,7 +106,9 @@ export function CatalogReportDateBar({
             <button
               type="button"
               className="catalog-report-date-bar__main"
-              aria-label={hasDate ? `${changeTitle}, ${label}` : emptyLabel}
+              aria-label={
+                hasDate ? `${resolvedChange}, ${label}` : resolvedEmpty
+              }
               onClick={() => setPickerOpen(true)}
             >
               <span className="catalog-report-date-bar__icon" aria-hidden>
@@ -105,8 +120,8 @@ export function CatalogReportDateBar({
               <button
                 type="button"
                 className="catalog-report-date-bar__delete"
-                aria-label="Clear date"
-                title="Clear date"
+                aria-label={t("common.clearDate")}
+                title={t("common.clearDate")}
                 onPointerDown={(event) => {
                   event.stopPropagation();
                 }}
@@ -127,8 +142,8 @@ export function CatalogReportDateBar({
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         initialDate={initialDate}
-        title={hasDate ? changeTitle : emptyLabel}
-        subtitle={pickerSubtitle}
+        title={hasDate ? resolvedChange : resolvedEmpty}
+        subtitle={resolvedSubtitle}
         confirmIcon={confirmIcon}
         confirmLabel={confirmLabel}
         onConfirm={(date) => {

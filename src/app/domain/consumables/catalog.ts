@@ -1,10 +1,17 @@
+import {
+  localizedLabel,
+  sameLabel,
+  type LocalizedLabel,
+} from "../../i18n/localizedLabel";
 import type { ConsumableItem } from "./types";
 
-/** English slug id + Swedish display label; empty variants → simple chip. */
+type Variant = string | LocalizedLabel;
+
+/** English slug id + bilingual display label; empty variants → simple chip. */
 function consumable(
   id: string,
-  label: string,
-  variants: readonly string[] = [],
+  label: LocalizedLabel,
+  variants: readonly Variant[] = [],
   options?: { requiresWear?: boolean },
 ): ConsumableItem {
   const requiresWear = options?.requiresWear;
@@ -17,27 +24,30 @@ function consumable(
     requiresWear,
     children: variants.map((variantLabel, index) => ({
       id: `${id}-${index + 1}`,
-      label: variantLabel,
+      label:
+        typeof variantLabel === "string"
+          ? sameLabel(variantLabel)
+          : variantLabel,
     })),
   };
 }
 
 /**
- * Consumables catalog (Förbrukning) — Swedish labels, English slug ids.
+ * Consumables catalog — bilingual admin labels, English slug ids.
  * - No `children` → simple chip
  * - With `children` → variant select
- * - `requiresWear` → slitage picker (Låg / Medel / Hög) after variant pick
+ * - `requiresWear` → wear picker after variant pick
  */
 export const CONSUMABLES_CATALOG: ConsumableItem[] = [
-  consumable("brush", "Pensel"),
-  consumable("roller", "Roller"),
-  consumable("roller-frame", "Rollerbygel"),
-  consumable("spike-roller", "Piggroller"),
-  consumable("broom", "Kvast"),
-  consumable("mop", "Mopp"),
+  consumable("brush", localizedLabel("Brush", "Pensel")),
+  consumable("roller", localizedLabel("Roller", "Roller")),
+  consumable("roller-frame", localizedLabel("Roller frame", "Rollerbygel")),
+  consumable("spike-roller", localizedLabel("Spike roller", "Piggroller")),
+  consumable("broom", localizedLabel("Broom", "Kvast")),
+  consumable("mop", localizedLabel("Mop", "Mopp")),
   consumable(
     "diamond-segment",
-    "Diamantsegment",
+    localizedLabel("Diamond segment", "Diamantsegment"),
     [
       "EZ S / 16 grit (H1)",
       "EZ M / 25 grit (H2)",
@@ -49,26 +59,26 @@ export const CONSUMABLES_CATALOG: ConsumableItem[] = [
   ),
   consumable(
     "grinding-cup",
-    "Slipskål",
+    localizedLabel("Grinding cup", "Slipskål"),
     [
-      "Universal",
-      "Turbo",
-      "Fin slipyta",
-      "Abrasiv",
-      "Epoxi",
-      "Beläggningsborttagning",
+      localizedLabel("Universal", "Universal"),
+      localizedLabel("Turbo", "Turbo"),
+      localizedLabel("Fine surface", "Fin slipyta"),
+      localizedLabel("Abrasive", "Abrasiv"),
+      localizedLabel("Epoxy", "Epoxi"),
+      localizedLabel("Coating removal", "Beläggningsborttagning"),
     ],
     { requiresWear: true },
   ),
   consumable(
     "polish-disc",
-    "Polerskiva",
+    localizedLabel("Polish disc", "Polerskiva"),
     ["Grit 50", "Grit 100", "Grit 200", "Grit 400", "Grit 800"],
     { requiresWear: true },
   ),
   consumable(
     "polish-pad",
-    "Polerpad",
+    localizedLabel("Polish pad", "Polerpad"),
     [
       "30 grit",
       "50 grit",
@@ -81,14 +91,20 @@ export const CONSUMABLES_CATALOG: ConsumableItem[] = [
     ],
     { requiresWear: true },
   ),
-  consumable("bucket", "Hink"),
-  consumable("tape", "Tejp"),
-  consumable("plastic", "Plast"),
-  consumable("stop-strips", "Stopplister"),
-  consumable("joint-compound", "Fogmassa"),
-  consumable("barrier-tape", "Avspärrningsband"),
-  consumable("marker-tags", "Markeringslappar"),
-  consumable("trash-bags", "Sopsäckar"),
-  consumable("gloves", "Handskar", ["Engångshandskar", "Arbetshandskar"]),
-  consumable("hammer-drill", "Slagborr"),
+  consumable("bucket", localizedLabel("Bucket", "Hink")),
+  consumable("tape", localizedLabel("Tape", "Tejp")),
+  consumable("plastic", localizedLabel("Plastic", "Plast")),
+  consumable("stop-strips", localizedLabel("Stop strips", "Stopplister")),
+  consumable("joint-compound", localizedLabel("Joint compound", "Fogmassa")),
+  consumable(
+    "barrier-tape",
+    localizedLabel("Barrier tape", "Avspärrningsband"),
+  ),
+  consumable("marker-tags", localizedLabel("Marker tags", "Markeringslappar")),
+  consumable("trash-bags", localizedLabel("Trash bags", "Sopsäckar")),
+  consumable("gloves", localizedLabel("Gloves", "Handskar"), [
+    localizedLabel("Disposable gloves", "Engångshandskar"),
+    localizedLabel("Work gloves", "Arbetshandskar"),
+  ]),
+  consumable("hammer-drill", localizedLabel("Hammer drill", "Slagborr")),
 ];

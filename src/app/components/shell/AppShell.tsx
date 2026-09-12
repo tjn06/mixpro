@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { BatchMixer, type SessionMixCommitPayload } from "../../BatchMixer";
 import type { CreateRecipeEntryContext } from "../../domain/recipe/createFromInputs";
 import {
@@ -13,6 +14,7 @@ import type { AppDestination } from "../../navigation/types";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
 import { gramsFromSlotValues, slotValuesFromGrams } from "../../saved-batch-totals/batches";
 import { useSessionsStore } from "../../sessions/store";
+import { useSettingsStore } from "../../settings/store";
 import { AppNavDrawer } from "../nav/AppNavDrawer";
 import { CreateRecipeScreen } from "../recipe/CreateRecipeScreen";
 import { RecipesPage } from "../pages/RecipesPage";
@@ -52,6 +54,8 @@ function destinationFromView(view: ShellView): AppDestination {
 export function AppShell() {
   /** Theme sync must live here — not only on Calculator — or remounting BatchMixer re-applies defaults. */
   useThemeAppearanceSync();
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
 
   const [view, setView] = useState<ShellView>({ kind: "destination", id: "calculator" });
   const [navOpen, setNavOpen] = useState(false);
@@ -101,19 +105,19 @@ export function AppShell() {
       if (view.kind === "session-mix-editor") {
         const ok = window.confirm(
           view.mode === "edit"
-            ? "Leave and discard changes to this mix?"
-            : "Leave and discard this mix?",
+            ? t("mixer.discardMixChanges")
+            : t("mixer.discardMix"),
         );
         if (!ok) return false;
       }
       if (view.kind === "create-recipe") {
-        const ok = window.confirm("Discard this recipe?");
+        const ok = window.confirm(t("recipe.discard"));
         if (!ok) return false;
       }
       setView(next);
       return true;
     },
-    [view],
+    [view, t],
   );
 
   const openSettings = useCallback(() => {
@@ -171,7 +175,7 @@ export function AppShell() {
         updateSessionBatch(sessionId, batchId, {
           name: payload.name,
           recipeId: payload.recipe.id,
-          recipeName: recipeMenuLabel(payload.recipe),
+          recipeName: recipeMenuLabel(payload.recipe, uiLanguage),
           recipe: payload.recipe,
           values,
         });
@@ -179,7 +183,7 @@ export function AppShell() {
         addSessionBatch(sessionId, {
           name: payload.name,
           recipeId: payload.recipe.id,
-          recipeName: recipeMenuLabel(payload.recipe),
+          recipeName: recipeMenuLabel(payload.recipe, uiLanguage),
           recipe: payload.recipe,
           values,
           multiplier: 1,
@@ -190,7 +194,7 @@ export function AppShell() {
       }
       setView({ kind: "session-overview", sessionId });
     },
-    [view, addSessionBatch, updateSessionBatch, sessions],
+    [view, addSessionBatch, updateSessionBatch, sessions, uiLanguage],
   );
 
   const returnFromCreateRecipe = useCallback(() => {
@@ -265,7 +269,7 @@ export function AppShell() {
             initialValues={view.initialValues}
             onOpenNav={openNav}
             sessionMode={{
-              sessionName: activeSession?.name ?? "Session",
+              sessionName: activeSession?.name ?? t("nav.sessionChip"),
               mode: view.mode,
               batchName: view.batchName,
               onCommit: handleMixCommit,

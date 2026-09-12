@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ConsumableItem } from "../../domain/consumables/types";
 import { omitCatalogIdFromSelection } from "../../domain/select/acquisition";
 import { pruneWearByOptionId, type WearLevel } from "../../domain/select/wear";
@@ -13,8 +14,11 @@ export function ConsumablesPage({
   onMenuClick: () => void;
   embedded?: boolean;
 }) {
+  const { t } = useTranslation("common");
   const catalog = useConsumablesLibraryStore((s) => s.items);
-  const addItem = useConsumablesLibraryStore((s) => s.addItem);
+  const addBilingualItem = useConsumablesLibraryStore(
+    (s) => s.addBilingualItem,
+  );
   const renameItem = useConsumablesLibraryStore((s) => s.renameItem);
   const removeItem = useConsumablesLibraryStore((s) => s.removeItem);
 
@@ -26,9 +30,11 @@ export function ConsumablesPage({
     [],
   );
 
+  const title = t("nav.consumables");
+
   return (
     <CatalogHub
-      title="Consumables"
+      title={title}
       catalog={catalog}
       customItems={customConsumables}
       selection={selection}
@@ -47,16 +53,16 @@ export function ConsumablesPage({
         setSelection(nextSelection);
         setWearByOptionId((prev) => pruneWearByOptionId(prev, nextSelection));
       }}
-      onAddGlobalItem={addItem}
+      onAddGlobalItemBilingual={addBilingualItem}
       onRenameGlobalItem={renameItem}
       onRemoveGlobalItem={removeItem}
       onMenuClick={onMenuClick}
       embedded={embedded}
-      reportTitle="Consumables"
-      searchPlaceholder="Search consumables…"
-      customPlaceholder="Custom consumable name"
-      inventoryNounSingular="item"
-      inventoryNounPlural="items"
+      reportTitle={title}
+      searchPlaceholder={t("catalog.searchConsumables")}
+      customPlaceholder={t("catalog.customConsumable")}
+      inventoryNounSingular={t("catalog.noun.item")}
+      inventoryNounPlural={t("catalog.noun.items")}
     />
   );
 }

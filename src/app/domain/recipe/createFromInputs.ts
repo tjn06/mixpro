@@ -1,3 +1,6 @@
+import type { AppLanguage } from "../../i18n/language";
+import { DEFAULT_UI_LANGUAGE } from "../../i18n/language";
+import { standardIngredientLabel } from "./ingredientLabels";
 import type { BlendingRecipe, PercentOfBinder } from "./types";
 
 /** Entry context — Create Recipe does not know the host; caller decides. */
@@ -176,14 +179,21 @@ export function blendingRecipeFromFormula(input: RecipeFormulaInput): BlendingRe
   };
 }
 
-export function formatRecipeFormulaSummary(recipe: BlendingRecipe): string {
+export function formatRecipeFormulaSummary(
+  recipe: BlendingRecipe,
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
+): string {
   const a = recipe.binderParts.find((p) => p.id === "A")?.parts ?? 0;
   const b = recipe.binderParts.find((p) => p.id === "B")?.parts ?? 0;
   const sand = recipe.binderPercents.find((p) => p.id === "SAND");
   const tix = recipe.binderPercents.find((p) => p.id === "TIX");
-  const bits = [`${a}:${b} Resin/Hardener`];
-  if (sand) bits.push(`${roundPct(sand.percent)}% Filler`);
-  if (tix) bits.push(`${roundPct(tix.percent)}% Thickener`);
+  const resin = standardIngredientLabel("A", language) ?? "Resin";
+  const hardener = standardIngredientLabel("B", language) ?? "Hardener";
+  const filler = standardIngredientLabel("SAND", language) ?? "Filler";
+  const thickener = standardIngredientLabel("TIX", language) ?? "Thickener";
+  const bits = [`${a}:${b} ${resin}/${hardener}`];
+  if (sand) bits.push(`${roundPct(sand.percent)}% ${filler}`);
+  if (tix) bits.push(`${roundPct(tix.percent)}% ${thickener}`);
   return bits.join(" · ");
 }
 

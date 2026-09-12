@@ -1,11 +1,12 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, type CSSProperties, type ReactNode, type RefObject, Fragment } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import { getEntityMetaLabel, emptyComplementValues } from "../../domain/recipe/calc";
 import { batchIngredientTotalGrams } from "../../domain/batch-totals/totals";
 import type { ExtraBatchEntry } from "../../domain/batch-totals/extraBatches";
-import { extraBatchSectionLabel, extraBatchTotalCount, hasExtraBatches } from "../../domain/batch-totals/extraBatches";
+import { extraBatchTotalCount, hasExtraBatches } from "../../domain/batch-totals/extraBatches";
 import { BatchTotalsShareBar } from "./BatchTotalsShareBar";
 import {
   CARD_NAME_WEIGHT,
@@ -240,6 +241,7 @@ export function BatchTotalsBottomPanel({
   onLoadBatchTotals?: () => void;
   saveFlash?: boolean;
 }) {
+  const { t } = useTranslation("common");
   const [shareOpen, setShareOpen] = useState(false);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const [holding, setHolding] = useState(false);
@@ -521,10 +523,10 @@ export function BatchTotalsBottomPanel({
   );
 
   const panelStageLabel = sourceExpanded
-    ? "Batch sources expanded — drag handle down to show share"
+    ? t("totals.panelExpanded")
     : shareOpen
-      ? "Share actions — drag handle up for sources, down to collapse"
-      : "Batch total — drag handle up for share actions";
+      ? t("totals.panelShare")
+      : t("totals.panelCollapsed");
 
   return (
     <div
@@ -570,7 +572,7 @@ export function BatchTotalsBottomPanel({
           {isExpandedVisual ? (
             <div
               className="batch-totals-bottom-panel__body app-gutter-x batch-totals-bottom-panel__body--readonly"
-              aria-label="Batch summary — total per ingredient"
+              aria-label={t("totals.summaryAria")}
             >
               <div className="batch-totals-bottom-panel__body-inner">
                 <BatchTotalsEntityTotalTable
@@ -651,18 +653,20 @@ export interface BatchTotalsScreenProps {
 
 function StepButton({
   label,
+  direction,
   onClick,
   disabled,
   className = "",
   style,
 }: {
   label: string;
+  direction: "decrease" | "increase";
   onClick: () => void;
   disabled?: boolean;
   className?: string;
   style?: CSSProperties;
 }) {
-  const symbol = label === "Decrease batch count" ? "−" : "+";
+  const symbol = direction === "decrease" ? "−" : "+";
 
   return (
     <button
@@ -802,6 +806,7 @@ function SummaryBatchRows({
   extraBatches: ExtraBatchEntry[];
   className?: string;
 }) {
+  const { t } = useTranslation("common");
   const hasExtra = hasExtraBatches(extraBatches);
   const extraTotalCount = extraBatchTotalCount(extraBatches);
 
@@ -812,7 +817,7 @@ function SummaryBatchRows({
       }${className ? ` ${className}` : ""}`}
     >
       <div className="batch-totals-summary-bar__batch-row">
-        <span style={sectionTitleStyle()}>Batches</span>
+        <span style={sectionTitleStyle()}>{t("totals.batches")}</span>
         <MultCell value={multiplier} />
       </div>
       <div
@@ -821,8 +826,11 @@ function SummaryBatchRows({
         }`}
         aria-hidden={!hasExtra}
       >
-        <span style={sectionTitleStyle(cv.extraBatch.label)} title="Extra batch">
-          Extra batch
+        <span
+          style={sectionTitleStyle(cv.extraBatch.label)}
+          title={t("totals.extraBatch")}
+        >
+          {t("totals.extraBatch")}
         </span>
         <MultCell value={extraTotalCount} />
       </div>
@@ -838,17 +846,20 @@ function SummaryBatchChips({
   multiplier: number;
   extraBatches: ExtraBatchEntry[];
 }) {
+  const { t } = useTranslation("common");
   const hasExtra = hasExtraBatches(extraBatches);
   const extraTotalCount = extraBatchTotalCount(extraBatches);
 
   return (
-    <div className="batch-totals-entity-summary__chips" aria-label="Batch counts">
+    <div className="batch-totals-entity-summary__chips" aria-label={t("totals.batchCounts")}>
       <span className="batch-totals-entity-summary__chip">
-        Batches <span className="batch-totals-entity-summary__chip-mult">×{multiplier}</span>
+        {t("totals.batches")}{" "}
+        <span className="batch-totals-entity-summary__chip-mult">×{multiplier}</span>
       </span>
       {hasExtra ? (
         <span className="batch-totals-entity-summary__chip batch-totals-entity-summary__chip--extra">
-          Extra <span className="batch-totals-entity-summary__chip-mult">×{extraTotalCount}</span>
+          {t("totals.extraBatch")}{" "}
+          <span className="batch-totals-entity-summary__chip-mult">×{extraTotalCount}</span>
         </span>
       ) : null}
     </div>
@@ -870,13 +881,15 @@ function BatchTotalsEntityTotalTable({
   multiplier: number;
   colorScheme: ColorScheme;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const amountColor = entityValueColor(true, colorScheme);
   const ingredientRows = entityIndexes.filter((i) => i !== 0);
 
   return (
     <div className="batch-totals-entity-total-table min-w-0 w-full" aria-readonly>
       <header className="batch-totals-entity-summary__intro">
-        <h2 className="batch-totals-entity-summary__title">Summary</h2>
+        <h2 className="batch-totals-entity-summary__title">{t("common.summary")}</h2>
         <p className="batch-totals-entity-summary__subtitle">
           Combined totals for each ingredient across all batches.
         </p>
@@ -890,7 +903,10 @@ function BatchTotalsEntityTotalTable({
         <tbody>
           {ingredientRows.map((pi) => {
             const p = MIX_PARAMS[pi];
-            const metaLabel = getEntityMetaLabel(recipe, p.id);
+            const metaLabel =
+              p.id === "TOTAL"
+                ? t("mixer.totalMeta")
+                : getEntityMetaLabel(recipe, p.id, uiLanguage);
             const totalGrams = batchIngredientTotalGrams(values, extraBatches, pi, multiplier);
 
             return (
@@ -941,9 +957,15 @@ function SourceTableDataRow({
   mult: number;
   amountColor: string;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const p = MIX_PARAMS[pi];
   const isTotal = pi === 0;
-  const metaLabel = !isTotal ? getEntityMetaLabel(recipe, p.id) : undefined;
+  const metaLabel = !isTotal
+    ? p.id === "TOTAL"
+      ? t("mixer.totalMeta")
+      : getEntityMetaLabel(recipe, p.id, uiLanguage)
+    : undefined;
   const lineTotalGrams = perBatchGrams * mult;
   const totalCellExtra = isTotal
     ? ({ paddingTop: "calc(var(--totals-cell-py) + 6px)" } satisfies CSSProperties)
@@ -1013,6 +1035,7 @@ function MultiplierSectionHeader({
   trailing?: ReactNode;
   showReset?: boolean;
 }) {
+  const { t } = useTranslation("common");
   return (
     <div
       className="shrink-0 grid items-center min-w-0 w-full"
@@ -1031,7 +1054,8 @@ function MultiplierSectionHeader({
           style={{ minWidth: 32, height: "var(--totals-header-icon-btn)" }}
         >
           <StepButton
-            label="Decrease batch count"
+            label={t("totals.decrease")}
+            direction="decrease"
             onClick={() => onMultiplierChange(Math.max(1, multiplier - 1))}
             disabled={multiplier <= 1}
             className="absolute"
@@ -1052,7 +1076,8 @@ function MultiplierSectionHeader({
             {multiplier}
           </p>
           <StepButton
-            label="Increase batch count"
+            label={t("totals.increase")}
+            direction="increase"
             onClick={() => onMultiplierChange(Math.min(999, multiplier + 1))}
             disabled={multiplier >= 999}
             className="absolute"
@@ -1066,7 +1091,7 @@ function MultiplierSectionHeader({
       >
         {showReset ? (
           <IconHeaderButton
-            label="Reset batch count"
+            label={t("totals.reset")}
             onClick={() => onMultiplierChange(1)}
             disabled={multiplier <= 1}
           >
@@ -1104,6 +1129,7 @@ function BatchTotalsSourceTables({
   onEditExtraBatch: (index: number) => void;
   onRemoveExtraBatch: (index: number) => void;
 }) {
+  const { t } = useTranslation("common");
   const amountColor = entityValueColor(true, colorScheme);
   const ingredientRows = entityIndexes.filter((i) => i !== 0);
   const batchRowIndexes = [...ingredientRows, 0];
@@ -1111,7 +1137,7 @@ function BatchTotalsSourceTables({
   return (
     <div className="batch-totals-source-card w-full min-w-0 shrink-0 overflow-hidden">
       <MultiplierSectionHeader
-        title="Batches"
+        title={t("totals.batches")}
         multiplier={multiplier}
         onMultiplierChange={onMultiplierChange}
         showReset
@@ -1127,13 +1153,13 @@ function BatchTotalsSourceTables({
           <thead>
             <tr>
               <th scope="col" className="text-left" style={sourceThCellItemStyle(TH_TEXT)}>
-                Item
+                {t("totals.colItem")}
               </th>
               <th scope="col" className="text-center" style={sourceThCellMultStyle(TH_TEXT)}>
                 ×
               </th>
               <th scope="col" className="text-right" style={sourceThCellTotalStyle(TH_TEXT)}>
-                Total
+                {t("totals.colTotal")}
               </th>
             </tr>
           </thead>
@@ -1149,12 +1175,14 @@ function BatchTotalsSourceTables({
                 amountColor={amountColor}
               />
             ))}
-            {extraBatches.map((entry, index) => (
+            {extraBatches.map((entry, index) => {
+              const extraLabel = t("totals.extraBatchN", { n: index + 1 });
+              return (
               <Fragment key={`extra-section-${index}`}>
                 <tr data-section-header>
                   <td colSpan={3} style={{ padding: 0 }}>
                     <MultiplierSectionHeader
-                      title={extraBatchSectionLabel(index, extraBatches.length)}
+                      title={extraLabel}
                       titleColor={cv.extraBatch.label}
                       multiplier={entry.multiplier}
                       onMultiplierChange={(next) => onExtraBatchMultiplierChange(index, next)}
@@ -1162,14 +1190,14 @@ function BatchTotalsSourceTables({
                       trailing={
                         <>
                           <IconHeaderButton
-                            label={`Edit ${extraBatchSectionLabel(index, extraBatches.length).toLowerCase()}`}
+                            label={t("totals.editExtra", { label: extraLabel })}
                             onClick={() => onEditExtraBatch(index)}
                             color={cv.extraBatch.label}
                           >
                             <RenameIcon size={HEADER_ICON_SIZE} />
                           </IconHeaderButton>
                           <IconHeaderButton
-                            label={`Remove ${extraBatchSectionLabel(index, extraBatches.length).toLowerCase()}`}
+                            label={t("totals.removeExtra", { label: extraLabel })}
                             onClick={() => onRemoveExtraBatch(index)}
                             color={cv.text.muted}
                           >
@@ -1192,7 +1220,8 @@ function BatchTotalsSourceTables({
                   />
                 ))}
               </Fragment>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -1329,6 +1358,7 @@ export function BatchTotalsScreen({
   onLoadBatchTotals,
   saveFlash = false,
 }: BatchTotalsScreenProps) {
+  const { t } = useTranslation("common");
   const colorScheme = useSettingsStore((s) => s.colorScheme);
   const shellCompact = useAppShellCompact();
   const [extraBatchSheetOpen, setExtraBatchSheetOpen] = useState(false);
@@ -1469,10 +1499,10 @@ export function BatchTotalsScreen({
               }}
               title={
                 editingExtraIndex !== null && editingExtraIndex >= 0
-                  ? extraBatchSectionLabel(editingExtraIndex, extraBatches.length)
-                  : "Extra batch"
+                  ? t("totals.extraBatchN", { n: editingExtraIndex + 1 })
+                  : t("totals.extraBatch")
               }
-              subtitle="One custom batch — added on top of your batches"
+              subtitle={t("sheets.mixerInput.subtitle")}
               recipe={recipe}
               values={sheetValues}
               entityIndexes={entityIndexes}

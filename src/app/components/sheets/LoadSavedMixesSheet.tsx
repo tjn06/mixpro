@@ -5,6 +5,8 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import type { BucketSelection } from "../../domain/bucket/types";
 import { CollapseActionsIcon, DeleteIcon, ExpandActionsIcon, GoToIcon, RenameIcon, CloseIcon } from "../shared/ActionIcons";
@@ -101,16 +103,18 @@ function sortMixesBySavedAt(mixes: readonly SavedMixSnapshot[]): SavedMixSnapsho
   return [...mixes].sort((a, b) => b.savedAt.localeCompare(a.savedAt));
 }
 
-function bucketLabel(selection: BucketSelection): string {
-  return selection === "none" ? "No bucket" : `${selection} L bucket`;
+function bucketLabel(selection: BucketSelection, t: TFunction<"common">): string {
+  return selection === "none"
+    ? t("mixer.bucket.noBucket")
+    : t("mixer.bucket.liters", { size: selection });
 }
 
 function formatTotalKg(grams: number): string {
   return `${(grams / 1000).toFixed(3)} kg`;
 }
 
-function mixDetailLine(mix: SavedMixSnapshot): string {
-  return [mix.recipeName, bucketLabel(mix.bucketSelection)].join(" • ");
+function mixDetailLine(mix: SavedMixSnapshot, t: TFunction<"common">): string {
+  return [mix.recipeName, bucketLabel(mix.bucketSelection, t)].join(" • ");
 }
 
 function SavedMixSwipeStrip({
@@ -126,6 +130,7 @@ function SavedMixSwipeStrip({
   onRename: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation("common");
   const cellR1C1: CSSProperties = {
     ...stripCellBase,
     borderRight: STRIP_DIVIDER,
@@ -156,7 +161,7 @@ function SavedMixSwipeStrip({
   return (
     <div
       role="group"
-      aria-label="Mix actions"
+      aria-label={t("sheets.loadMixes.actionsAria")}
       className={`saved-mix-swipe-panel absolute inset-y-0 right-0 min-h-0 ${
         open ? "saved-mix-swipe-panel--open" : "saved-mix-swipe-panel--closed"
       }`}
@@ -170,7 +175,7 @@ function SavedMixSwipeStrip({
       <button
         type="button"
         aria-expanded={open}
-        aria-label={open ? "Close actions" : "More actions"}
+        aria-label={open ? t("sheets.loadMixes.closeActions") : t("sheets.loadMixes.moreActions")}
         className="saved-mix-swipe-cell saved-mix-swipe-cell--r1c1 transition-colors duration-150"
         style={cellR1C1}
         onClick={onToggle}
@@ -181,7 +186,7 @@ function SavedMixSwipeStrip({
       {open ? (
         <button
           type="button"
-          aria-label="Delete"
+          aria-label={t("common.delete")}
           className="saved-mix-swipe-cell saved-mix-swipe-cell--r1c2 h-full w-full shrink-0 rounded-none transition-colors duration-150"
           style={cellR1C2}
           onClick={onDelete}
@@ -192,7 +197,7 @@ function SavedMixSwipeStrip({
 
       <button
         type="button"
-        aria-label="Open"
+        aria-label={t("sheets.loadMixes.open")}
         className="saved-mix-swipe-cell saved-mix-swipe-cell--r2c1 h-full w-full shrink-0 rounded-none transition-colors duration-150"
         style={cellR2C1}
         onClick={onOpen}
@@ -203,7 +208,7 @@ function SavedMixSwipeStrip({
       {open ? (
         <button
           type="button"
-          aria-label="Edit"
+          aria-label={t("common.edit")}
           className="saved-mix-swipe-cell saved-mix-swipe-cell--r2c2 transition-colors duration-150"
           style={cellR2C2}
           onClick={onRename}
@@ -232,6 +237,7 @@ function SavedMixRow({
   onDelete: (mix: SavedMixSnapshot) => void;
   onRename: (mix: SavedMixSnapshot) => void;
 }) {
+  const { t } = useTranslation("common");
   const savedDate = new Date(mix.savedAt);
   const savedTime = getHumanSavedTime(savedDate, now);
   const displayName = savedMixDisplayName(mix);
@@ -252,7 +258,7 @@ function SavedMixRow({
           className="break-words min-w-0"
           style={{ ...LIST_MUTED, gridColumn: "1 / -1" }}
         >
-          {mixDetailLine(mix)}
+          {mixDetailLine(mix, t)}
         </p>
 
         <p
@@ -301,6 +307,7 @@ export function LoadSavedMixesSheet({
   onOpenChange,
   onSelect,
 }: LoadSavedMixesSheetProps) {
+  const { t } = useTranslation("common");
   const mixes = useSavedMixesStore((s) => s.mixes);
   const deleteMix = useSavedMixesStore((s) => s.deleteMix);
   const updateMixMetaName = useSavedMixesStore((s) => s.updateMixMetaName);
@@ -319,8 +326,8 @@ export function LoadSavedMixesSheet({
       const name = savedMixDisplayName(m).toLowerCase();
       const recipe = (m.recipeName || "").toLowerCase();
       const meta = (m.metaName || "").toLowerCase();
-      const bucket = bucketLabel(m.bucketSelection).toLowerCase();
-      const detail = mixDetailLine(m).toLowerCase();
+      const bucket = bucketLabel(m.bucketSelection, t).toLowerCase();
+      const detail = mixDetailLine(m, t).toLowerCase();
       const savedTime = getSavedMixTimeSearchText(new Date(m.savedAt), now);
       return (
         name.includes(q) ||
@@ -331,7 +338,7 @@ export function LoadSavedMixesSheet({
         savedTime.includes(q)
       );
     });
-  }, [sortedMixes, query, now]);
+  }, [sortedMixes, query, now, t]);
 
   const listScroll = useScrollEdgeFades(
     listRef,
@@ -368,10 +375,8 @@ export function LoadSavedMixesSheet({
 
   const subtitle =
     mixes.length === 0
-      ? "No saved mixes yet"
-      : mixes.length === 1
-        ? "1 saved mix"
-        : `${mixes.length} saved mixes`;
+      ? t("sheets.loadMixes.empty")
+      : t("sheets.loadMixes.count", { count: mixes.length });
 
   return (
     <>
@@ -385,7 +390,7 @@ export function LoadSavedMixesSheet({
             style={SHEET_COVER_HEADER_STYLE}
           >
             <h2 id="load-saved-mixes-title" style={SHEET_TITLE}>
-              Saved mixes
+              {t("sheets.loadMixes.title")}
             </h2>
             <p style={{ ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" }}>
               {subtitle}
@@ -394,8 +399,8 @@ export function LoadSavedMixesSheet({
               <PageSearchField
                 value={query}
                 onChange={setQuery}
-                placeholder="Search saved mixes"
-                aria-label="Search saved mixes"
+                placeholder={t("sheets.loadMixes.search")}
+                aria-label={t("sheets.loadMixes.search")}
               />
             </div>
           </header>
@@ -416,7 +421,9 @@ export function LoadSavedMixesSheet({
                     className={`${SHEET_LIST_ROW_CLASS} rounded-2xl flex flex-col items-center justify-center text-center px-6 py-12`}
                   >
                     <p style={{ ...LIST_MUTED, letterSpacing: "0.04em", lineHeight: 1.45 }}>
-                      {mixes.length === 0 ? "Save a mix from the mixer to see it here." : "No matches."}
+                      {mixes.length === 0
+                        ? t("sheets.loadMixes.emptyHint")
+                        : t("sheets.loadMixes.noMatches")}
                     </p>
                   </div>
                 ) : (
@@ -450,7 +457,7 @@ export function LoadSavedMixesSheet({
             buttons={[
               {
                 key: "close",
-                label: "Close",
+                label: t("common.close"),
                 icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
                 onClick: () => onOpenChange(false),
               },

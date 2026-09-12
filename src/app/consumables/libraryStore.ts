@@ -2,9 +2,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { CONSUMABLES_CATALOG } from "../domain/consumables/catalog";
 import type { ConsumableItem } from "../domain/consumables/types";
+import type { ItemLabel, LocalizedLabel } from "../i18n/localizedLabel";
 import {
   addRootFlexSelectItem,
   cloneFlexSelectItems,
+  mergeSeedCatalogWithUserItems,
   removeFlexSelectItem,
   updateFlexSelectLabel,
 } from "../domain/select/catalogMutations";
@@ -15,7 +17,8 @@ const HOT_STORE_KEY = "__mixmate_consumables_library_store__";
 interface ConsumablesLibraryState {
   items: ConsumableItem[];
   addItem: (label: string) => ConsumableItem;
-  renameItem: (id: string, label: string) => void;
+  addBilingualItem: (label: LocalizedLabel) => ConsumableItem;
+  renameItem: (id: string, label: ItemLabel) => void;
   removeItem: (id: string) => void;
   resetToDefaults: () => void;
 }
@@ -35,10 +38,34 @@ function createConsumablesLibraryStore() {
           return item;
         },
 
+        addBilingualItem: (label) => {
+          const item: ConsumableItem = {
+            id: `admin-consumable-${crypto.randomUUID()}`,
+            label: {
+              en: label.en.trim(),
+              sv: label.sv.trim(),
+            },
+          };
+          set({ items: addRootFlexSelectItem(get().items, item) });
+          return item;
+        },
+
         renameItem: (id, label) => {
-          const next = label.trim();
-          if (!next) return;
-          set({ items: updateFlexSelectLabel(get().items, id, next) });
+          if (typeof label === "string") {
+            const next = label.trim();
+            if (!next) return;
+            set({ items: updateFlexSelectLabel(get().items, id, next) });
+            return;
+          }
+          const en = label.en.trim();
+          const sv = label.sv.trim();
+          if (!en && !sv) return;
+          set({
+            items: updateFlexSelectLabel(get().items, id, {
+              en: en || sv,
+              sv: sv || en,
+            }),
+          });
         },
 
         removeItem: (id) => {
@@ -51,15 +78,26 @@ function createConsumablesLibraryStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 5,
+        version: 6,
         partialize: (state) => ({ items: state.items }),
-        migrate: () => ({
-          items: cloneFlexSelectItems(CONSUMABLES_CATALOG),
-        }),
+        migrate: (persisted) => {
+          const raw = persisted as { items?: ConsumableItem[] } | undefined;
+          return {
+            items: mergeSeedCatalogWithUserItems(
+              CONSUMABLES_CATALOG,
+              raw?.items,
+            ),
+          };
+        },
         merge: (persisted, current) => {
           const p = persisted as { items?: ConsumableItem[] } | undefined;
-          if (!p?.items?.length) return current;
-          return { ...current, items: p.items };
+          return {
+            ...current,
+            items: mergeSeedCatalogWithUserItems(
+              CONSUMABLES_CATALOG,
+              p?.items,
+            ),
+          };
         },
       },
     ),

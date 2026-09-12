@@ -1,9 +1,11 @@
 import React, { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { BucketSelection } from "../../domain/bucket/types";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import { recipeMenuLabel } from "../../domain/recipe/types";
 import type { SandType } from "../../domain/mix/volume";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
+import { useSettingsStore } from "../../settings/store";
 import { RecipePickerSheet } from "../sheets/RecipePickerSheet";
 import { RecipeHeaderRecipeRow, RecipeHeaderSubline } from "./RecipeZoneMeta";
 
@@ -62,11 +64,13 @@ export function RecipeSelect({
   loadedSavedMixId = null,
   onSavedMixSelect,
 }: RecipeSelectProps) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const [open, setOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const selectable = recipes.length > 1 && !disabled;
-  const recipeName = recipeMenuLabel(value);
+  const recipeName = recipeMenuLabel(value, uiLanguage);
 
   const handleTriggerClick = () => {
     if (menuVisible) {
@@ -85,7 +89,7 @@ export function RecipeSelect({
             type="button"
             aria-haspopup="listbox"
             aria-expanded={menuVisible}
-            aria-label={`${recipeName}. Tap to change recipe.`}
+            aria-label={t("mixer.changeRecipeAria", { name: recipeName })}
             className="inline-flex items-center justify-center gap-1 max-w-full min-w-0 touch-manipulation bg-transparent border-none p-0 cursor-pointer"
             onClick={handleTriggerClick}
           >

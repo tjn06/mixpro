@@ -12,7 +12,10 @@ export const WEAR_LEVEL_LABELS: Record<WearLevel, string> = {
   hog: "H",
 };
 
-/** Full Swedish names for accessibility. */
+/**
+ * Full Swedish names for accessibility (non-React / report callers).
+ * UI components should use react-i18next (`wear.lag` / `medel` / `hog`) instead.
+ */
 export const WEAR_LEVEL_A11Y_LABELS: Record<WearLevel, string> = {
   lag: "Låg",
   medel: "Medel",

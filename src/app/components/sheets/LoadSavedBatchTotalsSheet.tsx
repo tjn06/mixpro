@@ -5,6 +5,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { useTranslation } from "react-i18next";
 import type { SavedBatchTotalsSnapshot } from "../../saved-batch-totals/types";
 import {
   isBatchTotalsCompatibleWithSession,
@@ -155,6 +156,7 @@ function BatchTotalsSwipeStrip({
   onRename: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation("common");
   const cellR1C1: CSSProperties = {
     ...stripCellBase,
     borderRight: STRIP_DIVIDER,
@@ -191,7 +193,7 @@ function BatchTotalsSwipeStrip({
   return (
     <div
       role="group"
-      aria-label="Batch totals actions"
+      aria-label={t("sheets.loadTotals.actionsAria")}
       className={`saved-mix-swipe-panel absolute inset-y-0 right-0 min-h-0 ${
         open ? "saved-mix-swipe-panel--open" : "saved-mix-swipe-panel--closed"
       }`}
@@ -205,7 +207,7 @@ function BatchTotalsSwipeStrip({
       <button
         type="button"
         aria-expanded={open}
-        aria-label={open ? "Close actions" : "More actions"}
+        aria-label={open ? t("sheets.loadMixes.closeActions") : t("sheets.loadMixes.moreActions")}
         className="saved-mix-swipe-cell saved-mix-swipe-cell--r1c1 transition-colors duration-150"
         style={cellR1C1}
         onClick={onToggle}
@@ -216,7 +218,7 @@ function BatchTotalsSwipeStrip({
       {open ? (
         <button
           type="button"
-          aria-label="Delete"
+          aria-label={t("common.delete")}
           disabled={!canDelete}
           className="saved-mix-swipe-cell saved-mix-swipe-cell--r1c2 h-full w-full shrink-0 rounded-none transition-colors duration-150"
           style={cellR1C2}
@@ -228,7 +230,7 @@ function BatchTotalsSwipeStrip({
 
       <button
         type="button"
-        aria-label="Open"
+        aria-label={t("sheets.loadMixes.open")}
         disabled={!canOpen}
         className="saved-mix-swipe-cell saved-mix-swipe-cell--r2c1 h-full w-full shrink-0 rounded-none transition-colors duration-150"
         style={cellR2C1}
@@ -240,7 +242,7 @@ function BatchTotalsSwipeStrip({
       {open ? (
         <button
           type="button"
-          aria-label="Rename"
+          aria-label={t("common.rename")}
           disabled={!canRename}
           className="saved-mix-swipe-cell saved-mix-swipe-cell--r2c2 transition-colors duration-150"
           style={cellR2C2}
@@ -317,7 +319,7 @@ function BatchTotalsRow({
           {!compatible ? (
             <>
               <span aria-hidden> · </span>
-              <span>Read only</span>
+              <span>{t("sheets.loadTotals.readOnly")}</span>
             </>
           ) : null}
         </p>
@@ -407,6 +409,7 @@ export function LoadSavedBatchTotalsSheet({
   onSelect: (entry: SavedBatchTotalsSnapshot) => void;
   session: BatchTotalsSessionContext;
 }) {
+  const { t } = useTranslation("common");
   const entries = useSavedBatchTotalsStore((s) => s.entries);
   const deleteEntry = useSavedBatchTotalsStore((s) => s.deleteEntry);
   const updateEntryMetaName = useSavedBatchTotalsStore((s) => s.updateEntryMetaName);
@@ -465,7 +468,11 @@ export function LoadSavedBatchTotalsSheet({
     if (isDemoBatchTotalsEntry(entry.id)) return;
     if (
       typeof window !== "undefined" &&
-      !window.confirm(`Delete “${savedBatchTotalsDisplayName(entry)}”?`)
+      !window.confirm(
+        t("sheets.loadTotals.confirmDelete", {
+          name: savedBatchTotalsDisplayName(entry),
+        }),
+      )
     ) {
       return;
     }
@@ -479,8 +486,11 @@ export function LoadSavedBatchTotalsSheet({
 
   const subtitle =
     totalCount === 0
-      ? "Nothing saved yet"
-      : `${compatible.length} for this mix · ${incompatible.length} other`;
+      ? t("sheets.loadTotals.empty")
+      : t("sheets.loadTotals.summary", {
+          thisCount: compatible.length,
+          otherCount: incompatible.length,
+        });
 
   return (
     <>
@@ -494,7 +504,7 @@ export function LoadSavedBatchTotalsSheet({
           style={SHEET_COVER_HEADER_STYLE}
         >
           <h2 id="load-batch-totals-title" style={SHEET_TITLE}>
-            Saved batch totals
+            {t("sheets.loadTotals.title")}
           </h2>
           <p style={{ ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" }}>
             {subtitle}
@@ -530,7 +540,7 @@ export function LoadSavedBatchTotalsSheet({
               ) : (
                 <>
                   <EntrySection
-                    title="This mix"
+                    title={t("sheets.loadTotals.thisMix")}
                     entries={compatible}
                     compatible
                     now={now}
@@ -541,7 +551,7 @@ export function LoadSavedBatchTotalsSheet({
                     onRename={handleRename}
                   />
                   <EntrySection
-                    title="Other mixes"
+                    title={t("sheets.loadTotals.otherMixes")}
                     entries={incompatible}
                     compatible={false}
                     now={now}
@@ -562,7 +572,7 @@ export function LoadSavedBatchTotalsSheet({
           buttons={[
             {
               key: "close",
-              label: "Close",
+              label: t("common.close"),
               icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
               onClick: () => onOpenChange(false),
             },

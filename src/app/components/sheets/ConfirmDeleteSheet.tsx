@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { useTranslation } from "react-i18next";
 import { CloseIcon, DeleteIcon } from "../shared/ActionIcons";
 import {
   SHEET_COVER_FORM_HEADER_STYLE,
@@ -17,7 +18,7 @@ export function ConfirmDeleteSheet({
   open,
   onOpenChange,
   itemLabel,
-  title = "Delete custom item",
+  title,
   onConfirm,
 }: {
   open: boolean;
@@ -26,7 +27,10 @@ export function ConfirmDeleteSheet({
   title?: string;
   onConfirm: () => void;
 }) {
+  const { t } = useTranslation("common");
   const titleId = useId();
+  const resolvedTitle = title ?? t("sheets.delete.title");
+  const name = itemLabel || t("sheets.delete.fallbackName");
 
   return (
     <AppFrameCoverSheet open={open} zIndex={90} ariaLabelledBy={titleId}>
@@ -35,14 +39,13 @@ export function ConfirmDeleteSheet({
         style={SHEET_COVER_FORM_HEADER_STYLE}
       >
         <h2 id={titleId} className={SHEET_TITLE_CLASS}>
-          {title}
+          {resolvedTitle}
         </h2>
         <p
           className={SHEET_SUBTITLE_CLASS}
           style={{ maxWidth: 280, textAlign: "center" }}
         >
-          Are you sure you want to delete “{itemLabel || "this item"}”? This
-          cannot be undone.
+          {t("sheets.delete.body", { name })}
         </p>
       </header>
 
@@ -60,14 +63,14 @@ export function ConfirmDeleteSheet({
         buttons={[
           {
             key: "close",
-            label: "Close",
+            label: t("common.close"),
             icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: () => onOpenChange(false),
             variant: "secondary",
           },
           {
             key: "delete",
-            label: "Delete",
+            label: t("common.delete"),
             icon: <DeleteIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: () => {
               onConfirm();

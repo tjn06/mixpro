@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import { CloseIcon, CalendarIcon } from "../shared/ActionIcons";
@@ -9,16 +10,15 @@ import {
   SHEET_SUBTITLE_CLASS,
   SHEET_TITLE_CLASS,
 } from "../sheets/sheetChrome";
-import type { ReactNode } from "react";
 
 export function SessionDatePickerSheet({
   open,
   onOpenChange,
   initialDate,
   onConfirm,
-  title = "Edit date",
-  subtitle = "Choose the work day for this session filter.",
-  confirmLabel = "Apply",
+  title,
+  subtitle,
+  confirmLabel,
   confirmIcon,
 }: {
   open: boolean;
@@ -31,6 +31,10 @@ export function SessionDatePickerSheet({
   /** Footer confirm affordance — defaults to calendar (not save). */
   confirmIcon?: ReactNode;
 }) {
+  const { t } = useTranslation("common");
+  const resolvedTitle = title ?? t("sessions.datePickerTitle");
+  const resolvedSubtitle = subtitle ?? t("sessions.datePickerSubtitle");
+  const resolvedConfirm = confirmLabel ?? t("common.apply");
   const [selected, setSelected] = useState<Date | undefined>(initialDate);
 
   useEffect(() => {
@@ -57,9 +61,9 @@ export function SessionDatePickerSheet({
         style={SHEET_COVER_FORM_HEADER_STYLE}
       >
         <h2 id="session-date-picker-title" className={SHEET_TITLE_CLASS}>
-          {title}
+          {resolvedTitle}
         </h2>
-        <p className={SHEET_SUBTITLE_CLASS}>{subtitle}</p>
+        <p className={SHEET_SUBTITLE_CLASS}>{resolvedSubtitle}</p>
       </header>
 
       <div className="session-date-picker-sheet__body app-gutter-x flex-1 min-h-0 overflow-y-auto overscroll-none">
@@ -77,13 +81,13 @@ export function SessionDatePickerSheet({
         buttons={[
           {
             key: "close",
-            label: "Close",
+            label: t("common.close"),
             icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: () => onOpenChange(false),
           },
           {
             key: "apply",
-            label: confirmLabel,
+            label: resolvedConfirm,
             icon: applyIcon,
             onClick: () => {
               if (!selected) return;

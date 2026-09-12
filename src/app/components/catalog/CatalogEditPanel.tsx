@@ -1,9 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FocusEvent } from "react";
+import { useTranslation } from "react-i18next";
 import {
+  catalogRowMatchesQuery,
   flattenCatalogForEdit,
   type CatalogEditRow,
 } from "../../domain/select/catalogMutations";
 import type { FlexSelectItem } from "../../domain/select/types";
+import {
+  bilingualFromFields,
+  isLocalizedLabel,
+  type ItemLabel,
+  type LocalizedLabel,
+} from "../../i18n/localizedLabel";
+import { useSettingsStore } from "../../settings/store";
 import { cv } from "../../ui/tokens";
 import { PageSearchField } from "../shared/PageSearchField";
 import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
@@ -11,83 +20,140 @@ import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
 /** Edit global catalog — fixed chrome + independently scrolling list. */
 export function CatalogEditPanel({
   items,
-  onAdd,
+  onAddBilingual,
   onRename,
   onRemove,
-  searchPlaceholder = "Search items…",
+  searchPlaceholder,
 }: {
   items: readonly FlexSelectItem[];
-  onAdd: (label: string) => void;
-  onRename: (id: string, label: string) => void;
+  onAddBilingual: (label: LocalizedLabel) => void;
+  onRename: (id: string, label: ItemLabel) => void;
   onRemove: (id: string) => void;
   searchPlaceholder?: string;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
+  const resolvedSearch = searchPlaceholder ?? t("catalog.edit.search");
   const [query, setQuery] = useState("");
-  const [draft, setDraft] = useState("");
+  const [draftEn, setDraftEn] = useState("");
+  const [draftSv, setDraftSv] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingBilingual, setEditingBilingual] = useState(false);
   const [editDraft, setEditDraft] = useState("");
+  const [editDraftEn, setEditDraftEn] = useState("");
+  const [editDraftSv, setEditDraftSv] = useState("");
 
-  const rows = useMemo(() => flattenCatalogForEdit(items), [items]);
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
-      (row) =>
-        row.label.toLowerCase().includes(q) ||
-        (row.parentLabel?.toLowerCase().includes(q) ?? false),
-    );
-  }, [rows, query]);
+  const rows = useMemo(
+    () => flattenCatalogForEdit(items, uiLanguage),
+    [items, uiLanguage],
+  );
+  const filtered = useMemo(
+    () => rows.filter((row) => catalogRowMatchesQuery(row, query)),
+    [rows, query],
+  );
+
+  const clearEdit = () => {
+    setEditingId(null);
+    setEditingBilingual(false);
+    setEditDraft("");
+    setEditDraftEn("");
+    setEditDraftSv("");
+  };
 
   const startEdit = (row: CatalogEditRow) => {
     setEditingId(row.id);
-    setEditDraft(row.label);
+    if (row.bilingual && isLocalizedLabel(row.rawLabel)) {
+      setEditingBilingual(true);
+      setEditDraftEn(row.rawLabel.en);
+      setEditDraftSv(row.rawLabel.sv);
+      setEditDraft("");
+      return;
+    }
+    setEditingBilingual(false);
+    setEditDraft(typeof row.rawLabel === "string" ? row.rawLabel : row.label);
+    setEditDraftEn("");
+    setEditDraftSv("");
   };
 
   const commitEdit = () => {
     if (!editingId) return;
-    const next = editDraft.trim();
-    if (next) onRename(editingId, next);
-    setEditingId(null);
-    setEditDraft("");
+    if (editingBilingual) {
+      const next = bilingualFromFields(editDraftEn, editDraftSv);
+      if (next) onRename(editingId, next);
+    } else {
+      const next = editDraft.trim();
+      if (next) onRename(editingId, next);
+    }
+    clearEdit();
+  };
+
+  const onBilingualRenameBlur = (e: FocusEvent<HTMLInputElement>) => {
+    const next = e.relatedTarget as Node | null;
+    if (next && e.currentTarget.parentElement?.contains(next)) return;
+    commitEdit();
+  };
+
+  const submitAdd = () => {
+    const next = bilingualFromFields(draftEn, draftSv);
+    if (!next) return;
+    onAddBilingual(next);
+    setDraftEn("");
+    setDraftSv("");
   };
 
   return (
     <div className="catalog-hub__edit">
       <div className="catalog-hub__edit-fixed">
-        <p className="catalog-hub__lede">
-          Manage the global list used in sessions and Report. Groups keep their
-          dropdown options.
-        </p>
+        <p className="catalog-hub__lede">{t("catalog.edit.lede")}</p>
 
         <form
-          className="catalog-hub__add-row"
+          className="catalog-hub__add-form"
           onSubmit={(e) => {
             e.preventDefault();
-            const label = draft.trim();
-            if (!label) return;
-            onAdd(label);
-            setDraft("");
+            submitAdd();
           }}
         >
-          <input
-            type="text"
-            className="catalog-hub__add-input"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="New simple item name"
-            maxLength={48}
-          />
-          <button
-            type="submit"
-            className="destination-page__primary-btn destination-page__primary-btn--form catalog-hub__add-btn"
-          >
-            Add
-          </button>
+          <div className="catalog-hub__add-fields">
+            <label className="catalog-hub__add-field">
+              <span className="catalog-hub__add-field-label">
+                {t("catalog.edit.nameEn")}
+              </span>
+              <input
+                type="text"
+                className="catalog-hub__add-input"
+                value={draftEn}
+                onChange={(e) => setDraftEn(e.target.value)}
+                placeholder={t("catalog.edit.placeholderEn")}
+                maxLength={48}
+              />
+            </label>
+            <label className="catalog-hub__add-field">
+              <span className="catalog-hub__add-field-label">
+                {t("catalog.edit.nameSv")}
+              </span>
+              <input
+                type="text"
+                className="catalog-hub__add-input"
+                value={draftSv}
+                onChange={(e) => setDraftSv(e.target.value)}
+                placeholder={t("catalog.edit.placeholderSv")}
+                maxLength={48}
+              />
+            </label>
+          </div>
+          <div className="catalog-hub__add-actions">
+            <button
+              type="submit"
+              className="destination-page__primary-btn destination-page__primary-btn--form catalog-hub__add-btn"
+            >
+              {t("catalog.edit.add")}
+            </button>
+          </div>
         </form>
 
         <PageSearchField
           className="catalog-hub__search"
-          placeholder={searchPlaceholder}
+          placeholder={resolvedSearch}
           value={query}
           onChange={setQuery}
         />
@@ -100,8 +166,8 @@ export function CatalogEditPanel({
             style={{ color: cv.text.dimmed }}
           >
             {rows.length === 0
-              ? "No items yet."
-              : `No items match “${query.trim()}”.`}
+              ? t("catalog.edit.empty")
+              : t("catalog.edit.noMatch", { query: query.trim() })}
           </p>
         ) : (
           <ul className="catalog-hub__edit-list">
@@ -114,23 +180,62 @@ export function CatalogEditPanel({
                   >
                     <div className="catalog-hub__edit-card-main">
                       {editing ? (
-                        <input
-                          className="catalog-hub__rename-input"
-                          value={editDraft}
-                          autoFocus
-                          onChange={(e) => setEditDraft(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              commitEdit();
-                            }
-                            if (e.key === "Escape") {
-                              setEditingId(null);
-                              setEditDraft("");
-                            }
-                          }}
-                          onBlur={commitEdit}
-                        />
+                        editingBilingual ? (
+                          <div className="catalog-hub__rename-stack">
+                            <input
+                              className="catalog-hub__rename-input"
+                              value={editDraftEn}
+                              autoFocus
+                              aria-label={t("catalog.edit.nameEn")}
+                              placeholder={t("catalog.edit.placeholderEn")}
+                              onChange={(e) => setEditDraftEn(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  commitEdit();
+                                }
+                                if (e.key === "Escape") {
+                                  clearEdit();
+                                }
+                              }}
+                              onBlur={onBilingualRenameBlur}
+                            />
+                            <input
+                              className="catalog-hub__rename-input"
+                              value={editDraftSv}
+                              aria-label={t("catalog.edit.nameSv")}
+                              placeholder={t("catalog.edit.placeholderSv")}
+                              onChange={(e) => setEditDraftSv(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  commitEdit();
+                                }
+                                if (e.key === "Escape") {
+                                  clearEdit();
+                                }
+                              }}
+                              onBlur={onBilingualRenameBlur}
+                            />
+                          </div>
+                        ) : (
+                          <input
+                            className="catalog-hub__rename-input"
+                            value={editDraft}
+                            autoFocus
+                            onChange={(e) => setEditDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                commitEdit();
+                              }
+                              if (e.key === "Escape") {
+                                clearEdit();
+                              }
+                            }}
+                            onBlur={commitEdit}
+                          />
+                        )
                       ) : (
                         <>
                           <span className="catalog-hub__edit-card-title">
@@ -138,10 +243,14 @@ export function CatalogEditPanel({
                           </span>
                           <span className="catalog-hub__edit-card-meta">
                             {row.isGroup
-                              ? `Group · ${row.optionCount} options`
+                              ? t("catalog.edit.groupMeta", {
+                                  count: row.optionCount,
+                                })
                               : row.parentLabel
-                                ? `Option · ${row.parentLabel}`
-                                : "Simple item"}
+                                ? t("catalog.edit.optionMeta", {
+                                    parent: row.parentLabel,
+                                  })
+                                : t("catalog.edit.simpleItem")}
                           </span>
                         </>
                       )}
@@ -153,23 +262,29 @@ export function CatalogEditPanel({
                           className="catalog-hub__text-btn"
                           onClick={() => startEdit(row)}
                         >
-                          Edit
+                          {t("common.edit")}
                         </button>
                       ) : null}
                       <button
                         type="button"
                         className="catalog-hub__delete-btn"
-                        aria-label={`Delete ${row.label}`}
+                        aria-label={t("catalog.edit.deleteAria", {
+                          name: row.label,
+                        })}
                         onClick={() => {
                           const ok = window.confirm(
                             row.isGroup
-                              ? `Remove “${row.label}” and its options?`
-                              : `Remove “${row.label}”?`,
+                              ? t("catalog.edit.confirmRemoveGroup", {
+                                  name: row.label,
+                                })
+                              : t("catalog.edit.confirmRemove", {
+                                  name: row.label,
+                                }),
                           );
                           if (ok) onRemove(row.id);
                         }}
                       >
-                        Delete
+                        {t("common.delete")}
                       </button>
                     </div>
                   </article>

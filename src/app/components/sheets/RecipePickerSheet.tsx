@@ -9,6 +9,8 @@ import {
   type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   BUCKET_SIZES,
   DEFAULT_BUCKET_SELECTION,
@@ -19,7 +21,7 @@ import type { SandType } from "../../domain/mix/volume";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import { recipeMenuLabel } from "../../domain/recipe/types";
 import { getRecipeSummaryParts } from "../../domain/recipe/calc";
-import { recipePlaceholderDescription } from "../../domain/recipe/descriptions";
+import { recipeCardDescription } from "../../domain/recipe/descriptions";
 import { savedMixDisplayName } from "../../saved-mixes/display";
 import { getHumanSavedTime } from "../../saved-mixes/humanSavedTime";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
@@ -27,6 +29,7 @@ import { useTickingNow } from "../../hooks/useTickingNow";
 import { BucketMiniature } from "../mixer/MixBucket";
 import { GoToIcon, PanelTopCloseIcon, SavedIcon } from "../shared/ActionIcons";
 import { PageSearchField } from "../shared/PageSearchField";
+import { useSettingsStore } from "../../settings/store";
 import { recipeMatchesQuery } from "../recipe/RecipeLibraryCard";
 import { ScrollEdgeFadeOverlays, useScrollEdgeFades } from "./scrollEdgeFades";
 import { SHEET_LIST_ROW_CLASS } from "./sheetChrome";
@@ -75,8 +78,15 @@ function PickerBucketLabel({
   );
 }
 
-function pickerBucketAriaLabel(option: BucketSelection, selected: boolean): string {
-  const sizeLabel = option === "none" ? "Infinite, no bucket limit" : `${option} liter bucket`;
+function pickerBucketAriaLabel(
+  option: BucketSelection,
+  selected: boolean,
+  t: TFunction<"common">,
+): string {
+  const sizeLabel =
+    option === "none"
+      ? t("sheets.recipePicker.infinite")
+      : t("sheets.recipePicker.literBucket", { size: option });
   return selected ? `${sizeLabel}, selected` : sizeLabel;
 }
 
@@ -184,6 +194,7 @@ function RecipePickerSavesWheel({
   active: boolean;
   onSavedMixSelect?: (mix: SavedMixSnapshot) => void;
 }) {
+  const { t } = useTranslation("common");
   const scrollRef = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
@@ -324,7 +335,7 @@ function RecipePickerSavesWheel({
         ref={scrollRef}
         className="recipe-picker-card__saves-wheel"
         role="list"
-        aria-label="Saved mixes"
+        aria-label={t("sheets.recipePicker.savedMixes")}
       >
         <div className="recipe-picker-card__saves-wheel-track">
           {recipeSaves.map((mix, index) => (
@@ -383,12 +394,14 @@ function RecipePickerCardDetail({
   onSavedMixSelect?: (mix: SavedMixSnapshot) => void;
   muted?: boolean;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const [bucketOpen, setBucketOpen] = useState(false);
   const recipeSaves = useMemo(
     () => savesForRecipe(recipe.id, savedMixes),
     [recipe.id, savedMixes],
   );
-  const recipeSummaryParts = getRecipeSummaryParts(recipe);
+  const recipeSummaryParts = getRecipeSummaryParts(recipe, uiLanguage);
   const { totalGrams: bucketRecommendedGrams, fillLiters: bucketRecommendedLiters } = useMemo(
     () => recommendedBatchForBucket(recipe, initialBinderSum, bucketSelection, sandType),
     [recipe, initialBinderSum, bucketSelection, sandType],
@@ -414,7 +427,7 @@ function RecipePickerCardDetail({
             </div>
           </div>
           <div className="recipe-picker-card__detail-row recipe-picker-card__detail-row--batch">
-            <span className="recipe-picker-side-meta__label">Rec. batch</span>
+            <span className="recipe-picker-side-meta__label">{t("mixer.recBatch")}</span>
             <span className="recipe-picker-side-meta__value recipe-picker-side-meta__value--strong">
               {formatRecommendedBatch(bucketRecommendedGrams)}
             </span>
@@ -435,7 +448,7 @@ function RecipePickerCardDetail({
             >
               <span className="recipe-picker-card-detail__bucket-label-group">
                 <span id={bucketSizeLabelId} className="recipe-picker-side-meta__label">
-                  Bucket
+                  {t("recipe.bucket")}
                 </span>
                 <ChevronDownIcon open={bucketOpen} className="recipe-picker-card__bucket-chevron" />
               </span>
@@ -484,7 +497,7 @@ function RecipePickerCardDetail({
                         value={String(option)}
                         checked={checked}
                         tabIndex={bucketOpen ? 0 : -1}
-                        aria-label={pickerBucketAriaLabel(option, checked)}
+                        aria-label={pickerBucketAriaLabel(option, checked, t)}
                         onChange={() => {
                           onBucketChange(option);
                           setBucketOpen(false);
@@ -503,7 +516,7 @@ function RecipePickerCardDetail({
         <div className="recipe-picker-card__saves-bar">
           <div className="recipe-picker-card__saves-head">
             <span className="recipe-picker-card__saves-label-group">
-              <span className="recipe-picker-side-meta__label">Latest saves</span>
+              <span className="recipe-picker-side-meta__label">{t("sheets.recipePicker.latestSaves")}</span>
               {recipeSaves.length > 0 ? (
                 <span className="recipe-picker-card__saves-count">{recipeSaves.length}</span>
               ) : null}
@@ -513,10 +526,12 @@ function RecipePickerCardDetail({
             id={`recipe-picker-saves-${recipe.id}`}
             className="recipe-picker-card__saves-scroll"
             role="region"
-            aria-label={`Saved mixes for ${recipeMenuLabel(recipe)}`}
+            aria-label={t("sheets.recipePicker.savedFor", {
+              name: recipeMenuLabel(recipe, uiLanguage),
+            })}
           >
             {recipeSaves.length === 0 ? (
-              <p className="recipe-picker-card__saves-empty">No saved mixes for this recipe yet.</p>
+              <p className="recipe-picker-card__saves-empty">{t("sheets.recipePicker.noSavesYet")}</p>
             ) : (
               <RecipePickerSavesWheel
                 recipeSaves={recipeSaves}
@@ -568,8 +583,10 @@ function RecipePickerCard({
   onPreview: () => void;
   onApply: () => void;
 }) {
-  const title = recipeMenuLabel(recipe);
-  const description = recipePlaceholderDescription(recipe.id);
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
+  const title = recipeMenuLabel(recipe, uiLanguage);
+  const description = recipeCardDescription(recipe, uiLanguage);
   const expanded = selected && showDetail;
 
   return (
@@ -597,7 +614,7 @@ function RecipePickerCard({
             ) : null}
             <span className="min-w-0 flex-1 recipe-picker-card__title">{title}</span>
             {applied ? (
-              <span className="recipe-picker-card__badge" aria-label="Current recipe">
+              <span className="recipe-picker-card__badge" aria-label={t("sheets.recipePicker.currentRecipe")}>
                 <SavedIcon size={14} />
               </span>
             ) : null}
@@ -607,7 +624,7 @@ function RecipePickerCard({
         <button
           type="button"
           className="recipe-picker-card__go touch-manipulation"
-          aria-label={`Use ${title}`}
+          aria-label={t("sheets.recipePicker.useRecipe", { title })}
           disabled={!canApply}
           onClick={() => {
             if (!canApply) return;
@@ -712,6 +729,7 @@ export function RecipePickerSheet({
   sandType = "medium",
   muted = false,
 }: RecipePickerSheetProps) {
+  const { t } = useTranslation("common");
   const [present, setPresent] = useState(false);
   const [phase, setPhase] = useState<MenuPhase>("idle");
   const [previewRecipe, setPreviewRecipe] = useState<BlendingRecipe | null>(null);
@@ -898,13 +916,13 @@ export function RecipePickerSheet({
         className={`recipe-picker-menu flex-1 min-h-0 flex flex-col overflow-hidden${menuPhaseClass}`}
         style={{ borderRadius: 0 }}
         role="dialog"
-        aria-label="Recipes, bucket, and saved mixes"
+        aria-label={t("sheets.recipePicker.sheetAria")}
         onAnimationEnd={handleMenuAnimationEnd}
       >
         <div className="recipe-picker-menu__chrome app-gutter-x">
           <PageSearchField
             className="recipe-picker-menu__search"
-            placeholder="Search recipes…"
+            placeholder={t("sheets.recipePicker.search")}
             value={searchQuery}
             onChange={setSearchQuery}
           />
@@ -919,12 +937,12 @@ export function RecipePickerSheet({
             className="recipe-picker-scroll app-gutter-x flex-1 min-h-0 overflow-y-auto overscroll-none"
           >
             <div className="recipe-picker-matrix">
-            <div className="recipe-picker-matrix__grid" role="listbox" aria-label="Recipes">
+            <div className="recipe-picker-matrix__grid" role="listbox" aria-label={t("sheets.recipePicker.recipesAria")}>
               {filteredRecipes.length === 0 ? (
                 <p className="recipe-picker-menu__empty">
                   {recipes.length === 0
-                    ? "No recipes yet."
-                    : `No recipes match “${searchQuery.trim()}”.`}
+                    ? t("sheets.recipePicker.empty")
+                    : t("sheets.recipePicker.noMatch", { query: searchQuery.trim() })}
                 </p>
               ) : (
                 filteredRecipes.map((recipe) => {
@@ -968,9 +986,9 @@ export function RecipePickerSheet({
             </div>
 
             {recentMixes.length > 0 ? (
-              <section className="recipe-picker-latest" aria-label="Latest mixes">
+              <section className="recipe-picker-latest" aria-label={t("sheets.recipePicker.latest")}>
                 <h3 className="recipe-picker-matrix__head-label recipe-picker-latest__head">
-                  Latest Mixes
+                  {t("sheets.recipePicker.latest")}
                 </h3>
                 <div className="recipe-picker-latest__list" role="list">
                   {recentMixes.map((mix) => (
@@ -994,7 +1012,7 @@ export function RecipePickerSheet({
         <button
           type="button"
           className={`${SHEET_LIST_ROW_CLASS} recipe-picker-close touch-manipulation`}
-          aria-label="Close recipe menu"
+          aria-label={t("sheets.recipePicker.closeMenu")}
           onClick={requestClose}
         >
           <PanelTopCloseIcon size={20} />

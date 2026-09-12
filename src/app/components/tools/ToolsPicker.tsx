@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ItemAcquisition } from "../../domain/select/acquisition";
 import type { FlexSelectSelection } from "../../domain/select/selection";
 import type { ToolItem } from "../../domain/tools/types";
@@ -31,6 +32,7 @@ export function ToolsPicker({
   commentsByLineKey?: Readonly<Record<string, string>>;
   onRentalCommentChange?: (lineKey: string, comment: string | null) => void;
 }) {
+  const { t } = useTranslation("common");
   const libraryItems = useToolsLibraryStore((s) => s.items);
   const catalog = catalogProp ?? libraryItems;
 
@@ -45,7 +47,7 @@ export function ToolsPicker({
       onRemoveCustomItem={onRemoveCustomTool}
       className={className}
       tone="session"
-      ariaLabel="Tools"
+      ariaLabel={t("nav.tools")}
       addSimpleLabel="Custom"
       addSimplePlaceholder="Custom tool name"
       customIdPrefix="custom-tool"

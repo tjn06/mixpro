@@ -6234,9 +6234,40 @@
   margin-bottom: 10px;
 }
 
+.catalog-hub__add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.catalog-hub__add-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.catalog-hub__add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.catalog-hub__add-field-label {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-xs, 11px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+}
+
 .catalog-hub__add-input {
   flex: 1;
   min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
   height: var(--control-h, 44px);
   margin: 0;
   padding: 0 12px;
@@ -6250,11 +6281,23 @@
   outline: none;
 }
 
+.catalog-hub__add-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .catalog-hub__add-btn {
   flex: 0 0 auto;
   width: auto;
   min-width: 4.5rem;
   padding-inline: 16px;
+}
+
+.catalog-hub__rename-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
 .catalog-hub__search {

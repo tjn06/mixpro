@@ -1,7 +1,13 @@
+import type { ItemLabel } from "../../i18n/localizedLabel";
+
 /** Generic selectable node for Responsive Flex Select View. */
 export type FlexSelectItem = {
   id: string;
-  label: string;
+  /**
+   * Admin/preset: `{ en, sv }` (follows UI language).
+   * User-entered: plain `string` (stored as typed).
+   */
+  label: ItemLabel;
   /**
    * When present, chip is a variant select: closed chip shows `label` only
    * (sized to the widest option). Options open in an overlay menu.

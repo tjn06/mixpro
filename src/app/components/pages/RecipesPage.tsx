@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { PRESET_RECIPES, recipeMenuLabel } from "../../domain/recipe/types";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
+import { useSettingsStore } from "../../settings/store";
 import { DestinationPageChrome } from "./DestinationPageChrome";
 import { PageSearchField } from "../shared/PageSearchField";
 import {
@@ -19,6 +21,8 @@ export function RecipesPage({
   onCreateRecipe: () => void;
   embedded?: boolean;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const userRecipes = useRecipeLibraryStore((s) => s.userRecipes) ?? [];
   const deleteRecipe = useRecipeLibraryStore((s) => s.deleteRecipe);
   const library = useMemo(
@@ -35,7 +39,7 @@ export function RecipesPage({
 
   return (
     <DestinationPageChrome
-      title="Recipes"
+      title={t("pages.recipes.title")}
       onMenuClick={onMenuClick}
       embedded={embedded}
     >
@@ -44,17 +48,17 @@ export function RecipesPage({
         className="destination-page__primary-btn destination-page__primary-btn--form"
         onClick={onCreateRecipe}
       >
-        + Create recipe
+        {t("pages.recipes.create")}
       </button>
       <p className="destination-page__lede" style={{ color: cv.text.muted }}>
-        Permanent formulas in your library.
+        {t("pages.recipes.lede")}{" "}
         {userRecipes.length > 0
-          ? ` ${userRecipes.length} custom.`
-          : " Start with a preset or create your own."}
+          ? t("pages.recipes.ledeCustom", { count: userRecipes.length })
+          : t("pages.recipes.ledeStart")}
       </p>
 
       <PageSearchField
-        placeholder="Search recipes…"
+        placeholder={t("pages.recipes.search")}
         value={query}
         onChange={setQuery}
       />
@@ -62,8 +66,8 @@ export function RecipesPage({
       {filtered.length === 0 ? (
         <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
           {library.length === 0
-            ? "No recipes yet."
-            : `No recipes match “${query.trim()}”.`}
+            ? t("pages.recipes.empty")
+            : t("pages.recipes.noMatch", { query: query.trim() })}
         </p>
       ) : (
         <ul className="recipes-page__list">
@@ -76,8 +80,13 @@ export function RecipesPage({
                   setExpandedId(next ? recipe.id : null)
                 }
                 onDelete={(target) => {
-                  const label = recipeMenuLabel(target);
-                  if (!window.confirm(`Delete “${label}”?`)) return;
+                  const label = recipeMenuLabel(target, uiLanguage);
+                  if (
+                    !window.confirm(
+                      t("pages.recipes.confirmDelete", { name: label }),
+                    )
+                  )
+                    return;
                   deleteRecipe(target.id);
                   if (expandedId === target.id) setExpandedId(null);
                 }}

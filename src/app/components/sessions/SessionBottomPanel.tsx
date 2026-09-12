@@ -3,6 +3,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
 import {
   CARD_NAME_WEIGHT,
@@ -13,7 +14,6 @@ import type { ColorScheme } from "../../../theme/appearance";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import type { SessionShareScope } from "../../domain/sessions/shareScope";
 import type { MixSession, SessionStageId } from "../../sessions/types";
-import { SESSION_STAGE_LABELS } from "../../sessions/types";
 import { cv } from "../../ui/tokens";
 import { InventoryStageSummaryBar } from "../shell/InventoryStageSummaryBar";
 import { StageBottomSheet } from "../shell/StageBottomSheet";
@@ -132,6 +132,7 @@ function SessionSummaryBar({
   compactSummaryRef: RefObject<HTMLDivElement | null>;
   batchesRelocated?: boolean;
 }) {
+  const { t } = useTranslation("common");
   const totalParam = MIX_PARAMS[0];
 
   if (stage === "summary") {
@@ -150,13 +151,15 @@ function SessionSummaryBar({
                   className="batch-totals-summary-bar__status-message truncate min-w-0"
                   data-saved={saved ? "" : undefined}
                 >
-                  {saved ? "Saved" : "Ready to save or share"}
+                  {saved
+                    ? t("sessions.saved")
+                    : t("sessions.readyToSaveOrShare")}
                 </span>
               </div>
             </div>
             <div className="batch-totals-summary-bar__total batch-totals-summary-bar__total--status">
               <span className="batch-totals-summary-bar__metric-unit">
-                Pull up for details
+                {t("sessions.pullUpDetails")}
               </span>
             </div>
           </div>
@@ -170,10 +173,18 @@ function SessionSummaryBar({
       stage === "consumption-tools" ? toolCount : consumableCount;
     return (
       <InventoryStageSummaryBar
-        label={SESSION_STAGE_LABELS[stage]}
+        label={t(`sessions.stage.${stage}`)}
         count={count}
-        nounSingular={stage === "consumption-tools" ? "tool" : "item"}
-        nounPlural={stage === "consumption-tools" ? "tools" : "items"}
+        nounSingular={
+          stage === "consumption-tools"
+            ? t("catalog.noun.tool")
+            : t("catalog.noun.item")
+        }
+        nounPlural={
+          stage === "consumption-tools"
+            ? t("catalog.noun.tools")
+            : t("catalog.noun.items")
+        }
         colorScheme={colorScheme}
         compactSummaryRef={compactSummaryRef}
       />
@@ -190,7 +201,7 @@ function SessionSummaryBar({
     ) : (
       <div className="batch-totals-summary-bar__batch-rows min-w-0">
         <div className="batch-totals-summary-bar__batch-row">
-          <StatusLabel>{SESSION_STAGE_LABELS[stage]}</StatusLabel>
+          <StatusLabel>{t(`sessions.stage.${stage}`)}</StatusLabel>
           <SummaryCount value={mixCount} />
         </div>
       </div>
@@ -275,13 +286,14 @@ export function SessionBottomPanel({
   /** Day badge selection — drives share report slice. */
   dayFilter?: string;
 }) {
+  const { t } = useTranslation("common");
   const compactSummaryRef = useRef<HTMLDivElement>(null);
 
   return (
     <StageBottomSheet
       panelId="session-bottom-panel"
-      regionLabel="Session summary"
-      expandedBodyLabel="Session summary — total per ingredient"
+      regionLabel={t("sessions.summaryRegion")}
+      expandedBodyLabel={t("sessions.summaryExpanded")}
       sourceExpanded={sourceExpanded}
       onSourceExpandedChange={onSourceExpandedChange}
       remeasureKey={`${session.activeStage}:${mixCount}:${toolCount}:${consumableCount}:${shareScope}:${dayFilter}:${session.updatedAt}`}

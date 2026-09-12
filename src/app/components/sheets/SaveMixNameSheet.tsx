@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CloseIcon, SaveIcon, SaveNewIcon } from "../shared/ActionIcons";
 import {
   appendRecentSkipped,
@@ -75,6 +76,7 @@ function initialDisplayName(
 }
 
 export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
+  const { t } = useTranslation("common");
   const { open, onOpenChange, onConfirm, mode, savedMixes = [], excludeMixId } = props;
   const recipeName = mode === "save" ? props.recipeName : props.mix.recipeName;
   const existingMix = mode === "save" ? props.existingMix ?? null : props.mix;
@@ -118,13 +120,14 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
 
   if (!open) return null;
 
-  const title = mode === "save" ? "Save mix" : "Rename mix";
+  const title =
+    mode === "save" ? t("sheets.saveMix.saveTitle") : t("sheets.saveMix.renameTitle");
   const subtitle =
     mode === "save"
       ? hasExistingMix
-        ? "Update this mix, or save a new copy."
-        : "Optional display name — must not match a recipe or admin label"
-      : "Clear the field to show the recipe name again";
+        ? t("sheets.saveMix.subtitleUpdate")
+        : t("sheets.saveMix.subtitleNew")
+      : t("sheets.saveMix.subtitleRename");
   const subtitleStyle = hasExistingMix
     ? { maxWidth: 300, textAlign: "center" as const, color: cv.state.warn }
     : { maxWidth: 280, textAlign: "center" as const };
@@ -199,13 +202,13 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
       ? [
           {
             key: "close",
-            label: "Close",
+            label: t("common.close"),
             icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: () => onOpenChange(false),
           },
           {
             key: "confirm",
-            label: "Save mix",
+            label: t("common.save"),
             icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: handleSave,
             disabled: !canConfirm,
@@ -214,7 +217,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
       : [
           {
             key: "close",
-            label: "Close",
+            label: t("common.close"),
             icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: () => onOpenChange(false),
           },
@@ -222,8 +225,8 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
             ? [
                 {
                   key: "save-new",
-                  label: "Save as new mix",
-                  tooltip: "Save as new",
+                  label: t("sheets.saveMix.saveAsNew"),
+                  tooltip: t("sheets.saveMix.saveAsNewShort"),
                   icon: <SaveNewIcon size={SHEET_FOOTER_ICON_SIZE} />,
                   onClick: handleSaveNew,
                   disabled: !canConfirm,
@@ -232,8 +235,8 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
             : []),
           {
             key: "save",
-            label: "Save mix",
-            tooltip: hasExistingMix ? "Update" : undefined,
+            label: t("sheets.saveMix.saveTitle"),
+            tooltip: hasExistingMix ? t("sheets.saveMix.update") : undefined,
             icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: handleSave,
             disabled: !canConfirm,
@@ -302,7 +305,7 @@ export function SaveMixNameSheet(props: SaveMixNameSheetProps) {
               maxLength={64}
               autoComplete="off"
               spellCheck={false}
-              placeholder="e.g. Morning Little Mix"
+              placeholder={t("sheets.saveMix.placeholder")}
               aria-invalid={activeError != null}
               aria-describedby={activeError ? "save-mix-name-error" : undefined}
               className={`${SHEET_FIELD_INPUT_CLASS}${activeError ? ` ${SHEET_FIELD_INPUT_ERROR_CLASS}` : ""}`}

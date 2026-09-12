@@ -2,9 +2,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { TOOLS_CATALOG } from "../domain/tools/catalog";
 import type { ToolItem } from "../domain/tools/types";
+import type { ItemLabel, LocalizedLabel } from "../i18n/localizedLabel";
 import {
   addRootFlexSelectItem,
   cloneFlexSelectItems,
+  mergeSeedCatalogWithUserItems,
   removeFlexSelectItem,
   updateFlexSelectLabel,
 } from "../domain/select/catalogMutations";
@@ -14,8 +16,11 @@ const HOT_STORE_KEY = "__mixmate_tools_library_store__";
 
 interface ToolsLibraryState {
   items: ToolItem[];
+  /** User free-text item (single name as typed). */
   addItem: (label: string) => ToolItem;
-  renameItem: (id: string, label: string) => void;
+  /** Admin bilingual catalog item. */
+  addBilingualItem: (label: LocalizedLabel) => ToolItem;
+  renameItem: (id: string, label: ItemLabel) => void;
   removeItem: (id: string) => void;
   resetToDefaults: () => void;
 }
@@ -35,10 +40,34 @@ function createToolsLibraryStore() {
           return item;
         },
 
+        addBilingualItem: (label) => {
+          const item: ToolItem = {
+            id: `admin-tool-${crypto.randomUUID()}`,
+            label: {
+              en: label.en.trim(),
+              sv: label.sv.trim(),
+            },
+          };
+          set({ items: addRootFlexSelectItem(get().items, item) });
+          return item;
+        },
+
         renameItem: (id, label) => {
-          const next = label.trim();
-          if (!next) return;
-          set({ items: updateFlexSelectLabel(get().items, id, next) });
+          if (typeof label === "string") {
+            const next = label.trim();
+            if (!next) return;
+            set({ items: updateFlexSelectLabel(get().items, id, next) });
+            return;
+          }
+          const en = label.en.trim();
+          const sv = label.sv.trim();
+          if (!en && !sv) return;
+          set({
+            items: updateFlexSelectLabel(get().items, id, {
+              en: en || sv,
+              sv: sv || en,
+            }),
+          });
         },
 
         removeItem: (id) => {
@@ -51,15 +80,20 @@ function createToolsLibraryStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 4,
+        version: 5,
         partialize: (state) => ({ items: state.items }),
-        migrate: () => ({
-          items: cloneFlexSelectItems(TOOLS_CATALOG),
-        }),
+        migrate: (persisted) => {
+          const raw = persisted as { items?: ToolItem[] } | undefined;
+          return {
+            items: mergeSeedCatalogWithUserItems(TOOLS_CATALOG, raw?.items),
+          };
+        },
         merge: (persisted, current) => {
           const p = persisted as { items?: ToolItem[] } | undefined;
-          if (!p?.items?.length) return current;
-          return { ...current, items: p.items };
+          return {
+            ...current,
+            items: mergeSeedCatalogWithUserItems(TOOLS_CATALOG, p?.items),
+          };
         },
       },
     ),

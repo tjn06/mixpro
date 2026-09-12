@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ConsumableItem } from "../../domain/consumables/types";
 import type { ItemAcquisition } from "../../domain/select/acquisition";
 import type { FlexSelectSelection } from "../../domain/select/selection";
@@ -32,6 +33,7 @@ export function ConsumablesPicker({
   catalog?: readonly ConsumableItem[];
   className?: string;
 }) {
+  const { t } = useTranslation("common");
   const libraryItems = useConsumablesLibraryStore((s) => s.items);
   const catalog = catalogProp ?? libraryItems;
 
@@ -48,7 +50,7 @@ export function ConsumablesPicker({
       onRemoveCustomItem={onRemoveCustomConsumable}
       className={className}
       tone="session"
-      ariaLabel="Consumables"
+      ariaLabel={t("nav.consumables")}
       addSimpleLabel="Custom"
       addSimplePlaceholder="Custom consumable name"
       customIdPrefix="custom-consumable"

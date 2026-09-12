@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
 import { getEntityMetaLabel } from "../../domain/recipe/calc";
 import {
@@ -13,7 +14,6 @@ import {
   type SessionShareScope,
 } from "../../domain/sessions/shareScope";
 import {
-  SESSION_STAGE_CARD_LABELS,
   canNavigateToSessionStage,
   isSessionStageComplete,
   nextSessionStage,
@@ -38,7 +38,6 @@ import { selectionLineKey } from "../../domain/select/acquisition";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
 import { useSessionsStore } from "../../sessions/store";
 import {
-  SESSION_STAGE_LABELS,
   SESSION_STAGE_ORDER,
   type SessionStageId,
 } from "../../sessions/types";
@@ -90,7 +89,9 @@ export function SessionOverviewScreen({
   onEditMix: (batchId: string) => void;
   onCreateRecipe: () => void;
 }) {
+  const { t } = useTranslation("common");
   const colorScheme = useSettingsStore((s) => s.colorScheme);
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const sessions = useSessionsStore((s) => s.sessions);
   const session = sessions.find((item) => item.id === sessionId) ?? null;
   const patchSession = useSessionsStore((s) => s.patchSession);
@@ -190,8 +191,9 @@ export function SessionOverviewScreen({
         selectedToolQtys,
         toolsCatalog,
         customTools,
+        uiLanguage,
       ),
-    [selectedToolQtys, toolsCatalog, customTools],
+    [selectedToolQtys, toolsCatalog, customTools, uiLanguage],
   );
   const selectedToolLabels = useMemo(
     () =>
@@ -199,8 +201,9 @@ export function SessionOverviewScreen({
         selectedToolQtys,
         toolsCatalog,
         customTools,
+        uiLanguage,
       ),
-    [selectedToolQtys, toolsCatalog, customTools],
+    [selectedToolQtys, toolsCatalog, customTools, uiLanguage],
   );
   const selectedConsumableLabels = useMemo(
     () =>
@@ -209,12 +212,14 @@ export function SessionOverviewScreen({
         consumablesCatalog,
         customConsumables,
         consumableWearByOptionId,
+        uiLanguage,
       ),
     [
       selectedConsumableQtys,
       consumablesCatalog,
       customConsumables,
       consumableWearByOptionId,
+      uiLanguage,
     ],
   );
 
@@ -346,7 +351,7 @@ export function SessionOverviewScreen({
         className="app-frame relative flex flex-col overflow-hidden select-none h-full min-h-0"
         style={{ background: "var(--semantic-surface-app)" }}
       >
-        <AppHeader title="SESSION" onMenuClick={onMenuClick} sessionChrome />
+        <AppHeader title={t("sessions.headerTitle")} onMenuClick={onMenuClick} sessionChrome />
         <p className="destination-page__empty app-gutter-x" style={{ color: cv.text.dimmed }}>
           Session not found.
         </p>
@@ -383,25 +388,25 @@ export function SessionOverviewScreen({
     <div className="batch-totals-entity-total-table min-w-0 w-full" aria-readonly>
       <header className="batch-totals-entity-summary__intro">
         <h2 className="batch-totals-entity-summary__title">
-          {SESSION_STAGE_LABELS[activeStage]}
+          {t(`sessions.stage.${activeStage}`)}
         </h2>
         <p className="batch-totals-entity-summary__subtitle">
           {activeStage === "summary"
-            ? "Session package — mixes, tools, consumables, and combined ingredient totals."
+            ? t("sessions.ledePackage")
             : activeStage === "mixes"
-              ? "Combined totals for each ingredient across all mixes."
+              ? t("sessions.ledeMixTotals")
               : activeStage === "consumption-tools"
                 ? selectedToolLabels.length > 0
-                  ? "Tools selected for this session."
-                  : "No tools selected yet."
+                  ? t("sessions.ledeTools")
+                  : t("sessions.ledeToolsEmpty")
                 : selectedConsumableLabels.length > 0
-                  ? "Consumables selected for this session."
-                  : "No consumables selected yet."}
+                  ? t("sessions.ledeConsumables")
+                  : t("sessions.ledeConsumablesEmpty")}
         </p>
         {activeStage === "mixes" || activeStage === "summary" ? (
-          <div className="batch-totals-entity-summary__chips" aria-label="Session counts">
+          <div className="batch-totals-entity-summary__chips" aria-label={t("sessions.countsAria")}>
             <span className="batch-totals-entity-summary__chip">
-              Mixes{" "}
+              {t("sessions.stageShort.mixes")}{" "}
               <span className="batch-totals-entity-summary__chip-mult">
                 ×{visibleBatches.length}
               </span>
@@ -409,13 +414,13 @@ export function SessionOverviewScreen({
             {activeStage === "summary" ? (
               <>
                 <span className="batch-totals-entity-summary__chip">
-                  Tools{" "}
+                  {t("sessions.stageShort.consumption-tools")}{" "}
                   <span className="batch-totals-entity-summary__chip-mult">
                     ×{toolCount}
                   </span>
                 </span>
                 <span className="batch-totals-entity-summary__chip">
-                  Cons.{" "}
+                  {t("sessions.stageShort.consumables")}{" "}
                   <span className="batch-totals-entity-summary__chip-mult">
                     ×{consumableCount}
                   </span>
@@ -425,7 +430,7 @@ export function SessionOverviewScreen({
           </div>
         ) : null}
         {activeStage === "consumption-tools" && selectedToolEntries.length > 0 ? (
-          <div className="batch-totals-entity-summary__chips" aria-label="Selected tools">
+          <div className="batch-totals-entity-summary__chips" aria-label={t("sessions.selectedToolsAria")}>
             {selectedToolEntries.map((entry) => (
               <span
                 key={entry.id}
@@ -440,7 +445,7 @@ export function SessionOverviewScreen({
         {activeStage === "consumables" && selectedConsumableLabels.length > 0 ? (
           <div
             className="batch-totals-entity-summary__chips"
-            aria-label="Selected consumables"
+            aria-label={t("sessions.selectedConsumablesAria")}
           >
             {selectedConsumableLabels.map((label) => (
               <span key={label} className="batch-totals-entity-summary__chip">
@@ -450,7 +455,7 @@ export function SessionOverviewScreen({
           </div>
         ) : null}
         {activeStage === "summary" && selectedToolEntries.length > 0 ? (
-          <div className="batch-totals-entity-summary__chips" aria-label="Selected tools">
+          <div className="batch-totals-entity-summary__chips" aria-label={t("sessions.selectedToolsAria")}>
             {selectedToolEntries.map((entry) => (
               <span
                 key={`tool-${entry.id}`}
@@ -465,7 +470,7 @@ export function SessionOverviewScreen({
         {activeStage === "summary" && selectedConsumableLabels.length > 0 ? (
           <div
             className="batch-totals-entity-summary__chips"
-            aria-label="Selected consumables"
+            aria-label={t("sessions.selectedConsumablesAria")}
           >
             {selectedConsumableLabels.map((label) => (
               <span key={`cons-${label}`} className="batch-totals-entity-summary__chip">
@@ -491,7 +496,9 @@ export function SessionOverviewScreen({
                 ? resolveSessionBatchRecipe(batches[0], sessionRecipes, libraryRecipes)
                 : null;
               const metaLabel = sampleRecipe
-                ? getEntityMetaLabel(sampleRecipe, p.id)
+                ? p.id === "TOTAL"
+                  ? t("mixer.totalMeta")
+                  : getEntityMetaLabel(sampleRecipe, p.id, uiLanguage)
                 : undefined;
               return (
                 <tr key={p.id}>
@@ -555,12 +562,12 @@ export function SessionOverviewScreen({
         </table>
       ) : activeStage === "consumption-tools" ? (
         selectedToolLabels.length === 0 ? (
-          <p style={{ color: cv.text.dimmed, margin: 0 }}>No tools selected yet.</p>
+          <p style={{ color: cv.text.dimmed, margin: 0 }}>{t("sessions.ledeToolsEmpty")}</p>
         ) : null
       ) : activeStage === "consumables" ? (
         selectedConsumableLabels.length === 0 ? (
           <p style={{ color: cv.text.dimmed, margin: 0 }}>
-            No consumables selected yet.
+            {t("sessions.ledeConsumablesEmpty")}
           </p>
         ) : null
       ) : null}
@@ -577,14 +584,14 @@ export function SessionOverviewScreen({
               className="session-overview__day-readonly-hint"
               style={{ color: cv.text.muted }}
             >
-              Select a day to add or edit mixes.
+              {t("sessions.selectDayEditMixes")}
             </p>
           ) : null}
           {visibleBatches.length === 0 ? (
             <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
               {dayFilterId === "all"
-                ? "No mixes yet. Select a day, then add a mix."
-                : "No mixes on this day."}
+                ? t("sessions.noMixesYet")
+                : t("sessions.noMixesOnDay")}
             </p>
           ) : (
             visibleBatches.map((batch) => (
@@ -632,7 +639,7 @@ export function SessionOverviewScreen({
               title={
                 dayEditsEnabled
                   ? undefined
-                  : "Select a day before adding a mix"
+                  : t("sessions.selectDayAddMix")
               }
               onClick={() => {
                 if (!dayEditsEnabled) return;
@@ -643,7 +650,7 @@ export function SessionOverviewScreen({
               <span className="batch-totals-add-extra-btn__icon" aria-hidden>
                 +
               </span>
-              Add mix
+              {t("sessions.addMix")}
             </button>
             <button
               type="button"
@@ -651,7 +658,7 @@ export function SessionOverviewScreen({
               title={
                 dayEditsEnabled
                   ? undefined
-                  : "Select a day before adding a recipe"
+                  : t("sessions.selectDayAddRecipe")
               }
               onClick={() => {
                 if (!dayEditsEnabled) return;
@@ -677,7 +684,7 @@ export function SessionOverviewScreen({
   };
 
   const summaryStatusLabel =
-    session.status === "saved" ? "Saved" : "Ready to save";
+    session.status === "saved" ? t("sessions.saved") : t("sessions.readyToSave");
 
   const summaryMain = (
     <div className="scroll-edge-fade-viewport batch-totals-scroll-fade-viewport flex flex-col">
@@ -685,15 +692,17 @@ export function SessionOverviewScreen({
       <div ref={scrollPanelRef} className="batch-totals-scroll-panel flex flex-col">
         <div className="batch-totals-scroll-panel__inner session-overview__mix-list">
           <header className="session-overview__stage-intro">
-            <h2 style={{ color: cv.text.primary, margin: 0 }}>Summary</h2>
+            <h2 style={{ color: cv.text.primary, margin: 0 }}>
+              {t("sessions.stage.summary")}
+            </h2>
             <p style={{ color: cv.text.muted, margin: 0 }}>
-              Check the job package, then save or share from the dock.
+              {t("sessions.summaryLede")}
             </p>
           </header>
 
           <div
             className="session-overview__summary-snapshot"
-            aria-label="Session snapshot"
+            aria-label={t("sessions.snapshotAria")}
           >
             <div className="session-overview__summary-snapshot-hero">
               <span
@@ -712,24 +721,30 @@ export function SessionOverviewScreen({
             <div className="session-overview__summary-snapshot-facts">
               <span>
                 <strong>{visibleBatches.length}</strong>{" "}
-                {visibleBatches.length === 1 ? "mix" : "mixes"}
+                {visibleBatches.length === 1
+                  ? t("sessions.count.mix_one")
+                  : t("sessions.count.mix_other")}
               </span>
               <span aria-hidden>·</span>
               <span>
                 <strong>{toolCount}</strong>{" "}
-                {toolCount === 1 ? "tool" : "tools"}
+                {toolCount === 1
+                  ? t("sessions.count.tool_one")
+                  : t("sessions.count.tool_other")}
               </span>
               <span aria-hidden>·</span>
               <span>
                 <strong>{consumableCount}</strong>{" "}
-                {consumableCount === 1 ? "consumable" : "consumables"}
+                {consumableCount === 1
+                  ? t("sessions.count.consumable_one")
+                  : t("sessions.count.consumable_other")}
               </span>
             </div>
           </div>
 
           <section className="session-overview__summary-section" aria-labelledby="summary-mixes-heading">
             <div className="session-overview__summary-section-head">
-              <h3 id="summary-mixes-heading">Mixes</h3>
+              <h3 id="summary-mixes-heading">{t("sessions.stage.mixes")}</h3>
               <span className="session-overview__summary-section-count">
                 {visibleBatches.length}
               </span>
@@ -737,8 +752,8 @@ export function SessionOverviewScreen({
             {visibleBatches.length === 0 ? (
               <p className="session-overview__summary-empty" style={{ color: cv.text.dimmed }}>
                 {dayFilterId === "all"
-                  ? "No mixes yet — select a day in Mixes to add them."
-                  : "No mixes on this day."}
+                  ? t("sessions.noMixesSummary")
+                  : t("sessions.noMixesOnDay")}
               </p>
             ) : (
               <ul className="session-overview__summary-mixes">
@@ -754,7 +769,7 @@ export function SessionOverviewScreen({
                         title={
                           dayEditsEnabled
                             ? undefined
-                            : "Select a day before editing a mix"
+                            : t("sessions.selectDayEditMix")
                         }
                         onClick={() => {
                           if (!dayEditsEnabled) return;
@@ -769,7 +784,9 @@ export function SessionOverviewScreen({
                           style={{ color: cv.text.muted }}
                         >
                           {batch.recipeName ||
-                            (recipe ? recipeMenuLabel(recipe) : batch.recipeId)}
+                            (recipe
+                              ? recipeMenuLabel(recipe, uiLanguage)
+                              : batch.recipeId)}
                           {" · "}
                           ×{Math.max(1, batch.multiplier)}
                         </span>
@@ -792,13 +809,15 @@ export function SessionOverviewScreen({
             aria-labelledby="summary-tools-heading"
           >
             <div className="session-overview__summary-section-head">
-              <h3 id="summary-tools-heading">Tools</h3>
+              <h3 id="summary-tools-heading">
+                {t("sessions.stage.consumption-tools")}
+              </h3>
               <span className="session-overview__summary-section-count">
                 {toolCount}
               </span>
             </div>
             {selectedToolEntries.length > 0 ? (
-              <div className="session-overview__summary-chips" aria-label="Selected tools">
+              <div className="session-overview__summary-chips" aria-label={t("sessions.selectedToolsAria")}>
                 {selectedToolEntries.map((entry) => (
                   <span
                     key={entry.id}
@@ -811,7 +830,7 @@ export function SessionOverviewScreen({
               </div>
             ) : (
               <p className="session-overview__summary-empty" style={{ color: cv.text.dimmed }}>
-                None selected — add them in Tools, or continue without.
+                {t("sessions.summaryToolsEmpty")}
               </p>
             )}
             <button
@@ -826,7 +845,7 @@ export function SessionOverviewScreen({
               }
               onClick={() => goToStage("consumption-tools")}
             >
-              Open Tools
+              {t("sessions.openTools")}
             </button>
           </section>
 
@@ -835,7 +854,9 @@ export function SessionOverviewScreen({
             aria-labelledby="summary-cons-heading"
           >
             <div className="session-overview__summary-section-head">
-              <h3 id="summary-cons-heading">Consumables</h3>
+              <h3 id="summary-cons-heading">
+                {t("sessions.stage.consumables")}
+              </h3>
               <span className="session-overview__summary-section-count">
                 {consumableCount}
               </span>
@@ -843,7 +864,7 @@ export function SessionOverviewScreen({
             {selectedConsumableLabels.length > 0 ? (
               <div
                 className="session-overview__summary-chips"
-                aria-label="Selected consumables"
+                aria-label={t("sessions.selectedConsumablesAria")}
               >
                 {selectedConsumableLabels.map((label) => (
                   <span key={label} className="session-overview__summary-chip">
@@ -853,7 +874,7 @@ export function SessionOverviewScreen({
               </div>
             ) : (
               <p className="session-overview__summary-empty" style={{ color: cv.text.dimmed }}>
-                None selected — add them in Consumables, or continue without.
+                {t("sessions.summaryConsumablesEmpty")}
               </p>
             )}
             <button
@@ -864,7 +885,7 @@ export function SessionOverviewScreen({
               }
               onClick={() => goToStage("consumables")}
             >
-              Open Consumables
+              {t("sessions.openConsumables")}
             </button>
           </section>
         </div>
@@ -881,7 +902,7 @@ export function SessionOverviewScreen({
               className="session-overview__day-readonly-hint"
               style={{ color: cv.text.muted }}
             >
-              Select a day to change tools.
+              {t("sessions.selectDayChangeTools")}
             </p>
           ) : null}
           <div
@@ -958,7 +979,7 @@ export function SessionOverviewScreen({
               className="session-overview__day-readonly-hint"
               style={{ color: cv.text.muted }}
             >
-              Select a day to change consumables.
+              {t("sessions.selectDayChangeConsumables")}
             </p>
           ) : null}
           <div
@@ -1042,17 +1063,17 @@ export function SessionOverviewScreen({
       <div className="batch-totals-route flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="recipe-context-gradient flex-1 min-h-0 flex flex-col overflow-hidden">
           <AppHeader
-            title={`SESSION: ${session.name}`}
+            title={`${t("sessions.headerTitle")}: ${session.name}`}
             onMenuClick={onMenuClick}
             onTitleClick={() => setRenameNameOpen(true)}
-            titleClickLabel={`Rename session, ${session.name}`}
+            titleClickLabel={`${t("sessions.editName")}, ${session.name}`}
             sessionChrome
           />
 
           <div className="batch-totals-screen flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden relative">
             <div className="batch-totals-screen__main flex flex-col">
               <div className="session-overview__chrome">
-                <nav className="session-overview__stages app-gutter-x" aria-label="Session stages">
+                <nav className="session-overview__stages app-gutter-x" aria-label={t("sessions.stagesAria")}>
                   {SESSION_STAGE_ORDER.map((stageId, index) => {
                     const active = stageId === activeStage;
                     const touched = touchedStages.includes(stageId);
@@ -1105,7 +1126,7 @@ export function SessionOverviewScreen({
                               aria-hidden
                             />
                           ) : null}
-                          {SESSION_STAGE_CARD_LABELS[stageId]}
+                          {t(`sessions.stageShort.${stageId}`)}
                         </span>
                       </button>
                     );
@@ -1163,9 +1184,9 @@ export function SessionOverviewScreen({
         open={renameNameOpen}
         onOpenChange={setRenameNameOpen}
         initialName={session.name}
-        title="Rename session"
-        subtitle="Update the name shown in your session list."
-        confirmLabel="Rename"
+        title={t("sessions.renameTitle")}
+        subtitle={t("sessions.renameSubtitle")}
+        confirmLabel={t("common.rename")}
         onConfirm={(name) => patchSession(session.id, { name })}
       />
     </div>

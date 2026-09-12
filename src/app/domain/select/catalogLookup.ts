@@ -1,3 +1,6 @@
+import type { AppLanguage } from "../../i18n/language";
+import { DEFAULT_UI_LANGUAGE } from "../../i18n/language";
+import { displayLabel } from "../../i18n/localizedLabel";
 import type { FlexSelectSelection } from "./selection";
 import { flexSelectSelectionIds } from "./selection";
 import type { FlexSelectItem } from "./types";
@@ -6,16 +9,17 @@ import {
   parseSelectionLineKey,
 } from "./acquisition";
 
-/** Lookup label for an id in a nested flex-select catalog. */
+/** Lookup display label for an id in a nested flex-select catalog. */
 export function findFlexSelectLabel(
   id: string,
   catalog: readonly FlexSelectItem[],
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
 ): string | null {
   const { catalogId } = parseSelectionLineKey(id);
   for (const item of catalog) {
-    if (item.id === catalogId) return item.label;
+    if (item.id === catalogId) return displayLabel(item.label, language);
     if (item.children?.length) {
-      const nested = findFlexSelectLabel(catalogId, item.children);
+      const nested = findFlexSelectLabel(catalogId, item.children, language);
       if (nested) return nested;
     }
   }
@@ -34,12 +38,14 @@ export function listSelectedFlexSelectEntries(
   selection: FlexSelectSelection,
   catalog: readonly FlexSelectItem[],
   customItems: readonly FlexSelectItem[] = [],
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
 ): FlexSelectLabelEntry[] {
   const entries: FlexSelectLabelEntry[] = [];
   for (const id of flexSelectSelectionIds(selection)) {
     const rented = isRentedSelectionKey(id);
     const label =
-      findFlexSelectLabel(id, catalog) ?? findFlexSelectLabel(id, customItems);
+      findFlexSelectLabel(id, catalog, language) ??
+      findFlexSelectLabel(id, customItems, language);
     if (!label) continue;
     entries.push({
       id,
@@ -56,13 +62,14 @@ export function listSelectedFlexSelectLabels(
   selectedIds: readonly string[],
   catalog: readonly FlexSelectItem[],
   customItems: readonly FlexSelectItem[] = [],
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
 ): string[] {
   return selectedIds
     .map((id) => {
       const rented = isRentedSelectionKey(id);
       const label =
-        findFlexSelectLabel(id, catalog) ??
-        findFlexSelectLabel(id, customItems);
+        findFlexSelectLabel(id, catalog, language) ??
+        findFlexSelectLabel(id, customItems, language);
       if (!label) return null;
       return rented ? `${label} · Rented` : label;
     })

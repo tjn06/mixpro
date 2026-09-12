@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 const PANEL_DRAG_THRESHOLD_PX = 16;
 const PANEL_DRAG_FOLLOW = 1;
@@ -61,8 +62,8 @@ export function StageBottomSheet({
   summary,
   shareActions,
   expandedBody,
-  regionLabel = "Summary",
-  expandedBodyLabel = "Details",
+  regionLabel,
+  expandedBodyLabel,
   panelId = "stage-bottom-panel",
   remeasureKey,
 }: {
@@ -79,6 +80,9 @@ export function StageBottomSheet({
   /** Bump when summary/share content size may change. */
   remeasureKey?: string | number;
 }) {
+  const { t } = useTranslation("common");
+  const resolvedRegionLabel = regionLabel ?? t("common.summary");
+  const resolvedExpandedBodyLabel = expandedBodyLabel ?? t("common.details");
   const [shareOpen, setShareOpen] = useState(false);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const [holding, setHolding] = useState(false);
@@ -401,7 +405,7 @@ export function StageBottomSheet({
           className="batch-totals-bottom-panel__content"
           role="region"
           aria-expanded={sourceExpanded}
-          aria-label={regionLabel}
+          aria-label={resolvedRegionLabel}
         >
           <div
             ref={handleRef}
@@ -421,7 +425,7 @@ export function StageBottomSheet({
           {isExpandedVisual ? (
             <div
               className="batch-totals-bottom-panel__body app-gutter-x batch-totals-bottom-panel__body--readonly"
-              aria-label={expandedBodyLabel}
+              aria-label={resolvedExpandedBodyLabel}
             >
               <div className="batch-totals-bottom-panel__body-inner">
                 {expandedBody}

@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { savedMixDisplayName } from "../../saved-mixes/display";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import { ConfigNameIcon } from "../shared/ActionIcons";
@@ -143,12 +144,14 @@ export function RecipeHeaderRecipeRow({
   muted?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation("common");
+  const name = typeof children === "string" ? children : undefined;
   return (
     <div
       className={`app-header__recipe-row${muted ? " app-header__recipe-row--muted" : ""} ${className}`.trim()}
-      aria-label={`Recipe: ${typeof children === "string" ? children : undefined}`}
+      aria-label={name != null ? t("mixer.recipeAria", { name }) : undefined}
     >
-      <span className="app-header__recipe-label">Recipe</span>
+      <span className="app-header__recipe-label">{t("mixer.recipeLabel")}</span>
       <span className="app-header__recipe-sep" aria-hidden>
         :
       </span>
@@ -165,14 +168,15 @@ export function RecipeMixnameRow({
   displayName: string;
   muted?: boolean;
 }) {
+  const { t } = useTranslation("common");
   return (
     <div
       className={`app-header__config-name-row app-header__config-name-row--user${
         muted ? " app-header__config-name-row--muted" : ""
       }`}
-      aria-label={`Mix name: ${displayName}`}
+      aria-label={t("mixer.mixNameAria", { name: displayName })}
     >
-      <span className="app-header__config-name-label">Mixname</span>
+      <span className="app-header__config-name-label">{t("mixer.mixNameLabel")}</span>
       <span className="app-header__config-name-sep" aria-hidden>
         :
       </span>

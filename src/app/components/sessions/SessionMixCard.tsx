@@ -2,11 +2,13 @@ import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
 import { getEntityMetaLabel, recipeIngredientIndexes } from "../../domain/recipe/calc";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import { gramsFromSlotValues } from "../../saved-batch-totals/batches";
 import type { SessionBatchItem } from "../../sessions/types";
+import { useSettingsStore } from "../../settings/store";
 import {
   CARD_NAME_WEIGHT,
   entityValueColor,
@@ -111,16 +113,18 @@ function cardRoundBtnStyle(disabled?: boolean, color?: string): CSSProperties {
 
 function StepButton({
   label,
+  direction,
   onClick,
   disabled,
   compact = false,
 }: {
   label: string;
+  direction: "decrease" | "increase";
   onClick: () => void;
   disabled?: boolean;
   compact?: boolean;
 }) {
-  const symbol = label === "Decrease batch count" ? "−" : "+";
+  const symbol = direction === "decrease" ? "−" : "+";
   return (
     <button
       type="button"
@@ -230,6 +234,8 @@ export function SessionMixCard({
   /** When true, day-scoped edits (mult, comment, edit, remove) are blocked. */
   readOnly?: boolean;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const values = gramsFromSlotValues(batch.values);
   const mult = Math.max(1, batch.multiplier);
   const totalGrams = sessionBatchTotalGrams(batch);
@@ -350,10 +356,11 @@ export function SessionMixCard({
 
         <div
           className="session-mix-card__mult-field"
-          aria-label={`Batch multiplier, ${mult}`}
+          aria-label={t("mixCard.multiplierAria", { count: mult })}
         >
           <StepButton
-            label="Decrease batch count"
+            label={t("mixCard.decrease")}
+            direction="decrease"
             onClick={() => onMultiplierChange(Math.max(1, mult - 1))}
             disabled={readOnly || mult <= 1}
             compact
@@ -365,7 +372,8 @@ export function SessionMixCard({
             {mult}
           </span>
           <StepButton
-            label="Increase batch count"
+            label={t("mixCard.increase")}
+            direction="increase"
             onClick={() => onMultiplierChange(Math.min(999, mult + 1))}
             disabled={readOnly || mult >= 999}
             compact
@@ -378,15 +386,15 @@ export function SessionMixCard({
           className="session-mix-card__subheader"
           style={{ background: bt.cardHeaderBackground }}
         >
-          <div className="session-mix-card__stamp" aria-label="Mix activity">
+          <div className="session-mix-card__stamp" aria-label={t("mixCard.activity")}>
             {activityStamp.created ? (
               <span className="session-mix-card__stamp-line">
-                Created {activityStamp.created}
+                {t("mixCard.created", { when: activityStamp.created })}
               </span>
             ) : null}
             {activityStamp.updated ? (
               <span className="session-mix-card__stamp-line">
-                Updated {activityStamp.updated}
+                {t("mixCard.updated", { when: activityStamp.updated })}
               </span>
             ) : null}
           </div>
@@ -396,15 +404,15 @@ export function SessionMixCard({
                 commentOpen ? " session-mix-card__action-group--open" : ""
               }`}
               role="group"
-              aria-label="Mix comment"
+              aria-label={t("mixCard.commentAria")}
             >
               <IconHeaderButton
                 label={
                   commentOpen
-                    ? `Close comment on ${batch.name}`
+                    ? t("mixCard.closeCommentAria", { name: batch.name })
                     : hasComment
-                      ? `Comment on ${batch.name}`
-                      : `Add comment to ${batch.name}`
+                      ? t("mixCard.commentOn", { name: batch.name })
+                      : t("mixCard.addCommentAria", { name: batch.name })
                 }
                 onClick={openCommentPanel}
                 color={commentOpen ? cv.text.primary : cv.text.muted}
@@ -423,13 +431,13 @@ export function SessionMixCard({
               >
                 <span className="session-mix-card__action-reveal-inner">
                   <span className="session-mix-card__action-group-label">
-                    Comment
+                    {t("mixCard.comment")}
                   </span>
                   <IconHeaderButton
                     label={
                       commentEditing
-                        ? `Cancel editing comment on ${batch.name}`
-                        : `Edit comment on ${batch.name}`
+                        ? t("mixCard.cancelCommentAria", { name: batch.name })
+                        : t("mixCard.editCommentAria", { name: batch.name })
                     }
                     onClick={onEditComment}
                     disabled={readOnly}
@@ -438,7 +446,7 @@ export function SessionMixCard({
                     <ModifyIcon size={HEADER_ICON_SIZE} />
                   </IconHeaderButton>
                   <IconHeaderButton
-                    label={`Save comment on ${batch.name}`}
+                    label={t("mixCard.saveCommentAria", { name: batch.name })}
                     onClick={saveComment}
                     disabled={readOnly || !commentEditing}
                     onPointerDown={(e) => {
@@ -451,15 +459,15 @@ export function SessionMixCard({
               </span>
             </div>
             <IconHeaderButton
-              label={`Edit ${batch.name}`}
+              label={t("mixCard.editAria", { name: batch.name })}
               onClick={onEdit}
               disabled={readOnly}
             >
               <RenameIcon size={HEADER_ICON_SIZE} />
             </IconHeaderButton>
             <LongPressButton
-              label={`Hold to remove ${batch.name}`}
-              confirmAction="REMOVE MIX"
+              label={t("mixCard.removeHint")}
+              confirmAction={t("mixCard.removeConfirm")}
               onLongPress={onRemove}
               disabled={readOnly}
               progressVariant="beam"
@@ -490,8 +498,8 @@ export function SessionMixCard({
                 }
               }}
               rows={1}
-              placeholder="Add a note for this mix…"
-              aria-label={`Comment on ${batch.name}`}
+              placeholder={t("mixCard.notePlaceholder")}
+              aria-label={t("mixCard.commentOn", { name: batch.name })}
             />
           ) : (
             <p
@@ -499,7 +507,7 @@ export function SessionMixCard({
                 hasComment ? "" : " session-mix-card__comment-text--empty"
               }`}
             >
-              {hasComment ? savedComment : "No comment yet"}
+              {hasComment ? savedComment : t("mixCard.noComment")}
             </p>
           )}
         </div>
@@ -519,13 +527,13 @@ export function SessionMixCard({
             <thead>
               <tr>
                 <th scope="col" className="text-left" style={{ ...TH_TEXT, padding: "var(--totals-th-py) var(--totals-th-px)" }}>
-                  Item
+                  {t("mixCard.colItem")}
                 </th>
                 <th scope="col" className="text-center" style={{ ...TH_TEXT, padding: "var(--totals-th-py) var(--totals-th-mult-px, 8px)" }}>
                   ×
                 </th>
                 <th scope="col" className="text-right" style={{ ...TH_TEXT, padding: "var(--totals-th-py) var(--totals-th-px)" }}>
-                  Total
+                  {t("mixCard.colTotal")}
                 </th>
               </tr>
             </thead>
@@ -536,7 +544,11 @@ export function SessionMixCard({
                 const perBatch = values[pi] ?? 0;
                 const lineTotal = perBatch * mult;
                 const metaLabel =
-                  !isTotal && recipe ? getEntityMetaLabel(recipe, p.id) : undefined;
+                  !isTotal && recipe
+                    ? p.id === "TOTAL"
+                      ? t("mixer.totalMeta")
+                      : getEntityMetaLabel(recipe, p.id, uiLanguage)
+                    : undefined;
 
                 return (
                   <tr key={p.id} {...(isTotal ? { "data-total-row": true } : undefined)}>

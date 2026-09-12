@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { formatMixAmount as fmt } from "../../domain/mix/entities";
 import { useSingleValueSwipeAdjust } from "../../hooks/useSingleValueSwipeAdjust";
 import { entityAccentColor } from "../../presentation/entityAccent";
@@ -56,6 +57,7 @@ export function GramSwipeInputSheet({
   valueGrams,
   onApply,
 }: GramSwipeInputSheetProps) {
+  const { t } = useTranslation("common");
   const colorScheme = useSettingsStore((s) => s.colorScheme);
   const [draftGrams, setDraftGrams] = useState(Math.max(0, valueGrams));
   const [portal, setPortal] = useState<HTMLElement | null>(null);
@@ -126,10 +128,10 @@ export function GramSwipeInputSheet({
           style={SHEET_COVER_HEADER_STYLE}
         >
           <h2 id={titleId} style={SHEET_TITLE}>
-            Set {fieldLabel}
+            {t("sheets.gramSwipe.setField", { fieldLabel })}
           </h2>
           <p style={{ ...SHEET_SUBTITLE, maxWidth: 300, textAlign: "center" }}>
-            Drag the zones to dial the weight. Confirm writes grams into the field.
+            {t("sheets.gramSwipe.hint")}
           </p>
         </header>
 
@@ -253,8 +255,8 @@ export function GramSwipeInputSheet({
               >
                 <div style={{ height: "var(--bottom-sub-row-h)" }}>
                   <LongPressButton
-                    label="Close"
-                    confirmAction="CLOSE"
+                    label={t("common.close")}
+                    confirmAction={t("sheets.mixerInput.closeConfirm")}
                     onLongPress={() => onOpenChange(false)}
                     icon={<CloseIcon />}
                     progressVariant="water"
@@ -264,8 +266,8 @@ export function GramSwipeInputSheet({
                 </div>
                 <div style={{ height: "var(--bottom-sub-row-h)" }}>
                   <LongPressButton
-                    label="Apply"
-                    confirmAction="APPLY"
+                    label={t("common.apply")}
+                    confirmAction={t("sheets.mixerInput.applyConfirm")}
                     onLongPress={handleApply}
                     icon={<SavedIcon />}
                     progressVariant="water"

@@ -1,5 +1,7 @@
 import { useLayoutEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { BucketSelection } from "../../domain/bucket/types";
 import { RECOMMENDED_MAX_FILL_PERCENT } from "../../domain/bucket/types";
 import { CloseIcon } from "../shared/ActionIcons";
@@ -49,8 +51,10 @@ function formatBatchWeight(grams: number): string {
   return `${Math.round(grams)} g`;
 }
 
-function bucketLabel(selection: BucketSelection): string {
-  return selection === "none" ? "No bucket" : `${selection} L bucket`;
+function bucketLabel(selection: BucketSelection, t: TFunction<"common">): string {
+  return selection === "none"
+    ? t("mixer.bucket.noBucket")
+    : t("mixer.bucket.liters", { size: selection });
 }
 
 export interface RecBatchInfoSheetProps {
@@ -84,6 +88,7 @@ export function RecBatchInfoSheet({
   currentMixTotalGrams,
   mixFillPercent,
 }: RecBatchInfoSheetProps) {
+  const { t } = useTranslation("common");
   const [portal, setPortal] = useState<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
@@ -111,10 +116,10 @@ export function RecBatchInfoSheet({
         style={SHEET_COVER_HEADER_STYLE}
       >
         <h2 id="rec-batch-info-title" style={SHEET_TITLE}>
-          Recommended batch
+          {t("sheets.recBatchInfo.title")}
         </h2>
         <p style={{ ...SHEET_SUBTITLE, maxWidth: 300, textAlign: "center" }}>
-          Safe amount to mix in your bucket
+          {t("sheets.recBatchInfo.safeAmount")}
         </p>
       </header>
 
@@ -131,17 +136,20 @@ export function RecBatchInfoSheet({
           style={{ padding: "14px 16px", gap: 10, marginBottom: 16 }}
         >
           <div className="flex flex-col" style={{ gap: 4 }}>
-            <span style={STAT_LABEL}>Your bucket</span>
-            <span style={STAT_VALUE}>{bucketLabel(bucketSelection)}</span>
+            <span style={STAT_LABEL}>{t("sheets.recBatchInfo.yourBucket")}</span>
+            <span style={STAT_VALUE}>{bucketLabel(bucketSelection, t)}</span>
           </div>
           <div className="flex flex-col" style={{ gap: 4 }}>
-            <span style={STAT_LABEL}>Rec. batch (recipe)</span>
+            <span style={STAT_LABEL}>{t("sheets.recBatchInfo.recBatchRecipe")}</span>
             <span style={STAT_VALUE}>{formatBatchWeight(recommendedNominalGrams)}</span>
           </div>
           {showBucketRec ? (
             <div className="flex flex-col" style={{ gap: 4 }}>
               <span style={STAT_LABEL}>
-                Rec. for {bucketSelection} L ({RECOMMENDED_MAX_FILL_PERCENT}% fill)
+                {t("sheets.recBatchInfo.recForBucket", {
+                  size: bucketSelection,
+                  fill: RECOMMENDED_MAX_FILL_PERCENT,
+                })}
               </span>
               <span style={STAT_VALUE}>{formatBatchWeight(recommendedForBucketGrams)}</span>
             </div>
@@ -154,11 +162,14 @@ export function RecBatchInfoSheet({
             }}
           />
           <div className="flex flex-col" style={{ gap: 4 }}>
-            <span style={STAT_LABEL}>Your mix now</span>
+            <span style={STAT_LABEL}>{t("sheets.recBatchInfo.yourMix")}</span>
             <span style={STAT_VALUE}>{formatBatchWeight(currentMixTotalGrams)}</span>
             {hasBucket && mixFillPercent != null ? (
               <span style={{ ...BODY_TEXT, fontSize: "var(--text-ui-sm)" }}>
-                About {mixFillPercent}% of {bucketSelection} L bucket volume
+                {t("sheets.recBatchInfo.mixFillOfBucket", {
+                  percent: mixFillPercent,
+                  size: bucketSelection,
+                })}
               </span>
             ) : null}
           </div>
@@ -175,19 +186,16 @@ export function RecBatchInfoSheet({
           }}
         >
           <InfoBullet>
-            Leaves headroom so the mix will not spill while you blend — we target up to{" "}
-            {RECOMMENDED_MAX_FILL_PERCENT}% of bucket volume, not a full fill.
+            {t("sheets.recBatchInfo.bulletHeadroom", {
+              fill: RECOMMENDED_MAX_FILL_PERCENT,
+            })}
           </InfoBullet>
+          <InfoBullet>{t("sheets.recBatchInfo.bulletBucketSizes")}</InfoBullet>
+          <InfoBullet>{t("sheets.recBatchInfo.bulletPotLife")}</InfoBullet>
           <InfoBullet>
-            10 L and 17 L buckets need different recommended amounts for the same recipe.
-          </InfoBullet>
-          <InfoBullet>
-            Pick a batch you can mix and use before the epoxy starts to set — use less for
-            small jobs or short pot life.
-          </InfoBullet>
-          <InfoBullet>
-            Long-press <strong style={{ color: cv.text.primary, fontWeight: 600 }}>RESET</strong>{" "}
-            to restore the recommended starting batch for this recipe.
+            {t("sheets.recBatchInfo.bulletReset", {
+              reset: t("mixer.reset"),
+            })}
           </InfoBullet>
         </ul>
 
@@ -200,7 +208,7 @@ export function RecBatchInfoSheet({
             textAlign: "center",
           }}
         >
-          Bucket fill % reflects your current mix, not the recommended reference alone.
+          {t("sheets.recBatchInfo.fillNote")}
         </p>
       </div>
 
@@ -208,7 +216,7 @@ export function RecBatchInfoSheet({
         buttons={[
           {
             key: "close",
-            label: "Close",
+            label: t("common.close"),
             icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: () => onOpenChange(false),
           },

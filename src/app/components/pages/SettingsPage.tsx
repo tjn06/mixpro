@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { SettingsForm } from "../settings/SettingsForm";
 import { DestinationPageChrome } from "./DestinationPageChrome";
 import { cv } from "../../ui/tokens";
@@ -12,17 +13,18 @@ export function SettingsPage({
   onClose: () => void;
   embedded?: boolean;
 }) {
+  const { t } = useTranslation("common");
   return (
     <DestinationPageChrome
-      title="Settings"
+      title={t("pages.settings.title")}
       onMenuClick={onMenuClick}
       onBack={onClose}
-      backLabel="Close settings"
+      backLabel={t("pages.settings.close")}
       backImmediate
       embedded={embedded}
     >
       <p className="destination-page__lede" style={{ color: cv.text.muted }}>
-        Display and accessibility
+        {t("pages.settings.lede")}
       </p>
       <SettingsForm />
     </DestinationPageChrome>

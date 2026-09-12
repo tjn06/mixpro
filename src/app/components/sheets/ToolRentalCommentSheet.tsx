@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CloseIcon, MessageIcon, SaveIcon } from "../shared/ActionIcons";
 import {
   SHEET_COVER_FORM_HEADER_STYLE,
@@ -32,6 +33,7 @@ export function ToolRentalCommentSheet({
   initialComment: string;
   onSave: (comment: string | null) => void;
 }) {
+  const { t } = useTranslation("common");
   const titleId = useId();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState(initialComment);
@@ -74,7 +76,7 @@ export function ToolRentalCommentSheet({
         style={SHEET_COVER_FORM_HEADER_STYLE}
       >
         <h2 id={titleId} className={SHEET_TITLE_CLASS}>
-          Rental note
+          {t("sheets.rentalComment.title")}
         </h2>
         <p
           className={SHEET_SUBTITLE_CLASS}
@@ -96,7 +98,7 @@ export function ToolRentalCommentSheet({
             className={SHEET_FIELD_LABEL_CLASS}
             style={{ display: "block", textAlign: "center", margin: 0 }}
           >
-            Tool
+            {t("sheets.rentalComment.tool")}
           </p>
           <p
             className="truncate min-w-0"
@@ -130,7 +132,7 @@ export function ToolRentalCommentSheet({
             className={SHEET_FIELD_LABEL_CLASS}
             style={{ display: "block", textAlign: "center", margin: 0 }}
           >
-            Comment
+            {t("sheets.rentalComment.label")}
           </label>
           <textarea
             ref={inputRef}
@@ -148,7 +150,7 @@ export function ToolRentalCommentSheet({
             value={draft}
             maxLength={280}
             rows={4}
-            placeholder="Supplier, pickup, return…"
+            placeholder={t("sheets.rentalComment.placeholder")}
             onChange={(event) => setDraft(event.target.value)}
           />
         </div>
@@ -158,14 +160,14 @@ export function ToolRentalCommentSheet({
         buttons={[
           {
             key: "close",
-            label: "Close",
+            label: t("common.close"),
             icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: () => onOpenChange(false),
             variant: "secondary",
           },
           {
             key: "save",
-            label: "Save",
+            label: t("common.save"),
             icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: commit,
             variant: "primary",
@@ -187,14 +189,19 @@ export function RentalCommentButton({
   disabled?: boolean;
   onClick: () => void;
 }) {
+  const { t } = useTranslation("common");
+  const label = hasComment
+    ? t("sheets.rentalComment.edit")
+    : t("sheets.rentalComment.add");
+
   return (
     <button
       type="button"
       className="select-chip__comment-btn"
       data-has-comment={hasComment ? "" : undefined}
       disabled={disabled}
-      aria-label={hasComment ? "Edit rental comment" : "Add rental comment"}
-      title={hasComment ? "Edit rental comment" : "Add rental comment"}
+      aria-label={label}
+      title={label}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => {
         event.stopPropagation();

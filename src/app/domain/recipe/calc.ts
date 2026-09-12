@@ -1,3 +1,11 @@
+import type { AppLanguage } from "../../i18n/language";
+import { DEFAULT_UI_LANGUAGE } from "../../i18n/language";
+import { displayLabel } from "../../i18n/localizedLabel";
+import {
+  partsUnitLabel,
+  standardIngredientLabel,
+  totalMetaLabel,
+} from "./ingredientLabels";
 import type { BlendingRecipe } from "./types";
 
 /** Param ids that can drive a locked-ratio recalculation. */
@@ -211,10 +219,13 @@ function formatRecipeIngredientId(id: string): string {
 }
 
 /** Compact ingredient line, e.g. "2:1 Resin/Hardener + 533.33% Sand Filler." */
-export function formatRecipeSummary(recipe: BlendingRecipe): string {
+export function formatRecipeSummary(
+  recipe: BlendingRecipe,
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
+): string {
   const ratio = recipe.binderParts.map((p) => formatRatioNumber(p.parts)).join(":");
   const binderLabels = recipe.binderParts
-    .map((p) => getIngredientLabel(recipe, p.id) ?? p.id)
+    .map((p) => getIngredientLabel(recipe, p.id, language) ?? p.id)
     .join("/");
 
   let summary = "";
@@ -223,7 +234,7 @@ export function formatRecipeSummary(recipe: BlendingRecipe): string {
   else if (binderLabels) summary += binderLabels;
 
   for (const entry of recipe.binderPercents) {
-    const label = entry.label?.trim();
+    const label = getIngredientLabel(recipe, entry.id, language);
     const name = label
       ? `${formatRecipeIngredientId(entry.id)} ${label}`
       : formatRecipeIngredientId(entry.id);
@@ -234,12 +245,15 @@ export function formatRecipeSummary(recipe: BlendingRecipe): string {
 }
 
 /** Ratio prefix vs remainder for compact displays, e.g. "2:1" | "Resin/Hardener + 533.33% Sand Filler." */
-export function getRecipeSummaryParts(recipe: BlendingRecipe): {
+export function getRecipeSummaryParts(
+  recipe: BlendingRecipe,
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
+): {
   ratio: string;
   detail: string;
 } {
   const ratio = recipe.binderParts.map((p) => formatRatioNumber(p.parts)).join(":");
-  const full = formatRecipeSummary(recipe);
+  const full = formatRecipeSummary(recipe, language);
   if (!ratio) return { ratio: "", detail: full };
   if (full.startsWith(ratio)) {
     return { ratio, detail: full.slice(ratio.length).trimStart() };
@@ -251,16 +265,31 @@ export function getRecipeSummaryParts(recipe: BlendingRecipe): {
 export function getLockedRatioDisplay(
   recipe: BlendingRecipe,
   id: string,
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
 ): { value: string; unit: string } {
   const partEntry = recipe.binderParts.find((p) => p.id === id);
-  if (partEntry) return { value: formatRatioNumber(partEntry.parts), unit: "PARTS" };
+  if (partEntry) {
+    return {
+      value: formatRatioNumber(partEntry.parts),
+      unit: partsUnitLabel(language),
+    };
+  }
   const pctEntry = recipe.binderPercents.find((p) => p.id === id);
   if (pctEntry) return { value: formatRatioNumber(pctEntry.percent), unit: "%" };
   return { value: "", unit: "" };
 }
 
-/** Display label for any mix ingredient (Resin, Hardener, Filler, Thickener, …). */
-export function getIngredientLabel(recipe: BlendingRecipe, id: string): string | undefined {
+/**
+ * Display label for any mix ingredient (Resin/Bas, Hardener/Härdare, …).
+ * Standard slots (A/B/SAND/TIX) resolve by id so older English saves still localize.
+ */
+export function getIngredientLabel(
+  recipe: BlendingRecipe,
+  id: string,
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
+): string | undefined {
+  const standard = standardIngredientLabel(id, language);
+  if (standard) return standard;
   const partLabel = recipe.binderParts.find((p) => p.id === id)?.label?.trim();
   if (partLabel) return partLabel;
   const pctLabel = recipe.binderPercents.find((p) => p.id === id)?.label?.trim();
@@ -269,19 +298,28 @@ export function getIngredientLabel(recipe: BlendingRecipe, id: string): string |
 }
 
 /** Secondary line under entity id on mix cards (Epoxy, Resin, Filler, …). */
-export function getEntityMetaLabel(recipe: BlendingRecipe, id: string): string | undefined {
+export function getEntityMetaLabel(
+  recipe: BlendingRecipe,
+  id: string,
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
+): string | undefined {
   if (id === "TOTAL") {
-    return "Total epoxymass";
+    return totalMetaLabel(language);
   }
-  const label = getIngredientLabel(recipe, id);
+  const label = getIngredientLabel(recipe, id, language);
   if (label) return label;
-  if ((id === "A" || id === "B") && recipe.nameSubline?.trim()) {
-    return recipe.nameSubline.trim();
+  if (id === "A" || id === "B") {
+    const sub = displayLabel(recipe.nameSubline, language).trim();
+    if (sub) return sub;
   }
   return undefined;
 }
 
 /** @deprecated Use getIngredientLabel — kept for recipe ratio cards on A/B. */
-export function getBinderPartLabel(recipe: BlendingRecipe, id: string): string | undefined {
-  return getIngredientLabel(recipe, id);
+export function getBinderPartLabel(
+  recipe: BlendingRecipe,
+  id: string,
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
+): string | undefined {
+  return getIngredientLabel(recipe, id, language);
 }

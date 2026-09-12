@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import type { BucketSelection } from "../../domain/bucket/types";
 import type { SandType } from "../../domain/mix/volume";
@@ -40,8 +41,8 @@ export interface MixerInputSheetProps {
 export function MixerInputSheet({
   open,
   onOpenChange,
-  title = "Extra batch",
-  subtitle = "One custom batch — added on top of your batches",
+  title,
+  subtitle,
   recipe,
   values,
   entityIndexes,
@@ -49,11 +50,14 @@ export function MixerInputSheet({
   sandType,
   onApply,
 }: MixerInputSheetProps) {
+  const { t } = useTranslation("common");
   const colorScheme = useSettingsStore((s) => s.colorScheme);
   const [draftValues, setDraftValues] = useState(values);
   const [active, setActive] = useState(0);
   const [dragFocus, setDragFocus] = useState(false);
   const totalTileRef = useRef<HTMLButtonElement>(null);
+  const resolvedTitle = title ?? t("sheets.mixerInput.title");
+  const resolvedSubtitle = subtitle ?? t("sheets.mixerInput.subtitle");
 
   /** Top row is ingredients only — TOTAL sits in the bottom bar like the mix screen. */
   const cardIndexes = useMemo(
@@ -116,11 +120,11 @@ export function MixerInputSheet({
           style={SHEET_COVER_HEADER_STYLE}
         >
           <h2 id="mixer-input-sheet-title" style={SHEET_TITLE}>
-            {title}
+            {resolvedTitle}
           </h2>
-          {subtitle ? (
+          {resolvedSubtitle ? (
             <p style={{ ...SHEET_SUBTITLE, maxWidth: 280, textAlign: "center" }}>
-              {subtitle}
+              {resolvedSubtitle}
             </p>
           ) : null}
         </header>
@@ -184,8 +188,8 @@ export function MixerInputSheet({
                 >
                   <div style={{ height: "var(--bottom-sub-row-h)" }}>
                     <LongPressButton
-                      label="Close"
-                      confirmAction="CLOSE"
+                      label={t("common.close")}
+                      confirmAction={t("sheets.mixerInput.closeConfirm")}
                       onLongPress={() => onOpenChange(false)}
                       icon={<CloseIcon />}
                       progressVariant="water"
@@ -195,8 +199,8 @@ export function MixerInputSheet({
                   </div>
                   <div style={{ height: "var(--bottom-sub-row-h)" }}>
                     <LongPressButton
-                      label="Apply"
-                      confirmAction="APPLY"
+                      label={t("common.apply")}
+                      confirmAction={t("sheets.mixerInput.applyConfirm")}
                       onLongPress={handleApply}
                       icon={<SavedIcon />}
                       progressVariant="water"

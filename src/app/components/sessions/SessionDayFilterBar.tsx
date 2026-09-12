@@ -8,6 +8,7 @@ import {
   useState,
   type RefObject,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelectChipGestures } from "../select/useSelectChipGestures";
 import { SessionDatePickerSheet } from "./SessionDatePickerSheet";
 
@@ -169,9 +170,11 @@ function SessionDayBadgeChip({
   onSelect: () => void;
   onOpenCalendar?: () => void;
 }) {
+  const { t } = useTranslation("common");
   const isFuture = Boolean(badge.isFuture);
   const isProvisional = Boolean(badge.isProvisional);
   const visuallySelected = allMode || selected;
+  const displayLabel = isProvisional ? t("common.today") : badge.label;
 
   const gestures = useSelectChipGestures({
     mode: "select",
@@ -180,11 +183,11 @@ function SessionDayBadgeChip({
   });
 
   const ariaExtra = [
-    isProvisional ? ", provisional work day" : "",
-    isFuture ? ", upcoming" : "",
+    isProvisional ? `, ${t("sessions.dayProvisional")}` : "",
+    isFuture ? `, ${t("sessions.dayUpcoming")}` : "",
     selected && !allMode
-      ? ", selected. Double-tap to edit date"
-      : ", tap to filter this day. Double-tap to edit date",
+      ? `, ${t("sessions.daySelectedHint")}`
+      : `, ${t("sessions.dayTapHint")}`,
   ].join("");
 
   return (
@@ -197,7 +200,7 @@ function SessionDayBadgeChip({
       data-provisional={isProvisional ? "" : undefined}
       data-future={isFuture ? "" : undefined}
       aria-selected={visuallySelected}
-      aria-label={`${badge.label}${ariaExtra}`}
+      aria-label={`${displayLabel}${ariaExtra}`}
       {...gestures}
     >
       <span className="select-chip__label session-day-filter__chip-label">
@@ -209,7 +212,7 @@ function SessionDayBadgeChip({
             aria-hidden
           />
         ) : null}
-        <span>{badge.label}</span>
+        <span>{displayLabel}</span>
       </span>
     </button>
   );
@@ -237,6 +240,7 @@ export function SessionDayFilterBar({
   /** Pinned + control — add a custom day from the calendar. */
   onAddDay?: (date: Date) => void;
 }) {
+  const { t } = useTranslation("common");
   const controlled = selectedIdProp != null && onSelectedIdChange != null;
   const [internalBadges, setInternalBadges] = useState(buildMockSessionDayBadges);
   const [internalSelectedId, setInternalSelectedId] = useState<string>("all");
@@ -342,7 +346,7 @@ export function SessionDayFilterBar({
   return (
     <div className="session-day-filter select-view">
       <div className="session-day-filter__row">
-        <div className="session-day-filter__pinned" role="group" aria-label="Date filter">
+        <div className="session-day-filter__pinned" role="group" aria-label={t("sessions.dateFilterAria")}>
           <button
             type="button"
             className="select-chip session-day-filter__chip session-day-filter__chip--icon"
@@ -350,10 +354,10 @@ export function SessionDayFilterBar({
             aria-pressed={allMode}
             aria-label={
               allMode
-                ? "All dates, selected. Showing all days"
-                : "Show all dates"
+                ? t("sessions.allDatesSelected")
+                : t("sessions.showAllDates")
             }
-            title="All dates"
+            title={t("sessions.allDates")}
             onClick={() => selectDay("all")}
           >
             <CalendarCheck size={PIN_ICON_SIZE} strokeWidth={2.25} aria-hidden />
@@ -361,8 +365,8 @@ export function SessionDayFilterBar({
           <button
             type="button"
             className="select-chip session-day-filter__chip session-day-filter__chip--icon session-day-filter__chip--add"
-            aria-label="Add date"
-            title="Add date"
+            aria-label={t("common.addDate")}
+            title={t("common.addDate")}
             onClick={openAddCalendar}
           >
             <Plus size={PIN_ICON_SIZE} strokeWidth={2.5} aria-hidden />
@@ -384,7 +388,7 @@ export function SessionDayFilterBar({
             ref={scrollRef}
             className="session-day-filter__scroll"
             role="listbox"
-            aria-label="Session dates"
+            aria-label={t("sessions.sessionDatesAria")}
             aria-orientation="horizontal"
           >
             {dayBadges.map((badge) => (

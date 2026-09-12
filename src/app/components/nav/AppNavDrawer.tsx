@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { AppDestination } from "../../navigation/types";
 import { APP_DESTINATIONS } from "../../navigation/types";
 import { ColorSchemeSegment } from "../settings/ColorSchemeSegment";
@@ -17,21 +18,27 @@ export function AppNavDrawer({
   onClose: () => void;
   onNavigate: (dest: AppDestination) => void;
 }) {
+  const { t } = useTranslation("common");
   if (!open) return null;
 
   return (
-    <div className="app-nav-drawer" role="dialog" aria-modal="true" aria-label="Navigation">
+    <div
+      className="app-nav-drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("nav.aria")}
+    >
       <button
         type="button"
         className="app-nav-drawer__backdrop"
-        aria-label="Close menu"
+        aria-label={t("nav.closeMenu")}
         onClick={onClose}
       />
       <nav
         className={`app-nav-drawer__panel${
           sessionChrome ? " app-nav-drawer__panel--session" : ""
         }`}
-        aria-label="Main"
+        aria-label={t("nav.main")}
       >
         <div className="app-nav-drawer__brand-row">
           <div className="app-nav-drawer__brand-block min-w-0">
@@ -39,14 +46,14 @@ export function AppNavDrawer({
             {sessionChrome ? (
               <span className="session-mode-chip app-nav-drawer__session-chip">
                 <span className="session-mode-chip__dot" aria-hidden />
-                Session
+                {t("nav.sessionChip")}
               </span>
             ) : null}
           </div>
           <button
             type="button"
             className="app-nav-drawer__close"
-            aria-label="Close menu"
+            aria-label={t("nav.closeMenu")}
             onClick={onClose}
           >
             <X size={22} strokeWidth={2} aria-hidden />
@@ -76,7 +83,7 @@ export function AppNavDrawer({
                     if (item.id !== "settings") onClose();
                   }}
                 >
-                  {item.label}
+                  {t(`nav.${item.id}`)}
                 </button>
               </li>
             );

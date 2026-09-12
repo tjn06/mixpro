@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { BlendingRecipe } from "../../domain/recipe/types";
 import { recipeMenuLabel } from "../../domain/recipe/types";
+import { useSettingsStore } from "../../settings/store";
 import {
   RecipeLibraryCard,
   recipeMatchesQuery,
@@ -25,7 +27,7 @@ export function PickRecipeForMixSheet({
   libraryRecipes,
   sessionRecipes = [],
   onPick,
-  title = "Add mix",
+  title,
   openLabelFor,
 }: {
   open: boolean;
@@ -38,9 +40,13 @@ export function PickRecipeForMixSheet({
   /** Card open/select label; default Open {menu label}. */
   openLabelFor?: (recipe: BlendingRecipe) => string;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
+  const resolvedTitle = title ?? t("sessions.addMix");
   const pickLabel =
     openLabelFor ??
-    ((recipe: BlendingRecipe) => `Open ${recipeMenuLabel(recipe)}`);
+    ((recipe: BlendingRecipe) =>
+      t("sessions.openRecipe", { name: recipeMenuLabel(recipe, uiLanguage) }));
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -52,52 +58,45 @@ export function PickRecipeForMixSheet({
     }
   }, [open]);
 
-  const filteredSession = useMemo(
-    () => sessionRecipes.filter((recipe) => recipeMatchesQuery(recipe, query)),
-    [sessionRecipes, query],
-  );
   const filteredLibrary = useMemo(
     () => libraryRecipes.filter((recipe) => recipeMatchesQuery(recipe, query)),
     [libraryRecipes, query],
   );
-
-  const totalMatches = filteredSession.length + filteredLibrary.length;
-  const totalAvailable = sessionRecipes.length + libraryRecipes.length;
-
-  const scrollEdges = useScrollEdgeFades(
-    scrollRef,
-    open,
-    `${expandedId}:${query}:${filteredSession.length}:${filteredLibrary.length}`,
+  const filteredSession = useMemo(
+    () => sessionRecipes.filter((recipe) => recipeMatchesQuery(recipe, query)),
+    [sessionRecipes, query],
   );
+  const totalMatches = filteredLibrary.length + filteredSession.length;
+  const totalAvailable = libraryRecipes.length + sessionRecipes.length;
+  const scrollEdges = useScrollEdgeFades(scrollRef, open && totalMatches > 0);
 
   if (!open) return null;
 
   const pick = (recipe: BlendingRecipe) => {
-    const accepted = onPick(recipe);
-    if (accepted === false) return;
-    onOpenChange(false);
+    const keepOpen = onPick(recipe) === true;
+    if (!keepOpen) onOpenChange(false);
   };
 
   return (
     <AppFrameCoverSheet
       open={open}
-      zIndex={41}
+      zIndex={40}
       ariaLabelledBy="pick-recipe-for-mix-title"
-      className="session-pick-recipe"
+      className="session-pick-recipe-sheet"
     >
       <header
-        className="session-pick-recipe__header shrink-0 flex flex-col items-center text-center"
+        className="shrink-0 flex flex-col items-center text-center"
         style={SHEET_COVER_FORM_HEADER_STYLE}
       >
         <h2 id="pick-recipe-for-mix-title" className={SHEET_TITLE_CLASS}>
-          {title}
+          {resolvedTitle}
         </h2>
       </header>
 
       <div className="session-pick-recipe__chrome app-gutter-x shrink-0">
         <PageSearchField
           className="session-pick-recipe__search"
-          placeholder="Search recipes…"
+          placeholder={t("sessions.searchRecipes")}
           value={query}
           onChange={setQuery}
         />
@@ -115,15 +114,15 @@ export function PickRecipeForMixSheet({
           {totalMatches === 0 ? (
             <p className="destination-page__empty" style={{ color: cv.text.dimmed }}>
               {totalAvailable === 0
-                ? "No recipes available."
-                : `No recipes match “${query.trim()}”.`}
+                ? t("sessions.noRecipes")
+                : t("pages.recipes.noMatch", { query: query.trim() })}
             </p>
           ) : (
             <>
               {filteredSession.length > 0 ? (
                 <section className="session-pick-recipe__section session-pick-recipe__section--session">
                   <h3 className="session-pick-recipe__section-title session-pick-recipe__section-title--session">
-                    Session recipes
+                    {t("sessions.sessionRecipes")}
                   </h3>
                   <ul className="recipes-page__list">
                     {filteredSession.map((recipe) => (
@@ -147,7 +146,7 @@ export function PickRecipeForMixSheet({
               {filteredLibrary.length > 0 ? (
                 <section className="session-pick-recipe__section">
                   <h3 className="session-pick-recipe__section-title">
-                    Recipe library
+                    {t("sessions.recipeLibrary")}
                   </h3>
                   <ul className="recipes-page__list">
                     {filteredLibrary.map((recipe) => (
@@ -174,7 +173,7 @@ export function PickRecipeForMixSheet({
       <button
         type="button"
         className={`${SHEET_LIST_ROW_CLASS} recipe-picker-close touch-manipulation`}
-        aria-label="Close"
+        aria-label={t("common.close")}
         onClick={() => onOpenChange(false)}
       >
         <PanelTopCloseIcon size={20} />

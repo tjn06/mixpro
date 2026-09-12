@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   omitCatalogIdFromSelection,
   selectionLineKey,
@@ -30,8 +31,8 @@ export function CatalogFlexPicker({
   className,
   tone = "default",
   ariaLabel,
-  addSimpleLabel = "Custom",
-  addSimplePlaceholder = "Custom item name",
+  addSimpleLabel,
+  addSimplePlaceholder,
   customIdPrefix = "custom",
   unselectLabel,
   acquisitionEnabled = false,
@@ -64,6 +65,11 @@ export function CatalogFlexPicker({
   commentsByLineKey?: Readonly<Record<string, string>>;
   onRentalCommentChange?: (lineKey: string, comment: string | null) => void;
 }) {
+  const { t } = useTranslation("common");
+  const resolvedAddSimpleLabel = addSimpleLabel ?? t("catalog.custom");
+  const resolvedAddSimplePlaceholder =
+    addSimplePlaceholder ?? t("select.customPlaceholder");
+
   const items = useMemo(
     () => [...catalog, ...customItems],
     [catalog, customItems],
@@ -88,8 +94,8 @@ export function CatalogFlexPicker({
       tone={tone}
       aria-label={ariaLabel}
       unselectLabel={unselectLabel}
-      addSimpleLabel={addSimpleLabel}
-      addSimplePlaceholder={addSimplePlaceholder}
+      addSimpleLabel={resolvedAddSimpleLabel}
+      addSimplePlaceholder={resolvedAddSimplePlaceholder}
       acquisitionEnabled={acquisitionEnabled}
       commentsByLineKey={commentsByLineKey}
       onRentalCommentChange={onRentalCommentChange}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CloseIcon, SaveIcon } from "../shared/ActionIcons";
 import {
   SHEET_FIELD_INPUT_CLASS,
@@ -21,9 +22,9 @@ export function SaveSessionNameSheet({
   onOpenChange,
   initialName,
   onConfirm,
-  title = "Save session",
-  subtitle = "Name this project for your session list.",
-  confirmLabel = "Save",
+  title,
+  subtitle,
+  confirmLabel,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -33,6 +34,10 @@ export function SaveSessionNameSheet({
   subtitle?: string;
   confirmLabel?: string;
 }) {
+  const { t } = useTranslation("common");
+  const resolvedTitle = title ?? t("sessions.saveTitle");
+  const resolvedSubtitle = subtitle ?? t("sessions.saveSubtitle");
+  const resolvedConfirm = confirmLabel ?? t("common.save");
   const [name, setName] = useState(initialName);
 
   useEffect(() => {
@@ -62,10 +67,13 @@ export function SaveSessionNameSheet({
         style={SHEET_COVER_FORM_HEADER_STYLE}
       >
         <h2 id="save-session-name-title" className={SHEET_TITLE_CLASS}>
-          {title}
+          {resolvedTitle}
         </h2>
-        <p className={SHEET_SUBTITLE_CLASS} style={{ maxWidth: 280, textAlign: "center" }}>
-          {subtitle}
+        <p
+          className={SHEET_SUBTITLE_CLASS}
+          style={{ maxWidth: 280, textAlign: "center" }}
+        >
+          {resolvedSubtitle}
         </p>
       </header>
 
@@ -75,14 +83,17 @@ export function SaveSessionNameSheet({
       >
         <div
           className="shrink-0 w-full max-w-[360px] mx-auto"
-          style={{ paddingBottom: FORM.formBottomInset, paddingTop: FORM.subtitleToSubinfo }}
+          style={{
+            paddingBottom: FORM.formBottomInset,
+            paddingTop: FORM.subtitleToSubinfo,
+          }}
         >
           <label
             htmlFor="save-session-name-input"
             className={SHEET_FIELD_LABEL_CLASS}
             style={{ display: "block", textAlign: "center", margin: 0 }}
           >
-            Session name
+            {t("sheets.sessionName")}
           </label>
           <input
             id="save-session-name-input"
@@ -111,13 +122,13 @@ export function SaveSessionNameSheet({
         buttons={[
           {
             key: "close",
-            label: "Close",
+            label: t("common.close"),
             icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: () => onOpenChange(false),
           },
           {
             key: "save",
-            label: confirmLabel,
+            label: resolvedConfirm,
             icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: handleSave,
             disabled: !canConfirm,

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   selectionLineKey,
   type ItemAcquisition,
@@ -15,7 +16,9 @@ import {
   type WearByOptionId,
   type WearLevel,
 } from "../../domain/select/wear";
+import { SESSION_REPORT_LANGUAGE } from "../../domain/sessions/report";
 import { localWorkDateId } from "../../domain/sessions/workDate";
+import type { ItemLabel, LocalizedLabel } from "../../i18n/localizedLabel";
 import { useSettingsStore } from "../../settings/store";
 import { CatalogFlexPicker } from "../select/CatalogFlexPicker";
 import { CatalogReportDateBar } from "./CatalogReportDateBar";
@@ -26,11 +29,6 @@ import { CatalogEditPanel } from "./CatalogEditPanel";
 import { CatalogSharePanel } from "./CatalogSharePanel";
 
 export type CatalogHubTab = "report" | "edit";
-
-const TABS: { id: CatalogHubTab; label: string }[] = [
-  { id: "report", label: "Report" },
-  { id: "edit", label: "Edit" },
-];
 
 /**
  * Top-level Tools / Consumables workspace:
@@ -46,7 +44,7 @@ export function CatalogHub({
   onWearChange,
   onAddCustomItem,
   onRemoveCustomItem,
-  onAddGlobalItem,
+  onAddGlobalItemBilingual,
   onRenameGlobalItem,
   onRemoveGlobalItem,
   onMenuClick,
@@ -73,8 +71,8 @@ export function CatalogHub({
     acquisition: ItemAcquisition,
   ) => void;
   onRemoveCustomItem?: (id: string) => void;
-  onAddGlobalItem: (label: string) => void;
-  onRenameGlobalItem: (id: string, label: string) => void;
+  onAddGlobalItemBilingual: (label: LocalizedLabel) => void;
+  onRenameGlobalItem: (id: string, label: ItemLabel) => void;
   onRemoveGlobalItem: (id: string) => void;
   onMenuClick: () => void;
   embedded?: boolean;
@@ -88,15 +86,36 @@ export function CatalogHub({
   commentsByLineKey?: Readonly<Record<string, string>>;
   onRentalCommentChange?: (lineKey: string, comment: string | null) => void;
 }) {
+  const { t } = useTranslation("common");
+  const tabs: { id: CatalogHubTab; label: string }[] = [
+    { id: "report", label: t("catalog.tabReport") },
+    { id: "edit", label: t("catalog.tabEdit") },
+  ];
   const [tab, setTab] = useState<CatalogHubTab>("report");
   const [panelExpanded, setPanelExpanded] = useState(false);
   const [workDateId, setWorkDateId] = useState<string | null>(() =>
     localWorkDateId(),
   );
   const colorScheme = useSettingsStore((s) => s.colorScheme);
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const selectedEntries = useMemo(
     () =>
-      listSelectedFlexSelectEntries(selection, catalog, customItems ?? []),
+      listSelectedFlexSelectEntries(
+        selection,
+        catalog,
+        customItems ?? [],
+        uiLanguage,
+      ),
+    [selection, catalog, customItems, uiLanguage],
+  );
+  const shareEntries = useMemo(
+    () =>
+      listSelectedFlexSelectEntries(
+        selection,
+        catalog,
+        customItems ?? [],
+        SESSION_REPORT_LANGUAGE,
+      ),
     [selection, catalog, customItems],
   );
   const selectedLabels = useMemo(
@@ -111,12 +130,12 @@ export function CatalogHub({
   const shareLabels = useMemo(
     () =>
       formatFlexSelectLabelEntries(
-        selectedEntries.map((entry) => ({
+        shareEntries.map((entry) => ({
           ...entry,
           label: `${entry.label}${wearLabelSuffix(wearByOptionId?.[entry.id])}`,
         })),
       ),
-    [selectedEntries, wearByOptionId],
+    [shareEntries, wearByOptionId],
   );
   const selectedTotal = flexSelectSelectionTotal(selection);
 
@@ -130,13 +149,15 @@ export function CatalogHub({
         <h2 className="batch-totals-entity-summary__title">{title}</h2>
         <p className="batch-totals-entity-summary__subtitle">
           {selectedLabels.length > 0
-            ? `${title} selected for this list.`
-            : `No ${inventoryNounPlural} selected yet.`}
+            ? t("catalog.selectedForList", { title })
+            : t("catalog.noneSelectedYet", { noun: inventoryNounPlural })}
         </p>
         {selectedEntries.length > 0 ? (
           <div
             className="batch-totals-entity-summary__chips"
-            aria-label={`Selected ${inventoryNounPlural}`}
+            aria-label={t("catalog.selectedAria", {
+              noun: inventoryNounPlural,
+            })}
           >
             {selectedEntries.map((entry) => {
               const base =
@@ -163,9 +184,9 @@ export function CatalogHub({
       <div
         className="catalog-hub__tabs app-gutter-x"
         role="tablist"
-        aria-label={`${title} sections`}
+        aria-label={t("catalog.sectionsAria", { title })}
       >
-        {TABS.map((item) => (
+        {tabs.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -183,8 +204,10 @@ export function CatalogHub({
         <CatalogReportDateBar
           workDateId={workDateId}
           onWorkDateChange={setWorkDateId}
-          ariaLabel={`${title} report date`}
-          pickerSubtitle={`Optional work day for this ${title.toLowerCase()} report.`}
+          ariaLabel={t("catalog.reportDateAria", { title })}
+          pickerSubtitle={t("catalog.reportDateSubtitle", {
+            title: title.toLowerCase(),
+          })}
         />
       ) : null}
     </div>
@@ -200,8 +223,8 @@ export function CatalogHub({
         tab === "report" ? (
           <StageBottomSheet
             panelId="catalog-bottom-panel"
-            regionLabel={`${title} summary`}
-            expandedBodyLabel={`${title} selection`}
+            regionLabel={t("catalog.summaryRegion", { title })}
+            expandedBodyLabel={t("catalog.selectionExpanded", { title })}
             sourceExpanded={panelExpanded}
             onSourceExpandedChange={setPanelExpanded}
             remeasureKey={`${selectedTotal}:${selectedLabels.join("|")}:${workDateId ?? ""}`}
@@ -255,7 +278,7 @@ export function CatalogHub({
             onRemoveCustomItem={onRemoveCustomItem}
             className="tools-page__picker"
             ariaLabel={title}
-            addSimpleLabel="Custom"
+            addSimpleLabel={t("catalog.custom")}
             addSimplePlaceholder={customPlaceholder}
           />
         </div>
@@ -264,7 +287,7 @@ export function CatalogHub({
       {tab === "edit" ? (
         <CatalogEditPanel
           items={catalog}
-          onAdd={onAddGlobalItem}
+          onAddBilingual={onAddGlobalItemBilingual}
           onRename={onRenameGlobalItem}
           onRemove={onRemoveGlobalItem}
           searchPlaceholder={searchPlaceholder}

@@ -1,3 +1,5 @@
+import type { AppLanguage } from "../../i18n/language";
+import { DEFAULT_UI_LANGUAGE } from "../../i18n/language";
 import {
   listSelectedFlexSelectEntries,
   listSelectedFlexSelectLabels,
@@ -13,8 +15,14 @@ export function listSelectedConsumableLabels(
   selectedIds: readonly string[],
   catalog: readonly ConsumableItem[],
   customConsumables: readonly ConsumableItem[] = [],
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
 ): string[] {
-  return listSelectedFlexSelectLabels(selectedIds, catalog, customConsumables);
+  return listSelectedFlexSelectLabels(
+    selectedIds,
+    catalog,
+    customConsumables,
+    language,
+  );
 }
 
 export function listSelectedConsumableLabelEntries(
@@ -22,11 +30,13 @@ export function listSelectedConsumableLabelEntries(
   catalog: readonly ConsumableItem[],
   customConsumables: readonly ConsumableItem[] = [],
   wearByOptionId?: WearByOptionId,
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
 ): string[] {
   const entries = listSelectedFlexSelectEntries(
     selection,
     catalog,
     customConsumables,
+    language,
   );
   return entries.map((entry) => {
     const base =

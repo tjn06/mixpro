@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CloseIcon, SaveIcon } from "../shared/ActionIcons";
 import {
   appendRecentSkipped,
@@ -49,6 +50,7 @@ type SaveBatchTotalsNameSheetProps =
     };
 
 export function SaveBatchTotalsNameSheet(props: SaveBatchTotalsNameSheetProps) {
+  const { t } = useTranslation("common");
   const { open, onOpenChange, onConfirm, batchNameInput } = props;
   const mode = props.mode ?? "save";
   const recipeName = mode === "rename" ? props.entry.recipeName : props.recipeName;
@@ -140,15 +142,17 @@ export function SaveBatchTotalsNameSheet(props: SaveBatchTotalsNameSheetProps) {
         style={SHEET_COVER_FORM_HEADER_STYLE}
       >
         <h2 id="save-batch-totals-name-title" className={SHEET_TITLE_CLASS}>
-          {mode === "rename" ? "Rename batch totals" : "Save batch totals"}
+          {mode === "rename"
+            ? t("sheets.saveTotals.renameTitle")
+            : t("sheets.saveTotals.saveTitle")}
         </h2>
         <p
           className={SHEET_SUBTITLE_CLASS}
           style={{ maxWidth: 280, textAlign: "center" }}
         >
           {mode === "rename"
-            ? "Clear the field to show Untitled totals"
-            : "Optional display name — must not match a recipe or another saved totals"}
+            ? t("sheets.saveTotals.clearHint")
+            : t("sheets.saveTotals.subtitle")}
         </p>
       </header>
 
@@ -196,7 +200,7 @@ export function SaveBatchTotalsNameSheet(props: SaveBatchTotalsNameSheetProps) {
             maxLength={64}
             autoComplete="off"
             spellCheck={false}
-            placeholder="e.g. Site pour"
+            placeholder={t("sheets.saveTotals.placeholder")}
             aria-invalid={nameError != null}
             aria-describedby={nameError ? "save-batch-totals-name-error" : undefined}
             className={`${SHEET_FIELD_INPUT_CLASS}${nameError ? ` ${SHEET_FIELD_INPUT_ERROR_CLASS}` : ""}`}
@@ -234,13 +238,13 @@ export function SaveBatchTotalsNameSheet(props: SaveBatchTotalsNameSheetProps) {
         buttons={[
           {
             key: "close",
-            label: "Close",
+            label: t("common.close"),
             icon: <CloseIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: () => onOpenChange(false),
           },
           {
             key: "save",
-            label: mode === "rename" ? "Save" : "Save",
+            label: t("common.save"),
             icon: <SaveIcon size={SHEET_FOOTER_ICON_SIZE} />,
             onClick: handleSave,
             disabled: !canConfirm,

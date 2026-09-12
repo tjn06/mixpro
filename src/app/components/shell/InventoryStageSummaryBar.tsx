@@ -1,4 +1,5 @@
 import type { ReactNode, Ref } from "react";
+import { useTranslation } from "react-i18next";
 import type { ColorScheme } from "../../../theme/appearance";
 import { entityValueColor } from "../../presentation/entityCardStyles";
 import { cv } from "../../ui/tokens";
@@ -59,6 +60,7 @@ export function InventoryStageSummaryBar({
   colorScheme: ColorScheme;
   compactSummaryRef?: Ref<HTMLDivElement>;
 }) {
+  const { t } = useTranslation("common");
   const noun = count === 1 ? nounSingular : nounPlural;
 
   return (
@@ -76,7 +78,7 @@ export function InventoryStageSummaryBar({
           </div>
           <div className="batch-totals-summary-bar__total batch-totals-summary-bar__total--inventory">
             <span className="batch-totals-summary-bar__metric-label">
-              {count > 0 ? "Selected" : "None selected"}
+              {count > 0 ? t("catalog.selected") : t("catalog.noneSelected")}
             </span>
             {count > 0 ? (
               <>

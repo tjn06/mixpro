@@ -96,25 +96,6 @@ const REPORT_COPY: Record<
   },
 };
 
-/** Recipe ingredient labels → report language. */
-const INGREDIENT_LABEL: Record<BatchReportLanguage, Record<string, string>> = {
-  sv: {
-    Resin: "Bas",
-    Hardener: "Härdare",
-    Filler: "Fyllmedel",
-    Thickener: "Förtjockningsmedel",
-    Tjockningsmedel: "Förtjockningsmedel",
-    Sand: "Sand",
-  },
-  en: {
-    Resin: "Resin",
-    Hardener: "Hardener",
-    Filler: "Filler",
-    Thickener: "Thickener",
-    Sand: "Sand",
-  },
-};
-
 /** Slot codes that stay visible in shared reports (site shorthand). */
 const KEEP_SLOT_CODE = new Set(["A", "B", "TIX", "SAND"]);
 
@@ -181,9 +162,7 @@ function reportMetaLabel(
 ): string | undefined {
   if (id === "TOTAL") return REPORT_COPY[language].totalMeta;
   if (!recipe) return undefined;
-  const label = getIngredientLabel(recipe, id) ?? getEntityMetaLabel(recipe, id);
-  if (!label) return undefined;
-  return INGREDIENT_LABEL[language][label] ?? label;
+  return getIngredientLabel(recipe, id, language) ?? getEntityMetaLabel(recipe, id, language);
 }
 
 /** Boss-readable amount line — keep A/B (and TIX/SAND); hide TOTAL code. */
@@ -217,10 +196,14 @@ function firstRecipeForSlot(
   return null;
 }
 
-function batchRecipeLabel(batch: SessionBatchItem, recipe: BlendingRecipe | null): string {
+function batchRecipeLabel(
+  batch: SessionBatchItem,
+  recipe: BlendingRecipe | null,
+  language: BatchReportLanguage,
+): string {
   const fromBatch = batch.recipeName?.trim();
   if (fromBatch) return fromBatch;
-  if (recipe) return recipeMenuLabel(recipe);
+  if (recipe) return recipeMenuLabel(recipe, language);
   return batch.recipeId;
 }
 
@@ -244,7 +227,7 @@ function appendBatchesSection(
     const values = gramsFromSlotValues(batch.values);
     const mult = Math.max(1, batch.multiplier);
     lines.push(batch.name);
-    lines.push(`${copy.recipe}: ${batchRecipeLabel(batch, recipe)}`);
+    lines.push(`${copy.recipe}: ${batchRecipeLabel(batch, recipe, language)}`);
     if (batch.comment?.trim()) {
       lines.push(`  ${batch.comment.trim()}`);
     }
@@ -275,6 +258,7 @@ function appendToolsSection(
     qtys,
     useToolsLibraryStore.getState().items,
     session.customTools ?? [],
+    language,
   );
   if (labels.length === 0) return;
 
@@ -295,6 +279,7 @@ function appendConsumablesSection(
     useConsumablesLibraryStore.getState().items,
     session.customConsumables ?? [],
     session.consumableWearByOptionId ?? {},
+    language,
   );
   if (labels.length === 0) return;
 

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, forwardRef, type CSSProperties } from "react";
+import { useTranslation } from "react-i18next";
 import { LongPressButton, LongPressEdgeProvider } from "./components/shared/LongPressButton";
 import { AppHeader } from "./components/shared/AppHeader";
 import {
@@ -280,6 +281,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
   className = "",
   style,
 }, ref) {
+  const { t } = useTranslation("common");
   const chrome = entityCardChrome(color, cardLit, colorScheme);
   const tileStyle = {
     border: chrome.border,
@@ -293,6 +295,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
   const valueColor = entityValueColor(cardLit, colorScheme);
   const unitColor = entityUnitColor(cardLit, colorScheme);
   const barOpacity = cardLit ? 1 : 0.4;
+  const totalLabel = t("mixer.total");
 
   if (expanded) {
     return (
@@ -326,7 +329,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
           fontWeight: CARD_NAME_WEIGHT,
           transition: LOCK_TEXT_TRANSITION,
         }}>
-          TOTAL
+          {totalLabel}
         </span>
         <span className="tabular-nums" style={{
           fontSize: "var(--text-lock-value)",
@@ -377,7 +380,7 @@ const TotalTile = forwardRef<HTMLButtonElement, {
       }} />
       <div className="flex flex-1 flex-col items-start justify-center min-w-0">
         <CardReadout
-          name="TOTAL"
+          name={totalLabel}
           value={valueKg}
           unit="kg"
           nameColor={nameColor}
@@ -463,11 +466,12 @@ function resolveRecipe(seed: BlendingRecipe | undefined, catalog: BlendingRecipe
 
 function recipeCreateHeaderTitle(
   mode: BatchMixerRecipeCreateMode | undefined,
+  t: (key: string, options?: Record<string, unknown>) => string,
 ): string {
-  if (!mode) return "MIXpro";
-  if (mode.sessionName) return `Session · ${mode.sessionName}`;
-  if (mode.purpose === "edit-weights") return "Adjust weights";
-  return "Set rec. batch";
+  if (!mode) return t("mixer.title");
+  if (mode.sessionName) return t("mixer.sessionTitle", { name: mode.sessionName });
+  if (mode.purpose === "edit-weights") return t("mixer.adjustWeights");
+  return t("mixer.setRecBatch");
 }
 
 export function BatchMixer({
@@ -482,6 +486,7 @@ export function BatchMixer({
   sessionMode,
   recipeCreateMode,
 }: BatchMixerProps) {
+  const { t } = useTranslation("common");
   const nestedFocus = sessionMode
     ? ("session" as const)
     : recipeCreateMode
@@ -617,6 +622,7 @@ export function BatchMixer({
 
   const canHalveMixAction = canHalveMix(values);
   const colorScheme = useSettingsStore((s) => s.colorScheme);
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const canDoubleMixAction = useMemo(
     () => canDoubleMix(values, activeRecipe, bucketSelection, sandType),
     [values, activeRecipe, bucketSelection, sandType],
@@ -649,7 +655,7 @@ export function BatchMixer({
   const saveBatchNameInput = useMemo(
     () =>
       batchNameInputFromMixer({
-        recipeName: recipeMenuLabel(activeRecipe),
+        recipeName: recipeMenuLabel(activeRecipe, uiLanguage),
         recipe: activeRecipe,
         totalGrams: values[0] ?? 0,
         recommendedTotalGrams,
@@ -664,6 +670,7 @@ export function BatchMixer({
       bucketSelection,
       mixVolume.estimatedLiters,
       loadedSavedMixId,
+      uiLanguage,
     ],
   );
 
@@ -817,13 +824,13 @@ export function BatchMixer({
     if (dirty) {
       const ok = window.confirm(
         sessionMode.mode === "edit"
-          ? "Discard changes to this mix?"
-          : "Discard this mix?",
+          ? t("mixer.discardMixChanges")
+          : t("mixer.discardMix"),
       );
       if (!ok) return;
     }
     sessionMode.onCancel();
-  }, [sessionMode]);
+  }, [sessionMode, t]);
 
   const handleSessionCommit = useCallback(() => {
     if (!sessionMode) return;
@@ -831,9 +838,9 @@ export function BatchMixer({
     sessionMode.onCommit({
       recipe,
       values: [...valuesRef.current],
-      name: sessionMode.batchName?.trim() || recipeMenuLabel(recipe),
+      name: sessionMode.batchName?.trim() || recipeMenuLabel(recipe, uiLanguage),
     });
-  }, [sessionMode]);
+  }, [sessionMode, uiLanguage]);
 
   const handleRecipeCreateCancel = useCallback(() => {
     if (!recipeCreateMode) return;
@@ -843,13 +850,13 @@ export function BatchMixer({
     if (dirty) {
       const ok = window.confirm(
         recipeCreateMode.purpose === "edit-weights"
-          ? "Discard weight changes?"
-          : "Discard batch size changes?",
+          ? t("mixer.discardWeightChanges")
+          : t("mixer.discardBatchChanges"),
       );
       if (!ok) return;
     }
     recipeCreateMode.onCancel();
-  }, [recipeCreateMode]);
+  }, [recipeCreateMode, t]);
 
   const handleRecipeCreateCommit = useCallback(() => {
     if (!recipeCreateMode) return;
@@ -877,7 +884,7 @@ export function BatchMixer({
 
   const handleSaveConfirm = useCallback(
     (metaName?: string, strategy: "update" | "new" = "new") => {
-      const recipeName = recipeMenuLabel(recipeRef.current);
+      const recipeName = recipeMenuLabel(recipeRef.current, uiLanguage);
       const input = {
         recipeId: recipeRef.current.id,
         recipeName,
@@ -897,7 +904,7 @@ export function BatchMixer({
       setSaveFlash(true);
       setTimeout(() => setSaveFlash(false), 1500);
     },
-    [saveMix, updateMix, sandType, loadedSavedMix],
+    [saveMix, updateMix, sandType, loadedSavedMix, uiLanguage],
   );
 
   const handleLoad = useCallback(() => {
@@ -937,7 +944,7 @@ export function BatchMixer({
 
   const handleSaveBatchTotalsConfirm = useCallback(
     (metaName?: string) => {
-      const recipeName = recipeMenuLabel(recipeRef.current);
+      const recipeName = recipeMenuLabel(recipeRef.current, uiLanguage);
       saveBatchTotalsFromSession({
         recipeId: recipeRef.current.id,
         recipeName,
@@ -957,7 +964,7 @@ export function BatchMixer({
         batchTotalsSaveFlashTimer.current = null;
       }, 1500);
     },
-    [batchMultiplier, extraBatches, loadedSavedMixId, saveBatchTotalsFromSession],
+    [batchMultiplier, extraBatches, loadedSavedMixId, saveBatchTotalsFromSession, uiLanguage],
   );
 
   /** Attach totals plan only — table 1 mix stays locked to the current session. */
@@ -1282,8 +1289,8 @@ export function BatchMixer({
             <AppHeader
               title={
                 sessionMode
-                  ? `Session · ${sessionMode.sessionName}`
-                  : recipeCreateHeaderTitle(recipeCreateMode)
+                  ? t("mixer.sessionTitle", { name: sessionMode.sessionName })
+                  : recipeCreateHeaderTitle(recipeCreateMode, t)
               }
               isLocked={isLocked}
               onMenuClick={onOpenNav}
@@ -1304,7 +1311,7 @@ export function BatchMixer({
                   ) : (
                     <RecipeHeaderSubline>
                       <RecipeHeaderRecipeRow muted={isLocked}>
-                        {recipeMenuLabel(activeRecipe)}
+                        {recipeMenuLabel(activeRecipe, uiLanguage)}
                       </RecipeHeaderRecipeRow>
                     </RecipeHeaderSubline>
                   )}
@@ -1335,8 +1342,8 @@ export function BatchMixer({
             <AppHeader
               title={
                 sessionMode
-                  ? `Session · ${sessionMode.sessionName}`
-                  : recipeCreateHeaderTitle(recipeCreateMode)
+                  ? t("mixer.sessionTitle", { name: sessionMode.sessionName })
+                  : recipeCreateHeaderTitle(recipeCreateMode, t)
               }
               isLocked={isLocked}
               onMenuClick={onOpenNav}
@@ -1349,19 +1356,19 @@ export function BatchMixer({
               }
               backLabel={
                 nestedFocus === "session"
-                  ? "Back to session"
+                  ? t("mixer.backToSession")
                   : nestedFocus === "recipe-create"
                     ? recipeCreateMode?.purpose === "edit-weights"
-                      ? "Back to weights"
-                      : "Back to formula"
-                    : "Back"
+                      ? t("mixer.backToWeights")
+                      : t("mixer.backToFormula")
+                    : t("common.back")
               }
               backConfirmAction={
                 nestedFocus === "session"
-                  ? "BACK TO SESSION"
+                  ? t("mixer.backToSessionConfirm")
                   : nestedFocus === "recipe-create"
-                    ? "GO BACK"
-                    : "GO BACK"
+                    ? t("common.goBack")
+                    : t("common.goBack")
               }
               onForward={nestedFocus ? undefined : handleForward}
               forwardBadgeCount={nestedFocus ? null : forwardTotalsBadge}
@@ -1378,7 +1385,7 @@ export function BatchMixer({
                       <RecipeHeaderRecipeRow muted={isLocked}>
                         {recipeCreateMode
                           ? recipeCreateMode.recipeLabel
-                          : recipeMenuLabel(activeRecipe)}
+                          : recipeMenuLabel(activeRecipe, uiLanguage)}
                       </RecipeHeaderRecipeRow>
                     </RecipeHeaderSubline>
                   ) : (
@@ -1459,19 +1466,19 @@ export function BatchMixer({
               saveLabelOverride={
                 sessionMode
                   ? sessionMode.mode === "edit"
-                    ? "Update in session"
-                    : "Save to session"
+                    ? t("mixer.updateInSession")
+                    : t("mixer.saveToSession")
                   : recipeCreateMode
-                    ? "SAVE TO RECIPE"
+                    ? t("mixer.saveToRecipe")
                     : undefined
               }
               saveConfirmAction={
                 sessionMode
                   ? sessionMode.mode === "edit"
-                    ? "UPDATE IN SESSION"
-                    : "SAVE TO SESSION"
+                    ? t("mixer.updateInSessionConfirm")
+                    : t("mixer.saveToSessionConfirm")
                   : recipeCreateMode
-                    ? "SAVE TO RECIPE"
+                    ? t("mixer.saveToRecipe")
                     : undefined
               }
               useCommitIcon={false}
@@ -1500,28 +1507,28 @@ export function BatchMixer({
               saveLabelOverride={
                 sessionMode
                   ? sessionMode.mode === "edit"
-                    ? "Update in session"
-                    : "Save to session"
+                    ? t("mixer.updateInSession")
+                    : t("mixer.saveToSession")
                   : recipeCreateMode
-                    ? "SAVE TO RECIPE"
+                    ? t("mixer.saveToRecipe")
                     : undefined
               }
               saveConfirmAction={
                 sessionMode
                   ? sessionMode.mode === "edit"
-                    ? "UPDATE IN SESSION"
-                    : "SAVE TO SESSION"
+                    ? t("mixer.updateInSessionConfirm")
+                    : t("mixer.saveToSessionConfirm")
                   : recipeCreateMode
-                    ? "SAVE TO RECIPE"
+                    ? t("mixer.saveToRecipe")
                     : undefined
               }
               saveDescriptionOverride={
                 sessionMode
                   ? sessionMode.mode === "edit"
-                    ? "Hold to save changes back to this session"
-                    : "Hold to save this mix to the session"
+                    ? t("mixer.holdUpdateSession")
+                    : t("mixer.holdSaveSession")
                   : recipeCreateMode
-                    ? "Hold to save this rec. batch to the recipe"
+                    ? t("mixer.holdSaveRecipe")
                     : undefined
               }
               useCommitIcon={false}
@@ -1665,8 +1672,8 @@ export function BatchMixer({
               <div className="flex-1 min-w-0">
                 <LongPressButton
                   ref={lockButtonRef}
-                  label="Lock screen"
-                  confirmAction="LOCK SCREEN"
+                  label={t("mixer.lockScreen")}
+                  confirmAction={t("mixer.lockScreenConfirm")}
                   onLongPress={toggleLock}
                   icon={<LockIcon locked={false} />}
                   className="w-full h-full"
@@ -1676,8 +1683,8 @@ export function BatchMixer({
                 />
               </div>
               <LongPressButton
-                label="Undo"
-                confirmAction="UNDO"
+                label={t("mixer.undo")}
+                confirmAction={t("mixer.undoConfirm")}
                 onLongPress={handleUndo}
                 disabled={!canUndo || isLocked}
                 icon={<UndoIcon />}
@@ -1685,8 +1692,8 @@ export function BatchMixer({
               />
             </div>
             <div className="flex" style={{ height: "var(--bottom-sub-row-h)", gap: "var(--action-row-gap)" }}>
-              <LongPressButton label="÷2" confirmAction="HALVE MIX" onLongPress={() => scaleMix(0.5)} disabled={!canHalveMixAction || isLocked} className="flex-1 h-full" labelSize="var(--text-action-md)" compact />
-              <LongPressButton label="×2" confirmAction="DOUBLE MIX" onLongPress={() => scaleMix(2)} disabled={!canDoubleMixAction || isLocked} className="flex-1 h-full" labelSize="var(--text-action-md)" compact />
+              <LongPressButton label={t("mixer.halve")} confirmAction={t("mixer.halveConfirm")} onLongPress={() => scaleMix(0.5)} disabled={!canHalveMixAction || isLocked} className="flex-1 h-full" labelSize="var(--text-action-md)" compact />
+              <LongPressButton label={t("mixer.double")} confirmAction={t("mixer.doubleConfirm")} onLongPress={() => scaleMix(2)} disabled={!canDoubleMixAction || isLocked} className="flex-1 h-full" labelSize="var(--text-action-md)" compact />
             </div>
           </div>
         </div>
@@ -1788,7 +1795,7 @@ export function BatchMixer({
         <SaveBatchTotalsNameSheet
           open={screen === "totals" && batchTotalsSaveOpen}
           onOpenChange={setBatchTotalsSaveOpen}
-          recipeName={recipeMenuLabel(activeRecipe)}
+          recipeName={recipeMenuLabel(activeRecipe, uiLanguage)}
           batchNameInput={saveBatchNameInput}
           onConfirm={handleSaveBatchTotalsConfirm}
         />
@@ -1797,7 +1804,7 @@ export function BatchMixer({
           mode="save"
           open={screen === "mixer" && saveNameSheetOpen}
           onOpenChange={setSaveNameSheetOpen}
-          recipeName={recipeMenuLabel(activeRecipe)}
+          recipeName={recipeMenuLabel(activeRecipe, uiLanguage)}
           existingMix={loadedSavedMix}
           savedMixes={savedMixes}
           batchNameInput={saveBatchNameInput}

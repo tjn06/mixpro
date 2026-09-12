@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   catalogSelectionKeys,
   omitCatalogIdFromSelection,
@@ -15,8 +16,9 @@ export function ToolsPage({
   onMenuClick: () => void;
   embedded?: boolean;
 }) {
+  const { t } = useTranslation("common");
   const catalog = useToolsLibraryStore((s) => s.items);
-  const addItem = useToolsLibraryStore((s) => s.addItem);
+  const addBilingualItem = useToolsLibraryStore((s) => s.addBilingualItem);
   const renameItem = useToolsLibraryStore((s) => s.renameItem);
   const removeItem = useToolsLibraryStore((s) => s.removeItem);
 
@@ -26,9 +28,11 @@ export function ToolsPage({
     {},
   );
 
+  const title = t("nav.tools");
+
   return (
     <CatalogHub
-      title="Tools"
+      title={title}
       catalog={catalog}
       customItems={customTools}
       selection={selection}
@@ -75,16 +79,16 @@ export function ToolsPage({
           return next;
         });
       }}
-      onAddGlobalItem={addItem}
+      onAddGlobalItemBilingual={addBilingualItem}
       onRenameGlobalItem={renameItem}
       onRemoveGlobalItem={removeItem}
       onMenuClick={onMenuClick}
       embedded={embedded}
-      reportTitle="Tools"
-      searchPlaceholder="Search tools…"
-      customPlaceholder="Custom tool name"
-      inventoryNounSingular="tool"
-      inventoryNounPlural="tools"
+      reportTitle={title}
+      searchPlaceholder={t("catalog.searchTools")}
+      customPlaceholder={t("catalog.customTool")}
+      inventoryNounSingular={t("catalog.noun.tool")}
+      inventoryNounPlural={t("catalog.noun.tools")}
     />
   );
 }

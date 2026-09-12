@@ -1,14 +1,17 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { recommendedBatchForBucket } from "../../domain/bucket/limits";
 import { getRecipeSummaryParts } from "../../domain/recipe/calc";
 import { formatRecipeFormulaSummary } from "../../domain/recipe/createFromInputs";
-import { recipePlaceholderDescription } from "../../domain/recipe/descriptions";
+import { recipeCardDescription } from "../../domain/recipe/descriptions";
 import {
   PRESET_RECIPES,
   recipeMenuLabel,
   type BlendingRecipe,
 } from "../../domain/recipe/types";
+import { labelSearchText } from "../../i18n/localizedLabel";
+import { useSettingsStore } from "../../settings/store";
 import { BaseConfigIcon, DeleteIcon, GoToIcon } from "../shared/ActionIcons";
 import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
 
@@ -30,14 +33,18 @@ export function recipeMatchesQuery(
 ): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  const parts = getRecipeSummaryParts(recipe);
+  const partsEn = getRecipeSummaryParts(recipe, "en");
+  const partsSv = getRecipeSummaryParts(recipe, "sv");
   const hay = [
-    recipeMenuLabel(recipe),
-    recipe.description,
-    recipePlaceholderDescription(recipe.id),
-    formatRecipeFormulaSummary(recipe),
-    parts.ratio,
-    parts.detail,
+    labelSearchText(recipe.name),
+    labelSearchText(recipe.nameSubline),
+    labelSearchText(recipe.description),
+    formatRecipeFormulaSummary(recipe, "en"),
+    formatRecipeFormulaSummary(recipe, "sv"),
+    partsEn.ratio,
+    partsEn.detail,
+    partsSv.ratio,
+    partsSv.detail,
   ]
     .join(" ")
     .toLowerCase();
@@ -63,17 +70,19 @@ export function RecipeLibraryCard({
   openLabel?: string;
   sessionTone?: boolean;
 }) {
+  const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const preset = isPresetRecipe(recipe);
   const pickMode = onOpen != null;
-  const title = recipeMenuLabel(recipe);
-  const description = recipe.description?.trim()
-    ? recipe.description.trim()
-    : preset
-      ? recipePlaceholderDescription(recipe.id)
-      : formatRecipeFormulaSummary(recipe);
+  const title = recipeMenuLabel(recipe, uiLanguage);
+  const builtInLabel = t("recipe.builtIn");
+  const cardDescription = recipeCardDescription(recipe, uiLanguage);
+  const description =
+    cardDescription ||
+    formatRecipeFormulaSummary(recipe, uiLanguage);
   const recipeSummaryParts = useMemo(
-    () => getRecipeSummaryParts(recipe),
-    [recipe],
+    () => getRecipeSummaryParts(recipe, uiLanguage),
+    [recipe, uiLanguage],
   );
   const showRecBatch = !pickMode;
   const recBatchGrams = useMemo(() => {
@@ -87,7 +96,7 @@ export function RecipeLibraryCard({
     <button
       type="button"
       className="recipe-picker-card__icon-btn recipe-picker-card__icon-btn--open touch-manipulation"
-      aria-label={openLabel ?? `Open ${title}`}
+      aria-label={openLabel ?? t("recipe.openAria", { name: title })}
       onClick={() => onOpen?.(recipe)}
     >
       <GoToIcon size={18} />
@@ -95,8 +104,8 @@ export function RecipeLibraryCard({
   ) : preset ? (
     <span
       className="recipe-picker-card__icon-btn recipe-picker-card__icon-btn--admin"
-      aria-label="Built-in recipe"
-      title="Built-in recipe"
+      aria-label={builtInLabel}
+      title={builtInLabel}
     >
       <BaseConfigIcon size={18} />
     </span>
@@ -104,7 +113,7 @@ export function RecipeLibraryCard({
     <button
       type="button"
       className="recipe-picker-card__icon-btn recipe-picker-card__icon-btn--delete touch-manipulation"
-      aria-label={`Delete ${title}`}
+      aria-label={t("recipe.deleteAria", { name: title })}
       onClick={() => onDelete?.(recipe)}
     >
       <DeleteIcon size={18} />
@@ -159,7 +168,7 @@ export function RecipeLibraryCard({
             </div>
             {showRecBatch ? (
               <div className="recipe-picker-card__detail-row recipe-picker-card__detail-row--batch">
-                <span className="recipe-picker-side-meta__label">Rec. batch</span>
+                <span className="recipe-picker-side-meta__label">{t("mixer.recBatch")}</span>
                 <span className="recipe-picker-side-meta__value recipe-picker-side-meta__value--strong">
                   {formatRecommendedBatch(recBatchGrams)}
                 </span>

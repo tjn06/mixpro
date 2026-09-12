@@ -1,4 +1,5 @@
 import { useState, type RefObject } from "react";
+import { useTranslation } from "react-i18next";
 import type { BucketSelection } from "../../domain/bucket/types";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import { LongPressButton } from "../shared/LongPressButton";
@@ -16,7 +17,6 @@ import {
   FEATURE_VALUE_FONT,
 } from "../../presentation/featureReadout";
 
-const REC_BATCH_LABEL = "Rec. batch";
 const INFO_ICON_SIZE = 18;
 const REC_BATCH_BADGE_SIZE = 11;
 
@@ -108,13 +108,14 @@ export function RecBatchPanel({
   recPanelRef,
   recReadoutRef,
 }: RecBatchPanelProps) {
+  const { t } = useTranslation("common");
   const [infoOpen, setInfoOpen] = useState(false);
   const saveLabel = saveFlash
     ? saveLabelOverride
-      ? "Added"
-      : "Saved"
-    : saveLabelOverride ?? (loadedSavedMix ? "Update mix" : "Save mix");
-  const saveConfirm = saveConfirmAction ?? "SAVE MIX";
+      ? t("mixer.added")
+      : t("mixer.saved")
+    : saveLabelOverride ?? (loadedSavedMix ? t("mixer.updateMix") : t("mixer.saveMix"));
+  const saveConfirm = saveConfirmAction ?? t("mixer.saveMixConfirm");
   /** Text labels (session / create-recipe) — icon-only would hide the copy. */
   const saveIcon =
     sessionTone || saveLabelOverride
@@ -167,7 +168,7 @@ export function RecBatchPanel({
                   color: muted ? FEATURE_TITLE_COLOR_MUTED : FEATURE_TITLE_COLOR,
                 }}
               >
-                {REC_BATCH_LABEL}
+                {t("mixer.recBatch")}
               </span>
               <span
                 className="shrink-0 flex items-center"
@@ -200,7 +201,7 @@ export function RecBatchPanel({
           >
             <button
               type="button"
-              aria-label="About recommended batch"
+              aria-label={t("mixer.aboutRecBatch")}
               disabled={disabled}
               className="relative flex shrink-0 items-center justify-center touch-none transition-colors duration-150 active:opacity-85"
               style={{
@@ -224,8 +225,8 @@ export function RecBatchPanel({
             </button>
             <LongPressButton
               ref={resetButtonRef}
-              label="RESET"
-              confirmAction="RESET"
+              label={t("mixer.reset")}
+              confirmAction={t("mixer.reset")}
               onLongPress={onReset}
               disabled={disabled}
               labelSize="var(--text-ui-xs)"
@@ -257,8 +258,8 @@ export function RecBatchPanel({
           />
           {hideLoad ? null : (
             <LongPressButton
-              label="Load mix"
-              confirmAction="LOAD MIX"
+              label={t("mixer.loadMix")}
+              confirmAction={t("mixer.loadMixConfirm")}
               onLongPress={onLoad}
               disabled={!canLoad || disabled}
               icon={<LoadIcon />}

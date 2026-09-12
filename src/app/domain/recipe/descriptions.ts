@@ -1,16 +1,16 @@
-/** Short placeholder copy for recipe picker cards — truncated in UI. */
-export const RECIPE_PLACEHOLDER_DESCRIPTIONS: Record<string, string> = {
-  default: "General epoxy with sand filler for everyday repairs.",
-  "standard-blot": "Standard mix tuned for wetter, blöt applications.",
-  "fas-sockel": "Facade and sockel blend with sand and thickener.",
-  primer: "Thin primer coat — binder only, no fillers.",
-  lack: "Topcoat finish — binder only, no fillers.",
-  tixblandning: "Small batch with thickener for tixotropic mixes.",
-};
+import type { AppLanguage } from "../../i18n/language";
+import { DEFAULT_UI_LANGUAGE } from "../../i18n/language";
+import { displayLabel } from "../../i18n/localizedLabel";
+import type { BlendingRecipe } from "./types";
 
-export function recipePlaceholderDescription(recipeId: string): string {
-  return (
-    RECIPE_PLACEHOLDER_DESCRIPTIONS[recipeId] ??
-    "Locked-ratio epoxy recipe preset for this mixer."
-  );
+/**
+ * Card sublabel for a recipe.
+ * Prefers the requested language; if that side is empty/missing, uses the other.
+ * User free-text descriptions are returned as stored.
+ */
+export function recipeCardDescription(
+  recipe: BlendingRecipe,
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
+): string {
+  return displayLabel(recipe.description, language).trim();
 }

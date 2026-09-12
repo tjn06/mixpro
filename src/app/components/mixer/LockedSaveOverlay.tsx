@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useTranslation } from "react-i18next";
 import { LongPressButton } from "../shared/LongPressButton";
 import { SavedIcon, SaveIcon, KeepAwakeIcon } from "../shared/ActionIcons";
 import {
@@ -66,16 +67,18 @@ function KeepAwakeToggle({
   armed: boolean;
   onToggle: () => void;
 }) {
-  const title = active ? "Screen awake" : "Keep awake";
+  const { t } = useTranslation("common");
+  const remaining = formatWakeLockRemaining(remainingMs);
+  const title = active ? t("mixer.wake.screenAwake") : t("mixer.wake.keepAwake");
   const description = !supported
-    ? "Not supported"
+    ? t("mixer.wake.notSupported")
     : failed && armed
-      ? "Wake failed — tap retry"
+      ? t("mixer.wake.failed")
       : active
-        ? `${formatWakeLockRemaining(remainingMs)} left`
+        ? t("mixer.wake.left", { remaining })
         : armed
-          ? "Starting…"
-          : "Keep mobile screen on";
+          ? t("mixer.wake.starting")
+          : t("mixer.wake.hint");
 
   const lit = active;
   const borderAlpha = lit ? lp.borderAlpha.litSheet : lp.borderAlpha.primaryIdle;
@@ -87,8 +90,8 @@ function KeepAwakeToggle({
       aria-pressed={active}
       aria-label={
         active
-          ? `Keep screen on, ${formatWakeLockRemaining(remainingMs)} remaining. Tap to turn off`
-          : "Keep mobile screen alive"
+          ? t("mixer.wake.ariaOn", { remaining })
+          : t("mixer.wake.ariaOff")
       }
       disabled={!supported}
       className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-xl touch-none transition-colors duration-150"
@@ -167,6 +170,7 @@ export function LockedSaveOverlay({
   zIndex,
   surfaceBg,
 }: LockedSaveOverlayProps) {
+  const { t } = useTranslation("common");
   const [overlay, setOverlay] = useState<OverlayState | null>(null);
   const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [keepAwakeArmed, setKeepAwakeArmed] = useState(false);
@@ -300,18 +304,18 @@ export function LockedSaveOverlay({
 
   const saveLabel = saveFlash
     ? saveLabelOverride
-      ? "Added"
-      : "Saved"
-    : saveLabelOverride ?? (loadedSavedMix ? "Update mix" : "Save mix");
+      ? t("mixer.added")
+      : t("mixer.saved")
+    : saveLabelOverride ?? (loadedSavedMix ? t("mixer.updateMix") : t("mixer.saveMix"));
   const saveDescription = saveFlash
     ? saveLabelOverride
-      ? "Mix is in this session"
-      : "Stored in your mixes"
+      ? t("mixer.save.inSession")
+      : t("mixer.save.stored")
     : saveDescriptionOverride ??
       (loadedSavedMix
-        ? "Hold to update this saved mix"
-        : "Hold to name and store");
-  const confirmAction = saveConfirmAction ?? "SAVE MIX";
+        ? t("mixer.save.holdUpdate")
+        : t("mixer.save.holdStore"));
+  const confirmAction = saveConfirmAction ?? t("mixer.saveMixConfirm");
   const saveIcon =
     sessionTone || saveLabelOverride
       ? undefined

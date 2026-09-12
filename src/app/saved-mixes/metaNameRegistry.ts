@@ -19,7 +19,10 @@ export function normalizeMetaName(value: string): string {
 }
 
 export function getReservedMetaNames(): string[] {
-  const recipeLabels = PRESET_RECIPES.map(recipeMenuLabel);
+  const recipeLabels = PRESET_RECIPES.flatMap((recipe) => [
+    recipeMenuLabel(recipe, "en"),
+    recipeMenuLabel(recipe, "sv"),
+  ]);
   return [...new Set([...recipeLabels, BASE_CONFIG_DISPLAY_NAME])];
 }
 
