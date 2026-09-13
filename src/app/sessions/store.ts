@@ -31,6 +31,12 @@ function defaultSessionName(): string {
   return "Untitled";
 }
 
+function normalizeOrderNumber(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 function normalizeTouchedStages(
   touched: SessionStageId[] | undefined,
   activeStage: SessionStageId,
@@ -146,6 +152,7 @@ function normalizeSession(session: MixSession): MixSession {
       ? session.customConsumables
       : [],
     activeWorkDate,
+    orderNumber: normalizeOrderNumber(session.orderNumber),
   };
 }
 
@@ -153,6 +160,7 @@ type SessionPatch = Partial<
   Pick<
     MixSession,
     | "name"
+    | "orderNumber"
     | "activeStage"
     | "touchedStages"
     | "batches"
@@ -205,7 +213,7 @@ interface SessionsState {
   ) => void;
   removeSessionBatch: (sessionId: string, batchId: string) => void;
   /** Explicit Save Session from dock — marks saved. */
-  saveSession: (id: string, name?: string) => void;
+  saveSession: (id: string, name?: string, orderNumber?: string) => void;
   deleteSession: (id: string) => void;
 }
 
@@ -376,17 +384,21 @@ function createSessionsStore() {
           });
         },
 
-        saveSession: (id, name) => {
+        saveSession: (id, name, orderNumber) => {
           const ts = nowIso();
           set({
             sessions: get().sessions.map((session) => {
               if (session.id !== id) return session;
-              return {
+              const next: MixSession = {
                 ...session,
                 name: name?.trim() || session.name,
                 status: "saved",
                 updatedAt: ts,
               };
+              if (orderNumber !== undefined) {
+                next.orderNumber = normalizeOrderNumber(orderNumber);
+              }
+              return normalizeSession(next);
             }),
           });
         },
@@ -401,7 +413,7 @@ function createSessionsStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 6,
+        version: 7,
         migrate: (persisted) => {
           const data = persisted as {
             sessions?: MixSession[];

@@ -17,6 +17,7 @@ import {
   canNavigateToSessionStage,
   isSessionStageComplete,
   nextSessionStage,
+  sessionHeaderName,
 } from "../../domain/sessions/stages";
 import {
   resolveSessionBatchRecipe,
@@ -411,8 +412,8 @@ export function SessionOverviewScreen({
     patchSession(session.id, { activeStage: nextStage });
   };
 
-  const handleSaveConfirm = (name: string) => {
-    saveSession(session.id, name);
+  const handleSaveConfirm = (name: string, orderNumber: string) => {
+    saveSession(session.id, name, orderNumber);
     setSaveFlash(true);
     window.setTimeout(() => setSaveFlash(false), 1600);
   };
@@ -1099,10 +1100,10 @@ export function SessionOverviewScreen({
       <div className="batch-totals-route flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="recipe-context-gradient flex-1 min-h-0 flex flex-col overflow-hidden">
           <AppHeader
-            title={`${t("sessions.headerTitle")}: ${session.name}`}
+            title={`${t("sessions.headerTitle")}: ${sessionHeaderName(session)}`}
             onMenuClick={onMenuClick}
             onTitleClick={() => setRenameNameOpen(true)}
-            titleClickLabel={`${t("sessions.editName")}, ${session.name}`}
+            titleClickLabel={`${t("sessions.editName")}, ${sessionHeaderName(session)}`}
             sessionChrome
           />
 
@@ -1215,6 +1216,7 @@ export function SessionOverviewScreen({
         open={saveNameOpen}
         onOpenChange={setSaveNameOpen}
         initialName={session.name}
+        initialOrderNumber={session.orderNumber ?? ""}
         onConfirm={handleSaveConfirm}
       />
 
@@ -1222,10 +1224,16 @@ export function SessionOverviewScreen({
         open={renameNameOpen}
         onOpenChange={setRenameNameOpen}
         initialName={session.name}
+        initialOrderNumber={session.orderNumber ?? ""}
         title={t("sessions.renameTitle")}
         subtitle={t("sessions.renameSubtitle")}
         confirmLabel={t("common.rename")}
-        onConfirm={(name) => patchSession(session.id, { name })}
+        onConfirm={(name, orderNumber) =>
+          patchSession(session.id, {
+            name,
+            orderNumber: orderNumber || undefined,
+          })
+        }
       />
     </div>
   );

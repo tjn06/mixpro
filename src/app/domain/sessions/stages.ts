@@ -65,6 +65,22 @@ export function sessionCardTitle(session: MixSession): string {
   return session.name.trim() || DEFAULT_SESSION_NAME;
 }
 
+/** Trimmed order number, or undefined when absent. */
+export function sessionOrderNumber(session: MixSession): string | undefined {
+  const trimmed = session.orderNumber?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+/**
+ * Session name for headers — appends order number without a label when present.
+ * e.g. `Project · 12345`
+ */
+export function sessionHeaderName(session: MixSession): string {
+  const name = sessionCardTitle(session);
+  const order = sessionOrderNumber(session);
+  return order ? `${name} · ${order}` : name;
+}
+
 /** Default name + still draft — surface draft next to the title. */
 export function sessionCardShowsDraftHint(session: MixSession): boolean {
   return session.status === "draft" && isDefaultSessionName(session.name);

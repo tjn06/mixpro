@@ -57,6 +57,7 @@ const REPORT_COPY: Record<
     consumables: string;
     dateNote: string;
     periodNote: string;
+    orderNumber: string;
     batchCount: (n: number) => string;
     toolCount: (n: number) => string;
     consCount: (n: number) => string;
@@ -73,6 +74,7 @@ const REPORT_COPY: Record<
     consumables: "Förbrukningsmaterial",
     dateNote: "Datum",
     periodNote: "Period",
+    orderNumber: "Ordernummer",
     batchCount: (n) => (n === 1 ? "1 blandning" : `${n} blandningar`),
     toolCount: (n) => (n === 1 ? "1 verktyg" : `${n} verktyg`),
     consCount: (n) =>
@@ -89,6 +91,7 @@ const REPORT_COPY: Record<
     consumables: "Consumables",
     dateNote: "Date",
     periodNote: "Period",
+    orderNumber: "Order number",
     batchCount: (n) => (n === 1 ? "1 batch" : `${n} batches`),
     toolCount: (n) => (n === 1 ? "1 tool" : `${n} tools`),
     consCount: (n) =>
@@ -401,6 +404,8 @@ export function buildSessionReportText(
 
   lines.push(copy.heading);
   lines.push(title);
+  const order = session.orderNumber?.trim();
+  if (order) lines.push(`${copy.orderNumber}: ${order}`);
   if (period) lines.push(period);
   lines.push("");
 

@@ -18,7 +18,7 @@ const CANCEL_SALVAGE_MS = 280;
  * that pointer lifts, then a short cool-off so a neighbor under the finger
  * does not receive an accidental tap.
  */
-const SUPPRESS_COOL_OFF_MS = 360;
+const SUPPRESS_COOL_OFF_MS = 180;
 
 export type SelectChipGestureMode = "select" | "qty";
 

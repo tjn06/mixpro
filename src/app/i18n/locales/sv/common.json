@@ -209,6 +209,8 @@
       "subtitle": "Ange namn på engelska och/eller svenska. Ett språk räcker."
     },
     "sessionName": "Sessionsnamn",
+    "sessionOrderNumber": "Ordernummer",
+    "sessionOrderNumberOptional": "Valfritt",
     "loadMixes": {
       "title": "Sparade blandningar",
       "empty": "Inga sparade blandningar ännu",

@@ -9,6 +9,7 @@ import {
   isSessionStageComplete,
   sessionCardShowsDraftHint,
   sessionCardTitle,
+  sessionOrderNumber,
   sessionStageAmountLabel,
 } from "../../domain/sessions/stages";
 import { sessionMatchesHubDateFilter } from "../../domain/sessions/workDate";
@@ -100,6 +101,7 @@ function SessionCard({
 }) {
   const { t } = useTranslation("common");
   const uiLanguage = useSettingsStore((s) => s.uiLanguage);
+  const orderNumber = sessionOrderNumber(session);
   const savedTime = getHumanSavedTime(
     new Date(session.updatedAt),
     now,
@@ -125,6 +127,11 @@ function SessionCard({
                 </span>
               ) : null}
             </p>
+            {orderNumber ? (
+              <p className="sessions-page__card-order truncate min-w-0">
+                {orderNumber}
+              </p>
+            ) : null}
             <p className="sessions-page__card-time tabular-nums">
               {savedTime.comment ? (
                 <>
@@ -297,12 +304,16 @@ export function SessionsPage({
           if (!open) setRenameSession(null);
         }}
         initialName={renameSession?.name ?? ""}
+        initialOrderNumber={renameSession?.orderNumber ?? ""}
         title={t("sessions.renameTitle")}
         subtitle={t("sessions.renameSubtitle")}
         confirmLabel={t("common.save")}
-        onConfirm={(name) => {
+        onConfirm={(name, orderNumber) => {
           if (!renameSession) return;
-          patchSession(renameSession.id, { name });
+          patchSession(renameSession.id, {
+            name,
+            orderNumber: orderNumber || undefined,
+          });
           setRenameSession(null);
         }}
       />

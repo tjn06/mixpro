@@ -2265,6 +2265,18 @@
   color: var(--session-accent, #2dd4bf);
 }
 
+.sessions-page__card-order {
+  margin: 2px 0 0;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-ui-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  color: var(--semantic-text-secondary, var(--semantic-text-muted));
+  min-width: 0;
+  max-width: 100%;
+}
+
 .sessions-page__card-time {
   font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: var(--text-ui-xs);

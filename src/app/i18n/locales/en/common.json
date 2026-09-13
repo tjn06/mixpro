@@ -209,6 +209,8 @@
       "subtitle": "Enter a name in English and/or Swedish. One language is enough."
     },
     "sessionName": "Session name",
+    "sessionOrderNumber": "Order number",
+    "sessionOrderNumberOptional": "Optional",
     "loadMixes": {
       "title": "Saved mixes",
       "empty": "No saved mixes yet",

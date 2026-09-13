@@ -103,6 +103,8 @@ export type MixSession = {
    * Day filter "All" does not clear this.
    */
   activeWorkDate: string;
+  /** Optional customer/project order number — shown on cards & headers when set. */
+  orderNumber?: string;
   createdAt: string;
   updatedAt: string;
 };

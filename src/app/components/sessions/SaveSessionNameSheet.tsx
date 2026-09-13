@@ -21,6 +21,7 @@ export function SaveSessionNameSheet({
   open,
   onOpenChange,
   initialName,
+  initialOrderNumber = "",
   onConfirm,
   title,
   subtitle,
@@ -29,7 +30,9 @@ export function SaveSessionNameSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialName: string;
-  onConfirm: (name: string) => void;
+  /** Optional order number — empty string clears. */
+  initialOrderNumber?: string;
+  onConfirm: (name: string, orderNumber: string) => void;
   title?: string;
   subtitle?: string;
   confirmLabel?: string;
@@ -39,11 +42,13 @@ export function SaveSessionNameSheet({
   const resolvedSubtitle = subtitle ?? t("sessions.saveSubtitle");
   const resolvedConfirm = confirmLabel ?? t("common.save");
   const [name, setName] = useState(initialName);
+  const [orderNumber, setOrderNumber] = useState(initialOrderNumber);
 
   useEffect(() => {
     if (!open) return;
     setName(initialName);
-  }, [open, initialName]);
+    setOrderNumber(initialOrderNumber);
+  }, [open, initialName, initialOrderNumber]);
 
   if (!open) return null;
 
@@ -52,7 +57,7 @@ export function SaveSessionNameSheet({
 
   const handleSave = () => {
     if (!canConfirm) return;
-    onConfirm(trimmed);
+    onConfirm(trimmed, orderNumber.trim());
     onOpenChange(false);
   };
 
@@ -103,6 +108,40 @@ export function SaveSessionNameSheet({
             maxLength={64}
             autoComplete="off"
             spellCheck={false}
+            className={SHEET_FIELD_INPUT_CLASS}
+            style={{
+              ...sheetFieldInputStyle({ height: INPUT_H, textAlign: "center" }),
+              marginTop: FORM.labelToControl,
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSave();
+              }
+            }}
+          />
+
+          <label
+            htmlFor="save-session-order-input"
+            className={SHEET_FIELD_LABEL_CLASS}
+            style={{
+              display: "block",
+              textAlign: "center",
+              margin: 0,
+              marginTop: FORM.controlToAction,
+            }}
+          >
+            {t("sheets.sessionOrderNumber")}
+          </label>
+          <input
+            id="save-session-order-input"
+            type="text"
+            value={orderNumber}
+            onChange={(e) => setOrderNumber(e.target.value)}
+            maxLength={64}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder={t("sheets.sessionOrderNumberOptional")}
             className={SHEET_FIELD_INPUT_CLASS}
             style={{
               ...sheetFieldInputStyle({ height: INPUT_H, textAlign: "center" }),

@@ -9,6 +9,7 @@ import {
   type BlendingRecipe,
 } from "../../domain/recipe/types";
 import { resolveSessionBatchRecipe } from "../../domain/sessions/totals";
+import { sessionHeaderName } from "../../domain/sessions/stages";
 import { useThemeAppearanceSync } from "../../hooks/useThemeAppearanceSync";
 import type { AppDestination } from "../../navigation/types";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
@@ -269,7 +270,9 @@ export function AppShell() {
             initialValues={view.initialValues}
             onOpenNav={openNav}
             sessionMode={{
-              sessionName: activeSession?.name ?? t("nav.sessionChip"),
+              sessionName: activeSession
+                ? sessionHeaderName(activeSession)
+                : t("nav.sessionChip"),
               mode: view.mode,
               batchName: view.batchName,
               onCommit: handleMixCommit,

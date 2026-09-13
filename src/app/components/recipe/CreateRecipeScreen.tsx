@@ -42,6 +42,7 @@ import { displayLabel } from "../../i18n/localizedLabel";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
 import { useSettingsStore } from "../../settings/store";
 import { useSessionsStore } from "../../sessions/store";
+import { sessionHeaderName } from "../../domain/sessions/stages";
 import { CloseIcon, InfoIcon, ScaleIcon, SwipeAdjustIcon } from "../shared/ActionIcons";
 import { AppHeader } from "../shared/AppHeader";
 import {
@@ -719,7 +720,12 @@ export function CreateRecipeScreen({
   const showSessionSave = context.source === "session";
   const sessionName =
     sessionId != null
-      ? sessions.find((s) => s.id === sessionId)?.name ?? t("nav.sessionChip")
+      ? (() => {
+          const session = sessions.find((s) => s.id === sessionId);
+          return session
+            ? sessionHeaderName(session)
+            : t("nav.sessionChip");
+        })()
       : undefined;
 
   const libraryRecipes = useMemo(() => {
