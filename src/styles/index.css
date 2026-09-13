@@ -1558,7 +1558,7 @@ body,
   position: absolute;
   left: 50%;
   bottom: max(var(--space-3, 12px), var(--safe-bottom));
-  z-index: 2;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1568,9 +1568,17 @@ body,
   cursor: pointer;
   touch-action: manipulation;
   transform: translateX(-50%);
+  color: var(--semantic-text-primary);
+  background: var(--semantic-surface-button-solid, var(--semantic-surface-raised));
+  border: var(--semantic-border-default);
   box-shadow:
-    0 2px 6px color-mix(in srgb, var(--semantic-text-primary) 14%, transparent),
-    0 1px 2px color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
+    0 2px 8px color-mix(in srgb, var(--semantic-text-primary) 18%, transparent),
+    0 1px 2px color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+}
+
+.recipe-picker-close__chevron {
+  display: block;
+  flex-shrink: 0;
 }
 
 /* Saved mix card — 2×2 action grid; widens left over content, right edge stays on card. */

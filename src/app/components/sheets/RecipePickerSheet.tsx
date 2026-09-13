@@ -27,7 +27,7 @@ import { getHumanSavedTime } from "../../saved-mixes/humanSavedTime";
 import type { SavedMixSnapshot } from "../../saved-mixes/types";
 import { useTickingNow } from "../../hooks/useTickingNow";
 import { BucketMiniature } from "../mixer/MixBucket";
-import { GoToIcon, PanelTopCloseIcon, SavedIcon } from "../shared/ActionIcons";
+import { GoToIcon, SavedIcon } from "../shared/ActionIcons";
 import { PageSearchField } from "../shared/PageSearchField";
 import { useSettingsStore } from "../../settings/store";
 import { recipeMatchesQuery } from "../recipe/RecipeLibraryCard";
@@ -1011,11 +1011,24 @@ export function RecipePickerSheet({
         </div>
         <button
           type="button"
-          className={`${SHEET_LIST_ROW_CLASS} recipe-picker-close touch-manipulation`}
+          className="recipe-picker-close touch-manipulation"
           aria-label={t("sheets.recipePicker.closeMenu")}
           onClick={requestClose}
         >
-          <PanelTopCloseIcon size={20} />
+          <svg
+            className="recipe-picker-close__chevron"
+            width={22}
+            height={22}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M18 15l-6-6-6 6" />
+          </svg>
         </button>
       </div>
     </div>

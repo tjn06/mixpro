@@ -20,7 +20,6 @@ import {
   ShieldCheck,
   SavePlus,
   Info,
-  PanelTopClose,
   PanelBottomOpen,
   PanelBottomClose,
   Scale,
@@ -95,9 +94,6 @@ export const MessageIcon = createActionIcon(MessageSquare);
 export const ModifyIcon = createActionIcon(ScrollText);
 
 export const CloseIcon = createActionIcon(X);
-
-/** Collapse / dismiss a bottom sheet or panel. */
-export const PanelTopCloseIcon = createActionIcon(PanelTopClose);
 
 /** Reveal a bottom actions panel. */
 export const PanelBottomOpenIcon = createActionIcon(PanelBottomOpen);

@@ -7,13 +7,11 @@ import {
   RecipeLibraryCard,
   recipeMatchesQuery,
 } from "../recipe/RecipeLibraryCard";
-import { PanelTopCloseIcon } from "../shared/ActionIcons";
 import { PageSearchField } from "../shared/PageSearchField";
 import { AppFrameCoverSheet } from "../sheets/AppFrameCoverSheet";
 import {
   SHEET_TITLE_CLASS,
   SHEET_COVER_FORM_HEADER_STYLE,
-  SHEET_LIST_ROW_CLASS,
 } from "../sheets/sheetChrome";
 import {
   ScrollEdgeFadeOverlays,
@@ -172,11 +170,24 @@ export function PickRecipeForMixSheet({
 
       <button
         type="button"
-        className={`${SHEET_LIST_ROW_CLASS} recipe-picker-close touch-manipulation`}
+        className="recipe-picker-close touch-manipulation"
         aria-label={t("common.close")}
         onClick={() => onOpenChange(false)}
       >
-        <PanelTopCloseIcon size={20} />
+        <svg
+          className="recipe-picker-close__chevron"
+          width={22}
+          height={22}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M18 15l-6-6-6 6" />
+        </svg>
       </button>
     </AppFrameCoverSheet>
   );
