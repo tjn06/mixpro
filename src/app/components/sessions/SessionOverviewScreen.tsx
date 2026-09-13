@@ -1154,6 +1154,7 @@ export function SessionOverviewScreen({
                             complete ? " session-overview__stage-label--modified" : ""
                           }`}
                         >
+                          {t(`sessions.stageShort.${stageId}`)}
                           {complete ? (
                             <Check
                               className="session-overview__stage-modified-mark"
@@ -1162,7 +1163,6 @@ export function SessionOverviewScreen({
                               aria-hidden
                             />
                           ) : null}
-                          {t(`sessions.stageShort.${stageId}`)}
                         </span>
                       </button>
                     );

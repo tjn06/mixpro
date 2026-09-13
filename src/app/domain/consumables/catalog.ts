@@ -66,7 +66,7 @@ export const CONSUMABLES_CATALOG: ConsumableItem[] = [
       localizedLabel("Fine surface", "Fin slipyta"),
       localizedLabel("Abrasive", "Abrasiv"),
       localizedLabel("Epoxy", "Epoxi"),
-      localizedLabel("Coating removal", "Beläggningsborttagning"),
+      localizedLabel("Removal", "Rivning"),
     ],
     { requiresWear: true },
   ),

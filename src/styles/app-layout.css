@@ -2429,7 +2429,6 @@
 
 .sessions-page__stage--active {
   color: var(--semantic-text-primary);
-  font-weight: 700;
   background: color-mix(
     in srgb,
     var(--semantic-text-primary) 16%,
@@ -3827,15 +3826,15 @@
   text-overflow: ellipsis;
 }
 
-/** Modified — outline check anchored to the label text (left of first letter). */
+/** Modified — outline check anchored after the label text. */
 .session-overview__stage-modified-mark {
   position: absolute;
-  left: 0;
+  left: 100%;
   top: 50%;
   width: 11px;
   height: 11px;
   color: var(--session-accent);
-  transform: translate(-115%, -52%);
+  transform: translate(15%, -52%);
   pointer-events: none;
   flex-shrink: 0;
 }
@@ -3843,7 +3842,6 @@
 /** Current step — same gray palette as before, modestly stronger fill. */
 .session-overview__stage-btn--active {
   color: var(--semantic-text-primary);
-  font-weight: 700;
   background: color-mix(
     in srgb,
     var(--semantic-text-primary) 16%,
@@ -4837,7 +4835,7 @@
   padding-left: 6px;
   padding-right: 0;
   /* Base gaps; JS may raise column gap via margins to fill each row. */
-  gap: 14px 7px;
+  gap: 11px 5px;
 }
 
 .select-view--dense .select-chip {
@@ -6006,12 +6004,12 @@
 .select-chip--clone-plus {
   position: relative;
   z-index: 1;
-  flex: 0 0 38px;
+  flex: 0 0 32px;
   align-self: stretch;
   box-sizing: border-box;
-  width: 38px;
-  min-width: 38px;
-  max-width: 38px;
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
   height: auto;
   margin: 0;
   padding: 0;
@@ -6155,10 +6153,10 @@
 
   /** Keep fused + from inheriting the wider chip padding (was crushing the icon). */
   .select-chip--clone-plus {
-    flex-basis: 40px;
-    width: 40px;
-    min-width: 40px;
-    max-width: 40px;
+    flex-basis: 32px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
     padding: 0;
   }
 
@@ -6168,7 +6166,7 @@
 
   /** Dense experiment keeps tighter pad/gap on wider viewports too. */
   .select-view--dense {
-    gap: 14px 7px;
+    gap: 11px 5px;
   }
 
   .select-view--dense .select-chip {
@@ -6189,9 +6187,16 @@
  * Top pad only — do not set padding-bottom here.
  * `.batch-totals-scroll-panel__inner` already clears the measured stage sheet
  * via `--batch-totals-panel-reserve` (collapsed / half-open / expanded).
+ * Parent `.app-gutter-x` owns side inset; drop select-view’s extra left pad.
  */
 .session-overview__tools-pad {
   padding-top: 12px;
+}
+
+.session-overview__tools-pad .select-view,
+.session-overview__tools-pad .select-view--dense {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .tools-page__picker {

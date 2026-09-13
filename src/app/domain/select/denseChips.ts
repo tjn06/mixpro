@@ -7,9 +7,9 @@
  */
 export const SELECT_CHIPS_DENSE = true;
 
-export const DENSE_CHIP_GAP_Y = 14;
-export const DENSE_CHIP_GAP_X_MIN = 7;
-export const DENSE_CHIP_GAP_X_MAX = 16;
+export const DENSE_CHIP_GAP_Y = 11;
+export const DENSE_CHIP_GAP_X_MIN = 5;
+export const DENSE_CHIP_GAP_X_MAX = 14;
 
 /**
  * Adaptive type: short labels can read slightly larger.
