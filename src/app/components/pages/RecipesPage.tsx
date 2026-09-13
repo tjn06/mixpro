@@ -50,12 +50,6 @@ export function RecipesPage({
       >
         {t("pages.recipes.create")}
       </button>
-      <p className="destination-page__lede" style={{ color: cv.text.muted }}>
-        {t("pages.recipes.lede")}{" "}
-        {userRecipes.length > 0
-          ? t("pages.recipes.ledeCustom", { count: userRecipes.length })
-          : t("pages.recipes.ledeStart")}
-      </p>
 
       <PageSearchField
         placeholder={t("pages.recipes.search")}

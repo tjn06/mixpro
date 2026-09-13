@@ -2429,10 +2429,14 @@
 
 .sessions-page__stage--active {
   color: var(--semantic-text-primary);
+  font-weight: 700;
   background: color-mix(
     in srgb,
-    var(--semantic-text-primary) 9%,
+    var(--semantic-text-primary) 16%,
     var(--semantic-surface-raised)
+  );
+  filter: drop-shadow(
+    0 0 0.7px color-mix(in srgb, var(--semantic-text-primary) 32%, transparent)
   );
 }
 
@@ -3527,15 +3531,15 @@
 }
 
 /**
- * Selected dates: accent on border + fill only (like tools chips).
- * Keep label white / primary so it stays readable.
+ * Selected dates: same accent chrome as before, slightly stronger fill.
+ * Keep label primary / white so it stays readable.
  */
 .session-day-filter .select-chip.session-day-filter__chip[data-selected] {
   color: var(--semantic-text-primary);
   border-color: var(--session-day-accent);
   background: color-mix(
     in srgb,
-    var(--session-day-accent) 22%,
+    var(--session-day-accent) 30%,
     var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
 }
@@ -3545,7 +3549,7 @@
   border-style: dashed;
   background: color-mix(
     in srgb,
-    var(--session-day-accent) 14%,
+    var(--session-day-accent) 18%,
     var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
 }
@@ -3559,7 +3563,7 @@
 .session-day-filter .select-chip.session-day-filter__chip[data-selected]:active {
   background: color-mix(
     in srgb,
-    var(--session-day-accent) 30%,
+    var(--session-day-accent) 36%,
     var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
 }
@@ -3595,7 +3599,7 @@
   border-color: var(--session-day-future);
   background: color-mix(
     in srgb,
-    var(--session-day-future) 28%,
+    var(--session-day-future) 32%,
     var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
   );
 }
@@ -3836,16 +3840,17 @@
   flex-shrink: 0;
 }
 
-/** Only the current step gets a distinct fill. */
+/** Current step — same gray palette as before, modestly stronger fill. */
 .session-overview__stage-btn--active {
   color: var(--semantic-text-primary);
+  font-weight: 700;
   background: color-mix(
     in srgb,
-    var(--semantic-text-primary) 9%,
+    var(--semantic-text-primary) 16%,
     var(--semantic-surface-raised)
   );
   filter: drop-shadow(
-    0 0 0.65px color-mix(in srgb, var(--semantic-text-primary) 28%, transparent)
+    0 0 0.7px color-mix(in srgb, var(--semantic-text-primary) 32%, transparent)
   );
 }
 
