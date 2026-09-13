@@ -745,7 +745,7 @@ function WearSelectControl({
           {value ? WEAR_LEVEL_LABELS[value] : WEAR_PLACEHOLDER_LABEL}
         </span>
         <span className="select-chip__chevron select-chip__wear-chevron" aria-hidden>
-          <ChevronDown size={CHEVRON_SIZE} strokeWidth={2} />
+          <ChevronDown size={12} strokeWidth={2} />
         </span>
       </button>
       {menu}
