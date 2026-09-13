@@ -127,11 +127,12 @@ function SessionCard({
                 </span>
               ) : null}
             </p>
-            {orderNumber ? (
-              <p className="sessions-page__card-order truncate min-w-0">
-                {orderNumber}
-              </p>
-            ) : null}
+            <p
+              className="sessions-page__card-order truncate min-w-0"
+              aria-hidden={orderNumber ? undefined : true}
+            >
+              {orderNumber || "\u00A0"}
+            </p>
             <p className="sessions-page__card-time tabular-nums">
               {savedTime.comment ? (
                 <>

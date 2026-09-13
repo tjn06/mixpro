@@ -2272,6 +2272,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   line-height: 1.25;
+  min-height: calc(1.25em);
   color: var(--semantic-text-secondary, var(--semantic-text-muted));
   min-width: 0;
   max-width: 100%;
@@ -2505,7 +2506,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: var(--section-gap, 12px);
+  gap: 20px;
   width: 100%;
   min-width: 0;
   padding-block: var(--space-3, 12px) calc(var(--space-4, 16px) + var(--app-bottom-inset));
@@ -2531,7 +2532,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .create-recipe__field--kg-open {
@@ -3015,8 +3016,11 @@
 .create-recipe__advanced {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-top: 4px;
+  gap: 14px;
+  /* Body gap is 20px above this block; pull divider up so space is balanced
+     around the rule instead of a large empty band sitting above it. */
+  margin-top: -8px;
+  padding-top: 16px;
   border-top: var(--semantic-border-subtle);
 }
 
@@ -3026,7 +3030,7 @@
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   padding: 0;
   border: none;
   background: transparent;
@@ -3075,7 +3079,7 @@
 .create-recipe__advanced-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
   padding-bottom: 4px;
 }
 
