@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { DayPicker } from "react-day-picker";
+import { enGB, sv } from "date-fns/locale";
 import "react-day-picker/style.css";
+import { useSettingsStore } from "../../settings/store";
 import { CloseIcon, CalendarIcon } from "../shared/ActionIcons";
 import { AppFrameCoverSheet } from "../sheets/AppFrameCoverSheet";
 import { SheetFooter, SHEET_FOOTER_ICON_SIZE } from "../sheets/SheetCloseButton";
@@ -32,6 +34,7 @@ export function SessionDatePickerSheet({
   confirmIcon?: ReactNode;
 }) {
   const { t } = useTranslation("common");
+  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const resolvedTitle = title ?? t("sessions.datePickerTitle");
   const resolvedSubtitle = subtitle ?? t("sessions.datePickerSubtitle");
   const resolvedConfirm = confirmLabel ?? t("common.apply");
@@ -48,6 +51,8 @@ export function SessionDatePickerSheet({
   const applyIcon = confirmIcon ?? (
     <CalendarIcon size={SHEET_FOOTER_ICON_SIZE} />
   );
+  /** Monday-first weeks (Sweden / ISO); en-GB matches that for English UI. */
+  const calendarLocale = uiLanguage === "sv" ? sv : enGB;
 
   return (
     <AppFrameCoverSheet
@@ -72,6 +77,8 @@ export function SessionDatePickerSheet({
           selected={selected}
           onSelect={setSelected}
           defaultMonth={selected ?? initialDate}
+          locale={calendarLocale}
+          weekStartsOn={1}
           className="session-date-picker"
           animate
         />
