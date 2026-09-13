@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelectChipGestures } from "../select/useSelectChipGestures";
+import { ConfirmDeleteSheet } from "../sheets/ConfirmDeleteSheet";
 import { SessionDatePickerSheet } from "./SessionDatePickerSheet";
 
 export type SessionDayBadge = {
@@ -162,6 +163,7 @@ function SessionDayBadgeChip({
   allMode,
   onSelect,
   onOpenCalendar,
+  onLongPress,
 }: {
   badge: SessionDayBadge;
   selected: boolean;
@@ -169,6 +171,7 @@ function SessionDayBadgeChip({
   allMode: boolean;
   onSelect: () => void;
   onOpenCalendar?: () => void;
+  onLongPress?: () => void;
 }) {
   const { t } = useTranslation("common");
   const isFuture = Boolean(badge.isFuture);
@@ -180,6 +183,7 @@ function SessionDayBadgeChip({
     mode: "select",
     onTap: onSelect,
     onDoubleTap: onOpenCalendar,
+    onLongPress,
   });
 
   const ariaExtra = [
@@ -220,13 +224,16 @@ function SessionDayBadgeChip({
 
 /**
  * Horizontal day filter badges.
- * Pinned: All (icon) + add day · scrollable day chips · double-tap day = remap.
+ * Pinned: All (icon) + add day · scrollable day chips ·
+ * double-tap = remap calendar · long-press = delete day confirm.
  */
 export function SessionDayFilterBar({
   badges: badgesProp,
   selectedId: selectedIdProp,
   onSelectedIdChange,
   onConfirmDayChange,
+  onDeleteDay,
+  dayHasContent,
   onAddDay,
 }: {
   badges?: SessionDayBadge[];
@@ -237,6 +244,10 @@ export function SessionDayFilterBar({
    * Today → other day should add/select without rewriting Today.
    */
   onConfirmDayChange?: (fromDayId: string, toDate: Date) => void;
+  /** Long-press → Delete: clear that day's content (and drop non-Today chips). */
+  onDeleteDay?: (dayId: string) => void;
+  /** When false, long-press delete is ignored (empty provisional Today). */
+  dayHasContent?: (dayId: string) => boolean;
   /** Pinned + control — add a custom day from the calendar. */
   onAddDay?: (date: Date) => void;
 }) {
@@ -259,6 +270,7 @@ export function SessionDayFilterBar({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<"add" | "edit">("edit");
   const [editingBadgeId, setEditingBadgeId] = useState<string | null>(null);
+  const [deleteBadgeId, setDeleteBadgeId] = useState<string | null>(null);
   const allMode = selectedId === "all";
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollEdges = useHorizontalScrollFades(scrollRef, dayBadges.length);
@@ -267,9 +279,19 @@ export function SessionDayFilterBar({
     editingBadgeId != null
       ? dayBadges.find((b) => b.id === editingBadgeId) ?? null
       : null;
+  const deleteBadge =
+    deleteBadgeId != null
+      ? dayBadges.find((b) => b.id === deleteBadgeId) ?? null
+      : null;
   const pickerInitialDate = editingBadge
     ? parseBadgeDate(editingBadge.id)
     : new Date();
+
+  const deleteLabel = deleteBadge
+    ? deleteBadge.isProvisional
+      ? t("common.today")
+      : deleteBadge.label
+    : "";
 
   const selectDay = (id: string) => {
     setSelectedId(id);
@@ -286,6 +308,14 @@ export function SessionDayFilterBar({
     setPickerMode("add");
     setEditingBadgeId(null);
     setPickerOpen(true);
+  };
+
+  const openDeleteConfirm = (badge: SessionDayBadge) => {
+    const emptyToday =
+      badge.isToday && !(dayHasContent?.(badge.id) ?? false);
+    if (emptyToday) return;
+    setSelectedId(badge.id);
+    setDeleteBadgeId(badge.id);
   };
 
   const applyPickedDate = (date: Date) => {
@@ -341,6 +371,22 @@ export function SessionDayFilterBar({
     });
     setSelectedId(next.id);
     setEditingBadgeId(next.id);
+  };
+
+  const confirmDeleteDay = () => {
+    if (!deleteBadgeId) return;
+    if (onDeleteDay) {
+      onDeleteDay(deleteBadgeId);
+      return;
+    }
+    if (badgesProp) return;
+    const wasToday =
+      dayBadges.find((b) => b.id === deleteBadgeId)?.isToday === true;
+    if (wasToday) return;
+    setInternalBadges((prev) =>
+      sortSessionDayBadges(prev.filter((b) => b.id !== deleteBadgeId)),
+    );
+    if (selectedId === deleteBadgeId) setSelectedId("all");
   };
 
   return (
@@ -399,6 +445,7 @@ export function SessionDayFilterBar({
                 allMode={allMode}
                 onSelect={() => selectDay(badge.id)}
                 onOpenCalendar={() => openCalendar(badge)}
+                onLongPress={() => openDeleteConfirm(badge)}
               />
             ))}
           </div>
@@ -416,6 +463,17 @@ export function SessionDayFilterBar({
         }}
         initialDate={pickerInitialDate}
         onConfirm={applyPickedDate}
+      />
+
+      <ConfirmDeleteSheet
+        open={deleteBadge != null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteBadgeId(null);
+        }}
+        itemLabel={deleteLabel}
+        title={t("sessions.dayDeleteTitle")}
+        body={t("sessions.dayDeleteBody", { date: deleteLabel })}
+        onConfirm={confirmDeleteDay}
       />
     </div>
   );

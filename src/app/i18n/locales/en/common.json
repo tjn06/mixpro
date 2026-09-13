@@ -73,8 +73,10 @@
     "recipeLibrary": "Recipe library",
     "dayProvisional": "provisional work day",
     "dayUpcoming": "upcoming",
-    "daySelectedHint": "selected. Double-tap to edit date",
-    "dayTapHint": "tap to filter this day. Double-tap to edit date",
+    "daySelectedHint": "selected. Double-tap to edit date. Long-press to delete",
+    "dayTapHint": "tap to filter this day. Double-tap to edit date. Long-press to delete",
+    "dayDeleteTitle": "Delete day?",
+    "dayDeleteBody": "Remove all mixes, tools, and consumables on {{date}}? This cannot be undone.",
     "stagesAria": "Session stages",
     "stageComplete": "{{label}}, {{amount}}, complete",
     "stageCurrent": "{{label}}, {{amount}}, current step",
@@ -182,7 +184,7 @@
       "nameSv": "Swedish",
       "placeholderEn": "English name",
       "placeholderSv": "Swedish name",
-      "add": "Add",
+      "add": "Add item",
       "search": "Search items…",
       "empty": "No items yet.",
       "noMatch": "No items match “{{query}}”.",
@@ -201,6 +203,10 @@
       "title": "Delete custom item",
       "body": "Are you sure you want to delete “{{name}}”? This cannot be undone.",
       "fallbackName": "this item"
+    },
+    "catalogAdd": {
+      "title": "Add item",
+      "subtitle": "Enter a name in English and/or Swedish. One language is enough."
     },
     "sessionName": "Session name",
     "loadMixes": {
@@ -287,6 +293,7 @@
     },
     "rentalComment": {
       "title": "Rental note",
+      "subtitle": "Optional note for this rented tool — supplier, pickup, return…",
       "label": "Comment",
       "tool": "Tool",
       "placeholder": "Supplier, pickup, return…",
@@ -420,6 +427,10 @@
     "hardenerB": "Hardener B",
     "filler": "Filler",
     "thickener": "Thickener",
+    "placeholderPartsA": "e.g. 2",
+    "placeholderPartsB": "e.g. 1",
+    "placeholderPercent": "e.g. 400",
+    "placeholderGrams": "e.g. 1500",
     "advanced": "Advanced",
     "showAdvanced": "Show advanced options",
     "hideAdvanced": "Hide advanced options",
@@ -442,7 +453,8 @@
     "builtIn": "Built-in recipe",
     "enterABFirst": "Enter Resin A and Hardener B first",
     "enterABUnlock": "Enter Resin A and Hardener B to unlock the calculator.",
-    "dialFormGrams": "Dial form grams in the calculator (does not set rec. batch)",
+    "dialFormGrams": "Edit grams in the calculator (does not set rec. batch)",
+    "dialFormGramsBtn": "Edit in calculator",
     "binderHint": "Enter Resin A and Hardener B first to use % of binder.",
     "errors": {
       "nameRequired": "Name is required",

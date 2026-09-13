@@ -72,6 +72,33 @@ const PLUS_SIZE = 14;
 const CLONE_PLUS_SIZE = 20;
 const MENU_GAP_PX = 4;
 
+/** Portal menus leave `.select-view` — copy accent so session teal still applies. */
+function portalSelectMenuStyle(
+  anchor: HTMLElement,
+  rect: DOMRect,
+): CSSProperties {
+  const view = anchor.closest(".select-view");
+  const accent = view
+    ? getComputedStyle(view).getPropertyValue("--select-chip-accent").trim()
+    : "";
+  const viewportPad = 8;
+  const width = rect.width;
+  let left = rect.left;
+  if (left + width > window.innerWidth - viewportPad) {
+    left = Math.max(viewportPad, window.innerWidth - viewportPad - width);
+  }
+  return {
+    position: "fixed",
+    top: rect.bottom + MENU_GAP_PX,
+    left,
+    width,
+    zIndex: 80,
+    ...(accent
+      ? ({ ["--select-chip-accent"]: accent } as CSSProperties)
+      : {}),
+  };
+}
+
 /** Widest label by character length (stable closed-chip width for number suffixes). */
 function widestOptionLabel(
   familyLabel: ItemLabel,
@@ -142,19 +169,7 @@ function SelectDropdownChip({
     const anchor = anchorRef.current;
     if (!anchor) return;
     const rect = anchor.getBoundingClientRect();
-    const viewportPad = 8;
-    const width = rect.width;
-    let left = rect.left;
-    if (left + width > window.innerWidth - viewportPad) {
-      left = Math.max(viewportPad, window.innerWidth - viewportPad - width);
-    }
-    setMenuStyle({
-      position: "fixed",
-      top: rect.bottom + MENU_GAP_PX,
-      left,
-      width,
-      zIndex: 80,
-    });
+    setMenuStyle(portalSelectMenuStyle(anchor, rect));
   }, []);
 
   useLayoutEffect(() => {
@@ -231,6 +246,7 @@ function SelectDropdownChip({
             style={menuStyle}
             role="listbox"
             aria-label={itemText}
+            data-selected={selected ? "" : undefined}
           >
             {item.children?.map((option) => {
               const active = selectedOption?.id === option.id;
@@ -590,12 +606,15 @@ function WearSelectControl({
   value,
   open,
   disabled = false,
+  panelSelected = false,
   onOpenChange,
   onPick,
 }: {
   value: WearLevel | null;
   open: boolean;
   disabled?: boolean;
+  /** Parent panel already has a variant selected — tint the menu to match. */
+  panelSelected?: boolean;
   onOpenChange: (next: boolean) => void;
   onPick: (level: WearLevel) => void;
 }) {
@@ -604,24 +623,23 @@ function WearSelectControl({
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
   const listboxId = useId();
+  const menuSelected = Boolean(value) || panelSelected;
 
   const updateMenuPosition = useCallback(() => {
     const anchor = anchorRef.current;
     if (!anchor) return;
     const rect = anchor.getBoundingClientRect();
+    const style = portalSelectMenuStyle(anchor, rect);
     const width = Math.max(rect.width, 72);
     let left = rect.left;
     const viewportPad = 8;
     if (left + width > window.innerWidth - viewportPad) {
       left = Math.max(viewportPad, window.innerWidth - viewportPad - width);
     }
-    setMenuStyle({
-      position: "fixed",
-      top: rect.bottom + MENU_GAP_PX,
-      left,
-      width,
-      zIndex: 81,
-    });
+    style.width = width;
+    style.left = left;
+    style.zIndex = 81;
+    setMenuStyle(style);
   }, []);
 
   useLayoutEffect(() => {
@@ -671,6 +689,7 @@ function WearSelectControl({
             style={menuStyle}
             role="listbox"
             aria-label={wearTitle}
+            data-selected={menuSelected ? "" : undefined}
           >
             {WEAR_LEVELS.map((level) => {
               const active = value === level;
@@ -1228,6 +1247,7 @@ export function FlexSelectView({
                 <WearSelectControl
                   value={wearValue}
                   disabled={selectedOption == null}
+                  panelSelected={selectedOption != null}
                   open={
                     selectedOption != null &&
                     openWearOptionId === selectedOption.id

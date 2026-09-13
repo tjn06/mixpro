@@ -48,8 +48,8 @@ export function ToolsPicker({
       className={className}
       tone="session"
       ariaLabel={t("nav.tools")}
-      addSimpleLabel="Custom"
-      addSimplePlaceholder="Custom tool name"
+      addSimpleLabel={t("catalog.custom")}
+      addSimplePlaceholder={t("catalog.customTool")}
       customIdPrefix="custom-tool"
       acquisitionEnabled={acquisitionEnabled}
       commentsByLineKey={commentsByLineKey}

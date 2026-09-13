@@ -51,8 +51,8 @@ export function ConsumablesPicker({
       className={className}
       tone="session"
       ariaLabel={t("nav.consumables")}
-      addSimpleLabel="Custom"
-      addSimplePlaceholder="Custom consumable name"
+      addSimpleLabel={t("catalog.custom")}
+      addSimplePlaceholder={t("catalog.customConsumable")}
       customIdPrefix="custom-consumable"
     />
   );

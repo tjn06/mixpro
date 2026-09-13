@@ -15,6 +15,7 @@ import {
 import { useSettingsStore } from "../../settings/store";
 import { cv } from "../../ui/tokens";
 import { PageSearchField } from "../shared/PageSearchField";
+import { CatalogAddItemSheet } from "../sheets/CatalogAddItemSheet";
 import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
 
 /** Edit global catalog — fixed chrome + independently scrolling list. */
@@ -35,8 +36,7 @@ export function CatalogEditPanel({
   const uiLanguage = useSettingsStore((s) => s.uiLanguage);
   const resolvedSearch = searchPlaceholder ?? t("catalog.edit.search");
   const [query, setQuery] = useState("");
-  const [draftEn, setDraftEn] = useState("");
-  const [draftSv, setDraftSv] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBilingual, setEditingBilingual] = useState(false);
   const [editDraft, setEditDraft] = useState("");
@@ -93,63 +93,18 @@ export function CatalogEditPanel({
     commitEdit();
   };
 
-  const submitAdd = () => {
-    const next = bilingualFromFields(draftEn, draftSv);
-    if (!next) return;
-    onAddBilingual(next);
-    setDraftEn("");
-    setDraftSv("");
-  };
-
   return (
     <div className="catalog-hub__edit">
       <div className="catalog-hub__edit-fixed">
         <p className="catalog-hub__lede">{t("catalog.edit.lede")}</p>
 
-        <form
-          className="catalog-hub__add-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            submitAdd();
-          }}
+        <button
+          type="button"
+          className="destination-page__primary-btn destination-page__primary-btn--form catalog-hub__add-btn"
+          onClick={() => setAddOpen(true)}
         >
-          <div className="catalog-hub__add-fields">
-            <label className="catalog-hub__add-field">
-              <span className="catalog-hub__add-field-label">
-                {t("catalog.edit.nameEn")}
-              </span>
-              <input
-                type="text"
-                className="catalog-hub__add-input"
-                value={draftEn}
-                onChange={(e) => setDraftEn(e.target.value)}
-                placeholder={t("catalog.edit.placeholderEn")}
-                maxLength={48}
-              />
-            </label>
-            <label className="catalog-hub__add-field">
-              <span className="catalog-hub__add-field-label">
-                {t("catalog.edit.nameSv")}
-              </span>
-              <input
-                type="text"
-                className="catalog-hub__add-input"
-                value={draftSv}
-                onChange={(e) => setDraftSv(e.target.value)}
-                placeholder={t("catalog.edit.placeholderSv")}
-                maxLength={48}
-              />
-            </label>
-          </div>
-          <div className="catalog-hub__add-actions">
-            <button
-              type="submit"
-              className="destination-page__primary-btn destination-page__primary-btn--form catalog-hub__add-btn"
-            >
-              {t("catalog.edit.add")}
-            </button>
-          </div>
-        </form>
+          {t("catalog.edit.add")}
+        </button>
 
         <PageSearchField
           className="catalog-hub__search"
@@ -158,6 +113,12 @@ export function CatalogEditPanel({
           onChange={setQuery}
         />
       </div>
+
+      <CatalogAddItemSheet
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onConfirm={onAddBilingual}
+      />
 
       <div className="catalog-hub__edit-scroll">
         {filtered.length === 0 ? (

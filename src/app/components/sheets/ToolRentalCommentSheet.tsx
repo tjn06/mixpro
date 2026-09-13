@@ -82,7 +82,7 @@ export function ToolRentalCommentSheet({
           className={SHEET_SUBTITLE_CLASS}
           style={{ maxWidth: 280, textAlign: "center" }}
         >
-          Optional note for this rented tool — supplier, pickup, return…
+          {t("sheets.rentalComment.subtitle")}
         </p>
       </header>
 

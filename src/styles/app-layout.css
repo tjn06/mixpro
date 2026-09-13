@@ -4948,6 +4948,16 @@
   );
 }
 
+/** Long-press qty− drain — stay in yellow family, not session teal. */
+.select-chip-rental:has([data-hold]) {
+  transition:
+    border-color var(--select-chip-hold-ms, 420ms) linear,
+    background-color var(--select-chip-hold-ms, 420ms) linear;
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  color: var(--semantic-text-primary);
+}
+
 .select-chip-rental > .select-chip--rental-main {
   border: none;
   border-radius: 7px 0 0 7px;
@@ -4957,10 +4967,13 @@
   max-width: none;
 }
 
-.select-chip-rental > .select-chip--rental-main[data-selected] {
+.select-chip-rental > .select-chip--rental-main[data-selected],
+.select-chip-rental > .select-chip--rental-main[data-selected][data-hold] {
   border: none;
   background: transparent;
   color: inherit;
+  /* Beat generic selected/hold teal drain on the fused main button. */
+  transition: none;
 }
 
 .select-chip__comment-btn {
@@ -5126,7 +5139,8 @@
   border-radius: 999px;
   border: 1.5px solid var(--select-chip-accent);
   background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
-  color: var(--select-chip-accent);
+  /* Accent stays on chrome; label ink is theme primary (black light / white dark). */
+  color: var(--semantic-text-primary);
   font-family: "Outfit", sans-serif;
   font-size: 10px;
   font-weight: 700;
@@ -5158,12 +5172,12 @@
 .select-chip-rental[data-comment]::before,
 .select-chip[data-rented][data-comment]::before {
   border-color: var(--select-chip-rented, #d4a017);
-  color: var(--select-chip-rented, #d4a017);
+  color: var(--semantic-text-primary);
 }
 
 .select-chip-deletable[data-selected][data-qty]::after {
   border-color: var(--select-chip-accent);
-  color: #ffffff;
+  color: var(--semantic-text-primary);
 }
 
 [data-theme="dark"] .select-chip-rental {
@@ -5189,6 +5203,19 @@
     :has([data-hold])
   ) {
   background: color-mix(in srgb, #f5c84c 30%, #0a0a14);
+}
+
+[data-theme="dark"] .select-chip-rental:has([data-hold]) {
+  transition:
+    border-color var(--select-chip-hold-ms, 420ms) linear,
+    background-color var(--select-chip-hold-ms, 420ms) linear;
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #0a0a14));
+  color: #ffffff;
+}
+
+[data-theme="dark"] .select-chip-rental > .select-chip--rental-main[data-selected][data-hold] {
+  color: #ffffff;
 }
 
 [data-theme="dark"] .select-chip__comment-btn {
@@ -5371,6 +5398,7 @@
 /**
  * Dark pickers (session + Tools/Consumables hubs): tinted chrome preserved,
  * label/badge text white for readability.
+ * Light mode uses --semantic-text-primary (black) via base chip/badge rules.
  */
 [data-theme="dark"] .select-view .select-chip[data-selected]:not(
     .select-chip--wear
@@ -5414,7 +5442,14 @@
   .select-chip[data-selected][data-qty]::after,
 [data-theme="dark"]
   .select-view
-  .select-chip--select[data-selected][data-family]::before {
+  .select-chip--select[data-selected][data-family]::before,
+[data-theme="dark"]
+  .select-view
+  .select-chip--wear[data-selected][data-wear-title]::before,
+[data-theme="dark"]
+  .select-view
+  .select-chip-cluster[data-selected]
+  .select-chip--wear[data-wear-title]::before {
   color: #ffffff;
 }
 
@@ -5504,8 +5539,12 @@
   padding: 1px 6px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--select-chip-accent) 45%, transparent);
-  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
-  color: var(--select-chip-accent);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+  color: var(--semantic-text-primary);
   font-family: "Outfit", sans-serif;
   font-size: 10px;
   font-weight: 600;
@@ -5532,7 +5571,7 @@
 }
 
 .select-chip[data-selected] {
-  color: var(--select-chip-accent);
+  color: var(--semantic-text-primary);
   border-color: var(--select-chip-accent);
   background: color-mix(
     in srgb,
@@ -5687,6 +5726,26 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+/** Match selected panel/chip shell tint when an option is already chosen. */
+.select-chip-menu[data-selected],
+.select-chip-menu--wear[data-selected] {
+  border-color: var(--select-chip-accent, var(--session-accent, #2dd4bf));
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent, var(--session-accent, #2dd4bf)) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+.select-chip-menu[data-selected] .select-chip-menu__option:active,
+.select-chip-menu--wear[data-selected] .select-chip-menu__option:active {
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent, var(--session-accent, #2dd4bf)) 12%,
+    transparent
+  );
 }
 
 .select-chip-menu::-webkit-scrollbar {
@@ -5863,7 +5922,7 @@
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--select-chip-accent) 45%, transparent);
   background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
-  color: var(--select-chip-accent);
+  color: var(--semantic-text-primary);
   font-family: "Outfit", sans-serif;
   font-size: 9px;
   font-weight: 600;
@@ -5876,15 +5935,25 @@
   transform: translateX(-50%);
 }
 
+.select-chip--wear[data-selected][data-wear-title]::before,
+.select-chip-cluster[data-selected] .select-chip--wear[data-wear-title]::before {
+  background: color-mix(
+    in srgb,
+    var(--select-chip-accent) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+  border-color: var(--select-chip-accent);
+}
+
 .select-chip--wear[data-selected] {
-  color: var(--select-chip-accent);
+  color: var(--semantic-text-primary);
   border-color: transparent;
   background: transparent;
 }
 
 .select-chip-cluster[data-selected] .select-chip--wear {
   border-left-color: color-mix(in srgb, var(--select-chip-accent) 40%, transparent);
-  color: var(--select-chip-accent);
+  color: var(--semantic-text-primary);
 }
 
 .select-chip--wear:not([data-selected]) {
@@ -5950,7 +6019,7 @@
 
 .select-chip-cluster[data-selected] .select-chip--clone-plus {
   border-left-color: color-mix(in srgb, var(--select-chip-accent) 40%, transparent);
-  color: var(--select-chip-accent);
+  color: var(--semantic-text-primary);
 }
 
 .select-chip--clone-plus:active:not(:disabled) {
@@ -6053,7 +6122,7 @@
   border: 0;
   border-radius: 5px;
   background: color-mix(in srgb, var(--select-chip-accent) 28%, transparent);
-  color: var(--select-chip-accent);
+  color: var(--semantic-text-primary);
   font-family: "Outfit", sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -6111,8 +6180,13 @@
   }
 }
 
+/**
+ * Top pad only — do not set padding-bottom here.
+ * `.batch-totals-scroll-panel__inner` already clears the measured stage sheet
+ * via `--batch-totals-panel-reserve` (collapsed / half-open / expanded).
+ */
 .session-overview__tools-pad {
-  padding-block: 12px 20px;
+  padding-top: 12px;
 }
 
 .tools-page__picker {
@@ -6227,70 +6301,9 @@
   color: var(--semantic-text-muted);
 }
 
-.catalog-hub__add-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.catalog-hub__add-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.catalog-hub__add-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.catalog-hub__add-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.catalog-hub__add-field-label {
-  font-family: "Outfit", sans-serif;
-  font-size: var(--text-ui-xs, 11px);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--semantic-text-muted);
-}
-
-.catalog-hub__add-input {
-  flex: 1;
-  min-width: 0;
-  width: 100%;
-  box-sizing: border-box;
-  height: var(--control-h, 44px);
-  margin: 0;
-  padding: 0 12px;
-  border-radius: 12px;
-  border: 1.5px solid var(--semantic-border-subtle, rgba(255, 255, 255, 0.12));
-  background: var(--component-sheet-panel-list-row-bg, rgba(255, 255, 255, 0.04));
-  color: var(--semantic-text-primary);
-  font-family: "Outfit", sans-serif;
-  font-size: var(--text-page-body, 16px);
-  font-weight: 500;
-  outline: none;
-}
-
-.catalog-hub__add-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .catalog-hub__add-btn {
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 4.5rem;
-  padding-inline: 16px;
+  width: 100%;
+  margin-bottom: 10px;
 }
 
 .catalog-hub__rename-stack {

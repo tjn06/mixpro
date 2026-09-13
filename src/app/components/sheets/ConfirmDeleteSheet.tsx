@@ -19,18 +19,21 @@ export function ConfirmDeleteSheet({
   onOpenChange,
   itemLabel,
   title,
+  body,
   onConfirm,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   itemLabel: string;
   title?: string;
+  body?: string;
   onConfirm: () => void;
 }) {
   const { t } = useTranslation("common");
   const titleId = useId();
   const resolvedTitle = title ?? t("sheets.delete.title");
   const name = itemLabel || t("sheets.delete.fallbackName");
+  const resolvedBody = body ?? t("sheets.delete.body", { name });
 
   return (
     <AppFrameCoverSheet open={open} zIndex={90} ariaLabelledBy={titleId}>
@@ -45,7 +48,7 @@ export function ConfirmDeleteSheet({
           className={SHEET_SUBTITLE_CLASS}
           style={{ maxWidth: 280, textAlign: "center" }}
         >
-          {t("sheets.delete.body", { name })}
+          {resolvedBody}
         </p>
       </header>
 

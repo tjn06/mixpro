@@ -1501,38 +1501,6 @@ export function BatchMixer({
               actionsBlockRef={actionsBlockRef}
               ingredientCardsRef={ingredientCardsRef}
               saveButtonRef={saveButtonRef}
-              onSave={handleSaveRequest}
-              saveFlash={saveFlash}
-              loadedSavedMix={loadedSavedMix}
-              saveLabelOverride={
-                sessionMode
-                  ? sessionMode.mode === "edit"
-                    ? t("mixer.updateInSession")
-                    : t("mixer.saveToSession")
-                  : recipeCreateMode
-                    ? t("mixer.saveToRecipe")
-                    : undefined
-              }
-              saveConfirmAction={
-                sessionMode
-                  ? sessionMode.mode === "edit"
-                    ? t("mixer.updateInSessionConfirm")
-                    : t("mixer.saveToSessionConfirm")
-                  : recipeCreateMode
-                    ? t("mixer.saveToRecipe")
-                    : undefined
-              }
-              saveDescriptionOverride={
-                sessionMode
-                  ? sessionMode.mode === "edit"
-                    ? t("mixer.holdUpdateSession")
-                    : t("mixer.holdSaveSession")
-                  : recipeCreateMode
-                    ? t("mixer.holdSaveRecipe")
-                    : undefined
-              }
-              useCommitIcon={false}
-              sessionTone={focusSessionChrome}
               expandMs={LOCK_EXPAND_MS}
               expandEase={LOCK_EASE}
               zIndex={LOCK_UNLOCK_Z}

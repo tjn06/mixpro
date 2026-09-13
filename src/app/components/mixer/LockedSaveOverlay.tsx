@@ -1,9 +1,9 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
-import { LongPressButton } from "../shared/LongPressButton";
-import { SavedIcon, SaveIcon, KeepAwakeIcon } from "../shared/ActionIcons";
+import { KeepAwakeIcon } from "../shared/ActionIcons";
 import {
-  crossfadeLayerStyles,
+  CONTENT_FADE_IN_MS,
+  CONTENT_FADE_OUT_MS,
   LOCKED_ACTION_ICON_SIZE,
   PRIMARY_BORDER,
 } from "../shared/lockedActionCrossfade";
@@ -13,9 +13,17 @@ import { cv, componentTokens } from "../../ui/tokens";
 
 export { LOCKED_ACTION_ICON_SIZE } from "../shared/lockedActionCrossfade";
 
+/**
+ * When true, the locked overlay morphs from the save button (grow/shrink).
+ * Keep Awake is not sourced from save, so fade-in at the expanded rect is the default.
+ * Measurement from `saveButtonRef` stays wired either way so morph can be re-enabled.
+ */
+const MORPH_FROM_SAVE = false;
+
 type OverlayState = {
   show: boolean;
   expanded: boolean;
+  visible: boolean;
   rect: Rect;
   collapsed: Rect;
 };
@@ -28,16 +36,6 @@ export interface LockedSaveOverlayProps {
   actionsBlockRef: RefObject<HTMLElement | null>;
   ingredientCardsRef: RefObject<HTMLElement | null>;
   saveButtonRef: RefObject<HTMLButtonElement | null>;
-  onSave: () => void;
-  saveFlash?: boolean;
-  loadedSavedMix?: { id: string } | null;
-  /** Session Mode — commit copy instead of library save. */
-  saveLabelOverride?: string;
-  saveConfirmAction?: string;
-  saveDescriptionOverride?: string;
-  useCommitIcon?: boolean;
-  /** Session Mode — teal fill on commit button. */
-  sessionTone?: boolean;
   expandMs: number;
   expandEase: string;
   zIndex: number;
@@ -94,7 +92,7 @@ function KeepAwakeToggle({
           : t("mixer.wake.ariaOff")
       }
       disabled={!supported}
-      className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-xl touch-none transition-colors duration-150"
+      className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-xl touch-none transition-colors duration-150"
       style={{
         cursor: supported ? "pointer" : "default",
         background: lit ? cv.action.longPressActive : cv.action.longPressIdle,
@@ -157,20 +155,11 @@ export function LockedSaveOverlay({
   actionsBlockRef,
   ingredientCardsRef,
   saveButtonRef,
-  onSave,
-  saveFlash = false,
-  loadedSavedMix = null,
-  saveLabelOverride,
-  saveConfirmAction,
-  saveDescriptionOverride,
-  useCommitIcon = false,
-  sessionTone = false,
   expandMs,
   expandEase,
   zIndex,
   surfaceBg,
 }: LockedSaveOverlayProps) {
-  const { t } = useTranslation("common");
   const [overlay, setOverlay] = useState<OverlayState | null>(null);
   const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [keepAwakeArmed, setKeepAwakeArmed] = useState(false);
@@ -199,6 +188,7 @@ export function LockedSaveOverlay({
       const cards = ingredientCardsRef.current;
       if (!anchor || !bucketReadout || !recReadout || !actions || !save) return null;
 
+      // Collapsed = save button rect (morph origin when MORPH_FROM_SAVE is enabled).
       const collapsed = localRect(save, anchor);
       const expanded = saveCoverTargetRect(
         localRect(bucketReadout, anchor),
@@ -211,13 +201,24 @@ export function LockedSaveOverlay({
       return { collapsed, expanded };
     };
 
-    const apply = (next: { collapsed: Rect; expanded: Rect }, expanded: boolean) => {
+    const applyMorph = (next: { collapsed: Rect; expanded: Rect }, expanded: boolean) => {
       setOverlay((prev) => ({
         show: true,
         expanded,
+        visible: true,
         rect: expanded ? next.expanded : next.collapsed,
         collapsed: next.collapsed,
       }));
+    };
+
+    const applyFade = (next: { collapsed: Rect; expanded: Rect }, visible: boolean) => {
+      setOverlay({
+        show: true,
+        expanded: true,
+        visible,
+        rect: next.expanded,
+        collapsed: next.collapsed,
+      });
     };
 
     const ro =
@@ -225,7 +226,9 @@ export function LockedSaveOverlay({
         ? new ResizeObserver(() => {
             if (!isLocked) return;
             const next = measure();
-            if (next) apply(next, true);
+            if (!next) return;
+            if (MORPH_FROM_SAVE) applyMorph(next, true);
+            else applyFade(next, true);
           })
         : null;
 
@@ -242,11 +245,32 @@ export function LockedSaveOverlay({
     if (!next) return () => ro?.disconnect();
 
     if (isLocked) {
-      setOverlay({ show: true, expanded: false, rect: next.collapsed, collapsed: next.collapsed });
+      if (MORPH_FROM_SAVE) {
+        setOverlay({
+          show: true,
+          expanded: false,
+          visible: true,
+          rect: next.collapsed,
+          collapsed: next.collapsed,
+        });
+        let innerId = 0;
+        const outerId = requestAnimationFrame(() => {
+          innerId = requestAnimationFrame(() => {
+            applyMorph(next, true);
+          });
+        });
+        return () => {
+          cancelAnimationFrame(outerId);
+          if (innerId) cancelAnimationFrame(innerId);
+          ro?.disconnect();
+        };
+      }
+
+      applyFade(next, false);
       let innerId = 0;
       const outerId = requestAnimationFrame(() => {
         innerId = requestAnimationFrame(() => {
-          apply(next, true);
+          applyFade(next, true);
         });
       });
       return () => {
@@ -256,11 +280,19 @@ export function LockedSaveOverlay({
       };
     }
 
-    setOverlay((prev) => {
-      if (!prev?.show) return null;
-      return { ...prev, expanded: false, rect: prev.collapsed };
-    });
-    collapseTimer.current = setTimeout(() => setOverlay(null), expandMs);
+    if (MORPH_FROM_SAVE) {
+      setOverlay((prev) => {
+        if (!prev?.show) return null;
+        return { ...prev, expanded: false, visible: true, rect: prev.collapsed };
+      });
+      collapseTimer.current = setTimeout(() => setOverlay(null), expandMs);
+    } else {
+      setOverlay((prev) => {
+        if (!prev?.show) return null;
+        return { ...prev, visible: false };
+      });
+      collapseTimer.current = setTimeout(() => setOverlay(null), CONTENT_FADE_OUT_MS);
+    }
 
     return () => {
       if (collapseTimer.current) {
@@ -282,9 +314,10 @@ export function LockedSaveOverlay({
 
   if (!overlay?.show) return null;
 
-  const transition = `top ${expandMs}ms ${expandEase}, left ${expandMs}ms ${expandEase}, width ${expandMs}ms ${expandEase}, height ${expandMs}ms ${expandEase}, border-color ${expandMs}ms ${expandEase}`;
-
-  const expanded = overlay.expanded;
+  const morphTransition = `top ${expandMs}ms ${expandEase}, left ${expandMs}ms ${expandEase}, width ${expandMs}ms ${expandEase}, height ${expandMs}ms ${expandEase}, border-color ${expandMs}ms ${expandEase}`;
+  const fadeTransition = overlay.visible
+    ? `opacity ${CONTENT_FADE_IN_MS}ms ${expandEase}`
+    : `opacity ${CONTENT_FADE_OUT_MS}ms ease-out`;
 
   const shellStyle: CSSProperties = {
     position: "absolute",
@@ -293,85 +326,30 @@ export function LockedSaveOverlay({
     left: overlay.rect.left,
     width: overlay.rect.width,
     height: overlay.rect.height,
-    transition,
-    pointerEvents: "auto",
+    transition: MORPH_FROM_SAVE ? morphTransition : fadeTransition,
+    opacity: MORPH_FROM_SAVE ? 1 : overlay.visible ? 1 : 0,
+    pointerEvents: overlay.visible ? "auto" : "none",
     borderRadius: 12,
     overflow: "hidden",
     boxSizing: "border-box",
-    background: expanded ? "transparent" : surfaceBg,
-    border: expanded ? "1.5px solid transparent" : PRIMARY_BORDER,
+    background: surfaceBg,
+    border: MORPH_FROM_SAVE
+      ? overlay.expanded
+        ? PRIMARY_BORDER
+        : "1.5px solid transparent"
+      : PRIMARY_BORDER,
   };
-
-  const saveLabel = saveFlash
-    ? saveLabelOverride
-      ? t("mixer.added")
-      : t("mixer.saved")
-    : saveLabelOverride ?? (loadedSavedMix ? t("mixer.updateMix") : t("mixer.saveMix"));
-  const saveDescription = saveFlash
-    ? saveLabelOverride
-      ? t("mixer.save.inSession")
-      : t("mixer.save.stored")
-    : saveDescriptionOverride ??
-      (loadedSavedMix
-        ? t("mixer.save.holdUpdate")
-        : t("mixer.save.holdStore"));
-  const confirmAction = saveConfirmAction ?? t("mixer.saveMixConfirm");
-  const saveIcon =
-    sessionTone || saveLabelOverride
-      ? undefined
-      : saveFlash || useCommitIcon
-        ? <SavedIcon size={LOCKED_ACTION_ICON_SIZE} />
-        : <SaveIcon size={LOCKED_ACTION_ICON_SIZE} />;
-  const compactIcon =
-    sessionTone || saveLabelOverride
-      ? undefined
-      : saveFlash || useCommitIcon
-        ? <SavedIcon />
-        : <SaveIcon />;
 
   return (
     <div style={shellStyle}>
-      <div style={crossfadeLayerStyles(expanded, expandEase, true)}>
-        <div
-          className="flex h-full w-full min-w-0"
-          style={{ gap: "var(--action-row-gap)" }}
-        >
-          <KeepAwakeToggle
-            active={active}
-            supported={supported}
-            failed={failed}
-            remainingMs={remainingMs}
-            armed={keepAwakeArmed}
-            onToggle={() => setKeepAwakeArmed((v) => !v)}
-          />
-          <LongPressButton
-            label={saveLabel}
-            description={saveDescription}
-            confirmAction={confirmAction}
-            onLongPress={onSave}
-            variant="primary"
-            sessionTone={sessionTone}
-            progressVariant="water"
-            stacked
-            labelSize="var(--text-ui-sm)"
-            descriptionSize={10}
-            icon={saveIcon}
-            className="h-full min-w-0 flex-1"
-          />
-        </div>
-      </div>
-      <div style={crossfadeLayerStyles(expanded, expandEase, false)}>
-        <LongPressButton
-          label={saveLabel}
-          confirmAction={confirmAction}
-          onLongPress={onSave}
-          variant="primary"
-          sessionTone={sessionTone}
-          progressVariant="water"
-          icon={compactIcon}
-          className="h-full w-full"
-        />
-      </div>
+      <KeepAwakeToggle
+        active={active}
+        supported={supported}
+        failed={failed}
+        remainingMs={remainingMs}
+        armed={keepAwakeArmed}
+        onToggle={() => setKeepAwakeArmed((v) => !v)}
+      />
     </div>
   );
 }

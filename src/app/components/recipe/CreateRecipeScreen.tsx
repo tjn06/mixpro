@@ -31,12 +31,12 @@ import {
   type CreateRecipeEntryContext,
   type RecipeCreateMethod,
 } from "../../domain/recipe/createFromInputs";
-import { initialMixValues } from "../../domain/recipe/calc";
 import {
   PRESET_RECIPES,
   recipeMenuLabel,
   type BlendingRecipe,
 } from "../../domain/recipe/types";
+import { partsUnitLabel } from "../../domain/recipe/ingredientLabels";
 import type { AppLanguage } from "../../i18n/language";
 import { displayLabel } from "../../i18n/localizedLabel";
 import { useRecipeLibraryStore } from "../../recipe-library/store";
@@ -68,6 +68,18 @@ function copyRecipeName(
 }
 
 type FieldKey = "name" | "a" | "b" | "filler" | "thickener" | "description";
+
+/** Per-method component fields — kept independently when switching tabs. */
+type ComponentDraft = {
+  a: string;
+  b: string;
+  filler: string;
+  thickener: string;
+};
+
+function emptyComponentDraft(): ComponentDraft {
+  return { a: "", b: "", filler: "", thickener: "" };
+}
 
 function parseNum(raw: string): number {
   const normalized = String(raw).trim().replace(",", ".");
@@ -179,6 +191,7 @@ function Field({
   label,
   value,
   onChange,
+  placeholder,
   suffix,
   inputMode = "decimal",
   required = false,
@@ -191,6 +204,7 @@ function Field({
   label: string;
   value: string;
   onChange: (v: string) => void;
+  placeholder?: string;
   suffix?: string;
   inputMode?: "decimal" | "text";
   required?: boolean;
@@ -569,6 +583,7 @@ function Field({
             className={`${SHEET_FIELD_INPUT_CLASS} create-recipe__input`}
             style={sheetFieldInputStyle({ flex: 1, minWidth: 0 })}
             value={value}
+            placeholder={placeholder}
             inputMode={inputMode}
             required={required}
             aria-labelledby={labelId}
@@ -719,12 +734,10 @@ export function CreateRecipeScreen({
 
   const [method, setMethod] = useState<RecipeCreateMethod>("formula");
   const [name, setName] = useState("");
-  const [nameSubline, setNameSubline] = useState(() => t("recipe.defaultSubline"));
+  const [nameSubline, setNameSubline] = useState("");
   const [description, setDescription] = useState("");
-  const [a, setA] = useState(method === "formula" ? "2" : "");
-  const [b, setB] = useState(method === "formula" ? "1" : "");
-  const [filler, setFiller] = useState("");
-  const [thickener, setThickener] = useState("");
+  const [formulaDraft, setFormulaDraft] = useState<ComponentDraft>(emptyComponentDraft);
+  const [weightsDraft, setWeightsDraft] = useState<ComponentDraft>(emptyComponentDraft);
   const [error, setError] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -746,7 +759,22 @@ export function CreateRecipeScreen({
     undefined,
   );
 
+  /** Active method's A/B/filler/thickener — save/preview always use this. */
+  const components = method === "formula" ? formulaDraft : weightsDraft;
+  const { a, b, filler, thickener } = components;
+
   const markDirty = () => setDirty(true);
+
+  const setComponentField = (key: keyof ComponentDraft, value: string) => {
+    const apply = (prev: ComponentDraft): ComponentDraft => ({
+      ...prev,
+      [key]: value,
+    });
+    if (method === "formula") setFormulaDraft(apply);
+    else setWeightsDraft(apply);
+    markDirty();
+    if (submitted) setError(null);
+  };
 
   const applyRecipeAsCopy = (recipe: BlendingRecipe): boolean => {
     if (dirty) {
@@ -768,16 +796,15 @@ export function CreateRecipeScreen({
     setName(
       copyRecipeName(recipe, (n) => t("recipe.copyName", { name: n }), uiLanguage),
     );
-    setNameSubline(
-      displayLabel(recipe.nameSubline, uiLanguage).trim() ||
-        t("recipe.defaultSubline"),
-    );
+    setNameSubline(displayLabel(recipe.nameSubline, uiLanguage).trim());
     const copiedDescription = displayLabel(recipe.description, uiLanguage).trim();
     setDescription(copiedDescription);
-    setA(formatAmount(aParts));
-    setB(formatAmount(bParts));
-    setFiller(sandPct != null && sandPct > 0 ? formatAmount(sandPct) : "");
-    setThickener(tixPct != null && tixPct > 0 ? formatAmount(tixPct) : "");
+    setFormulaDraft({
+      a: formatAmount(aParts),
+      b: formatAmount(bParts),
+      filler: sandPct != null && sandPct > 0 ? formatAmount(sandPct) : "",
+      thickener: tixPct != null && tixPct > 0 ? formatAmount(tixPct) : "",
+    });
     setScaledBinderSum(binder);
     if (binder != null || copiedDescription !== "") {
       setAdvancedOpen(true);
@@ -841,85 +868,10 @@ export function CreateRecipeScreen({
 
   const switchMethod = (next: RecipeCreateMethod) => {
     if (next === method) return;
-
-    const aNum = parseNum(a);
-    const bNum = parseNum(b);
-    const fillNum = parseNum(filler);
-    const tixNum = parseNum(thickener);
-    const hasComponentInput =
-      a.trim() !== "" ||
-      b.trim() !== "" ||
-      filler.trim() !== "" ||
-      thickener.trim() !== "";
-
-    if (next === "formula") {
-      // Actual weights → Formula: convert grams to parts / % when A+B are valid.
-      if (aNum > 0 && bNum > 0) {
-        const recipe = blendingRecipeFromWeights({
-          name: name.trim() || t("recipe.draftName"),
-          nameSubline,
-          description,
-          a: aNum,
-          b: bNum,
-          filler: Number.isFinite(fillNum) && fillNum > 0 ? fillNum : 0,
-          thickener: Number.isFinite(tixNum) && tixNum > 0 ? tixNum : 0,
-        });
-        const aParts = recipe.binderParts.find((p) => p.id === "A")?.parts ?? 2;
-        const bParts = recipe.binderParts.find((p) => p.id === "B")?.parts ?? 1;
-        const sandPct = recipe.binderPercents.find((p) => p.id === "SAND")?.percent;
-        const tixPct = recipe.binderPercents.find((p) => p.id === "TIX")?.percent;
-        setA(String(aParts));
-        setB(String(bParts));
-        setFiller(sandPct != null && sandPct > 0 ? formatAmount(sandPct) : "");
-        setThickener(tixPct != null && tixPct > 0 ? formatAmount(tixPct) : "");
-      } else if (hasComponentInput) {
-        const ok = window.confirm(t("recipe.switchToFormulaConfirm"));
-        if (!ok) return;
-        setA("2");
-        setB("1");
-        setFiller("");
-        setThickener("");
-      } else {
-        setA((v) => v || "2");
-        setB((v) => v || "1");
-      }
-    } else {
-      // Formula → Actual weights: convert with rec. batch binder when available.
-      if (
-        aNum > 0 &&
-        bNum > 0 &&
-        scaledBinderSum != null &&
-        scaledBinderSum > 0
-      ) {
-        const recipe = blendingRecipeFromFormula({
-          name: name.trim() || t("recipe.draftName"),
-          nameSubline,
-          description,
-          aParts: aNum,
-          bParts: bNum,
-          fillerPercent: Number.isFinite(fillNum) && fillNum > 0 ? fillNum : 0,
-          thickenerPercent: Number.isFinite(tixNum) && tixNum > 0 ? tixNum : 0,
-          initialBinderSum: scaledBinderSum,
-        });
-        const vals = initialMixValues(recipe, scaledBinderSum);
-        setA(formatAmount(vals[1] ?? 0));
-        setB(formatAmount(vals[2] ?? 0));
-        setThickener((vals[3] ?? 0) > 0 ? formatAmount(vals[3] ?? 0) : "");
-        setFiller((vals[4] ?? 0) > 0 ? formatAmount(vals[4] ?? 0) : "");
-      } else if (hasComponentInput) {
-        const ok = window.confirm(t("recipe.switchToWeightsConfirm"));
-        if (!ok) return;
-        setA("");
-        setB("");
-        setFiller("");
-        setThickener("");
-      }
-    }
-
+    // Keep each mode's fields independently — no conversion / wipe on switch.
     setMethod(next);
     setError(null);
     setSubmitted(false);
-    markDirty();
   };
 
   const buildRecipe = (): BlendingRecipe | null => {
@@ -1086,10 +1038,12 @@ export function CreateRecipeScreen({
       const nextB = Math.max(0, Math.round(vals[2] ?? 0));
       const nextTix = Math.max(0, Math.round(vals[3] ?? 0));
       const nextFill = Math.max(0, Math.round(vals[4] ?? 0));
-      setA(formatAmount(nextA));
-      setB(formatAmount(nextB));
-      setThickener(nextTix > 0 ? formatAmount(nextTix) : "");
-      setFiller(nextFill > 0 ? formatAmount(nextFill) : "");
+      setWeightsDraft({
+        a: formatAmount(nextA),
+        b: formatAmount(nextB),
+        thickener: nextTix > 0 ? formatAmount(nextTix) : "",
+        filler: nextFill > 0 ? formatAmount(nextFill) : "",
+      });
       setBucketSelection(payload.bucketSelection);
       setPhase("form");
       setDraft(null);
@@ -1210,12 +1164,6 @@ export function CreateRecipeScreen({
 
       <div className="create-recipe__scroll flex-1 min-h-0 overflow-y-auto overscroll-none app-gutter-x">
         <div className="create-recipe__body">
-          <p className="create-recipe__lede">
-            {method === "formula"
-              ? t("recipe.formulaLede")
-              : t("recipe.weightsLede")}
-          </p>
-
           <div className="create-recipe__start-from">
             <button
               type="button"
@@ -1238,6 +1186,7 @@ export function CreateRecipeScreen({
           <Field
             label={t("recipe.subline")}
             value={nameSubline}
+            placeholder={t("recipe.defaultSubline")}
             inputMode="text"
             onChange={(v) => {
               setNameSubline(v);
@@ -1250,36 +1199,40 @@ export function CreateRecipeScreen({
               <Field
                 label={t("recipe.resinA")}
                 value={a}
-                suffix="parts"
+                placeholder={t("recipe.placeholderPartsA")}
+                suffix={partsUnitLabel(uiLanguage)}
                 required
                 fieldKey="a"
                 invalid={Boolean(fieldErrors.a)}
-                onChange={(v) => updateField("a", v, setA)}
+                onChange={(v) => setComponentField("a", v)}
               />
               <Field
                 label={t("recipe.hardenerB")}
                 value={b}
-                suffix="parts"
+                placeholder={t("recipe.placeholderPartsB")}
+                suffix={partsUnitLabel(uiLanguage)}
                 required
                 fieldKey="b"
                 invalid={Boolean(fieldErrors.b)}
-                onChange={(v) => updateField("b", v, setB)}
+                onChange={(v) => setComponentField("b", v)}
               />
               <Field
                 label={t("recipe.filler")}
                 value={filler}
+                placeholder={t("recipe.placeholderPercent")}
                 suffix={t("recipe.percentOfBinder")}
                 fieldKey="filler"
                 invalid={Boolean(fieldErrors.filler)}
-                onChange={(v) => updateField("filler", v, setFiller)}
+                onChange={(v) => setComponentField("filler", v)}
               />
               <Field
                 label={t("recipe.thickener")}
                 value={thickener}
+                placeholder={t("recipe.placeholderPercent")}
                 suffix={t("recipe.percentOfBinder")}
                 fieldKey="thickener"
                 invalid={Boolean(fieldErrors.thickener)}
-                onChange={(v) => updateField("thickener", v, setThickener)}
+                onChange={(v) => setComponentField("thickener", v)}
               />
             </>
           ) : (
@@ -1287,44 +1240,48 @@ export function CreateRecipeScreen({
               <Field
                 label={t("recipe.resinA")}
                 value={a}
+                placeholder={t("recipe.placeholderGrams")}
                 suffix="gram"
                 required
                 kgHelper
                 fieldKey="a"
                 invalid={Boolean(fieldErrors.a)}
-                onChange={(v) => updateField("a", v, setA)}
+                onChange={(v) => setComponentField("a", v)}
               />
               <Field
                 label={t("recipe.hardenerB")}
                 value={b}
+                placeholder={t("recipe.placeholderGrams")}
                 suffix="gram"
                 required
                 kgHelper
                 fieldKey="b"
                 invalid={Boolean(fieldErrors.b)}
-                onChange={(v) => updateField("b", v, setB)}
+                onChange={(v) => setComponentField("b", v)}
               />
               <Field
                 label={t("recipe.filler")}
                 value={filler}
+                placeholder={t("recipe.placeholderGrams")}
                 suffix="gram"
                 kgHelper
                 percentOfBinderHelper
                 binderGrams={weightsBinderGrams}
                 fieldKey="filler"
                 invalid={Boolean(fieldErrors.filler)}
-                onChange={(v) => updateField("filler", v, setFiller)}
+                onChange={(v) => setComponentField("filler", v)}
               />
               <Field
                 label={t("recipe.thickener")}
                 value={thickener}
+                placeholder={t("recipe.placeholderGrams")}
                 suffix="gram"
                 kgHelper
                 percentOfBinderHelper
                 binderGrams={weightsBinderGrams}
                 fieldKey="thickener"
                 invalid={Boolean(fieldErrors.thickener)}
-                onChange={(v) => updateField("thickener", v, setThickener)}
+                onChange={(v) => setComponentField("thickener", v)}
               />
               <div className="create-recipe__weights-tools">
                 <button
@@ -1337,8 +1294,8 @@ export function CreateRecipeScreen({
                       : t("recipe.dialFormGrams")
                   }
                   onClick={openEditWeightsCalculator}
-                >
-                  Dial form grams
+                  >
+                  {t("recipe.dialFormGramsBtn")}
                 </button>
                 <p className="create-recipe__weights-tools-hint">
                   {weightsBinderGrams == null

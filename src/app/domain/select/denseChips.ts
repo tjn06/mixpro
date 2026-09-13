@@ -11,13 +11,13 @@ export const DENSE_CHIP_GAP_Y = 14;
 export const DENSE_CHIP_GAP_X_MIN = 7;
 export const DENSE_CHIP_GAP_X_MAX = 16;
 
-/** Adaptive type: short labels read large; long labels stay compact. */
+/**
+ * Adaptive type: short labels can read slightly larger.
+ * Never shrink long labels below the base chip size (14px) — that was too hard to read.
+ */
 export function denseChipFontSizePx(labelLength: number): number {
   if (labelLength <= 5) return 15;
-  if (labelLength <= 8) return 14;
-  if (labelLength <= 11) return 13;
-  if (labelLength <= 15) return 12;
-  return 11;
+  return 14;
 }
 
 export function denseChipFontStyle(

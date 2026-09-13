@@ -73,8 +73,10 @@
     "recipeLibrary": "Receptbibliotek",
     "dayProvisional": "provisorisk arbetsdag",
     "dayUpcoming": "kommande",
-    "daySelectedHint": "valt. Dubbeltryck för att redigera datum",
-    "dayTapHint": "tryck för att filtrera denna dag. Dubbeltryck för att redigera datum",
+    "daySelectedHint": "valt. Dubbeltryck för att redigera datum. Håll för att ta bort",
+    "dayTapHint": "tryck för att filtrera denna dag. Dubbeltryck för att redigera datum. Håll för att ta bort",
+    "dayDeleteTitle": "Ta bort dag?",
+    "dayDeleteBody": "Ta bort alla blandningar, verktyg och förbrukning på {{date}}? Detta går inte att ångra.",
     "stagesAria": "Sessionssteg",
     "stageComplete": "{{label}}, {{amount}}, klar",
     "stageCurrent": "{{label}}, {{amount}}, aktuellt steg",
@@ -202,6 +204,10 @@
       "body": "Är du säker på att du vill ta bort “{{name}}”? Det går inte att ångra.",
       "fallbackName": "denna artikel"
     },
+    "catalogAdd": {
+      "title": "Lägg till",
+      "subtitle": "Ange namn på engelska och/eller svenska. Ett språk räcker."
+    },
     "sessionName": "Sessionsnamn",
     "loadMixes": {
       "title": "Sparade blandningar",
@@ -287,6 +293,7 @@
     },
     "rentalComment": {
       "title": "Hyresanteckning",
+      "subtitle": "Valfri anteckning för detta hyrda verktyg — leverantör, hämtning, återlämning…",
       "label": "Kommentar",
       "tool": "Verktyg",
       "placeholder": "Leverantör, hämtning, återlämning…",
@@ -420,6 +427,10 @@
     "hardenerB": "Härdare B",
     "filler": "Fyllnad",
     "thickener": "Förtjockare",
+    "placeholderPartsA": "t.ex. 2",
+    "placeholderPartsB": "t.ex. 1",
+    "placeholderPercent": "t.ex. 400",
+    "placeholderGrams": "t.ex. 1500",
     "advanced": "Avancerat",
     "showAdvanced": "Visa avancerade alternativ",
     "hideAdvanced": "Dölj avancerade alternativ",
@@ -442,7 +453,8 @@
     "builtIn": "Inbyggt recept",
     "enterABFirst": "Ange bas A och härdare B först",
     "enterABUnlock": "Ange bas A och härdare B för att låsa upp kalkylatorn.",
-    "dialFormGrams": "Ställ in formgram i kalkylatorn (anger inte rek. sats)",
+    "dialFormGrams": "Redigera gram i kalkylatorn (anger inte rek. sats)",
+    "dialFormGramsBtn": "Redigera i kalkylatorn",
     "binderHint": "Ange bas A och härdare B först för att använda % av bindemedel.",
     "errors": {
       "nameRequired": "Namn krävs",

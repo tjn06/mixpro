@@ -166,17 +166,20 @@ export function SessionOverviewScreen({
     for (const entry of consumableEntries) {
       if (entry.workDate) populatedDayIds.add(entry.workDate);
     }
-    return buildSessionDayFilterBadges(
-      collectSessionWorkDateIds({
-        batches,
-        toolEntries,
-        consumableEntries,
-        activeWorkDate: session?.activeWorkDate,
-        extraDayIds,
-      }),
-      new Date(),
+    return {
+      badges: buildSessionDayFilterBadges(
+        collectSessionWorkDateIds({
+          batches,
+          toolEntries,
+          consumableEntries,
+          activeWorkDate: session?.activeWorkDate,
+          extraDayIds,
+        }),
+        new Date(),
+        populatedDayIds,
+      ),
       populatedDayIds,
-    );
+    };
   }, [
     batches,
     toolEntries,
@@ -184,6 +187,8 @@ export function SessionOverviewScreen({
     session?.activeWorkDate,
     extraDayIds,
   ]);
+  const populatedDayIds = dayBadges.populatedDayIds;
+  const sessionDayBadges = dayBadges.badges;
 
   const selectedToolEntries = useMemo(
     () =>
@@ -335,6 +340,37 @@ export function SessionOverviewScreen({
       return withoutFrom.includes(toId) ? withoutFrom : [...withoutFrom, toId];
     });
     setDayFilterId(toId);
+  };
+
+  const deleteDayContent = (dayId: string) => {
+    if (!session) return;
+    const nextToolEntries = toolEntries.filter((e) => e.workDate !== dayId);
+    const nextConsumableEntries = consumableEntries.filter(
+      (e) => e.workDate !== dayId,
+    );
+
+    patchSession(session.id, {
+      batches: batches.filter((batch) => batch.workDate !== dayId),
+      toolEntries: nextToolEntries,
+      consumableEntries: nextConsumableEntries,
+      consumableWearByOptionId: pruneWearByOptionId(
+        consumableWearByOptionId,
+        qtyMapFromDatedEntries(nextConsumableEntries, "all"),
+      ),
+      activeWorkDate:
+        dayFilterId === dayId && dayId !== todayId
+          ? todayId
+          : dayId === session.activeWorkDate
+            ? todayId
+            : session.activeWorkDate,
+    });
+
+    if (dayId !== todayId) {
+      setExtraDayIds((prev) => prev.filter((id) => id !== dayId));
+    }
+    if (dayFilterId === dayId) {
+      setDayFilterId(todayId);
+    }
   };
 
   const addSessionDay = (date: Date) => {
@@ -1133,10 +1169,12 @@ export function SessionOverviewScreen({
                   })}
                 </nav>
                 <SessionDayFilterBar
-                  badges={dayBadges}
+                  badges={sessionDayBadges}
                   selectedId={dayFilterId}
                   onSelectedIdChange={setDayFilter}
                   onConfirmDayChange={confirmDayChange}
+                  onDeleteDay={deleteDayContent}
+                  dayHasContent={(dayId) => populatedDayIds.has(dayId)}
                   onAddDay={addSessionDay}
                 />
               </div>
