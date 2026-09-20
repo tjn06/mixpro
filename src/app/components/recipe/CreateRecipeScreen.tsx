@@ -36,6 +36,10 @@ import {
   recipeMenuLabel,
   type BlendingRecipe,
 } from "../../domain/recipe/types";
+import {
+  initialMixValues,
+  recipeBinderSum,
+} from "../../domain/recipe/calc";
 import { partsUnitLabel } from "../../domain/recipe/ingredientLabels";
 import type { AppLanguage } from "../../i18n/language";
 import { displayLabel } from "../../i18n/localizedLabel";
@@ -50,6 +54,7 @@ import {
   RecipeHeaderSublineStack,
 } from "../mixer/RecipeZoneMeta";
 import { PickRecipeForMixSheet } from "../sessions/PickRecipeForMixSheet";
+import { ConfirmActionSheet } from "../sheets/ConfirmActionSheet";
 import { GramSwipeInputSheet } from "../sheets/GramSwipeInputSheet";
 import {
   SHEET_FIELD_INPUT_CLASS,
@@ -70,16 +75,35 @@ function copyRecipeName(
 
 type FieldKey = "name" | "a" | "b" | "filler" | "thickener" | "description";
 
-/** Per-method component fields — kept independently when switching tabs. */
-type ComponentDraft = {
+/** Full create-recipe form for one method tab — Formula and Weights stay independent. */
+type MethodFormDraft = {
+  name: string;
+  nameSubline: string;
+  description: string;
   a: string;
   b: string;
   filler: string;
   thickener: string;
+  scaledBinderSum: number | undefined;
+  bucketSelection: BucketSelection;
+  advancedOpen: boolean;
+  dirty: boolean;
 };
 
-function emptyComponentDraft(): ComponentDraft {
-  return { a: "", b: "", filler: "", thickener: "" };
+function emptyMethodFormDraft(): MethodFormDraft {
+  return {
+    name: "",
+    nameSubline: "",
+    description: "",
+    a: "",
+    b: "",
+    filler: "",
+    thickener: "",
+    scaledBinderSum: undefined,
+    bucketSelection: "none",
+    advancedOpen: false,
+    dirty: false,
+  };
 }
 
 function parseNum(raw: string): number {
@@ -739,22 +763,15 @@ export function CreateRecipeScreen({
   }, [sessionId, sessions]);
 
   const [method, setMethod] = useState<RecipeCreateMethod>("formula");
-  const [name, setName] = useState("");
-  const [nameSubline, setNameSubline] = useState("");
-  const [description, setDescription] = useState("");
-  const [formulaDraft, setFormulaDraft] = useState<ComponentDraft>(emptyComponentDraft);
-  const [weightsDraft, setWeightsDraft] = useState<ComponentDraft>(emptyComponentDraft);
+  const [formulaForm, setFormulaForm] = useState<MethodFormDraft>(emptyMethodFormDraft);
+  const [weightsForm, setWeightsForm] = useState<MethodFormDraft>(emptyMethodFormDraft);
   const [error, setError] = useState<string | null>(null);
-  const [dirty, setDirty] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formulaInfoOpen, setFormulaInfoOpen] = useState(false);
   const [bucketInfoOpen, setBucketInfoOpen] = useState(false);
   const [startFromOpen, setStartFromOpen] = useState(false);
-
-  /** Advanced: untouched = unlimited bucket, no binder baseline. */
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [bucketSelection, setBucketSelection] = useState<BucketSelection>("none");
-  const [scaledBinderSum, setScaledBinderSum] = useState<number | undefined>(undefined);
+  const [pendingStartRecipe, setPendingStartRecipe] =
+    useState<BlendingRecipe | null>(null);
 
   const [phase, setPhase] = useState<"form" | "scale">("form");
   const [scalePurpose, setScalePurpose] = useState<"rec-batch" | "edit-weights">(
@@ -765,60 +782,103 @@ export function CreateRecipeScreen({
     undefined,
   );
 
-  /** Active method's A/B/filler/thickener — save/preview always use this. */
-  const components = method === "formula" ? formulaDraft : weightsDraft;
-  const { a, b, filler, thickener } = components;
+  const form = method === "formula" ? formulaForm : weightsForm;
+  const setForm = method === "formula" ? setFormulaForm : setWeightsForm;
+  const {
+    name,
+    nameSubline,
+    description,
+    a,
+    b,
+    filler,
+    thickener,
+    scaledBinderSum,
+    bucketSelection,
+    advancedOpen,
+    dirty,
+  } = form;
 
-  const markDirty = () => setDirty(true);
+  const patchForm = (
+    patch: Partial<MethodFormDraft> | ((prev: MethodFormDraft) => MethodFormDraft),
+  ) => {
+    setForm((prev) =>
+      typeof patch === "function" ? patch(prev) : { ...prev, ...patch },
+    );
+  };
 
-  const setComponentField = (key: keyof ComponentDraft, value: string) => {
-    const apply = (prev: ComponentDraft): ComponentDraft => ({
-      ...prev,
-      [key]: value,
-    });
-    if (method === "formula") setFormulaDraft(apply);
-    else setWeightsDraft(apply);
-    markDirty();
+  const markDirty = () => patchForm({ dirty: true });
+
+  const setComponentField = (
+    key: "a" | "b" | "filler" | "thickener",
+    value: string,
+  ) => {
+    patchForm({ [key]: value, dirty: true });
     if (submitted) setError(null);
+  };
+
+  const commitRecipeAsCopy = (recipe: BlendingRecipe) => {
+    const copiedName = copyRecipeName(
+      recipe,
+      (n) => t("recipe.copyName", { name: n }),
+      uiLanguage,
+    );
+    const copiedSubline = displayLabel(recipe.nameSubline, uiLanguage).trim();
+    const copiedDescription = displayLabel(recipe.description, uiLanguage).trim();
+
+    if (method === "weights") {
+      const binder = recipeBinderSum(recipe);
+      const [, aG, bG, tixG, sandG] = initialMixValues(recipe, binder);
+      patchForm({
+        name: copiedName,
+        nameSubline: copiedSubline,
+        description: copiedDescription,
+        a: formatAmount(aG),
+        b: formatAmount(bG),
+        filler: sandG > 0 ? formatAmount(sandG) : "",
+        thickener: tixG > 0 ? formatAmount(tixG) : "",
+        advancedOpen: copiedDescription !== "" ? true : form.advancedOpen,
+        dirty: true,
+      });
+    } else {
+      const aParts = recipe.binderParts.find((p) => p.id === "A")?.parts ?? 2;
+      const bParts = recipe.binderParts.find((p) => p.id === "B")?.parts ?? 1;
+      const sandPct = recipe.binderPercents.find((p) => p.id === "SAND")?.percent;
+      const tixPct = recipe.binderPercents.find((p) => p.id === "TIX")?.percent;
+      const binder =
+        recipe.initialBinderSum != null &&
+        Number.isFinite(recipe.initialBinderSum) &&
+        recipe.initialBinderSum > 0
+          ? Math.round(recipe.initialBinderSum)
+          : undefined;
+
+      patchForm({
+        name: copiedName,
+        nameSubline: copiedSubline,
+        description: copiedDescription,
+        a: formatAmount(aParts),
+        b: formatAmount(bParts),
+        filler: sandPct != null && sandPct > 0 ? formatAmount(sandPct) : "",
+        thickener: tixPct != null && tixPct > 0 ? formatAmount(tixPct) : "",
+        scaledBinderSum: binder,
+        advancedOpen:
+          binder != null || copiedDescription !== "" ? true : form.advancedOpen,
+        dirty: true,
+      });
+    }
+
+    setError(null);
+    setSubmitted(false);
   };
 
   const applyRecipeAsCopy = (recipe: BlendingRecipe): boolean => {
     if (dirty) {
-      const ok = window.confirm(t("recipe.replaceConfirm"));
-      if (!ok) return false;
+      setPendingStartRecipe(recipe);
+      // Keep picker open under the confirm sheet.
+      return true;
     }
-    const aParts = recipe.binderParts.find((p) => p.id === "A")?.parts ?? 2;
-    const bParts = recipe.binderParts.find((p) => p.id === "B")?.parts ?? 1;
-    const sandPct = recipe.binderPercents.find((p) => p.id === "SAND")?.percent;
-    const tixPct = recipe.binderPercents.find((p) => p.id === "TIX")?.percent;
-    const binder =
-      recipe.initialBinderSum != null &&
-      Number.isFinite(recipe.initialBinderSum) &&
-      recipe.initialBinderSum > 0
-        ? Math.round(recipe.initialBinderSum)
-        : undefined;
-
-    setMethod("formula");
-    setName(
-      copyRecipeName(recipe, (n) => t("recipe.copyName", { name: n }), uiLanguage),
-    );
-    setNameSubline(displayLabel(recipe.nameSubline, uiLanguage).trim());
-    const copiedDescription = displayLabel(recipe.description, uiLanguage).trim();
-    setDescription(copiedDescription);
-    setFormulaDraft({
-      a: formatAmount(aParts),
-      b: formatAmount(bParts),
-      filler: sandPct != null && sandPct > 0 ? formatAmount(sandPct) : "",
-      thickener: tixPct != null && tixPct > 0 ? formatAmount(tixPct) : "",
-    });
-    setScaledBinderSum(binder);
-    if (binder != null || copiedDescription !== "") {
-      setAdvancedOpen(true);
-    }
-    setError(null);
-    setSubmitted(false);
-    markDirty();
-    return true;
+    commitRecipeAsCopy(recipe);
+    // false = close picker after successful apply.
+    return false;
   };
 
   const descriptionWordCount = countDescriptionWords(description);
@@ -898,7 +958,7 @@ export function CreateRecipeScreen({
           validateRecipeCardDescription(description) ??
             t("recipe.errors.checkDescription"),
         );
-        setAdvancedOpen(true);
+        patchForm({ advancedOpen: true });
         window.setTimeout(() => focusCreateField("description"), 50);
         return null;
       } else if (localErrors.a || localErrors.b) {
@@ -1033,7 +1093,7 @@ export function CreateRecipeScreen({
     } else {
       addLibraryRecipe(recipe);
     }
-    setDirty(false);
+    setForm((prev) => ({ ...prev, dirty: false }));
     onSaved(recipe, via);
   };
 
@@ -1044,32 +1104,37 @@ export function CreateRecipeScreen({
       const nextB = Math.max(0, Math.round(vals[2] ?? 0));
       const nextTix = Math.max(0, Math.round(vals[3] ?? 0));
       const nextFill = Math.max(0, Math.round(vals[4] ?? 0));
-      setWeightsDraft({
+      setWeightsForm((prev) => ({
+        ...prev,
         a: formatAmount(nextA),
         b: formatAmount(nextB),
         thickener: nextTix > 0 ? formatAmount(nextTix) : "",
         filler: nextFill > 0 ? formatAmount(nextFill) : "",
-      });
-      setBucketSelection(payload.bucketSelection);
+        bucketSelection: payload.bucketSelection,
+        dirty: true,
+      }));
       setPhase("form");
       setDraft(null);
       setDraftMixValues(undefined);
-      markDirty();
       return;
     }
     const binderSum = payload.binderSum > 0 ? payload.binderSum : undefined;
-    setScaledBinderSum(binderSum);
-    setBucketSelection(payload.bucketSelection);
-    setAdvancedOpen(true);
+    patchForm({
+      scaledBinderSum: binderSum,
+      bucketSelection: payload.bucketSelection,
+      advancedOpen: true,
+      dirty: true,
+    });
     setPhase("form");
     setDraft(null);
     setDraftMixValues(undefined);
-    markDirty();
   };
 
-  const updateField = (key: FieldKey, value: string, setter: (v: string) => void) => {
-    setter(value);
-    markDirty();
+  const updateMetaField = (
+    key: "name" | "nameSubline" | "description",
+    value: string,
+  ) => {
+    patchForm({ [key]: value, dirty: true });
     if (submitted) setError(null);
   };
 
@@ -1187,17 +1252,14 @@ export function CreateRecipeScreen({
             required
             fieldKey="name"
             invalid={Boolean(fieldErrors.name)}
-            onChange={(v) => updateField("name", v, setName)}
+            onChange={(v) => updateMetaField("name", v)}
           />
           <Field
             label={t("recipe.subline")}
             value={nameSubline}
             placeholder={t("recipe.defaultSubline")}
             inputMode="text"
-            onChange={(v) => {
-              setNameSubline(v);
-              markDirty();
-            }}
+            onChange={(v) => updateMetaField("nameSubline", v)}
           />
 
           {method === "formula" ? (
@@ -1347,7 +1409,7 @@ export function CreateRecipeScreen({
                   ? t("recipe.hideAdvanced")
                   : t("recipe.showAdvanced")
               }
-              onClick={() => setAdvancedOpen((open) => !open)}
+              onClick={() => patchForm({ advancedOpen: !advancedOpen })}
             >
               <span>{t("recipe.advanced")}</span>
               <span
@@ -1400,8 +1462,7 @@ export function CreateRecipeScreen({
                         0,
                         RECIPE_CARD_DESCRIPTION_MAX_CHARS,
                       );
-                      setDescription(next);
-                      markDirty();
+                      updateMetaField("description", next);
                     }}
                   />
                 </label>
@@ -1441,8 +1502,10 @@ export function CreateRecipeScreen({
                             selected ? " create-recipe__bucket-option--selected" : ""
                           }`}
                           onClick={() => {
-                            setBucketSelection(option);
-                            markDirty();
+                            patchForm({
+                              bucketSelection: option,
+                              dirty: true,
+                            });
                           }}
                         >
                           {bucketOptionLabel(option, t("recipe.unlimited"))}
@@ -1526,6 +1589,24 @@ export function CreateRecipeScreen({
           })
         }
         onPick={applyRecipeAsCopy}
+      />
+
+      <ConfirmActionSheet
+        open={pendingStartRecipe != null}
+        onOpenChange={(open) => {
+          if (!open) setPendingStartRecipe(null);
+        }}
+        title={t("recipe.replaceTitle")}
+        body={t("recipe.replaceConfirm")}
+        cancelLabel={t("common.cancel")}
+        confirmLabel={t("common.ok")}
+        onCancel={() => setPendingStartRecipe(null)}
+        onConfirm={() => {
+          if (!pendingStartRecipe) return;
+          commitRecipeAsCopy(pendingStartRecipe);
+          setPendingStartRecipe(null);
+          setStartFromOpen(false);
+        }}
       />
     </div>
   );

@@ -69,6 +69,12 @@
   color: var(--component-sheet-footer-btn-color);
 }
 
+.sheet-footer-btn--primary {
+  background: var(--component-header-icon-btn-bg-active-solid, var(--component-header-icon-btn-bg-active));
+  border: var(--component-header-icon-btn-border-active);
+  color: var(--component-header-icon-btn-color-active);
+}
+
 .sheet-footer-btn--flash {
   color: var(--semantic-text-primary);
 }

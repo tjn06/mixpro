@@ -5,6 +5,7 @@ import {
   type ItemAcquisition,
 } from "../../domain/select/acquisition";
 import { listSelectedFlexSelectEntries, formatFlexSelectLabelEntries } from "../../domain/select/catalogLookup";
+import { buildCatalogSelectionReport } from "../../domain/select/catalogMutations";
 import {
   ensureFlexSelectSelected,
   flexSelectSelectionTotal,
@@ -25,6 +26,7 @@ import { CatalogReportDateBar } from "./CatalogReportDateBar";
 import { DestinationPageChrome } from "../pages/DestinationPageChrome";
 import { InventoryStageSummaryBar } from "../shell/InventoryStageSummaryBar";
 import { StageBottomSheet } from "../shell/StageBottomSheet";
+import { ShareTextPreview } from "../share/ShareTextPreview";
 import { CatalogEditPanel } from "./CatalogEditPanel";
 import { CatalogSharePanel } from "./CatalogSharePanel";
 
@@ -97,17 +99,6 @@ export function CatalogHub({
     localWorkDateId(),
   );
   const colorScheme = useSettingsStore((s) => s.colorScheme);
-  const uiLanguage = useSettingsStore((s) => s.uiLanguage);
-  const selectedEntries = useMemo(
-    () =>
-      listSelectedFlexSelectEntries(
-        selection,
-        catalog,
-        customItems ?? [],
-        uiLanguage,
-      ),
-    [selection, catalog, customItems, uiLanguage],
-  );
   const shareEntries = useMemo(
     () =>
       listSelectedFlexSelectEntries(
@@ -117,15 +108,6 @@ export function CatalogHub({
         SESSION_REPORT_LANGUAGE,
       ),
     [selection, catalog, customItems],
-  );
-  const selectedLabels = useMemo(
-    () =>
-      selectedEntries.map((entry) => {
-        const base =
-          entry.qty > 1 ? `${entry.label} ×${entry.qty}` : entry.label;
-        return `${base}${wearLabelSuffix(wearByOptionId?.[entry.id])}`;
-      }),
-    [selectedEntries, wearByOptionId],
   );
   const shareLabels = useMemo(
     () =>
@@ -138,46 +120,24 @@ export function CatalogHub({
     [shareEntries, wearByOptionId],
   );
   const selectedTotal = flexSelectSelectionTotal(selection);
+  const [comment, setComment] = useState("");
+  const reportText = useMemo(
+    () =>
+      buildCatalogSelectionReport({
+        title: reportTitle,
+        labels: shareLabels,
+        comment,
+        workDateId,
+      }),
+    [reportTitle, shareLabels, comment, workDateId],
+  );
 
   useEffect(() => {
     if (tab !== "report") setPanelExpanded(false);
   }, [tab]);
 
-  const expandedBody = (
-    <div className="batch-totals-entity-total-table min-w-0 w-full" aria-readonly>
-      <header className="batch-totals-entity-summary__intro">
-        <h2 className="batch-totals-entity-summary__title">{title}</h2>
-        <p className="batch-totals-entity-summary__subtitle">
-          {selectedLabels.length > 0
-            ? t("catalog.selectedForList", { title })
-            : t("catalog.noneSelectedYet", { noun: inventoryNounPlural })}
-        </p>
-        {selectedEntries.length > 0 ? (
-          <div
-            className="batch-totals-entity-summary__chips"
-            aria-label={t("catalog.selectedAria", {
-              noun: inventoryNounPlural,
-            })}
-          >
-            {selectedEntries.map((entry) => {
-              const base =
-                entry.qty > 1 ? `${entry.label} ×${entry.qty}` : entry.label;
-              const label = `${base}${wearLabelSuffix(wearByOptionId?.[entry.id])}`;
-              return (
-                <span
-                  key={entry.id}
-                  className="batch-totals-entity-summary__chip"
-                  data-rented={entry.rented ? "" : undefined}
-                >
-                  {label}
-                </span>
-              );
-            })}
-          </div>
-        ) : null}
-      </header>
-    </div>
-  );
+  const previewHeading = t("catalog.shareReportHeading");
+  const previewAria = `${previewHeading} — ${title}`;
 
   const subnav = (
     <div className="catalog-hub__chrome">
@@ -224,10 +184,10 @@ export function CatalogHub({
           <StageBottomSheet
             panelId="catalog-bottom-panel"
             regionLabel={t("catalog.summaryRegion", { title })}
-            expandedBodyLabel={t("catalog.selectionExpanded", { title })}
+            expandedBodyLabel={previewAria}
             sourceExpanded={panelExpanded}
             onSourceExpandedChange={setPanelExpanded}
-            remeasureKey={`${selectedTotal}:${selectedLabels.join("|")}:${workDateId ?? ""}`}
+            remeasureKey={`${selectedTotal}:${shareLabels.join("|")}:${workDateId ?? ""}:${comment}`}
             summary={
               <InventoryStageSummaryBar
                 label={title}
@@ -240,11 +200,19 @@ export function CatalogHub({
             shareActions={
               <CatalogSharePanel
                 title={reportTitle}
-                selectedLabels={shareLabels}
-                workDateId={workDateId}
+                reportText={reportText}
+                comment={comment}
+                onCommentChange={setComment}
+                canShare={shareLabels.length > 0}
               />
             }
-            expandedBody={expandedBody}
+            expandedBody={
+              <ShareTextPreview
+                heading={previewHeading}
+                subtitle={title}
+                text={reportText}
+              />
+            }
           />
         ) : undefined
       }

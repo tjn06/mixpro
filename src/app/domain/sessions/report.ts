@@ -6,7 +6,7 @@ import {
   getIngredientLabel,
   recipeIngredientIndexes,
 } from "../recipe/calc";
-import { recipeMenuLabel, type BlendingRecipe } from "../recipe/types";
+import type { BlendingRecipe } from "../recipe/types";
 import { gramsFromSlotValues } from "../../saved-batch-totals/batches";
 import type { MixSession, SessionBatchItem, SessionStageId } from "../../sessions/types";
 import { useConsumablesLibraryStore } from "../../consumables/libraryStore";
@@ -47,9 +47,9 @@ export const SESSION_REPORT_LANGUAGE: BatchReportLanguage = "sv";
 const REPORT_COPY: Record<
   BatchReportLanguage,
   {
-    heading: string;
+    /** Fallback subject only — never printed as a report body heading. */
+    subjectFallback: string;
     batches: string;
-    recipe: string;
     overview: string;
     totals: string;
     totalMeta: string;
@@ -64,41 +64,38 @@ const REPORT_COPY: Record<
   }
 > = {
   sv: {
-    heading: "Förbrukningsrapport",
-    batches: "Blandningar",
-    recipe: "Recept",
+    subjectFallback: "Förbrukning",
+    batches: "Förbrukningsmaterial",
     overview: "Översikt",
     totals: "Totalt",
     totalMeta: "Total epoxymassa",
     tools: "Verktyg",
-    consumables: "Förbrukningsmaterial",
+    consumables: "Förbrukningsartiklar",
     dateNote: "Datum",
     periodNote: "Period",
     orderNumber: "Ordernummer",
     batchCount: (n) => (n === 1 ? "1 blandning" : `${n} blandningar`),
     toolCount: (n) => (n === 1 ? "1 verktyg" : `${n} verktyg`),
     consCount: (n) =>
-      n === 1 ? "1 förbrukningsvara" : `${n} förbrukningsvaror`,
+      n === 1 ? "1 förbrukningsartikel" : `${n} förbrukningsartiklar`,
   },
   en: {
-    heading: "Consumption report",
-    batches: "Batches",
-    recipe: "Recipe",
+    subjectFallback: "Consumption",
+    batches: "Materials",
     overview: "Overview",
     totals: "Totals",
     totalMeta: "Total epoxy mass",
     tools: "Tools",
-    consumables: "Consumables",
+    consumables: "Consumable articles",
     dateNote: "Date",
     periodNote: "Period",
     orderNumber: "Order number",
     batchCount: (n) => (n === 1 ? "1 batch" : `${n} batches`),
     toolCount: (n) => (n === 1 ? "1 tool" : `${n} tools`),
     consCount: (n) =>
-      n === 1 ? "1 consumable" : `${n} consumables`,
+      n === 1 ? "1 consumable article" : `${n} consumable articles`,
   },
 };
-
 /** Slot codes that stay visible in shared reports (site shorthand). */
 const KEEP_SLOT_CODE = new Set(["A", "B", "TIX", "SAND"]);
 
@@ -199,17 +196,6 @@ function firstRecipeForSlot(
   return null;
 }
 
-function batchRecipeLabel(
-  batch: SessionBatchItem,
-  recipe: BlendingRecipe | null,
-  language: BatchReportLanguage,
-): string {
-  const fromBatch = batch.recipeName?.trim();
-  if (fromBatch) return fromBatch;
-  if (recipe) return recipeMenuLabel(recipe, language);
-  return batch.recipeId;
-}
-
 function appendBatchesSection(
   lines: string[],
   session: MixSession,
@@ -229,10 +215,8 @@ function appendBatchesSection(
     const recipe = resolve(batch);
     const values = gramsFromSlotValues(batch.values);
     const mult = Math.max(1, batch.multiplier);
-    lines.push(batch.name);
-    lines.push(`${copy.recipe}: ${batchRecipeLabel(batch, recipe, language)}`);
     if (batch.comment?.trim()) {
-      lines.push(`  ${batch.comment.trim()}`);
+      lines.push(batch.comment.trim());
     }
     if (recipe) {
       const indexes = [0, ...recipeIngredientIndexes(recipe).filter((i) => i !== 0)];
@@ -242,14 +226,13 @@ function appendBatchesSection(
         const unit = p.isKg ? "kg" : "g";
         const grams = (values[pi] ?? 0) * mult;
         lines.push(
-          `  ${formatAmountLine(p.id, meta, formatMixAmount(grams, p.isKg), unit, language)}`,
+          formatAmountLine(p.id, meta, formatMixAmount(grams, p.isKg), unit, language),
         );
       }
     }
     lines.push("");
   }
 }
-
 function appendToolsSection(
   lines: string[],
   session: MixSession,
@@ -335,7 +318,7 @@ function appendSummarySection(
           ? copy.totalMeta
           : reportMetaLabel(firstRecipeForSlot(batches, resolve, pi), p.id, language);
       lines.push(
-        `  ${formatAmountLine(p.id, label, formatMixAmount(totals[pi] ?? 0, p.isKg), unit, language)}`,
+        formatAmountLine(p.id, label, formatMixAmount(totals[pi] ?? 0, p.isKg), unit, language),
       );
     }
     lines.push("");
@@ -395,19 +378,17 @@ export function buildSessionReportText(
   const copy = REPORT_COPY[language];
   const lines: string[] = [];
   const trimmedComment = comment?.trim();
-  const title =
-    trimmedComment || session.name.trim() || copy.heading;
+  const title = trimmedComment || session.name.trim();
 
   const stages = stagesForShareScope(scope, activeStage);
   const period = sessionReportPeriodLine(session, dayFilter, language);
   const batches = batchesForDayFilter(session, dayFilter);
 
-  lines.push(copy.heading);
-  lines.push(title);
+  if (title) lines.push(title);
   const order = session.orderNumber?.trim();
   if (order) lines.push(`${copy.orderNumber}: ${order}`);
   if (period) lines.push(period);
-  lines.push("");
+  if (title || order || period) lines.push("");
 
   for (const stage of stages) {
     appendStageSection(
@@ -439,7 +420,8 @@ export function sessionReportSubject(
 ): string {
   const trimmed = comment?.trim();
   if (trimmed) return trimmed;
-  const name = session.name.trim() || REPORT_COPY[language].heading;
+  const name =
+    session.name.trim() || REPORT_COPY[language].subjectFallback;
   const period = sessionReportPeriodLine(session, dayFilter, language);
   return period ? `${name} — ${period}` : name;
 }

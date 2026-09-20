@@ -48,6 +48,7 @@ export const TOOLS_CATALOG: ToolItem[] = [
     "HTC RX6",
     "HTC RX8",
     "HTC RX950",
+    "HTC 420",
   ]),
   tool("blast-machine", localizedLabel("Blast machine", "Blästringsmaskin")),
   tool("jackhammer", localizedLabel("Jackhammer", "Bilningsmaskin")),
@@ -73,6 +74,29 @@ export const TOOLS_CATALOG: ToolItem[] = [
     "16 A CEE",
     "32 A CEE",
   ]),
+  // API additions — existing catalog entries kept above.
+  tool(
+    "steel-shot-blaster",
+    localizedLabel("Steel shot blaster", "Stålkulebläster"),
+  ),
+  tool(
+    "small-dust-separator",
+    localizedLabel("Small dust separator", "Liten stoftavskiljare"),
+  ),
+  tool(
+    "remediation-dust-separator",
+    localizedLabel("Remediation dust separator", "Sanering stoftavskiljare"),
+  ),
+  tool("htc-80id", localizedLabel("HTC 80iD", "HTC 80iD"), [
+    localizedLabel("HTC 80iD", "HTC 80iD"),
+    localizedLabel("Remediation HTC 80iD", "Sanering HTC 80iD"),
+  ]),
+  tool(
+    "flex-hand-grinder",
+    localizedLabel("Flex hand grinder", "Flex handslip"),
+  ),
+  tool("abs-grinder", localizedLabel("ABS grinder", "ABS-Slip")),
+  tool("hilti-pry-bar", localizedLabel("Hilti pry bar", "Bilspett Hilti")),
 ];
 
 export function findToolLabel(

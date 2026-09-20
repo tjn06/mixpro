@@ -1,10 +1,21 @@
 import {
+  useMemo,
   useRef,
+  useState,
   type ReactNode,
   type RefObject,
 } from "react";
 import { useTranslation } from "react-i18next";
 import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
+import {
+  SESSION_REPORT_LANGUAGE,
+  buildSessionReportText,
+  sessionReportSubject,
+} from "../../domain/sessions/report";
+import {
+  stagesForShareScope,
+  type SessionShareScope,
+} from "../../domain/sessions/shareScope";
 import {
   CARD_NAME_WEIGHT,
   entityValueColor,
@@ -12,11 +23,11 @@ import {
 import { entityAccentColor } from "../../presentation/entityAccent";
 import type { ColorScheme } from "../../../theme/appearance";
 import type { BlendingRecipe } from "../../domain/recipe/types";
-import type { SessionShareScope } from "../../domain/sessions/shareScope";
 import type { MixSession, SessionStageId } from "../../sessions/types";
 import { cv } from "../../ui/tokens";
 import { InventoryStageSummaryBar } from "../shell/InventoryStageSummaryBar";
 import { StageBottomSheet } from "../shell/StageBottomSheet";
+import { ShareTextPreview } from "../share/ShareTextPreview";
 import { SessionShareBar } from "./SessionShareBar";
 
 function AmountCell({
@@ -258,7 +269,6 @@ export function SessionBottomPanel({
   colorScheme,
   sourceExpanded,
   onSourceExpandedChange,
-  expandedBody,
   session,
   libraryRecipes,
   shareScope,
@@ -274,7 +284,6 @@ export function SessionBottomPanel({
   colorScheme: ColorScheme;
   sourceExpanded: boolean;
   onSourceExpandedChange: (next: boolean) => void;
-  expandedBody: ReactNode;
   session: MixSession;
   libraryRecipes: BlendingRecipe[];
   shareScope: SessionShareScope;
@@ -288,15 +297,52 @@ export function SessionBottomPanel({
 }) {
   const { t } = useTranslation("common");
   const compactSummaryRef = useRef<HTMLDivElement>(null);
+  const [comment, setComment] = useState("");
+  const language = SESSION_REPORT_LANGUAGE;
+  const activeStage = session.activeStage;
+
+  const reportText = useMemo(
+    () =>
+      buildSessionReportText(
+        session,
+        libraryRecipes,
+        language,
+        comment,
+        shareScope,
+        activeStage,
+        dayFilter,
+      ),
+    [session, libraryRecipes, language, comment, shareScope, activeStage, dayFilter],
+  );
+
+  const reportSubject = useMemo(
+    () =>
+      sessionReportSubject(
+        session,
+        language,
+        comment,
+        shareScope,
+        activeStage,
+        dayFilter,
+      ),
+    [session, language, comment, shareScope, activeStage, dayFilter],
+  );
+
+  const previewHeading = t("sessions.shareReportHeading");
+  const scopedStages = stagesForShareScope(shareScope, activeStage);
+  const previewSubtitle = scopedStages
+    .map((stage) => t(`sessions.stage.${stage}`))
+    .join(" → ");
+  const previewAria = `${previewHeading} — ${previewSubtitle}`;
 
   return (
     <StageBottomSheet
       panelId="session-bottom-panel"
       regionLabel={t("sessions.summaryRegion")}
-      expandedBodyLabel={t("sessions.summaryExpanded")}
+      expandedBodyLabel={previewAria}
       sourceExpanded={sourceExpanded}
       onSourceExpandedChange={onSourceExpandedChange}
-      remeasureKey={`${session.activeStage}:${mixCount}:${toolCount}:${consumableCount}:${shareScope}:${dayFilter}:${session.updatedAt}`}
+      remeasureKey={`${session.activeStage}:${mixCount}:${toolCount}:${consumableCount}:${shareScope}:${dayFilter}:${session.updatedAt}:${comment}`}
       summary={({ batchesRelocated }) => (
         <SessionSummaryBar
           stage={session.activeStage}
@@ -313,15 +359,25 @@ export function SessionBottomPanel({
       shareActions={
         <SessionShareBar
           session={session}
-          libraryRecipes={libraryRecipes}
           shareScope={shareScope}
           onShareScopeChange={onShareScopeChange}
+          reportText={reportText}
+          reportSubject={reportSubject}
+          comment={comment}
+          onCommentChange={setComment}
           onSave={onSaveSession}
           saveFlash={saveFlash}
+          language={language}
           dayFilter={dayFilter}
         />
       }
-      expandedBody={expandedBody}
+      expandedBody={
+        <ShareTextPreview
+          heading={previewHeading}
+          subtitle={previewSubtitle}
+          text={reportText}
+        />
+      }
     />
   );
 }

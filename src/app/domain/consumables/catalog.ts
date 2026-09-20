@@ -54,6 +54,8 @@ export const CONSUMABLES_CATALOG: ConsumableItem[] = [
       "EZ H / 30 grit (H3)",
       "EZ X / 50 grit (H4)",
       "EZ XS / 100 grit (H5)",
+      localizedLabel("Fenix Husqvarna", "Fenix Husqvarna"),
+      localizedLabel("Metal Husqvarna", "Metall Husqvarna"),
     ],
     { requiresWear: true },
   ),
@@ -107,4 +109,25 @@ export const CONSUMABLES_CATALOG: ConsumableItem[] = [
     localizedLabel("Work gloves", "Arbetshandskar"),
   ]),
   consumable("hammer-drill", localizedLabel("Hammer drill", "Slagborr")),
+  consumable("saw-blade", localizedLabel("Saw blade", "Sågklinga"), [], {
+    requiresWear: true,
+  }),
+  // API additions — existing catalog entries kept above.
+  consumable(
+    "abs-grinding-paper",
+    localizedLabel("ABS grinding paper", "ABS-Slip Papper"),
+  ),
+  consumable(
+    "hand-diamond-blade",
+    localizedLabel("Hand diamond blade", "Handdiamantklinga"),
+    [
+      localizedLabel("Edge Husqvarna", "Edge Husqvarna"),
+      localizedLabel("Fine Husqvarna", "Fine Husqvarna"),
+      localizedLabel("Polish Hilti", "Polerklinga Hilti"),
+      localizedLabel("Red Hilti", "Röd Hilti"),
+      localizedLabel("Black Hilti", "Svart Hilti"),
+      localizedLabel("Sp Husqvarna", "Sp Husqvarna"),
+    ],
+    { requiresWear: true },
+  ),
 ];

@@ -1,8 +1,7 @@
 import { Check } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { formatMixAmount, MIX_PARAMS } from "../../domain/mix/entities";
-import { getEntityMetaLabel } from "../../domain/recipe/calc";
+import { formatMixAmount } from "../../domain/mix/entities";
 import {
   PRESET_RECIPES,
   recipeMenuLabel,
@@ -21,9 +20,7 @@ import {
 } from "../../domain/sessions/stages";
 import {
   resolveSessionBatchRecipe,
-  sessionEntityIndexes,
   sessionGrandTotalGrams,
-  sessionIngredientTotalsGrams,
 } from "../../domain/sessions/totals";
 import {
   collectSessionWorkDateIds,
@@ -42,11 +39,7 @@ import {
   SESSION_STAGE_ORDER,
   type SessionStageId,
 } from "../../sessions/types";
-import {
-  CARD_NAME_WEIGHT,
-  entityValueColor,
-} from "../../presentation/entityCardStyles";
-import { entityAccentColor } from "../../presentation/entityAccent";
+import { entityValueColor } from "../../presentation/entityCardStyles";
 import { useSettingsStore } from "../../settings/store";
 import { AppHeader } from "../shared/AppHeader";
 import {
@@ -257,17 +250,6 @@ export function SessionOverviewScreen({
     () => sessionGrandTotalGrams(visibleBatches),
     [visibleBatches],
   );
-  const ingredientTotals = useMemo(
-    () => sessionIngredientTotalsGrams(visibleBatches),
-    [visibleBatches],
-  );
-  const entityIndexes = useMemo(
-    () =>
-      sessionEntityIndexes(visibleBatches, (batch) =>
-        resolveSessionBatchRecipe(batch, sessionRecipes, libraryRecipes),
-      ),
-    [visibleBatches, sessionRecipes, libraryRecipes],
-  );
 
   const scrollEdges = useScrollEdgeFades(
     scrollPanelRef,
@@ -419,198 +401,6 @@ export function SessionOverviewScreen({
   };
 
   const amountColor = entityValueColor(true, colorScheme);
-  const ingredientRows = entityIndexes.filter((i) => i !== 0);
-
-  const expandedSummary = (
-    <div className="batch-totals-entity-total-table min-w-0 w-full" aria-readonly>
-      <header className="batch-totals-entity-summary__intro">
-        <h2 className="batch-totals-entity-summary__title">
-          {t(`sessions.stage.${activeStage}`)}
-        </h2>
-        <p className="batch-totals-entity-summary__subtitle">
-          {activeStage === "summary"
-            ? t("sessions.ledePackage")
-            : activeStage === "mixes"
-              ? t("sessions.ledeMixTotals")
-              : activeStage === "consumption-tools"
-                ? selectedToolLabels.length > 0
-                  ? t("sessions.ledeTools")
-                  : t("sessions.ledeToolsEmpty")
-                : selectedConsumableLabels.length > 0
-                  ? t("sessions.ledeConsumables")
-                  : t("sessions.ledeConsumablesEmpty")}
-        </p>
-        {activeStage === "mixes" || activeStage === "summary" ? (
-          <div className="batch-totals-entity-summary__chips" aria-label={t("sessions.countsAria")}>
-            <span className="batch-totals-entity-summary__chip">
-              {t("sessions.stageShort.mixes")}{" "}
-              <span className="batch-totals-entity-summary__chip-mult">
-                ×{visibleBatches.length}
-              </span>
-            </span>
-            {activeStage === "summary" ? (
-              <>
-                <span className="batch-totals-entity-summary__chip">
-                  {t("sessions.stageShort.consumption-tools")}{" "}
-                  <span className="batch-totals-entity-summary__chip-mult">
-                    ×{toolCount}
-                  </span>
-                </span>
-                <span className="batch-totals-entity-summary__chip">
-                  {t("sessions.stageShort.consumables")}{" "}
-                  <span className="batch-totals-entity-summary__chip-mult">
-                    ×{consumableCount}
-                  </span>
-                </span>
-              </>
-            ) : null}
-          </div>
-        ) : null}
-        {activeStage === "consumption-tools" && selectedToolEntries.length > 0 ? (
-          <div className="batch-totals-entity-summary__chips" aria-label={t("sessions.selectedToolsAria")}>
-            {selectedToolEntries.map((entry) => (
-              <span
-                key={entry.id}
-                className="batch-totals-entity-summary__chip"
-                data-rented={entry.rented ? "" : undefined}
-              >
-                {entry.qty > 1 ? `${entry.label} ×${entry.qty}` : entry.label}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {activeStage === "consumables" && selectedConsumableLabels.length > 0 ? (
-          <div
-            className="batch-totals-entity-summary__chips"
-            aria-label={t("sessions.selectedConsumablesAria")}
-          >
-            {selectedConsumableLabels.map((label) => (
-              <span key={label} className="batch-totals-entity-summary__chip">
-                {label}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {activeStage === "summary" && selectedToolEntries.length > 0 ? (
-          <div className="batch-totals-entity-summary__chips" aria-label={t("sessions.selectedToolsAria")}>
-            {selectedToolEntries.map((entry) => (
-              <span
-                key={`tool-${entry.id}`}
-                className="batch-totals-entity-summary__chip"
-                data-rented={entry.rented ? "" : undefined}
-              >
-                {entry.qty > 1 ? `${entry.label} ×${entry.qty}` : entry.label}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {activeStage === "summary" && selectedConsumableLabels.length > 0 ? (
-          <div
-            className="batch-totals-entity-summary__chips"
-            aria-label={t("sessions.selectedConsumablesAria")}
-          >
-            {selectedConsumableLabels.map((label) => (
-              <span key={`cons-${label}`} className="batch-totals-entity-summary__chip">
-                {label}
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </header>
-      {activeStage === "mixes" || activeStage === "summary" ? (
-        <table
-          className="batch-totals-entity-total-table__grid w-full min-w-0 border-collapse"
-          style={{ tableLayout: "fixed" }}
-        >
-          <colgroup>
-            <col style={{ width: "56%" }} />
-            <col style={{ width: "44%" }} />
-          </colgroup>
-          <tbody>
-            {ingredientRows.map((pi) => {
-              const p = MIX_PARAMS[pi];
-              const sampleRecipe = batches[0]
-                ? resolveSessionBatchRecipe(batches[0], sessionRecipes, libraryRecipes)
-                : null;
-              const metaLabel = sampleRecipe
-                ? p.id === "TOTAL"
-                  ? t("mixer.totalMeta")
-                  : getEntityMetaLabel(sampleRecipe, p.id, uiLanguage)
-                : undefined;
-              return (
-                <tr key={p.id}>
-                  <th
-                    scope="row"
-                    className="text-left align-middle font-normal"
-                    style={{ padding: "var(--entity-summary-cell-py) 0" }}
-                  >
-                    <div className="min-w-0 flex items-baseline gap-1">
-                      <span
-                        className="truncate shrink-0"
-                        style={{
-                          fontSize: "var(--text-card-name)",
-                          letterSpacing: "0.18em",
-                          fontWeight: CARD_NAME_WEIGHT,
-                          color: entityAccentColor(p.id, colorScheme),
-                          lineHeight: 1.15,
-                        }}
-                      >
-                        {p.id}
-                      </span>
-                      {metaLabel ? (
-                        <span
-                          className="truncate min-w-0"
-                          style={{
-                            fontSize: "var(--text-totals-item-meta)",
-                            color: cv.text.secondary,
-                            fontWeight: 500,
-                          }}
-                        >
-                          {metaLabel}
-                        </span>
-                      ) : null}
-                    </div>
-                  </th>
-                  <td
-                    className="app-readout text-right align-middle tabular-nums whitespace-nowrap"
-                    style={{
-                      paddingBlock: "var(--entity-summary-cell-py)",
-                      fontSize: "var(--text-totals-row-amount)",
-                      fontWeight: 600,
-                      color: amountColor,
-                    }}
-                  >
-                    {formatMixAmount(ingredientTotals[pi] ?? 0, p.isKg)}
-                    <span
-                      style={{
-                        color: cv.text.muted,
-                        fontWeight: 500,
-                        marginLeft: 3,
-                        fontSize: "var(--text-totals-unit)",
-                      }}
-                    >
-                      {p.isKg ? "kg" : "g"}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      ) : activeStage === "consumption-tools" ? (
-        selectedToolLabels.length === 0 ? (
-          <p style={{ color: cv.text.dimmed, margin: 0 }}>{t("sessions.ledeToolsEmpty")}</p>
-        ) : null
-      ) : activeStage === "consumables" ? (
-        selectedConsumableLabels.length === 0 ? (
-          <p style={{ color: cv.text.dimmed, margin: 0 }}>
-            {t("sessions.ledeConsumablesEmpty")}
-          </p>
-        ) : null
-      ) : null}
-    </div>
-  );
-
   const mixesMain = (
     <div className="scroll-edge-fade-viewport batch-totals-scroll-fade-viewport flex flex-col">
       <ScrollEdgeFadeOverlays fromTop={scrollEdges.fromTop} fromBottom={false} />
@@ -1188,7 +978,6 @@ export function SessionOverviewScreen({
                 colorScheme={colorScheme}
                 sourceExpanded={panelExpanded}
                 onSourceExpandedChange={setPanelExpanded}
-                expandedBody={expandedSummary}
                 session={session}
                 libraryRecipes={libraryRecipes}
                 shareScope={shareScope}

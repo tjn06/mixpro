@@ -1,32 +1,20 @@
-import { useMemo, useState } from "react";
-import { buildCatalogSelectionReport } from "../../domain/select/catalogMutations";
+import { useMemo } from "react";
 import { ShareDeck } from "../share/ShareDeck";
 
 /** Same session-stage share deck for catalog Select/Report. */
 export function CatalogSharePanel({
   title,
-  selectedLabels,
-  workDateId = null,
+  reportText,
+  comment,
+  onCommentChange,
+  canShare,
 }: {
   title: string;
-  selectedLabels: readonly string[];
-  /** Optional report date — omitted from share text when unset. */
-  workDateId?: string | null;
+  reportText: string;
+  comment: string;
+  onCommentChange: (next: string) => void;
+  canShare: boolean;
 }) {
-  const [comment, setComment] = useState("");
-  const canShare = selectedLabels.length > 0;
-
-  const reportText = useMemo(
-    () =>
-      buildCatalogSelectionReport({
-        title,
-        labels: selectedLabels,
-        comment,
-        workDateId,
-      }),
-    [title, selectedLabels, comment, workDateId],
-  );
-
   const reportSubject = useMemo(() => {
     const trimmed = comment.trim();
     return trimmed || title;
@@ -38,7 +26,7 @@ export function CatalogSharePanel({
       reportText={reportText}
       reportSubject={reportSubject}
       comment={comment}
-      onCommentChange={setComment}
+      onCommentChange={onCommentChange}
     />
   );
 }

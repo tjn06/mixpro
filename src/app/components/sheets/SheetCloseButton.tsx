@@ -74,6 +74,7 @@ function SheetIconButton({
   onClick,
   accentColor,
   disabled = false,
+  variant = "secondary",
 }: SheetFooterButton) {
   return (
     <button
@@ -81,7 +82,9 @@ function SheetIconButton({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className="sheet-footer-btn w-full min-w-0 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-[0.98]"
+      className={`sheet-footer-btn w-full min-w-0 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-[0.98]${
+        variant === "primary" ? " sheet-footer-btn--primary" : ""
+      }`}
       style={{
         height: SHEET_FOOTER_BTN_H,
         color: accentColor,

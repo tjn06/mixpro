@@ -101,7 +101,7 @@
 .recipe-context-gradient::before {
   content: "";
   position: absolute;
-  top: var(--header-base-h);
+  top: var(--header-h, var(--header-base-h));
   left: 0;
   right: 0;
   bottom: 0;
@@ -120,6 +120,15 @@
   );
 }
 
+/**
+ * Fully opened bottom deck covers the workspace — hide the context wash so it
+ * cannot sit on top of the sheet (same stacking tree as the header).
+ */
+.recipe-context-gradient:has(.batch-totals-bottom-panel--source-expanded)::before,
+.recipe-context-gradient:has(.batch-totals-bottom-panel--table-revealing)::before {
+  opacity: 0;
+}
+
 .recipe-context-gradient > *:not(.app-header-chrome) {
   position: relative;
   z-index: 1;
@@ -130,6 +139,7 @@
   padding-top: var(--safe-top);
   background: var(--ui-header-bg, #ececf4);
   position: relative;
+  z-index: 6;
 }
 
 .app-header-chrome--session .session-overview__subline,
@@ -1160,7 +1170,7 @@
   cursor: pointer;
 }
 
-/** Absolute bottom sheet — grows upward to header subline; footer stays pinned at bottom. */
+/** Absolute bottom sheet — grows upward to header; footer stays pinned at bottom. */
 .batch-totals-bottom-panel {
   --batch-totals-panel-radius: 16px;
   --batch-totals-footer-gap: 8px;
@@ -1223,6 +1233,69 @@
   padding-block: var(--space-3, 12px);
 }
 
+/** Expanded dock: chrome title + live share plaintext (copy / mail / SMS). */
+.share-text-preview-block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--entity-summary-list-gap, 18px);
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+  /**
+   * Extra scroll runway so the last lines clear the dock footer
+   * (summary + share actions) when the body is scrolled to the end.
+   */
+  padding-bottom: max(4.5rem, calc(var(--app-bottom-inset, 0px) + 3.5rem));
+}
+
+.share-text-preview-block__intro {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--entity-summary-intro-gap, 8px);
+  padding-inline: var(--space-3, 12px);
+}
+
+.share-text-preview-block__heading {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-recipe-select);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--semantic-text-primary);
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.share-text-preview-block__subtitle {
+  margin: 0;
+  max-width: 20rem;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-ui-sm, 0.8125rem);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--semantic-text-muted);
+  line-height: 1.45;
+}
+
+.share-text-preview {
+  margin: 0;
+  width: 100%;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-family: var(--font-body, "Outfit", system-ui, sans-serif);
+  font-size: var(--text-totals-table, 0.8125rem);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  color: var(--semantic-text-primary);
+}
+
 .batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__body {
   display: flex;
   flex-direction: column;
@@ -1237,14 +1310,14 @@
   flex-direction: column;
   justify-content: flex-start;
   --entity-summary-body-pad-top: 16px;
-  --entity-summary-body-pad-bottom: 8px;
+  --entity-summary-body-pad-bottom: 24px;
   padding-top: var(--entity-summary-body-pad-top);
   padding-bottom: var(--entity-summary-body-pad-bottom);
 }
 
 .batch-totals-screen--tall .batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__body-inner {
   --entity-summary-body-pad-top: 20px;
-  --entity-summary-body-pad-bottom: 12px;
+  --entity-summary-body-pad-bottom: 28px;
 }
 
 .batch-totals-bottom-panel--table-revealing .batch-totals-bottom-panel__card-region {
@@ -5394,6 +5467,33 @@
   background: var(--semantic-surface-app, var(--ui-app-bg, #0a0a14));
 }
 
+[data-theme="dark"] .select-view .select-chip-cluster[data-rented][data-selected] {
+  border-color: #f5c84c;
+  background: color-mix(in srgb, #f5c84c 22%, #0a0a14);
+  color: #ffffff;
+}
+
+[data-theme="dark"]
+  .select-view
+  .select-chip-cluster[data-rented][data-selected]:has(
+    .select-chip-anchor .select-chip:active
+  ):not(:has([data-hold])) {
+  background: color-mix(in srgb, #f5c84c 30%, #0a0a14);
+}
+
+[data-theme="dark"] .select-chip-menu[data-rented][data-selected] {
+  border-color: #f5c84c;
+  background: color-mix(in srgb, #f5c84c 22%, #0a0a14);
+}
+
+[data-theme="dark"]
+  .select-chip-menu[data-rented]
+  .select-chip-menu__option[data-active] {
+  color: #f5c84c;
+  border-color: #f5c84c;
+  background: color-mix(in srgb, #f5c84c 16%, var(--semantic-surface-app, #0a0a14));
+}
+
 [data-theme="dark"] .select-chip--rented-arm,
 [data-theme="dark"] .select-chip--rented-arm[data-selected] {
   border-color: #f5c84c;
@@ -5574,6 +5674,18 @@
   text-overflow: ellipsis;
   pointer-events: none;
   transform: translateX(-50%);
+}
+
+/** Rented dropdown family badge — rent chrome in every selected state. */
+.select-chip--select[data-rented][data-family]::before,
+.select-chip-rental .select-chip--select[data-family]::before,
+.select-chip-cluster[data-rented] .select-chip--select[data-family]::before {
+  border-color: color-mix(in srgb, var(--select-chip-rented, #d4a017) 45%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
 }
 
 /**
@@ -5767,6 +5879,34 @@
   );
 }
 
+/** Rented dropdown menu — rent tint for open/selected panel + active option. */
+.select-chip-menu[data-rented][data-selected] {
+  border-color: var(--select-chip-rented, #d4a017);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+.select-chip-menu[data-rented][data-selected] .select-chip-menu__option:active {
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 12%,
+    transparent
+  );
+}
+
+.select-chip-menu[data-rented] .select-chip-menu__option[data-active] {
+  color: color-mix(in srgb, var(--select-chip-rented, #d4a017) 72%, #5a4200);
+  border-color: var(--select-chip-rented, #d4a017);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 16%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
 .select-chip-menu::-webkit-scrollbar {
   display: none;
 }
@@ -5865,6 +6005,25 @@
   );
 }
 
+.select-chip-cluster[data-rented][data-selected] {
+  border-color: var(--select-chip-rented, #d4a017);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+.select-chip-cluster[data-rented][data-selected]:has(
+    .select-chip-anchor .select-chip:active
+  ):not(:has([data-hold])) {
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 26%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
 .select-chip-cluster > .select-chip-anchor {
   flex: 1 1 auto;
   min-width: 0;
@@ -5883,6 +6042,32 @@
 .select-chip-cluster > .select-chip-anchor > .select-chip[data-selected] {
   border: none;
   background: transparent;
+}
+
+/** Fused comment rental inside cluster — shell owns rent chrome. */
+.select-chip-cluster > .select-chip-anchor > .select-chip-rental {
+  border: none;
+  border-radius: 7px 0 0 7px;
+  background: transparent;
+  height: 100%;
+  max-width: none;
+  color: inherit;
+}
+
+.select-chip-cluster[data-rented][data-selected]
+  > .select-chip-anchor
+  > .select-chip-rental {
+  border: none;
+  background: transparent;
+}
+
+.select-chip-cluster[data-rented][data-selected]
+  .select-chip--clone-plus:not(:disabled) {
+  border-left-color: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 45%,
+    transparent
+  );
 }
 
 /** Hold drain on the fused shell (chip text still drives data-hold). */
@@ -5964,6 +6149,16 @@
   border-color: var(--select-chip-accent);
 }
 
+.select-chip-cluster[data-rented][data-selected]
+  .select-chip--wear[data-wear-title]::before {
+  border-color: color-mix(in srgb, var(--select-chip-rented, #d4a017) 45%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 18%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
 .select-chip--wear[data-selected] {
   color: var(--semantic-text-primary);
   border-color: transparent;
@@ -5973,6 +6168,14 @@
 .select-chip-cluster[data-selected] .select-chip--wear {
   border-left-color: color-mix(in srgb, var(--select-chip-accent) 40%, transparent);
   color: var(--semantic-text-primary);
+}
+
+.select-chip-cluster[data-rented][data-selected] .select-chip--wear {
+  border-left-color: color-mix(
+    in srgb,
+    var(--select-chip-rented, #d4a017) 45%,
+    transparent
+  );
 }
 
 .select-chip--wear:not([data-selected]) {

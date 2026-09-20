@@ -1,10 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { BatchReportLanguage } from "../../domain/batch-totals/report";
-import {
-  SESSION_REPORT_LANGUAGE,
-  buildSessionReportText,
-  sessionReportSubject,
-} from "../../domain/sessions/report";
+import { SESSION_REPORT_LANGUAGE } from "../../domain/sessions/report";
 import {
   SESSION_SHARE_SCOPE_ORDER,
   sessionShareHasContent,
@@ -12,7 +8,6 @@ import {
   stagesForShareScope,
   type SessionShareScope,
 } from "../../domain/sessions/shareScope";
-import type { BlendingRecipe } from "../../domain/recipe/types";
 import type { MixSession } from "../../sessions/types";
 import { SavedIcon } from "../shared/ActionIcons";
 import { ShareDeck } from "../share/ShareDeck";
@@ -26,9 +21,12 @@ const SCOPE_LABELS = {
 
 export function SessionShareBar({
   session,
-  libraryRecipes,
   shareScope,
   onShareScopeChange,
+  reportText,
+  reportSubject,
+  comment,
+  onCommentChange,
   onSave,
   saveFlash = false,
   /** Report + share-chrome language. Default Swedish; pass `"en"` when switch is added. */
@@ -36,16 +34,18 @@ export function SessionShareBar({
   dayFilter = "all",
 }: {
   session: MixSession;
-  libraryRecipes: BlendingRecipe[];
   shareScope: SessionShareScope;
   onShareScopeChange: (scope: SessionShareScope) => void;
+  reportText: string;
+  reportSubject: string;
+  comment: string;
+  onCommentChange: (next: string) => void;
   onSave?: () => void;
   saveFlash?: boolean;
   language?: BatchReportLanguage;
   /** `"all"` or `yyyy-MM-dd` — matches the session day filter badges. */
   dayFilter?: string;
 }) {
-  const [comment, setComment] = useState("");
   const scopeLabels = SCOPE_LABELS[language];
   const activeStage = session.activeStage;
   const scopedStages = useMemo(
@@ -54,33 +54,6 @@ export function SessionShareBar({
   );
   const canShare = sessionShareHasContent(session, scopedStages, dayFilter);
 
-  const reportText = useMemo(
-    () =>
-      buildSessionReportText(
-        session,
-        libraryRecipes,
-        language,
-        comment,
-        shareScope,
-        activeStage,
-        dayFilter,
-      ),
-    [session, libraryRecipes, language, comment, shareScope, activeStage, dayFilter],
-  );
-
-  const reportSubject = useMemo(
-    () =>
-      sessionReportSubject(
-        session,
-        language,
-        comment,
-        shareScope,
-        activeStage,
-        dayFilter,
-      ),
-    [session, language, comment, shareScope, activeStage, dayFilter],
-  );
-
   return (
     <ShareDeck
       canShare={canShare}
@@ -88,7 +61,7 @@ export function SessionShareBar({
       reportSubject={reportSubject}
       language={language}
       comment={comment}
-      onCommentChange={setComment}
+      onCommentChange={onCommentChange}
       editAriaLabel={scopeLabels.scope}
       onSave={onSave}
       saveFlash={saveFlash}

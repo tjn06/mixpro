@@ -19,8 +19,12 @@ import {
 } from "../../domain/select/acquisition";
 import {
   headSlotId,
+  isOwnedCopySlot,
   newCloneSlotId,
+  ownedDefaultSlotId,
   reconcileDropdownSlots,
+  dropdownSlotLineKey,
+  dropdownSlotLineQty,
   type DropdownSlot,
 } from "../../domain/select/dropdownSlots";
 import {
@@ -118,6 +122,10 @@ function SelectDropdownChip({
   selectedOption,
   qty,
   open,
+  rented = false,
+  disabled = false,
+  hasComment = false,
+  onCommentClick,
   onOpenChange,
   onPickOption,
   onUnselect,
@@ -130,6 +138,11 @@ function SelectDropdownChip({
   selectedOption: FlexSelectItem | null;
   qty: number;
   open: boolean;
+  rented?: boolean;
+  /** Owned default copy while rental arm is on — muted, non-interactive. */
+  disabled?: boolean;
+  hasComment?: boolean;
+  onCommentClick?: () => void;
   onOpenChange: (next: boolean) => void;
   onPickOption: (optionId: string) => void;
   onUnselect: () => void;
@@ -151,6 +164,8 @@ function SelectDropdownChip({
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
   const listboxId = useId();
   const selected = selectedOption != null;
+  const showComment = Boolean(rented && selected && onCommentClick && !disabled);
+  const fused = showComment;
   const widthSizerLabel = useMemo(
     () => widestOptionLabel(item.label, item.children, uiLanguage),
     [item.label, item.children, uiLanguage],
@@ -190,6 +205,10 @@ function SelectDropdownChip({
 
   useEffect(() => {
     if (!open) return;
+    if (disabled) {
+      onOpenChange(false);
+      return;
+    }
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;
       if (!target) return;
@@ -206,12 +225,13 @@ function SelectDropdownChip({
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, onOpenChange]);
+  }, [open, disabled, onOpenChange]);
 
   const gestures = useSelectChipGestures({
-    enabled: !open,
+    enabled: !open && !disabled,
     mode: selected && !open ? "qty" : "select",
     onTap: () => {
+      if (disabled) return;
       if (open) {
         onOpenChange(false);
         return;
@@ -227,17 +247,19 @@ function SelectDropdownChip({
       }, SELECT_CHIP_DOUBLE_TAP_MS);
     },
     onDoubleTap: () => {
+      if (disabled) return;
       clearDeferOpen();
       onIncrement();
     },
     onLongPress: () => {
+      if (disabled) return;
       clearDeferOpen();
       onDecrement();
     },
   });
 
   const menu =
-    open && typeof document !== "undefined"
+    open && !disabled && typeof document !== "undefined"
       ? createPortal(
           <div
             ref={menuRef}
@@ -247,6 +269,7 @@ function SelectDropdownChip({
             role="listbox"
             aria-label={itemText}
             data-selected={selected ? "" : undefined}
+            data-rented={rented ? "" : undefined}
           >
             {item.children?.map((option) => {
               const active = selectedOption?.id === option.id;
@@ -287,46 +310,79 @@ function SelectDropdownChip({
         )
       : null;
 
-  const ariaLabel = selectedOption && selectedOptionText
-    ? qty > 1
-      ? t("select.optionQtyAria", {
-          item: itemText,
-          option: selectedOptionText,
-          qty,
-        })
-      : t("select.optionAria", {
-          item: itemText,
-          option: selectedOptionText,
-        })
-    : itemText;
+  const baseAria =
+    selectedOption && selectedOptionText
+      ? qty > 1
+        ? t("select.optionQtyAria", {
+            item: itemText,
+            option: selectedOptionText,
+            qty,
+          })
+        : t("select.optionAria", {
+            item: itemText,
+            option: selectedOptionText,
+          })
+      : itemText;
+  const ariaLabel = rented ? `${baseAria}, ${t("select.rented")}` : baseAria;
+
+  const main = (
+    <button
+      type="button"
+      className={
+        fused
+          ? "select-chip select-chip--select select-chip--rental-main"
+          : "select-chip select-chip--select"
+      }
+      data-selected={selected ? "" : undefined}
+      data-family={selectedOption ? itemText : undefined}
+      data-qty={!fused && qty > 1 ? String(qty) : undefined}
+      data-open={open ? "" : undefined}
+      data-rented={rented && !fused ? "" : undefined}
+      data-arm-muted={disabled ? "" : undefined}
+      data-comment={
+        !fused && hasComment && rented ? "\u2713" : undefined
+      }
+      aria-label={ariaLabel}
+      aria-haspopup="listbox"
+      aria-expanded={open}
+      aria-controls={open ? listboxId : undefined}
+      aria-disabled={disabled || undefined}
+      {...gestures}
+    >
+      <span className="select-chip__label-stack">
+        <span className="select-chip__width-sizer" aria-hidden>
+          {widthSizerLabel}
+        </span>
+        <span className="select-chip__group-label">
+          {selectedOptionText ?? itemText}
+        </span>
+      </span>
+      <span className="select-chip__chevron" aria-hidden>
+        <ChevronDown size={CHEVRON_SIZE} strokeWidth={2} />
+      </span>
+    </button>
+  );
 
   return (
     <div className="select-chip-anchor" ref={anchorRef}>
-      <button
-        type="button"
-        className="select-chip select-chip--select"
-        data-selected={selected ? "" : undefined}
-        data-family={selectedOption ? itemText : undefined}
-        data-qty={qty > 1 ? String(qty) : undefined}
-        data-open={open ? "" : undefined}
-        aria-label={ariaLabel}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={open ? listboxId : undefined}
-        {...gestures}
-      >
-        <span className="select-chip__label-stack">
-          <span className="select-chip__width-sizer" aria-hidden>
-            {widthSizerLabel}
-          </span>
-          <span className="select-chip__group-label">
-            {selectedOptionText ?? itemText}
-          </span>
-        </span>
-        <span className="select-chip__chevron" aria-hidden>
-          <ChevronDown size={CHEVRON_SIZE} strokeWidth={2} />
-        </span>
-      </button>
+      {fused ? (
+        <div
+          className="select-chip-rental"
+          data-selected={selected ? "" : undefined}
+          data-rented=""
+          data-qty={qty > 1 ? String(qty) : undefined}
+          data-comment={hasComment ? "\u2713" : undefined}
+          data-open={open ? "" : undefined}
+        >
+          {main}
+          <RentalCommentButton
+            hasComment={hasComment}
+            onClick={onCommentClick!}
+          />
+        </div>
+      ) : (
+        main
+      )}
       {menu}
     </div>
   );
@@ -869,6 +925,7 @@ export function FlexSelectView({
           item,
           selection,
           prev[item.id],
+          { rentArm: rentalArmed },
         );
         const before = prev[item.id];
         if (
@@ -877,7 +934,8 @@ export function FlexSelectView({
           before.some(
             (slot, i) =>
               slot.id !== reconciled[i]?.id ||
-              slot.optionId !== reconciled[i]?.optionId,
+              slot.optionId !== reconciled[i]?.optionId ||
+              Boolean(slot.rented) !== Boolean(reconciled[i]?.rented),
           )
         ) {
           next[item.id] = reconciled;
@@ -894,46 +952,107 @@ export function FlexSelectView({
 
       return changed ? next : prev;
     });
-  }, [items, selection]);
+  }, [items, selection, rentalArmed]);
 
   const pickOptionForSlot = useCallback(
     (
       parent: FlexSelectItem,
-      slotId: string,
-      prevOptionId: string | null,
+      slot: DropdownSlot,
       optionId: string,
     ) => {
-      if (acquisition === "rented") {
-        const rentedKey = selectionLineKey(optionId, "rented");
-        onSelectionChange(ensureFlexSelectSelected(selection, rentedKey));
-        setOpenSlotId(null);
-        return;
-      }
+      const nextRented =
+        acquisition === "rented" ||
+        (slot.optionId != null && Boolean(slot.rented));
+      const prevOptionId = slot.optionId;
+      const prevWasRented = Boolean(slot.rented);
+      const prevKey =
+        prevOptionId != null
+          ? dropdownSlotLineKey(prevOptionId, prevWasRented)
+          : null;
+      const nextKey = dropdownSlotLineKey(optionId, nextRented);
+      const ownedDefaultId = ownedDefaultSlotId(parent.id);
 
       setSlotsByParent((prev) => {
         const slots = prev[parent.id] ?? [];
-        return {
-          ...prev,
-          [parent.id]: slots.map((slot) =>
-            slot.id === slotId ? { ...slot, optionId } : slot,
-          ),
-        };
+        let mapped = slots.map((s) =>
+          s.id === slot.id
+            ? { ...s, optionId, rented: nextRented }
+            : s,
+        );
+
+        if (nextRented && acquisition === "rented") {
+          // Keep a free empty target for the next rental while arm stays on.
+          const hasRentTarget = mapped.some(
+            (s) =>
+              !s.rented &&
+              s.optionId == null &&
+              !isOwnedCopySlot(s, parent.id),
+          );
+          if (!hasRentTarget) {
+            mapped = [
+              ...mapped,
+              {
+                id: newCloneSlotId(parent.id),
+                optionId: null,
+                isHead: false,
+                rented: false,
+              },
+            ];
+          }
+          const hasOwnedCopy = mapped.some((s) => isOwnedCopySlot(s, parent.id));
+          if (!hasOwnedCopy) {
+            mapped = [
+              ...mapped,
+              {
+                id: ownedDefaultId,
+                optionId: null,
+                isHead: false,
+                rented: false,
+              },
+            ];
+          }
+        } else if (nextRented && !mapped.some((s) => !s.rented)) {
+          mapped = [
+            ...mapped,
+            {
+              id: ownedDefaultId,
+              optionId: null,
+              isHead: false,
+              rented: false,
+            },
+          ];
+        }
+
+        return { ...prev, [parent.id]: mapped };
       });
 
       const keepQty =
-        prevOptionId != null ? flexSelectQty(selection, prevOptionId) : 0;
+        prevKey != null ? flexSelectQty(selection, prevKey) : 0;
       let next: Record<string, number> = { ...selection };
-      if (prevOptionId && prevOptionId !== optionId) {
-        delete next[prevOptionId];
+      // Renting must not wipe an owned line (parked copy keeps it).
+      if (prevKey && prevKey !== nextKey && !(nextRented && !prevWasRented)) {
+        delete next[prevKey];
       }
       delete next[parent.id];
-      next = setFlexSelectQty(next, optionId, keepQty >= 1 ? keepQty : 1);
+      next = setFlexSelectQty(
+        next,
+        nextKey,
+        nextRented && !prevWasRented
+          ? Math.max(1, flexSelectQty(selection, nextKey))
+          : keepQty >= 1
+            ? keepQty
+            : 1,
+      );
       onSelectionChange(next);
       setOpenSlotId(null);
 
       if (wearEnabled && parent.requiresWear && onWearChange) {
         const removeIds =
-          prevOptionId && prevOptionId !== optionId ? [prevOptionId] : [];
+          prevOptionId &&
+          prevOptionId !== optionId &&
+          prevWasRented
+            ? [prevOptionId]
+            : [];
         onWearChange(
           pruneWearByOptionId(wearByOptionId, next, removeIds),
         );
@@ -953,7 +1072,9 @@ export function FlexSelectView({
   const unselectSlot = useCallback(
     (parent: FlexSelectItem, slot: DropdownSlot) => {
       let next: Record<string, number> = { ...selection };
-      if (slot.optionId) delete next[slot.optionId];
+      if (slot.optionId) {
+        delete next[dropdownSlotLineKey(slot.optionId, Boolean(slot.rented))];
+      }
       delete next[parent.id];
       onSelectionChange(next);
 
@@ -968,7 +1089,14 @@ export function FlexSelectView({
         setSlotsByParent((prev) => ({
           ...prev,
           [parent.id]: (prev[parent.id] ?? []).map((s) =>
-            s.id === slot.id ? { ...s, optionId: null } : s,
+            s.id === slot.id ? { ...s, optionId: null, rented: false } : s,
+          ),
+        }));
+      } else if (isOwnedCopySlot(slot, parent.id)) {
+        setSlotsByParent((prev) => ({
+          ...prev,
+          [parent.id]: (prev[parent.id] ?? []).map((s) =>
+            s.id === slot.id ? { ...s, optionId: null, rented: false } : s,
           ),
         }));
       } else {
@@ -993,11 +1121,14 @@ export function FlexSelectView({
     const slotId = newCloneSlotId(parent.id);
     setSlotsByParent((prev) => {
       const slots = prev[parent.id] ?? [
-        { id: headSlotId(parent.id), optionId: null, isHead: true },
+        { id: headSlotId(parent.id), optionId: null, isHead: true, rented: false },
       ];
       return {
         ...prev,
-        [parent.id]: [...slots, { id: slotId, optionId: null, isHead: false }],
+        [parent.id]: [
+          ...slots,
+          { id: slotId, optionId: null, isHead: false, rented: false },
+        ],
       };
     });
     setOpenSlotId(slotId);
@@ -1025,62 +1156,137 @@ export function FlexSelectView({
             : 0;
           const selectKey = selectionLineKey(item.id, acquisition);
           const primaryIsRented = rentedQty >= 1;
+          /** Rent arm on + owned selected: park owned on a muted copy, free primary for rent. */
+          const parkingOwned =
+            acquisition === "rented" && !primaryIsRented && ownedQty >= 1;
           const primaryKey = primaryIsRented ? rentedKey : ownedKey;
-          const primaryQty = primaryIsRented ? rentedQty : ownedQty;
+          const primaryQty = primaryIsRented
+            ? rentedQty
+            : parkingOwned
+              ? 0
+              : ownedQty;
+          const showOwnedCopy = primaryIsRented || parkingOwned;
           const canRemoveCustom =
             onRemoveCustomItem != null && customItemIds?.has(item.id) === true;
+          const simpleWear =
+            wearEnabled && Boolean(item.requiresWear);
+          const simpleWearValue = simpleWear
+            ? (wearByOptionId?.[item.id] ?? null)
+            : null;
+          const simpleSelected = primaryQty >= 1;
+
+          const primaryChip = (
+            <SimpleSelectChip
+              label={itemText}
+              qty={primaryQty}
+              rented={primaryIsRented}
+              allowRetapSelect={parkingOwned}
+              hasComment={
+                primaryIsRented
+                  ? Boolean(commentsByLineKey?.[rentedKey]?.trim())
+                  : false
+              }
+              onCommentClick={
+                primaryIsRented && commentsEnabled
+                  ? () => openRentalComment(rentedKey, itemText)
+                  : undefined
+              }
+              onRemove={
+                canRemoveCustom
+                  ? () =>
+                      setDeleteTarget({ id: item.id, label: itemText })
+                  : undefined
+              }
+              onSelect={() => {
+                const nextKey =
+                  primaryIsRented || parkingOwned ? rentedKey : selectKey;
+                onSelectionChange(
+                  ensureFlexSelectSelected(selection, nextKey),
+                );
+                if (simpleWear && nextKey === ownedKey) {
+                  setOpenSlotId(null);
+                  setOpenWearOptionId(item.id);
+                }
+              }}
+              onIncrement={() =>
+                onSelectionChange(
+                  bumpFlexSelectQty(
+                    ensureFlexSelectSelected(selection, primaryKey),
+                    primaryKey,
+                    1,
+                  ),
+                )
+              }
+              onDecrement={() => {
+                const nextQty = flexSelectQty(selection, primaryKey) - 1;
+                const nextSelection = bumpFlexSelectQty(
+                  selection,
+                  primaryKey,
+                  -1,
+                );
+                onSelectionChange(nextSelection);
+                if (
+                  simpleWear &&
+                  onWearChange &&
+                  nextQty < 1 &&
+                  primaryKey === ownedKey
+                ) {
+                  onWearChange(
+                    pruneWearByOptionId(wearByOptionId, nextSelection, [
+                      item.id,
+                    ]),
+                  );
+                  if (openWearOptionId === item.id) setOpenWearOptionId(null);
+                }
+              }}
+            />
+          );
 
           return (
             <Fragment key={item.id}>
               {/**
                * Stable `-slot` key: catalog chip becomes yellow rental in place
-               * (no jump). Owned copy mounts after when a rental exists.
+               * (no jump). Owned copy mounts after when a rental exists — or
+               * while rent arm parks an already-owned selection.
                */}
-              <SimpleSelectChip
-                key={`${item.id}-slot`}
-                label={itemText}
-                qty={primaryQty}
-                rented={primaryIsRented}
-                hasComment={
-                  primaryIsRented
-                    ? Boolean(commentsByLineKey?.[rentedKey]?.trim())
-                    : false
-                }
-                onCommentClick={
-                  primaryIsRented && commentsEnabled
-                    ? () => openRentalComment(rentedKey, itemText)
-                    : undefined
-                }
-                onRemove={
-                  canRemoveCustom
-                    ? () =>
-                        setDeleteTarget({ id: item.id, label: itemText })
-                    : undefined
-                }
-                onSelect={() =>
-                  onSelectionChange(
-                    ensureFlexSelectSelected(
-                      selection,
-                      primaryIsRented ? rentedKey : selectKey,
-                    ),
-                  )
-                }
-                onIncrement={() =>
-                  onSelectionChange(
-                    bumpFlexSelectQty(
-                      ensureFlexSelectSelected(selection, primaryKey),
-                      primaryKey,
-                      1,
-                    ),
-                  )
-                }
-                onDecrement={() =>
-                  onSelectionChange(
-                    bumpFlexSelectQty(selection, primaryKey, -1),
-                  )
-                }
-              />
-              {primaryIsRented ? (
+              {simpleWear ? (
+                <div
+                  key={`${item.id}-slot`}
+                  className="select-chip-cluster"
+                  data-selected={simpleSelected ? "" : undefined}
+                  data-has-wear=""
+                >
+                  {primaryChip}
+                  <WearSelectControl
+                    value={simpleWearValue}
+                    disabled={!simpleSelected || primaryIsRented || parkingOwned}
+                    panelSelected={simpleSelected && !primaryIsRented}
+                    open={
+                      simpleSelected &&
+                      !primaryIsRented &&
+                      openWearOptionId === item.id
+                    }
+                    onOpenChange={(next) => {
+                      if (!simpleSelected || primaryIsRented) return;
+                      if (next) {
+                        setOpenSlotId(null);
+                        setOpenWearOptionId(item.id);
+                        return;
+                      }
+                      setOpenWearOptionId(null);
+                    }}
+                    onPick={(level) => {
+                      if (!onWearChange) return;
+                      onWearChange(
+                        setWearForOption(wearByOptionId, item.id, level),
+                      );
+                    }}
+                  />
+                </div>
+              ) : (
+                <Fragment key={`${item.id}-slot`}>{primaryChip}</Fragment>
+              )}
+              {showOwnedCopy ? (
                 <SimpleSelectChip
                   key={`${item.id}-owned-copy`}
                   label={itemText}
@@ -1113,78 +1319,49 @@ export function FlexSelectView({
 
         const slots =
           slotsByParent[item.id] ??
-          reconcileDropdownSlots(item, selection, undefined);
+          reconcileDropdownSlots(item, selection, undefined, {
+            rentArm: rentalArmed,
+          });
+        const renting = acquisition === "rented";
         const takenOptionIds = new Set(
-          acquisition === "rented"
-            ? optionIdsForItem(item).filter(
-                (id) =>
-                  flexSelectQty(selection, selectionLineKey(id, "rented")) >= 1,
-              )
-            : slots
-                .map((slot) => slot.optionId)
-                .filter((id): id is string => id != null),
+          optionIdsForItem(item).filter(
+            (id) => dropdownSlotLineQty(selection, id, renting) >= 1,
+          ),
         );
         const freeOptionCount = optionIdsForItem(item).filter(
           (id) => !takenOptionIds.has(id),
         ).length;
-        const awaitingPick = slots.some((slot) => slot.optionId == null);
-        const rentedOptionChips = acquisitionEnabled
-          ? (item.children ?? []).flatMap((child) => {
-              const rentedKey = selectionLineKey(child.id, "rented");
-              const rentedQty = flexSelectQty(selection, rentedKey);
-              if (rentedQty < 1) return [];
-              const rentedLabel = `${itemText} · ${displayLabel(child.label, uiLanguage)}`;
-              return [
-                <SimpleSelectChip
-                  key={rentedKey}
-                  label={rentedLabel}
-                  qty={rentedQty}
-                  rented
-                  hasComment={Boolean(commentsByLineKey?.[rentedKey]?.trim())}
-                  onCommentClick={
-                    commentsEnabled
-                      ? () => openRentalComment(rentedKey, rentedLabel)
-                      : undefined
-                  }
-                  onSelect={() =>
-                    onSelectionChange(
-                      ensureFlexSelectSelected(selection, rentedKey),
-                    )
-                  }
-                  onIncrement={() =>
-                    onSelectionChange(
-                      bumpFlexSelectQty(
-                        ensureFlexSelectSelected(selection, rentedKey),
-                        rentedKey,
-                        1,
-                      ),
-                    )
-                  }
-                  onDecrement={() =>
-                    onSelectionChange(
-                      bumpFlexSelectQty(selection, rentedKey, -1),
-                    )
-                  }
-                />,
-              ];
-            })
-          : [];
+        const awaitingPick = slots.some(
+          (slot) =>
+            slot.optionId == null &&
+            !isOwnedCopySlot(slot, item.id),
+        );
+        const ownedDefaultId = ownedDefaultSlotId(item.id);
 
         return (
           <Fragment key={item.id}>
             {slots.map((slot, slotIndex) => {
+              const slotRented = Boolean(slot.rented);
+              const ownedCopyMuted =
+                renting && isOwnedCopySlot(slot, item.id);
               const selectedOption =
                 slot.optionId != null
                   ? (item.children?.find((c) => c.id === slot.optionId) ?? null)
                   : null;
-              const qty = selectedOption
-                ? flexSelectQty(selection, selectedOption.id)
-                : 0;
+              const lineKey =
+                selectedOption != null
+                  ? dropdownSlotLineKey(selectedOption.id, slotRented)
+                  : null;
+              const qty =
+                selectedOption != null && lineKey != null
+                  ? flexSelectQty(selection, lineKey)
+                  : 0;
               const slotTaken = new Set(takenOptionIds);
               if (slot.optionId) slotTaken.delete(slot.optionId);
               const isLastInGroup = slotIndex === slots.length - 1;
 
               const handleOpenChange = (next: boolean) => {
+                if (ownedCopyMuted) return;
                 if (next) {
                   setOpenSlotId(slot.id);
                   setOpenWearOptionId(null);
@@ -1192,7 +1369,12 @@ export function FlexSelectView({
                 }
                 setOpenSlotId(null);
                 // Empty clone dismissed (outside tap / Escape) → drop it.
-                if (!slot.isHead && slot.optionId == null) {
+                // Keep owned copies while rent arm / rentals need them.
+                if (
+                  !slot.isHead &&
+                  slot.optionId == null &&
+                  !isOwnedCopySlot(slot, item.id)
+                ) {
                   setSlotsByParent((prev) => ({
                     ...prev,
                     [item.id]: (prev[item.id] ?? []).filter(
@@ -1208,6 +1390,10 @@ export function FlexSelectView({
               const wearValue = selectedOption
                 ? (wearByOptionId?.[selectedOption.id] ?? null)
                 : null;
+              const rentedLabel =
+                selectedOption != null
+                  ? `${itemText} · ${displayLabel(selectedOption.label, uiLanguage)}`
+                  : itemText;
 
               const chip = (
                 <SelectDropdownChip
@@ -1215,27 +1401,42 @@ export function FlexSelectView({
                   selectedOption={selectedOption}
                   qty={qty}
                   open={openSlotId === slot.id}
+                  rented={slotRented}
+                  disabled={ownedCopyMuted}
+                  hasComment={
+                    slotRented && lineKey != null
+                      ? Boolean(commentsByLineKey?.[lineKey]?.trim())
+                      : false
+                  }
+                  onCommentClick={
+                    slotRented && commentsEnabled && lineKey != null
+                      ? () => openRentalComment(lineKey, rentedLabel)
+                      : undefined
+                  }
                   onOpenChange={handleOpenChange}
                   onPickOption={(optionId) =>
-                    pickOptionForSlot(item, slot.id, slot.optionId, optionId)
+                    pickOptionForSlot(item, slot, optionId)
                   }
                   onUnselect={() => unselectSlot(item, slot)}
                   onIncrement={() => {
-                    if (!selectedOption) return;
+                    if (!selectedOption || !lineKey) return;
                     onSelectionChange(
-                      bumpFlexSelectQty(selection, selectedOption.id, 1),
+                      bumpFlexSelectQty(
+                        ensureFlexSelectSelected(selection, lineKey),
+                        lineKey,
+                        1,
+                      ),
                     );
                   }}
                   onDecrement={() => {
-                    if (!selectedOption) return;
-                    const nextQty =
-                      flexSelectQty(selection, selectedOption.id) - 1;
+                    if (!selectedOption || !lineKey) return;
+                    const nextQty = flexSelectQty(selection, lineKey) - 1;
                     if (nextQty < 1) {
                       unselectSlot(item, slot);
                       return;
                     }
                     onSelectionChange(
-                      bumpFlexSelectQty(selection, selectedOption.id, -1),
+                      bumpFlexSelectQty(selection, lineKey, -1),
                     );
                   }}
                   unselectLabel={resolvedUnselectLabel}
@@ -1246,14 +1447,14 @@ export function FlexSelectView({
               const wearControl = reserveWear ? (
                 <WearSelectControl
                   value={wearValue}
-                  disabled={selectedOption == null}
+                  disabled={selectedOption == null || ownedCopyMuted}
                   panelSelected={selectedOption != null}
                   open={
                     selectedOption != null &&
                     openWearOptionId === selectedOption.id
                   }
                   onOpenChange={(next) => {
-                    if (!selectedOption) return;
+                    if (!selectedOption || ownedCopyMuted) return;
                     if (next) {
                       setOpenSlotId(null);
                       setOpenWearOptionId(selectedOption.id);
@@ -1278,24 +1479,22 @@ export function FlexSelectView({
                 return <Fragment key={slot.id}>{chip}</Fragment>;
               }
 
-              const showCloneOnSlot =
-                isLastInGroup && rentedOptionChips.length === 0;
-
               /** Wear and/or + fused to the chip — separate hit targets. */
               return (
                 <div
                   key={slot.id}
                   className="select-chip-cluster"
                   data-selected={selectedOption ? "" : undefined}
+                  data-rented={slotRented && selectedOption ? "" : undefined}
                   data-has-wear={reserveWear ? "" : undefined}
                 >
                   {chip}
                   {wearControl}
-                  {showCloneOnSlot ? (
+                  {isLastInGroup ? (
                     <DropdownClonePlusButton
                       familyLabel={itemText}
                       disabled={
-                        acquisition === "rented" ||
+                        renting ||
                         freeOptionCount < 1 ||
                         awaitingPick
                       }
@@ -1305,18 +1504,6 @@ export function FlexSelectView({
                 </div>
               );
             })}
-            {rentedOptionChips}
-            {rentedOptionChips.length > 0 ? (
-              <DropdownClonePlusButton
-                familyLabel={itemText}
-                disabled={
-                  acquisition === "rented" ||
-                  freeOptionCount < 1 ||
-                  awaitingPick
-                }
-                onClick={() => addCloneSlot(item)}
-              />
-            ) : null}
           </Fragment>
         );
       })}
