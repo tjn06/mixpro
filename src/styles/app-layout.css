@@ -2261,25 +2261,23 @@
   min-width: 0;
 }
 
-/** Discrete cards — same light list-row plane as picker / library cards. */
+/** Discrete cards — surface + gap only (no outline), same list-row plane as pickers. */
 .sessions-page__list .sessions-page__card.sheet-list-row {
   position: relative;
   display: block;
   width: 100%;
   box-sizing: border-box;
   border-radius: 14px;
-  border: var(--component-sheet-panel-list-row-border, var(--semantic-border-default));
+  border: none;
   background: var(--component-sheet-panel-list-row-bg);
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--semantic-text-primary) 4%, transparent);
+  box-shadow: none;
   z-index: 1;
   overflow: hidden;
 }
 
 .sessions-page__card--active {
-  border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
-  box-shadow:
-    inset 3px 0 0 var(--session-accent),
-    0 1px 0 color-mix(in srgb, var(--session-accent) 12%, transparent);
+  border: none;
+  box-shadow: inset 3px 0 0 var(--session-accent);
 }
 
 .sessions-page__card-grid {
