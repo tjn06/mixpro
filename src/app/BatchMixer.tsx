@@ -139,8 +139,9 @@ const SWIPE_MAX_DY_PER_FRAME = 48;
 const SWIPE_ARROW_IDLE = MIXER_SWIPE_ARROW_IDLE;
 const SWIPE_STEP_IDLE = MIXER_SWIPE_STEP_IDLE;
 const CARD_CONNECTOR_Z  = 3;
-const DRAG_FOCUS_Z      = 5;
-const DRAG_OVERLAY_Z    = 4;
+/** Above app-header-chrome (z 6) so drag dim covers header + subheader. */
+const DRAG_FOCUS_Z      = 8;
+const DRAG_OVERLAY_Z    = 7;
 const DRAG_OVERLAY_HIDE_MS = 320;
 const DRAG_BLOCKED_MS = 120;
 const BUCKET_LIMIT_COLOR = cv.state.error;
