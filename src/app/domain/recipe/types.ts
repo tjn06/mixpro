@@ -13,11 +13,11 @@ export interface PartRatio {
   label?: string;
 }
 
-/** Percent of (A + B) for an additive (e.g. SAND:555 → 5.55× binder). */
+/** Percent of binder (A + B [+ C]) for an additive (e.g. FILLER:555 → 5.55× binder). */
 export interface PercentOfBinder {
   id: string;
   percent: number;
-  /** Human-readable name (e.g. Filler, Thickener). */
+  /** Material / display name (e.g. Sand, Tix, or a custom name). */
   label?: string;
 }
 
@@ -34,7 +34,7 @@ export interface BlendingRecipe {
    * User recipes: free-text string (stored as typed).
    */
   description?: ItemLabel;
-  /** Binder (A + B) reference in grams for initial mix and REC. BATCH reset. */
+  /** Binder (A + B [+ C]) reference in grams for initial mix and REC. BATCH reset. */
   initialBinderSum?: number;
   binderParts: PartRatio[];
   binderPercents: PercentOfBinder[];
@@ -56,11 +56,11 @@ export const DEFAULT_RECIPE: BlendingRecipe = {
     { id: "B", parts: 1, label: "Hardener" },
   ],
   binderPercents: [
-    { id: "SAND", percent: 1600 / 3, label: "Filler" },
+    { id: "FILLER", percent: 1600 / 3, label: "Filler" },
   ],
 };
 
-/** Same as Standard Lagning but SAND 10 kg (not 12 kg) at 2250 g binder. */
+/** Same as Standard Lagning but FILLER 10 kg (not 12 kg) at 2250 g binder. */
 export const STANDARD_BLOT_RECIPE: BlendingRecipe = {
   id: "standard-blot",
   name: localizedLabel("Standard Wet", "Standard Blöt"),
@@ -74,10 +74,10 @@ export const STANDARD_BLOT_RECIPE: BlendingRecipe = {
     { id: "A", parts: 2, label: "Resin" },
     { id: "B", parts: 1, label: "Hardener" },
   ],
-  binderPercents: [{ id: "SAND", percent: 4000 / 9, label: "Filler" }],
+  binderPercents: [{ id: "FILLER", percent: 4000 / 9, label: "Filler" }],
 };
 
-/** A 1.5 kg · B 0.75 kg (2:1) · SAND 10 kg · TIX 100 g at 2250 g binder (A + B). */
+/** A 1.5 kg · B 0.75 kg (2:1) · FILLER 10 kg · THICKENER 100 g at 2250 g binder (A + B). */
 export const FAS_SOCKEL_RECIPE: BlendingRecipe = {
   id: "fas-sockel",
   name: localizedLabel("Chamfer/Baseboard", "Fas/Sockel"),
@@ -92,8 +92,8 @@ export const FAS_SOCKEL_RECIPE: BlendingRecipe = {
     { id: "B", parts: 1, label: "Hardener" },
   ],
   binderPercents: [
-    { id: "SAND", percent: 4000 / 9, label: "Filler" },
-    { id: "TIX", percent: 40 / 9, label: "Thickener" },
+    { id: "FILLER", percent: 4000 / 9, label: "Filler" },
+    { id: "THICKENER", percent: 40 / 9, label: "Thickener" },
   ],
 };
 
@@ -131,7 +131,7 @@ export const LACK_RECIPE: BlendingRecipe = {
   binderPercents: [],
 };
 
-/** A 0.5 kg · B 0.25 kg (2:1) · TIX 50 g at 750 g binder (A + B). */
+/** A 0.5 kg · B 0.25 kg (2:1) · THICKENER 50 g at 750 g binder (A + B). */
 export const TIXBLANDNING_RECIPE: BlendingRecipe = {
   id: "tixblandning",
   name: localizedLabel("Thixotropic mix", "Tixblandning"),
@@ -145,7 +145,7 @@ export const TIXBLANDNING_RECIPE: BlendingRecipe = {
     { id: "A", parts: 2, label: "Resin" },
     { id: "B", parts: 1, label: "Hardener" },
   ],
-  binderPercents: [{ id: "TIX", percent: 20 / 3, label: "Thickener" }],
+  binderPercents: [{ id: "THICKENER", percent: 20 / 3, label: "Thickener" }],
 };
 
 export const PRESET_RECIPES: BlendingRecipe[] = [

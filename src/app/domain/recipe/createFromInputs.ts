@@ -1,7 +1,11 @@
 import type { AppLanguage } from "../../i18n/language";
 import { DEFAULT_UI_LANGUAGE } from "../../i18n/language";
-import { standardIngredientLabel } from "./ingredientLabels";
-import type { BlendingRecipe, PercentOfBinder } from "./types";
+import {
+  FILLER_SLOT_ID,
+  THICKENER_SLOT_ID,
+} from "../mix/slotMigration";
+import type { BlendingRecipe, PercentOfBinder, PartRatio } from "./types";
+import { getIngredientLabel } from "./calc";
 
 /** Entry context — Create Recipe does not know the host; caller decides. */
 export type CreateRecipeEntryContext =
@@ -21,8 +25,14 @@ export type RecipeWeightsInput = {
   /** Grams */
   a: number;
   b: number;
+  /** Optional third binder component grams. */
+  c?: number;
   filler: number;
   thickener: number;
+  /** Display name for the FILLER slot (Sand / Water / custom). */
+  fillerLabel?: string;
+  /** Display name for the THICKENER slot (Tix / custom). */
+  thickenerLabel?: string;
 };
 
 export type RecipeFormulaInput = {
@@ -31,11 +41,15 @@ export type RecipeFormulaInput = {
   description?: string;
   aParts: number;
   bParts: number;
-  /** Percent of binder (A+B). */
+  /** Optional third binder component parts. */
+  cParts?: number;
+  /** Percent of binder (A+B[+C]). */
   fillerPercent: number;
   thickenerPercent: number;
   /** Optional binder reference grams for REC. BATCH. */
   initialBinderSum?: number;
+  fillerLabel?: string;
+  thickenerLabel?: string;
 };
 
 function gcd(a: number, b: number): number {
@@ -49,40 +63,67 @@ function gcd(a: number, b: number): number {
   return x || 1;
 }
 
-/** Reduce A:B grams to integer parts (same structure as presets). */
-export function partsFromWeights(aGrams: number, bGrams: number): { aParts: number; bParts: number } {
+/** Reduce A:B[:C] grams to integer parts (same structure as presets). */
+export function partsFromWeights(
+  aGrams: number,
+  bGrams: number,
+  cGrams = 0,
+): { aParts: number; bParts: number; cParts: number } {
   const a = Math.max(0, aGrams);
   const b = Math.max(0, bGrams);
-  if (!(a > 0) || !(b > 0)) return { aParts: 2, bParts: 1 };
+  const c = Math.max(0, cGrams);
+  if (!(a > 0) || !(b > 0)) return { aParts: 2, bParts: 1, cParts: 0 };
   const scale = 1000;
   const ai = Math.round(a * scale);
   const bi = Math.round(b * scale);
-  const g = gcd(ai, bi);
-  return { aParts: ai / g, bParts: bi / g };
+  const ci = Math.round(c * scale);
+  if (!(c > 0)) {
+    const g = gcd(ai, bi);
+    return { aParts: ai / g, bParts: bi / g, cParts: 0 };
+  }
+  const g = gcd(gcd(ai, bi), ci);
+  return { aParts: ai / g, bParts: bi / g, cParts: ci / g };
 }
 
 function binderPercentsFromWeights(
   binderSum: number,
   fillerGrams: number,
   thickenerGrams: number,
+  fillerLabel?: string,
+  thickenerLabel?: string,
 ): PercentOfBinder[] {
   if (!(binderSum > 0)) return [];
   const list: PercentOfBinder[] = [];
   if (fillerGrams > 0) {
     list.push({
-      id: "SAND",
+      id: FILLER_SLOT_ID,
       percent: (fillerGrams / binderSum) * 100,
-      label: "Filler",
+      label: fillerLabel?.trim() || "Filler",
     });
   }
   if (thickenerGrams > 0) {
     list.push({
-      id: "TIX",
+      id: THICKENER_SLOT_ID,
       percent: (thickenerGrams / binderSum) * 100,
-      label: "Thickener",
+      label: thickenerLabel?.trim() || "Thickener",
     });
   }
   return list;
+}
+
+function binderPartsFromRatio(
+  aParts: number,
+  bParts: number,
+  cParts: number,
+): PartRatio[] {
+  const parts: PartRatio[] = [
+    { id: "A", parts: aParts, label: "Resin" },
+    { id: "B", parts: bParts, label: "Hardener" },
+  ];
+  if (cParts > 0) {
+    parts.push({ id: "C", parts: cParts, label: "Component C" });
+  }
+  return parts;
 }
 
 export function countDescriptionWords(raw: string): number {
@@ -115,6 +156,7 @@ export function validateWeightsInput(input: RecipeWeightsInput): string | null {
   const descErr = validateRecipeCardDescription(input.description);
   if (descErr) return descErr;
   if (!(input.a > 0) || !(input.b > 0)) return "Resin (A) and Hardener (B) must be greater than 0";
+  if (input.c != null && input.c < 0) return "Component C cannot be negative";
   if (input.filler < 0 || input.thickener < 0) return "Filler and thickener cannot be negative";
   return null;
 }
@@ -124,6 +166,7 @@ export function validateFormulaInput(input: RecipeFormulaInput): string | null {
   const descErr = validateRecipeCardDescription(input.description);
   if (descErr) return descErr;
   if (!(input.aParts > 0) || !(input.bParts > 0)) return "A and B parts must be greater than 0";
+  if (input.cParts != null && input.cParts < 0) return "C parts cannot be negative";
   if (input.fillerPercent < 0 || input.thickenerPercent < 0) {
     return "Percents cannot be negative";
   }
@@ -135,19 +178,23 @@ export function validateFormulaInput(input: RecipeFormulaInput): string | null {
 
 /** Build recipe from measured component weights (reverse-engineer formula). */
 export function blendingRecipeFromWeights(input: RecipeWeightsInput): BlendingRecipe {
-  const binderSum = input.a + input.b;
-  const { aParts, bParts } = partsFromWeights(input.a, input.b);
+  const cGrams = input.c != null && input.c > 0 ? input.c : 0;
+  const binderSum = input.a + input.b + cGrams;
+  const { aParts, bParts, cParts } = partsFromWeights(input.a, input.b, cGrams);
   return {
     id: crypto.randomUUID(),
     name: input.name.trim(),
     nameSubline: input.nameSubline?.trim() || undefined,
     description: normalizedDescription(input.description),
     initialBinderSum: Math.round(binderSum),
-    binderParts: [
-      { id: "A", parts: aParts, label: "Resin" },
-      { id: "B", parts: bParts, label: "Hardener" },
-    ],
-    binderPercents: binderPercentsFromWeights(binderSum, input.filler, input.thickener),
+    binderParts: binderPartsFromRatio(aParts, bParts, cParts),
+    binderPercents: binderPercentsFromWeights(
+      binderSum,
+      input.filler,
+      input.thickener,
+      input.fillerLabel,
+      input.thickenerLabel,
+    ),
   };
 }
 
@@ -155,15 +202,24 @@ export function blendingRecipeFromWeights(input: RecipeWeightsInput): BlendingRe
 export function blendingRecipeFromFormula(input: RecipeFormulaInput): BlendingRecipe {
   const percents: PercentOfBinder[] = [];
   if (input.fillerPercent > 0) {
-    percents.push({ id: "SAND", percent: input.fillerPercent, label: "Filler" });
+    percents.push({
+      id: FILLER_SLOT_ID,
+      percent: input.fillerPercent,
+      label: input.fillerLabel?.trim() || "Filler",
+    });
   }
   if (input.thickenerPercent > 0) {
-    percents.push({ id: "TIX", percent: input.thickenerPercent, label: "Thickener" });
+    percents.push({
+      id: THICKENER_SLOT_ID,
+      percent: input.thickenerPercent,
+      label: input.thickenerLabel?.trim() || "Thickener",
+    });
   }
   const binder =
     input.initialBinderSum != null && input.initialBinderSum > 0
       ? Math.round(input.initialBinderSum)
       : undefined;
+  const cParts = input.cParts != null && input.cParts > 0 ? input.cParts : 0;
 
   return {
     id: crypto.randomUUID(),
@@ -171,10 +227,7 @@ export function blendingRecipeFromFormula(input: RecipeFormulaInput): BlendingRe
     nameSubline: input.nameSubline?.trim() || undefined,
     description: normalizedDescription(input.description),
     initialBinderSum: binder,
-    binderParts: [
-      { id: "A", parts: input.aParts, label: "Resin" },
-      { id: "B", parts: input.bParts, label: "Hardener" },
-    ],
+    binderParts: binderPartsFromRatio(input.aParts, input.bParts, cParts),
     binderPercents: percents,
   };
 }
@@ -183,15 +236,21 @@ export function formatRecipeFormulaSummary(
   recipe: BlendingRecipe,
   language: AppLanguage = DEFAULT_UI_LANGUAGE,
 ): string {
-  const a = recipe.binderParts.find((p) => p.id === "A")?.parts ?? 0;
-  const b = recipe.binderParts.find((p) => p.id === "B")?.parts ?? 0;
-  const sand = recipe.binderPercents.find((p) => p.id === "SAND");
-  const tix = recipe.binderPercents.find((p) => p.id === "TIX");
-  const resin = standardIngredientLabel("A", language) ?? "Resin";
-  const hardener = standardIngredientLabel("B", language) ?? "Hardener";
-  const filler = standardIngredientLabel("SAND", language) ?? "Filler";
-  const thickener = standardIngredientLabel("TIX", language) ?? "Thickener";
-  const bits = [`${a}:${b} ${resin}/${hardener}`];
+  const parts = recipe.binderParts;
+  const ratio = parts.map((p) => roundPct(p.parts)).join(":");
+  const labels = parts
+    .map((p) => getIngredientLabel(recipe, p.id, language) ?? p.id)
+    .join("/");
+  const sand = recipe.binderPercents.find(
+    (p) => p.id === FILLER_SLOT_ID || p.id === "SAND",
+  );
+  const tix = recipe.binderPercents.find(
+    (p) => p.id === THICKENER_SLOT_ID || p.id === "TIX",
+  );
+  const filler = getIngredientLabel(recipe, FILLER_SLOT_ID, language) ?? "Filler";
+  const thickener =
+    getIngredientLabel(recipe, THICKENER_SLOT_ID, language) ?? "Thickener";
+  const bits = [`${ratio} ${labels}`];
   if (sand) bits.push(`${roundPct(sand.percent)}% ${filler}`);
   if (tix) bits.push(`${roundPct(tix.percent)}% ${thickener}`);
   return bits.join(" · ");

@@ -25,7 +25,7 @@ export interface MixVolumeEstimate {
 }
 
 export interface MixVolumeInput {
-  /** Combined grams of liquid epoxy components (A + B + TIX). */
+  /** Combined grams of liquid epoxy components (A + B + thickener). */
   epoxyGrams: number;
   sandGrams: number;
   sandType?: SandType;

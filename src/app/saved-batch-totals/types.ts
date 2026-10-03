@@ -1,12 +1,24 @@
 import type { ExtraBatchEntry } from "../domain/batch-totals/extraBatches";
 
-/** Same slot map as saved mixes — TOTAL · A · B · TIX · SAND. */
+/** Same slot map as saved mixes — TOTAL · A · B · C · THICKENER · FILLER. */
 export type MixSlotValues = {
   total: number;
   a: number;
   b: number;
-  tix: number;
-  sand: number;
+  /** Optional third binder; omitted on older saves. */
+  c?: number;
+  thickener: number;
+  filler: number;
+  /**
+   * @deprecated Legacy thickener key — still accepted on load from older saves.
+   * Prefer `thickener`; normalize via `normalizeMixSlotValues`.
+   */
+  tix?: number;
+  /**
+   * @deprecated Legacy filler key — still accepted on load from older saves.
+   * Prefer `filler`; normalize via `normalizeMixSlotValues`.
+   */
+  sand?: number;
 };
 
 /**

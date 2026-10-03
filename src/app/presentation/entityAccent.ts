@@ -7,16 +7,18 @@ const ENTITY_ACCENT_DARK = {
   TOTAL: "#34d399",
   A: "#a855f7",
   B: "#22d3ee",
-  TIX: "#a3e635",
-  SAND: "#f97316",
+  C: "#f472b6",
+  THICKENER: "#a3e635",
+  FILLER: "#f97316",
 } as const;
 
 const ENTITY_ACCENT_LIGHT = {
   TOTAL: "#059669",
   A: "#6d28d9",
   B: "#0e7490",
-  TIX: "#4d7c0f",
-  SAND: "#c2410c",
+  C: "#be185d",
+  THICKENER: "#4d7c0f",
+  FILLER: "#c2410c",
 } as const;
 
 export type EntityAccentId = keyof typeof ENTITY_ACCENT_DARK;

@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { DEFAULT_BUCKET_SELECTION } from "../domain/bucket/types";
 import type { BucketSelection } from "../domain/bucket/types";
 import type { SandType } from "../domain/mix/volume";
+import { normalizeMixSlotValues } from "../domain/mix/slotMigration";
 import { resolveSavedMixMetaName } from "./display";
 import type { SavedMixSnapshot } from "./types";
 
@@ -16,13 +17,15 @@ export function snapshotValuesFromGrams(values: number[]): SavedMixSnapshot["val
     total: values[0] ?? 0,
     a: values[1] ?? 0,
     b: values[2] ?? 0,
-    tix: values[3] ?? 0,
-    sand: values[4] ?? 0,
+    c: values[3] ?? 0,
+    thickener: values[4] ?? 0,
+    filler: values[5] ?? 0,
   };
 }
 
 export function gramsFromSnapshot(values: SavedMixSnapshot["values"]): number[] {
-  return [values.total, values.a, values.b, values.tix, values.sand];
+  const n = normalizeMixSlotValues(values);
+  return [n.total, n.a, n.b, n.c ?? 0, n.thickener, n.filler];
 }
 
 export type SaveMixInput = {
@@ -62,12 +65,21 @@ function migrateLegacyBlendingMixes(): SavedMixSnapshot[] {
 
 function normalizeMix(mix: SavedMixSnapshot): SavedMixSnapshot {
   const recipeName = mix.recipeName?.trim() || mix.recipeId;
+  const values = normalizeMixSlotValues(mix.values);
   return {
     ...mix,
     bucketSelection: mix.bucketSelection ?? DEFAULT_BUCKET_SELECTION,
     sandType: mix.sandType ?? "medium",
     recipeName,
     metaName: resolveSavedMixMetaName(mix.metaName, recipeName),
+    values: {
+      total: values.total,
+      a: values.a,
+      b: values.b,
+      c: values.c,
+      thickener: values.thickener,
+      filler: values.filler,
+    },
   };
 }
 
@@ -139,7 +151,7 @@ function createSavedMixesStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 2,
+        version: 3,
         migrate: (persisted) => {
           const data = persisted as { mixes?: SavedMixSnapshot[] } | undefined;
           return { mixes: (data?.mixes ?? []).map(normalizeMix) };

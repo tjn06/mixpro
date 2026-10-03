@@ -32,6 +32,18 @@ import {
   type RecipeCreateMethod,
 } from "../../domain/recipe/createFromInputs";
 import {
+  FILLER_MATERIAL_ORDER,
+  THICKENER_MATERIAL_ORDER,
+  fillerMaterialOptionLabel,
+  inferFillerMaterialKind,
+  inferThickenerMaterialKind,
+  resolveFillerMaterialLabel,
+  resolveThickenerMaterialLabel,
+  thickenerMaterialOptionLabel,
+  type FillerMaterialKind,
+  type ThickenerMaterialKind,
+} from "../../domain/recipe/additiveMaterials";
+import {
   PRESET_RECIPES,
   recipeMenuLabel,
   type BlendingRecipe,
@@ -47,7 +59,7 @@ import { useRecipeLibraryStore } from "../../recipe-library/store";
 import { useSettingsStore } from "../../settings/store";
 import { useSessionsStore } from "../../sessions/store";
 import { sessionHeaderName } from "../../domain/sessions/stages";
-import { CloseIcon, InfoIcon, ScaleIcon, SwipeAdjustIcon } from "../shared/ActionIcons";
+import { CloseIcon, InfoIcon, ScaleIcon, SwipeAdjustIcon, SavedIcon } from "../shared/ActionIcons";
 import { AppHeader } from "../shared/AppHeader";
 import {
   RecipeHeaderSubline,
@@ -73,7 +85,10 @@ function copyRecipeName(
   return formatCopy(original);
 }
 
-type FieldKey = "name" | "a" | "b" | "filler" | "thickener" | "description";
+type FieldKey = "name" | "a" | "b" | "c" | "filler" | "thickener" | "description";
+
+/** Mixer UI supports at most this many ingredient cards (A/B/C/filler/thickener). */
+const MAX_RECIPE_ENTITIES = 4;
 
 /** Full create-recipe form for one method tab — Formula and Weights stay independent. */
 type MethodFormDraft = {
@@ -82,8 +97,24 @@ type MethodFormDraft = {
   description: string;
   a: string;
   b: string;
+  /** Optional third binder; only used when `includeC` is true. */
+  c: string;
+  /** Whether the C input is shown (counts toward the 4-entity cap). */
+  includeC: boolean;
   filler: string;
   thickener: string;
+  fillerMaterial: FillerMaterialKind;
+  fillerCustomName: string;
+  /** Session-only custom names shown in the filler dropdown. */
+  fillerTempNames: string[];
+  /** Inline custom-name editor open. */
+  fillerNaming: boolean;
+  fillerNameDraft: string;
+  thickenerMaterial: ThickenerMaterialKind;
+  thickenerCustomName: string;
+  thickenerTempNames: string[];
+  thickenerNaming: boolean;
+  thickenerNameDraft: string;
   scaledBinderSum: number | undefined;
   bucketSelection: BucketSelection;
   advancedOpen: boolean;
@@ -97,13 +128,55 @@ function emptyMethodFormDraft(): MethodFormDraft {
     description: "",
     a: "",
     b: "",
+    c: "",
+    includeC: false,
     filler: "",
     thickener: "",
+    fillerMaterial: "sand",
+    fillerCustomName: "",
+    fillerTempNames: [],
+    fillerNaming: false,
+    fillerNameDraft: "",
+    thickenerMaterial: "tix",
+    thickenerCustomName: "",
+    thickenerTempNames: [],
+    thickenerNaming: false,
+    thickenerNameDraft: "",
     scaledBinderSum: undefined,
     bucketSelection: "none",
     advancedOpen: false,
     dirty: false,
   };
+}
+
+function fieldHasAmount(raw: string): boolean {
+  const n = parseNum(raw);
+  return Number.isFinite(n) && n > 0;
+}
+
+/** When C is present only one additive can be active — clear the excess (no message). */
+function enforceEntityCap(draft: MethodFormDraft): MethodFormDraft {
+  if (!draft.includeC) return draft;
+  const fillerOn = fieldHasAmount(draft.filler);
+  const thickenerOn = fieldHasAmount(draft.thickener);
+  if (!(fillerOn && thickenerOn)) return draft;
+  return {
+    ...draft,
+    thickener: "",
+    thickenerNaming: false,
+    thickenerNameDraft: "",
+  };
+}
+
+const MATERIAL_TEMP_PREFIX = "tmp:";
+
+function materialTempValue(name: string): string {
+  return `${MATERIAL_TEMP_PREFIX}${name}`;
+}
+
+function materialTempName(value: string): string | null {
+  if (!value.startsWith(MATERIAL_TEMP_PREFIX)) return null;
+  return value.slice(MATERIAL_TEMP_PREFIX.length);
 }
 
 function parseNum(raw: string): number {
@@ -183,6 +256,7 @@ const FIELD_FOCUS_ORDER: FieldKey[] = [
   "name",
   "a",
   "b",
+  "c",
   "filler",
   "thickener",
   "description",
@@ -221,10 +295,12 @@ function Field({
   inputMode = "decimal",
   required = false,
   invalid = false,
+  disabled = false,
   kgHelper = false,
   percentOfBinderHelper = false,
   binderGrams = null,
   fieldKey,
+  nameSelect,
 }: {
   label: string;
   value: string;
@@ -234,14 +310,31 @@ function Field({
   inputMode?: "decimal" | "text";
   required?: boolean;
   invalid?: boolean;
+  disabled?: boolean;
   /** Gram fields: open a unit converter that writes grams into this field. */
   kgHelper?: boolean;
   /** Filler/thickener: also offer % of binder in the converter sheet. */
   percentOfBinderHelper?: boolean;
-  /** A+B grams when both are complete; null disables % mode. */
+  /** A+B[+C] grams when binder is complete; null disables % mode. */
   binderGrams?: number | null;
   /** For scroll/focus on validation errors. */
   fieldKey?: FieldKey;
+  /** Optional material name control (filler / thickener). */
+  nameSelect?: {
+    /** Current select value: preset kind, `tmp:Name`, or `custom` while naming. */
+    value: string;
+    options: { value: string; label: string }[];
+    onChange: (next: string) => void;
+    naming: boolean;
+    draftName: string;
+    onDraftNameChange: (next: string) => void;
+    onConfirmCustom: () => void;
+    onCancelCustom: () => void;
+    customPlaceholder?: string;
+    ariaLabel: string;
+    confirmAria: string;
+    cancelAria: string;
+  };
 }) {
   const { t } = useTranslation("common");
   const labelId = useId();
@@ -256,7 +349,101 @@ function Field({
   const [popoverStyle, setPopoverStyle] = useState<CSSProperties | null>(null);
   const binderHint = t("recipe.binderHint");
   const dialSwipeLabel = t("recipe.dialSwipe");
+  const [materialMenuOpen, setMaterialMenuOpen] = useState(false);
+  const materialWrapRef = useRef<HTMLDivElement>(null);
+  const materialMenuRef = useRef<HTMLDivElement>(null);
+  const [materialMenuStyle, setMaterialMenuStyle] = useState<CSSProperties | null>(
+    null,
+  );
+  const [materialMenuPortal, setMaterialMenuPortal] =
+    useState<HTMLElement | null>(null);
 
+  const materialSelectedLabel =
+    nameSelect?.options.find((opt) => opt.value === nameSelect.value)?.label ??
+    "";
+
+  const updateMaterialMenuPosition = useCallback(() => {
+    const wrap = materialWrapRef.current;
+    const menu = materialMenuRef.current;
+    const frame = wrap?.closest<HTMLElement>(".app-frame");
+    if (!wrap || !frame) return;
+    const frameR = frame.getBoundingClientRect();
+    const wrapR = wrap.getBoundingClientRect();
+    const pad = 8;
+    const gap = 6;
+    const minW = Math.max(wrapR.width, 168);
+    const menuH = menu?.offsetHeight || 44 * (nameSelect?.options.length ?? 3) + 14;
+    const spaceBelow = frameR.bottom - wrapR.bottom - pad;
+    const spaceAbove = wrapR.top - frameR.top - pad;
+    const placeAbove = spaceBelow < menuH + gap && spaceAbove > spaceBelow;
+    let left = wrapR.left - frameR.left;
+    left = Math.min(left, frameR.width - pad - minW);
+    left = Math.max(pad, left);
+    const top = placeAbove
+      ? wrapR.top - frameR.top - gap - menuH
+      : wrapR.bottom - frameR.top + gap;
+    setMaterialMenuStyle({
+      position: "absolute",
+      top: Math.max(pad, top),
+      left,
+      minWidth: minW,
+      zIndex: 40,
+    });
+  }, [nameSelect?.options.length]);
+
+  useLayoutEffect(() => {
+    if (!materialMenuOpen) {
+      setMaterialMenuPortal(null);
+      setMaterialMenuStyle(null);
+      return;
+    }
+    const wrap = materialWrapRef.current;
+    const frame = wrap?.closest<HTMLElement>(".app-frame") ?? null;
+    setMaterialMenuPortal(frame);
+    updateMaterialMenuPosition();
+    const raf = requestAnimationFrame(() => {
+      updateMaterialMenuPosition();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [materialMenuOpen, updateMaterialMenuPosition, nameSelect?.options.length]);
+
+  useEffect(() => {
+    if (!materialMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const wrap = materialWrapRef.current;
+      const menu = materialMenuRef.current;
+      const target = e.target;
+      if (!(target instanceof Node)) return;
+      if (wrap?.contains(target)) return;
+      if (menu?.contains(target)) return;
+      setMaterialMenuOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMaterialMenuOpen(false);
+    };
+    const onReposition = () => updateMaterialMenuPosition();
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", onReposition);
+    window.addEventListener("scroll", onReposition, true);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
+    };
+  }, [materialMenuOpen, updateMaterialMenuPosition]);
+
+  useEffect(() => {
+    if (nameSelect?.naming) setMaterialMenuOpen(false);
+  }, [nameSelect?.naming]);
+
+  useEffect(() => {
+    if (!disabled) return;
+    setMaterialMenuOpen(false);
+    setUnitOpen(false);
+    setSwipeOpen(false);
+  }, [disabled]);
   const binderReady = binderGrams != null && binderGrams > 0;
   const showPercentTab = percentOfBinderHelper;
   const unitDraftInvalid =
@@ -358,6 +545,7 @@ function Field({
   }, [unitOpen, unitMode, binderReady, value]);
 
   const openUnitHelper = () => {
+    if (disabled) return;
     setSwipeOpen(false);
     setUnitMode("kg");
     setUnitDraft(gramsToKgDraft(value));
@@ -403,6 +591,7 @@ function Field({
   };
 
   const openSwipeHelper = () => {
+    if (disabled) return;
     setUnitOpen(false);
     setSwipeOpen(true);
   };
@@ -577,19 +766,143 @@ function Field({
   return (
     <div
       className={`create-recipe__field${invalid ? " create-recipe__field--invalid" : ""}${
-        unitOpen ? " create-recipe__field--kg-open" : ""
-      }`}
+        disabled ? " create-recipe__field--disabled" : ""
+      }${unitOpen ? " create-recipe__field--kg-open" : ""}`}
       data-create-field={fieldKey}
     >
       <div className="create-recipe__field-label-row">
-        <span className="create-recipe__field-label" id={labelId}>
-          {label}
-          {required ? (
-            <span className="create-recipe__field-required" aria-hidden>
-              *
-            </span>
+        <div className="create-recipe__field-label-group">
+          <span className="create-recipe__field-label" id={labelId}>
+            {label}
+            {required ? (
+              <span className="create-recipe__field-required" aria-hidden>
+                *
+              </span>
+            ) : null}
+          </span>
+          {nameSelect ? (
+            <div className="create-recipe__material-control">
+              {nameSelect.naming && !disabled ? (
+                <div className="create-recipe__material-name-edit">
+                  <input
+                    className="create-recipe__material-draft"
+                    value={nameSelect.draftName}
+                    placeholder={nameSelect.customPlaceholder}
+                    inputMode="text"
+                    aria-label={nameSelect.customPlaceholder ?? nameSelect.ariaLabel}
+                    autoFocus
+                    onChange={(e) => nameSelect.onDraftNameChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        nameSelect.onConfirmCustom();
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        nameSelect.onCancelCustom();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="create-recipe__material-cancel"
+                    aria-label={nameSelect.cancelAria}
+                    onClick={() => nameSelect.onCancelCustom()}
+                  >
+                    <CloseIcon size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    className="create-recipe__material-confirm"
+                    aria-label={nameSelect.confirmAria}
+                    disabled={nameSelect.draftName.trim() === ""}
+                    onClick={() => nameSelect.onConfirmCustom()}
+                  >
+                    <SavedIcon size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  ref={materialWrapRef}
+                  className="create-recipe__material-select-wrap"
+                >
+                  <button
+                    type="button"
+                    className="create-recipe__material-trigger"
+                    data-open={materialMenuOpen ? "" : undefined}
+                    aria-label={nameSelect.ariaLabel}
+                    aria-haspopup="listbox"
+                    aria-expanded={materialMenuOpen}
+                    disabled={disabled}
+                    onClick={() => {
+                      if (disabled) return;
+                      setMaterialMenuOpen((open) => !open);
+                    }}
+                  >
+                    <span className="create-recipe__material-trigger-label">
+                      {materialSelectedLabel}
+                    </span>
+                    <span
+                      className="create-recipe__material-chevron"
+                      data-open={materialMenuOpen ? "" : undefined}
+                      aria-hidden
+                    >
+                      <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+                        <path
+                          d="M1 1.25L5 4.75L9 1.25"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                  {materialMenuOpen && materialMenuPortal && materialMenuStyle
+                    ? createPortal(
+                        <div
+                          ref={materialMenuRef}
+                          className="create-recipe__material-menu"
+                          role="listbox"
+                          aria-label={nameSelect.ariaLabel}
+                          data-selected=""
+                          style={materialMenuStyle}
+                        >
+                          {nameSelect.options.map((opt) => {
+                            const active = opt.value === nameSelect.value;
+                            return (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                role="option"
+                                aria-selected={active}
+                                className="create-recipe__material-option"
+                                data-active={active ? "" : undefined}
+                                onClick={() => {
+                                  setMaterialMenuOpen(false);
+                                  nameSelect.onChange(opt.value);
+                                }}
+                              >
+                                <span className="create-recipe__material-option-label">
+                                  {opt.label}
+                                </span>
+                                <span
+                                  className="create-recipe__material-option-check"
+                                  aria-hidden
+                                >
+                                  {active ? <SavedIcon size={15} /> : null}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>,
+                        materialMenuPortal,
+                      )
+                    : null}
+                </div>
+              )}
+            </div>
           ) : null}
-        </span>
+        </div>
         {kgHelper && labelKg !== "" ? (
           <span className="create-recipe__field-kg" aria-live="polite">
             {labelKg} kg
@@ -611,10 +924,13 @@ function Field({
             placeholder={placeholder}
             inputMode={inputMode}
             required={required}
+            disabled={disabled}
             aria-labelledby={labelId}
             aria-invalid={invalid || undefined}
             aria-required={required || undefined}
+            aria-disabled={disabled || undefined}
             onChange={(e) => {
+              if (disabled) return;
               const next =
                 inputMode === "decimal"
                   ? sanitizeDecimalInput(e.target.value)
@@ -641,6 +957,7 @@ function Field({
                 aria-expanded={swipeOpen}
                 aria-haspopup="dialog"
                 title={dialSwipeLabel}
+                disabled={disabled}
                 onClick={openSwipeHelper}
               >
                 <SwipeAdjustIcon size={16} />
@@ -652,7 +969,9 @@ function Field({
                 aria-expanded={unitOpen}
                 aria-haspopup="dialog"
                 title={scaleTitle}
+                disabled={disabled}
                 onClick={() => {
+                  if (disabled) return;
                   if (unitOpen) closeUnitHelper();
                   else openUnitHelper();
                 }}
@@ -691,6 +1010,8 @@ function collectFieldErrors(
   name: string,
   a: string,
   b: string,
+  c: string,
+  includeC: boolean,
   filler: string,
   thickener: string,
   description: string,
@@ -702,6 +1023,10 @@ function collectFieldErrors(
   const bNum = parseNum(b);
   if (!(aNum > 0)) next.a = true;
   if (!(bNum > 0)) next.b = true;
+  if (includeC) {
+    const cNum = parseNum(c);
+    if (!(cNum > 0)) next.c = true;
+  }
 
   if (filler.trim() !== "") {
     const n = parseNum(filler);
@@ -790,8 +1115,20 @@ export function CreateRecipeScreen({
     description,
     a,
     b,
+    c,
+    includeC,
     filler,
     thickener,
+    fillerMaterial,
+    fillerCustomName,
+    fillerTempNames,
+    fillerNaming,
+    fillerNameDraft,
+    thickenerMaterial,
+    thickenerCustomName,
+    thickenerTempNames,
+    thickenerNaming,
+    thickenerNameDraft,
     scaledBinderSum,
     bucketSelection,
     advancedOpen,
@@ -801,19 +1138,51 @@ export function CreateRecipeScreen({
   const patchForm = (
     patch: Partial<MethodFormDraft> | ((prev: MethodFormDraft) => MethodFormDraft),
   ) => {
-    setForm((prev) =>
-      typeof patch === "function" ? patch(prev) : { ...prev, ...patch },
-    );
+    setForm((prev) => {
+      const next =
+        typeof patch === "function" ? patch(prev) : { ...prev, ...patch };
+      return enforceEntityCap(next);
+    });
   };
 
   const markDirty = () => patchForm({ dirty: true });
 
   const setComponentField = (
-    key: "a" | "b" | "filler" | "thickener",
+    key: "a" | "b" | "c" | "filler" | "thickener",
     value: string,
   ) => {
-    patchForm({ [key]: value, dirty: true });
+    patchForm((prev) => {
+      const next = { ...prev, [key]: value, dirty: true };
+      // When claiming the single additive slot under C, clear the other.
+      if (prev.includeC && fieldHasAmount(value)) {
+        if (key === "filler" && fieldHasAmount(prev.thickener)) {
+          next.thickener = "";
+          next.thickenerNaming = false;
+          next.thickenerNameDraft = "";
+        } else if (key === "thickener" && fieldHasAmount(prev.filler)) {
+          next.filler = "";
+          next.fillerNaming = false;
+          next.fillerNameDraft = "";
+        }
+      }
+      return next;
+    });
     if (submitted) setError(null);
+  };
+
+  const addComponentC = () => {
+    patchForm({
+      includeC: true,
+      dirty: true,
+    });
+  };
+
+  const removeComponentC = () => {
+    patchForm({
+      includeC: false,
+      c: "",
+      dirty: true,
+    });
   };
 
   const commitRecipeAsCopy = (recipe: BlendingRecipe) => {
@@ -824,26 +1193,54 @@ export function CreateRecipeScreen({
     );
     const copiedSubline = displayLabel(recipe.nameSubline, uiLanguage).trim();
     const copiedDescription = displayLabel(recipe.description, uiLanguage).trim();
+    const sandEntry = recipe.binderPercents.find(
+      (p) => p.id === "FILLER" || p.id === "SAND",
+    );
+    const tixEntry = recipe.binderPercents.find(
+      (p) => p.id === "THICKENER" || p.id === "TIX",
+    );    const cParts = recipe.binderParts.find((p) => p.id === "C")?.parts ?? 0;
+    const hasC = cParts > 0;
+    const nextFillerKind = inferFillerMaterialKind(sandEntry?.label);
+    const nextThickenerKind = inferThickenerMaterialKind(tixEntry?.label);
+    const fillerLabel =
+      nextFillerKind === "custom" ? (sandEntry?.label ?? "").trim() : "";
+    const thickenerLabel =
+      nextThickenerKind === "custom" ? (tixEntry?.label ?? "").trim() : "";
+    const materialPatch = {
+      fillerMaterial: nextFillerKind,
+      fillerCustomName: fillerLabel,
+      fillerTempNames: fillerLabel ? [fillerLabel] : [],
+      fillerNaming: false,
+      fillerNameDraft: "",
+      thickenerMaterial: nextThickenerKind,
+      thickenerCustomName: thickenerLabel,
+      thickenerTempNames: thickenerLabel ? [thickenerLabel] : [],
+      thickenerNaming: false,
+      thickenerNameDraft: "",
+    };
 
     if (method === "weights") {
       const binder = recipeBinderSum(recipe);
-      const [, aG, bG, tixG, sandG] = initialMixValues(recipe, binder);
+      const [, aG, bG, cG, tixG, sandG] = initialMixValues(recipe, binder);
       patchForm({
         name: copiedName,
         nameSubline: copiedSubline,
         description: copiedDescription,
         a: formatAmount(aG),
         b: formatAmount(bG),
+        c: hasC && cG > 0 ? formatAmount(cG) : "",
+        includeC: hasC,
         filler: sandG > 0 ? formatAmount(sandG) : "",
         thickener: tixG > 0 ? formatAmount(tixG) : "",
+        ...materialPatch,
         advancedOpen: copiedDescription !== "" ? true : form.advancedOpen,
         dirty: true,
       });
     } else {
       const aParts = recipe.binderParts.find((p) => p.id === "A")?.parts ?? 2;
       const bParts = recipe.binderParts.find((p) => p.id === "B")?.parts ?? 1;
-      const sandPct = recipe.binderPercents.find((p) => p.id === "SAND")?.percent;
-      const tixPct = recipe.binderPercents.find((p) => p.id === "TIX")?.percent;
+      const sandPct = sandEntry?.percent;
+      const tixPct = tixEntry?.percent;
       const binder =
         recipe.initialBinderSum != null &&
         Number.isFinite(recipe.initialBinderSum) &&
@@ -857,9 +1254,12 @@ export function CreateRecipeScreen({
         description: copiedDescription,
         a: formatAmount(aParts),
         b: formatAmount(bParts),
+        c: hasC ? formatAmount(cParts) : "",
+        includeC: hasC,
         filler: sandPct != null && sandPct > 0 ? formatAmount(sandPct) : "",
         thickener: tixPct != null && tixPct > 0 ? formatAmount(tixPct) : "",
         scaledBinderSum: binder,
+        ...materialPatch,
         advancedOpen:
           binder != null || copiedDescription !== "" ? true : form.advancedOpen,
         dirty: true,
@@ -890,18 +1290,212 @@ export function CreateRecipeScreen({
 
   const fieldErrors = useMemo(() => {
     if (!submitted) return {} as Partial<Record<FieldKey, true>>;
-    return collectFieldErrors(method, name, a, b, filler, thickener, description);
-  }, [submitted, method, name, a, b, filler, thickener, description]);
+    return collectFieldErrors(
+      method,
+      name,
+      a,
+      b,
+      c,
+      includeC,
+      filler,
+      thickener,
+      description,
+    );
+  }, [submitted, method, name, a, b, c, includeC, filler, thickener, description]);
 
-  /** Actual-weights binder (A+B) — required for filler/thickener % converter. */
+  /** Actual-weights binder (A+B[+C]) — required for filler/thickener % converter. */
   const weightsBinderGrams = useMemo(() => {
     const aNum = parseNum(a);
     const bNum = parseNum(b);
+    const cNum = includeC ? parseNum(c) : 0;
     if (!(aNum > 0) || !(bNum > 0)) return null;
-    return aNum + bNum;
-  }, [a, b]);
+    if (includeC && !(cNum > 0)) return null;
+    return aNum + bNum + (includeC ? cNum : 0);
+  }, [a, b, c, includeC]);
+
+  const maxAdditives = MAX_RECIPE_ENTITIES - 2 - (includeC ? 1 : 0);
+  const fillerDisabled =
+    maxAdditives < 2 && fieldHasAmount(thickener) && !fieldHasAmount(filler);
+  const thickenerDisabled =
+    maxAdditives < 2 && fieldHasAmount(filler) && !fieldHasAmount(thickener);
+  const resolvedFillerLabel = resolveFillerMaterialLabel(
+    fillerMaterial,
+    fillerCustomName,
+    uiLanguage,
+  );
+  const resolvedThickenerLabel = resolveThickenerMaterialLabel(
+    thickenerMaterial,
+    thickenerCustomName,
+    uiLanguage,
+  );
+
+  const fillerSelectValue =
+    fillerMaterial === "custom" && fillerCustomName.trim()
+      ? materialTempValue(fillerCustomName.trim())
+      : fillerMaterial;
+  const thickenerSelectValue =
+    thickenerMaterial === "custom" && thickenerCustomName.trim()
+      ? materialTempValue(thickenerCustomName.trim())
+      : thickenerMaterial;
+
+  const fillerSelectOptions = useMemo(() => {
+    const presets = FILLER_MATERIAL_ORDER.filter((k) => k !== "custom").map(
+      (kind) => ({
+        value: kind,
+        label: fillerMaterialOptionLabel(kind, uiLanguage),
+      }),
+    );
+    const temps = fillerTempNames.map((n) => ({
+      value: materialTempValue(n),
+      label: n,
+    }));
+    return [
+      ...presets,
+      ...temps,
+      {
+        value: "custom",
+        label: fillerMaterialOptionLabel("custom", uiLanguage),
+      },
+    ];
+  }, [fillerTempNames, uiLanguage]);
+
+  const thickenerSelectOptions = useMemo(() => {
+    const presets = THICKENER_MATERIAL_ORDER.filter((k) => k !== "custom").map(
+      (kind) => ({
+        value: kind,
+        label: thickenerMaterialOptionLabel(kind, uiLanguage),
+      }),
+    );
+    const temps = thickenerTempNames.map((n) => ({
+      value: materialTempValue(n),
+      label: n,
+    }));
+    return [
+      ...presets,
+      ...temps,
+      {
+        value: "custom",
+        label: thickenerMaterialOptionLabel("custom", uiLanguage),
+      },
+    ];
+  }, [thickenerTempNames, uiLanguage]);
+
+  const onFillerMaterialSelect = (next: string) => {
+    if (next === "custom") {
+      patchForm({
+        fillerNaming: true,
+        fillerNameDraft: "",
+        dirty: true,
+      });
+      return;
+    }
+    const temp = materialTempName(next);
+    if (temp != null) {
+      patchForm({
+        fillerMaterial: "custom",
+        fillerCustomName: temp,
+        fillerNaming: false,
+        fillerNameDraft: "",
+        dirty: true,
+      });
+      return;
+    }
+    patchForm({
+      fillerMaterial: next as FillerMaterialKind,
+      fillerNaming: false,
+      fillerNameDraft: "",
+      dirty: true,
+    });
+  };
+
+  const onThickenerMaterialSelect = (next: string) => {
+    if (next === "custom") {
+      patchForm({
+        thickenerNaming: true,
+        thickenerNameDraft: "",
+        dirty: true,
+      });
+      return;
+    }
+    const temp = materialTempName(next);
+    if (temp != null) {
+      patchForm({
+        thickenerMaterial: "custom",
+        thickenerCustomName: temp,
+        thickenerNaming: false,
+        thickenerNameDraft: "",
+        dirty: true,
+      });
+      return;
+    }
+    patchForm({
+      thickenerMaterial: next as ThickenerMaterialKind,
+      thickenerNaming: false,
+      thickenerNameDraft: "",
+      dirty: true,
+    });
+  };
+
+  const confirmFillerCustomName = () => {
+    const trimmed = fillerNameDraft.trim();
+    if (!trimmed) return;
+    patchForm((prev) => ({
+      ...prev,
+      fillerMaterial: "custom",
+      fillerCustomName: trimmed,
+      fillerTempNames: prev.fillerTempNames.includes(trimmed)
+        ? prev.fillerTempNames
+        : [...prev.fillerTempNames, trimmed],
+      fillerNaming: false,
+      fillerNameDraft: "",
+      dirty: true,
+    }));
+  };
+
+  const cancelFillerCustomName = () => {
+    patchForm({
+      fillerNaming: false,
+      fillerNameDraft: "",
+    });
+  };
+
+  const confirmThickenerCustomName = () => {
+    const trimmed = thickenerNameDraft.trim();
+    if (!trimmed) return;
+    patchForm((prev) => ({
+      ...prev,
+      thickenerMaterial: "custom",
+      thickenerCustomName: trimmed,
+      thickenerTempNames: prev.thickenerTempNames.includes(trimmed)
+        ? prev.thickenerTempNames
+        : [...prev.thickenerTempNames, trimmed],
+      thickenerNaming: false,
+      thickenerNameDraft: "",
+      dirty: true,
+    }));
+  };
+
+  const cancelThickenerCustomName = () => {
+    patchForm({
+      thickenerNaming: false,
+      thickenerNameDraft: "",
+    });
+  };
+
+  useEffect(() => {
+    if (fillerDisabled && fillerNaming) {
+      patchForm({ fillerNaming: false, fillerNameDraft: "" });
+    }
+  }, [fillerDisabled, fillerNaming]);
+
+  useEffect(() => {
+    if (thickenerDisabled && thickenerNaming) {
+      patchForm({ thickenerNaming: false, thickenerNameDraft: "" });
+    }
+  }, [thickenerDisabled, thickenerNaming]);
 
   const preview = useMemo(() => {
+    const cNum = includeC ? parseNum(c) : 0;
     if (method === "weights") {
       const input = {
         name: name.trim() || t("recipe.previewName"),
@@ -909,11 +1503,15 @@ export function CreateRecipeScreen({
         description,
         a: parseNum(a),
         b: parseNum(b),
+        c: includeC && cNum > 0 ? cNum : undefined,
         filler: parseNum(filler) || 0,
         thickener: parseNum(thickener) || 0,
+        fillerLabel: resolvedFillerLabel,
+        thickenerLabel: resolvedThickenerLabel,
       };
       // Preview without requiring a real name.
       if (!(input.a > 0) || !(input.b > 0)) return null;
+      if (includeC && !(cNum > 0)) return null;
       if (input.filler < 0 || input.thickener < 0) return null;
       return blendingRecipeFromWeights(input);
     }
@@ -923,14 +1521,33 @@ export function CreateRecipeScreen({
       description,
       aParts: parseNum(a),
       bParts: parseNum(b),
+      cParts: includeC && cNum > 0 ? cNum : undefined,
       fillerPercent: parseNum(filler) || 0,
       thickenerPercent: parseNum(thickener) || 0,
       initialBinderSum: scaledBinderSum,
+      fillerLabel: resolvedFillerLabel,
+      thickenerLabel: resolvedThickenerLabel,
     };
     if (!(input.aParts > 0) || !(input.bParts > 0)) return null;
+    if (includeC && !(cNum > 0)) return null;
     if (input.fillerPercent < 0 || input.thickenerPercent < 0) return null;
     return blendingRecipeFromFormula(input);
-  }, [method, name, nameSubline, description, a, b, filler, thickener, scaledBinderSum, t]);
+  }, [
+    method,
+    name,
+    nameSubline,
+    description,
+    a,
+    b,
+    c,
+    includeC,
+    filler,
+    thickener,
+    scaledBinderSum,
+    resolvedFillerLabel,
+    resolvedThickenerLabel,
+    t,
+  ]);
 
   const switchMethod = (next: RecipeCreateMethod) => {
     if (next === method) return;
@@ -947,6 +1564,8 @@ export function CreateRecipeScreen({
       name,
       a,
       b,
+      c,
+      includeC,
       filler,
       thickener,
       description,
@@ -961,7 +1580,7 @@ export function CreateRecipeScreen({
         patchForm({ advancedOpen: true });
         window.setTimeout(() => focusCreateField("description"), 50);
         return null;
-      } else if (localErrors.a || localErrors.b) {
+      } else if (localErrors.a || localErrors.b || localErrors.c) {
         setError(
           method === "formula"
             ? t("recipe.errors.partsPositive")
@@ -981,6 +1600,7 @@ export function CreateRecipeScreen({
       return null;
     }
 
+    const cNum = includeC ? parseNum(c) : 0;
     if (method === "weights") {
       const input = {
         name,
@@ -988,14 +1608,23 @@ export function CreateRecipeScreen({
         description,
         a: parseNum(a),
         b: parseNum(b),
+        c: includeC && cNum > 0 ? cNum : undefined,
         filler: parseNum(filler) || 0,
         thickener: parseNum(thickener) || 0,
+        fillerLabel: resolvedFillerLabel,
+        thickenerLabel: resolvedThickenerLabel,
       };
       const err = validateWeightsInput(input);
       if (err) {
         setError(err);
         focusCreateField(
-          !(parseNum(a) > 0) ? "a" : !(parseNum(b) > 0) ? "b" : "name",
+          !(parseNum(a) > 0)
+            ? "a"
+            : !(parseNum(b) > 0)
+              ? "b"
+              : includeC && !(cNum > 0)
+                ? "c"
+                : "name",
         );
         return null;
       }
@@ -1012,15 +1641,24 @@ export function CreateRecipeScreen({
       description,
       aParts: parseNum(a),
       bParts: parseNum(b),
+      cParts: includeC && cNum > 0 ? cNum : undefined,
       fillerPercent: parseNum(filler) || 0,
       thickenerPercent: parseNum(thickener) || 0,
       initialBinderSum: scaledBinderSum,
+      fillerLabel: resolvedFillerLabel,
+      thickenerLabel: resolvedThickenerLabel,
     };
     const err = validateFormulaInput(input);
     if (err) {
       setError(err);
       focusCreateField(
-        !(parseNum(a) > 0) ? "a" : !(parseNum(b) > 0) ? "b" : "name",
+        !(parseNum(a) > 0)
+          ? "a"
+          : !(parseNum(b) > 0)
+            ? "b"
+            : includeC && !(cNum > 0)
+              ? "c"
+              : "name",
       );
       return null;
     }
@@ -1054,29 +1692,34 @@ export function CreateRecipeScreen({
     if (method !== "weights") return;
     const aNum = parseNum(a);
     const bNum = parseNum(b);
-    if (!(aNum > 0) || !(bNum > 0)) {
+    const cNum = includeC ? parseNum(c) : 0;
+    if (!(aNum > 0) || !(bNum > 0) || (includeC && !(cNum > 0))) {
       setSubmitted(true);
       setError(t("recipe.errors.abPositive"));
-      focusCreateField(!(aNum > 0) ? "a" : "b");
+      focusCreateField(
+        !(aNum > 0) ? "a" : !(bNum > 0) ? "b" : "c",
+      );
       return;
     }
     const fillNum = parseNum(filler);
     const tixNum = parseNum(thickener);
     const fillerG = Number.isFinite(fillNum) && fillNum > 0 ? fillNum : 0;
     const tixG = Number.isFinite(tixNum) && tixNum > 0 ? tixNum : 0;
+    const cG = includeC && cNum > 0 ? cNum : 0;
     const recipe = blendingRecipeFromWeights({
       name: name.trim() || t("recipe.draftName"),
       nameSubline,
       description,
       a: aNum,
       b: bNum,
+      c: cG > 0 ? cG : undefined,
       filler: fillerG,
       thickener: tixG,
     });
-    const total = aNum + bNum + fillerG + tixG;
+    const total = aNum + bNum + cG + fillerG + tixG;
     setError(null);
     setScalePurpose("edit-weights");
-    setDraftMixValues([total, aNum, bNum, tixG, fillerG]);
+    setDraftMixValues([total, aNum, bNum, cG, tixG, fillerG]);
     setDraft(recipe);
     setPhase("scale");
   };
@@ -1102,17 +1745,22 @@ export function CreateRecipeScreen({
       const vals = payload.values;
       const nextA = Math.max(0, Math.round(vals[1] ?? 0));
       const nextB = Math.max(0, Math.round(vals[2] ?? 0));
-      const nextTix = Math.max(0, Math.round(vals[3] ?? 0));
-      const nextFill = Math.max(0, Math.round(vals[4] ?? 0));
-      setWeightsForm((prev) => ({
-        ...prev,
-        a: formatAmount(nextA),
-        b: formatAmount(nextB),
-        thickener: nextTix > 0 ? formatAmount(nextTix) : "",
-        filler: nextFill > 0 ? formatAmount(nextFill) : "",
-        bucketSelection: payload.bucketSelection,
-        dirty: true,
-      }));
+      const nextC = Math.max(0, Math.round(vals[3] ?? 0));
+      const nextTix = Math.max(0, Math.round(vals[4] ?? 0));
+      const nextFill = Math.max(0, Math.round(vals[5] ?? 0));
+      setWeightsForm((prev) =>
+        enforceEntityCap({
+          ...prev,
+          a: formatAmount(nextA),
+          b: formatAmount(nextB),
+          c: nextC > 0 ? formatAmount(nextC) : "",
+          includeC: prev.includeC || nextC > 0,
+          thickener: nextTix > 0 ? formatAmount(nextTix) : "",
+          filler: nextFill > 0 ? formatAmount(nextFill) : "",
+          bucketSelection: payload.bucketSelection,
+          dirty: true,
+        }),
+      );
       setPhase("form");
       setDraft(null);
       setDraftMixValues(undefined);
@@ -1284,6 +1932,35 @@ export function CreateRecipeScreen({
                 invalid={Boolean(fieldErrors.b)}
                 onChange={(v) => setComponentField("b", v)}
               />
+              {includeC ? (
+                <div className="create-recipe__component-c">
+                  <Field
+                    label={t("recipe.componentC")}
+                    value={c}
+                    placeholder={t("recipe.placeholderPartsC")}
+                    suffix={partsUnitLabel(uiLanguage)}
+                    required
+                    fieldKey="c"
+                    invalid={Boolean(fieldErrors.c)}
+                    onChange={(v) => setComponentField("c", v)}
+                  />
+                  <button
+                    type="button"
+                    className="create-recipe__secondary-btn create-recipe__component-c-toggle"
+                    onClick={removeComponentC}
+                  >
+                    {t("recipe.removeComponentC")}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="create-recipe__secondary-btn create-recipe__component-c-toggle"
+                  onClick={addComponentC}
+                >
+                  {t("recipe.addComponentC")}
+                </button>
+              )}
               <Field
                 label={t("recipe.filler")}
                 value={filler}
@@ -1291,7 +1968,23 @@ export function CreateRecipeScreen({
                 suffix={t("recipe.percentOfBinder")}
                 fieldKey="filler"
                 invalid={Boolean(fieldErrors.filler)}
+                disabled={fillerDisabled}
                 onChange={(v) => setComponentField("filler", v)}
+                nameSelect={{
+                  value: fillerSelectValue,
+                  options: fillerSelectOptions,
+                  onChange: onFillerMaterialSelect,
+                  naming: fillerNaming,
+                  draftName: fillerNameDraft,
+                  onDraftNameChange: (next) =>
+                    patchForm({ fillerNameDraft: next, dirty: true }),
+                  onConfirmCustom: confirmFillerCustomName,
+                  onCancelCustom: cancelFillerCustomName,
+                  customPlaceholder: t("recipe.customMaterialName"),
+                  ariaLabel: t("recipe.fillerMaterialAria"),
+                  confirmAria: t("recipe.confirmCustomMaterial"),
+                  cancelAria: t("recipe.cancelCustomMaterial"),
+                }}
               />
               <Field
                 label={t("recipe.thickener")}
@@ -1300,7 +1993,23 @@ export function CreateRecipeScreen({
                 suffix={t("recipe.percentOfBinder")}
                 fieldKey="thickener"
                 invalid={Boolean(fieldErrors.thickener)}
+                disabled={thickenerDisabled}
                 onChange={(v) => setComponentField("thickener", v)}
+                nameSelect={{
+                  value: thickenerSelectValue,
+                  options: thickenerSelectOptions,
+                  onChange: onThickenerMaterialSelect,
+                  naming: thickenerNaming,
+                  draftName: thickenerNameDraft,
+                  onDraftNameChange: (next) =>
+                    patchForm({ thickenerNameDraft: next, dirty: true }),
+                  onConfirmCustom: confirmThickenerCustomName,
+                  onCancelCustom: cancelThickenerCustomName,
+                  customPlaceholder: t("recipe.customMaterialName"),
+                  ariaLabel: t("recipe.thickenerMaterialAria"),
+                  confirmAria: t("recipe.confirmCustomMaterial"),
+                  cancelAria: t("recipe.cancelCustomMaterial"),
+                }}
               />
             </>
           ) : (
@@ -1327,6 +2036,36 @@ export function CreateRecipeScreen({
                 invalid={Boolean(fieldErrors.b)}
                 onChange={(v) => setComponentField("b", v)}
               />
+              {includeC ? (
+                <div className="create-recipe__component-c">
+                  <Field
+                    label={t("recipe.componentC")}
+                    value={c}
+                    placeholder={t("recipe.placeholderGrams")}
+                    suffix="gram"
+                    required
+                    kgHelper
+                    fieldKey="c"
+                    invalid={Boolean(fieldErrors.c)}
+                    onChange={(v) => setComponentField("c", v)}
+                  />
+                  <button
+                    type="button"
+                    className="create-recipe__secondary-btn create-recipe__component-c-toggle"
+                    onClick={removeComponentC}
+                  >
+                    {t("recipe.removeComponentC")}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="create-recipe__secondary-btn create-recipe__component-c-toggle"
+                  onClick={addComponentC}
+                >
+                  {t("recipe.addComponentC")}
+                </button>
+              )}
               <Field
                 label={t("recipe.filler")}
                 value={filler}
@@ -1337,7 +2076,23 @@ export function CreateRecipeScreen({
                 binderGrams={weightsBinderGrams}
                 fieldKey="filler"
                 invalid={Boolean(fieldErrors.filler)}
+                disabled={fillerDisabled}
                 onChange={(v) => setComponentField("filler", v)}
+                nameSelect={{
+                  value: fillerSelectValue,
+                  options: fillerSelectOptions,
+                  onChange: onFillerMaterialSelect,
+                  naming: fillerNaming,
+                  draftName: fillerNameDraft,
+                  onDraftNameChange: (next) =>
+                    patchForm({ fillerNameDraft: next, dirty: true }),
+                  onConfirmCustom: confirmFillerCustomName,
+                  onCancelCustom: cancelFillerCustomName,
+                  customPlaceholder: t("recipe.customMaterialName"),
+                  ariaLabel: t("recipe.fillerMaterialAria"),
+                  confirmAria: t("recipe.confirmCustomMaterial"),
+                  cancelAria: t("recipe.cancelCustomMaterial"),
+                }}
               />
               <Field
                 label={t("recipe.thickener")}
@@ -1349,7 +2104,23 @@ export function CreateRecipeScreen({
                 binderGrams={weightsBinderGrams}
                 fieldKey="thickener"
                 invalid={Boolean(fieldErrors.thickener)}
+                disabled={thickenerDisabled}
                 onChange={(v) => setComponentField("thickener", v)}
+                nameSelect={{
+                  value: thickenerSelectValue,
+                  options: thickenerSelectOptions,
+                  onChange: onThickenerMaterialSelect,
+                  naming: thickenerNaming,
+                  draftName: thickenerNameDraft,
+                  onDraftNameChange: (next) =>
+                    patchForm({ thickenerNameDraft: next, dirty: true }),
+                  onConfirmCustom: confirmThickenerCustomName,
+                  onCancelCustom: cancelThickenerCustomName,
+                  customPlaceholder: t("recipe.customMaterialName"),
+                  ariaLabel: t("recipe.thickenerMaterialAria"),
+                  confirmAria: t("recipe.confirmCustomMaterial"),
+                  cancelAria: t("recipe.cancelCustomMaterial"),
+                }}
               />
               <div className="create-recipe__weights-tools">
                 <button

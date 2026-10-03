@@ -97,7 +97,7 @@ const REPORT_COPY: Record<
   },
 };
 /** Slot codes that stay visible in shared reports (site shorthand). */
-const KEEP_SLOT_CODE = new Set(["A", "B", "TIX", "SAND"]);
+const KEEP_SLOT_CODE = new Set(["A", "B", "C", "THICKENER", "FILLER", "TIX", "SAND"]);
 
 function reportLocale(language: BatchReportLanguage) {
   return language === "sv" ? sv : enUS;
@@ -165,7 +165,7 @@ function reportMetaLabel(
   return getIngredientLabel(recipe, id, language) ?? getEntityMetaLabel(recipe, id, language);
 }
 
-/** Boss-readable amount line — keep A/B (and TIX/SAND); hide TOTAL code. */
+/** Boss-readable amount line — keep A/B/C (and FILLER/THICKENER); hide TOTAL code. */
 function formatAmountLine(
   slotId: string,
   meta: string | undefined,

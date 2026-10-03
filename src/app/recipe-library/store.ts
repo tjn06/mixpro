@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { normalizeRecipeAdditiveSlots } from "../domain/mix/slotMigration";
 import { PRESET_RECIPES, type BlendingRecipe } from "../domain/recipe/types";
 
 const STORAGE_KEY = "mixmate-recipe-library";
@@ -14,6 +15,10 @@ interface RecipeLibraryState {
   deleteRecipe: (id: string) => void;
 }
 
+function normalizeUserRecipe(recipe: BlendingRecipe): BlendingRecipe {
+  return normalizeRecipeAdditiveSlots(recipe);
+}
+
 function createRecipeLibraryStore() {
   return create<RecipeLibraryState>()(
     persist(
@@ -21,7 +26,10 @@ function createRecipeLibraryStore() {
         userRecipes: [],
 
         addRecipe: (recipe) => {
-          const next = { ...recipe, id: recipe.id || crypto.randomUUID() };
+          const next = normalizeUserRecipe({
+            ...recipe,
+            id: recipe.id || crypto.randomUUID(),
+          });
           set({
             userRecipes: [next, ...get().userRecipes].slice(0, MAX_USER_RECIPES),
           });
@@ -31,7 +39,7 @@ function createRecipeLibraryStore() {
         updateRecipe: (id, recipe) => {
           set({
             userRecipes: get().userRecipes.map((r) =>
-              r.id === id ? { ...recipe, id } : r,
+              r.id === id ? normalizeUserRecipe({ ...recipe, id }) : r,
             ),
           });
         },
@@ -44,7 +52,13 @@ function createRecipeLibraryStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 1,
+        version: 2,
+        migrate: (persisted) => {
+          const data = persisted as { userRecipes?: BlendingRecipe[] } | undefined;
+          return {
+            userRecipes: (data?.userRecipes ?? []).map(normalizeUserRecipe),
+          };
+        },
         partialize: (state) => ({ userRecipes: state.userRecipes }),
       },
     ),

@@ -15,7 +15,7 @@ export const DEMO_INCOMPATIBLE_BATCH_TOTALS: readonly SavedBatchTotalsSnapshot[]
     batches: [
       {
         role: "primary",
-        values: { total: 3000, a: 2000, b: 1000, tix: 0, sand: 0 },
+        values: { total: 3000, a: 2000, b: 1000, thickener: 0, filler: 0 },
         multiplier: 3,
       },
     ],
@@ -30,12 +30,12 @@ export const DEMO_INCOMPATIBLE_BATCH_TOTALS: readonly SavedBatchTotalsSnapshot[]
     batches: [
       {
         role: "primary",
-        values: { total: 1500, a: 1000, b: 500, tix: 0, sand: 0 },
+        values: { total: 1500, a: 1000, b: 500, thickener: 0, filler: 0 },
         multiplier: 2,
       },
       {
         role: "batch",
-        values: { total: 600, a: 400, b: 200, tix: 0, sand: 0 },
+        values: { total: 600, a: 400, b: 200, thickener: 0, filler: 0 },
         multiplier: 1,
       },
     ],
@@ -51,7 +51,7 @@ export const DEMO_INCOMPATIBLE_BATCH_TOTALS: readonly SavedBatchTotalsSnapshot[]
     batches: [
       {
         role: "primary",
-        values: { total: 9000, a: 2000, b: 1000, tix: 0, sand: 6000 },
+        values: { total: 9000, a: 2000, b: 1000, thickener: 0, filler: 6000 },
         multiplier: 5,
       },
     ],
@@ -66,12 +66,12 @@ export const DEMO_INCOMPATIBLE_BATCH_TOTALS: readonly SavedBatchTotalsSnapshot[]
     batches: [
       {
         role: "primary",
-        values: { total: 4500, a: 2000, b: 1000, tix: 100, sand: 1400 },
+        values: { total: 4500, a: 2000, b: 1000, thickener: 100, filler: 1400 },
         multiplier: 4,
       },
       {
         role: "batch",
-        values: { total: 900, a: 400, b: 200, tix: 20, sand: 280 },
+        values: { total: 900, a: 400, b: 200, thickener: 20, filler: 280 },
         multiplier: 2,
       },
     ],
@@ -87,12 +87,12 @@ export const DEMO_INCOMPATIBLE_BATCH_TOTALS: readonly SavedBatchTotalsSnapshot[]
     batches: [
       {
         role: "batch",
-        values: { total: 3000, a: 2000, b: 1000, tix: 0, sand: 0 },
+        values: { total: 3000, a: 2000, b: 1000, thickener: 0, filler: 0 },
         multiplier: 2,
       },
       {
         role: "batch",
-        values: { total: 1500, a: 1000, b: 500, tix: 0, sand: 0 },
+        values: { total: 1500, a: 1000, b: 500, thickener: 0, filler: 0 },
         multiplier: 1,
       },
     ],

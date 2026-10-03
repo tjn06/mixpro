@@ -93,7 +93,7 @@ import { componentTokens, cv } from "./ui/tokens";
 
 const ch = componentTokens.chrome;
 
-// All values stored internally in grams — index order: TOTAL, A, B, TIX, SAND
+// All values stored internally in grams — index order: TOTAL, A, B, C, THICKENER, FILLER
 // PARAMS imported from mixEntities.ts
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -441,7 +441,7 @@ export interface BatchMixerProps {
   recipes?: BlendingRecipe[];
   /** Binder base (A + B) in grams for the initial mix. Default 1000 g. */
   initialBinderSum?: number;
-  /** Seed ingredient grams (TOTAL · A · B · TIX · SAND) — used for session edit. */
+  /** Seed ingredient grams (TOTAL · A · B · C · THICKENER · FILLER) — used for session edit. */
   initialValues?: number[];
   /** Initial bucket selection — 5, 10, 17 L or none. Default 17 L. */
   initialBucketSelection?: BucketSelection;
@@ -862,7 +862,9 @@ export function BatchMixer({
   const handleRecipeCreateCommit = useCallback(() => {
     if (!recipeCreateMode) return;
     const vals = valuesRef.current;
-    const binderSum = Math.round((vals[1] ?? 0) + (vals[2] ?? 0));
+    const binderSum = Math.round(
+      (vals[1] ?? 0) + (vals[2] ?? 0) + (vals[3] ?? 0),
+    );
     recipeCreateMode.onCommit({
       recipe: recipeRef.current,
       values: [...vals],
@@ -1257,6 +1259,9 @@ export function BatchMixer({
         <div
           ref={containerRef}
           data-beam-canvas
+          data-drag-focus={
+            screen === "mixer" && dragFocus && !isLocked ? "" : undefined
+          }
           className="app-frame app-frame--mixer relative flex flex-col overflow-hidden select-none"
           style={{
             background: cv.app.background,

@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { BlendingRecipe } from "../domain/recipe/types";
+import {
+  normalizeMixSlotValues,
+  normalizeRecipeAdditiveSlots,
+} from "../domain/mix/slotMigration";
 import { normalizeFlexSelectSelection } from "../domain/select/selection";
 import { normalizeWearByOptionId } from "../domain/select/wear";
 import {
@@ -55,8 +59,20 @@ function normalizeBatch(batch: SessionBatchItem): SessionBatchItem {
   const createdAt = batch.createdAt || nowIso();
   const comment =
     typeof batch.comment === "string" ? batch.comment.trim() : "";
+  const values = normalizeMixSlotValues(batch.values);
   const next: SessionBatchItem = {
     ...batch,
+    values: {
+      total: values.total,
+      a: values.a,
+      b: values.b,
+      c: values.c,
+      thickener: values.thickener,
+      filler: values.filler,
+    },
+    recipe: batch.recipe
+      ? normalizeRecipeAdditiveSlots(batch.recipe)
+      : batch.recipe,
     workDate: batch.workDate || workDateIdFromIso(createdAt),
     createdAt,
     updatedAt: batch.updatedAt || createdAt,
@@ -137,7 +153,9 @@ function normalizeSession(session: MixSession): MixSession {
     ...session,
     activeStage,
     touchedStages: normalizeTouchedStages(session.touchedStages, activeStage),
-    sessionRecipes: session.sessionRecipes ?? [],
+    sessionRecipes: (session.sessionRecipes ?? []).map((recipe) =>
+      normalizeRecipeAdditiveSlots(recipe),
+    ),
     batches,
     toolEntries,
     consumableEntries,
@@ -413,7 +431,7 @@ function createSessionsStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 7,
+        version: 8,
         migrate: (persisted) => {
           const data = persisted as {
             sessions?: MixSession[];

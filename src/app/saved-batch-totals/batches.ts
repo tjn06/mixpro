@@ -1,4 +1,5 @@
 import type { ExtraBatchEntry } from "../domain/batch-totals/extraBatches";
+import { normalizeMixSlotValues } from "../domain/mix/slotMigration";
 import { gramsFromSnapshot, snapshotValuesFromGrams } from "../saved-mixes/store";
 import type {
   LegacySavedBatchTotalsSnapshot,
@@ -21,8 +22,16 @@ function normalizeMultiplier(value: number): number {
 }
 
 function normalizeBatch(batch: SavedBatchEntry): SavedBatchEntry {
+  const values = normalizeMixSlotValues(batch.values);
   return {
-    values: batch.values,
+    values: {
+      total: values.total,
+      a: values.a,
+      b: values.b,
+      c: values.c,
+      thickener: values.thickener,
+      filler: values.filler,
+    },
     multiplier: normalizeMultiplier(batch.multiplier),
     role: batch.role === "primary" ? "primary" : "batch",
   };

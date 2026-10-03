@@ -13,8 +13,9 @@ import {
 export const STANDARD_INGREDIENT_LABELS: Record<string, LocalizedLabel> = {
   A: localizedLabel("Resin", "Bas"),
   B: localizedLabel("Hardener", "Härdare"),
-  SAND: localizedLabel("Filler", "Fyllnad"),
-  TIX: localizedLabel("Thickener", "Förtjockare"),
+  C: localizedLabel("Component C", "Komponent C"),
+  FILLER: localizedLabel("Filler", "Fyllnad"),
+  THICKENER: localizedLabel("Thickener", "Förtjockare"),
 };
 
 export const PARTS_UNIT_LABEL = localizedLabel("PARTS", "DELAR");

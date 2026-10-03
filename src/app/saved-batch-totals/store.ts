@@ -139,7 +139,7 @@ function createSavedBatchTotalsStore() {
       }),
       {
         name: STORAGE_KEY,
-        version: 2,
+        version: 3,
         migrate: (persisted) => {
           const data = persisted as {
             entries?: Array<SavedBatchTotalsSnapshot | LegacySavedBatchTotalsSnapshot>;

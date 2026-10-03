@@ -1,4 +1,5 @@
 import { snapshotValuesFromGrams } from "../saved-mixes/store";
+import { normalizeMixSlotValues } from "../domain/mix/slotMigration";
 import { primaryBatch } from "./batches";
 import type { MixSlotValues, SavedBatchTotalsSnapshot } from "./types";
 
@@ -6,18 +7,26 @@ import type { MixSlotValues, SavedBatchTotalsSnapshot } from "./types";
 export type BatchTotalsSessionContext = {
   recipeId: string;
   loadedSavedMixId: string | null;
-  /** Live mix grams — TOTAL · A · B · TIX · SAND. */
+  /** Live mix grams — TOTAL · A · B · C · THICKENER · FILLER. */
   values: number[];
 };
 
 const RATIO_EPS = 1e-3;
 
 function entityRatios(values: MixSlotValues): number[] {
-  const total = values.total;
+  const n = normalizeMixSlotValues(values);
+  const total = n.total;
+  const c = n.c ?? 0;
   if (!(total > 0)) {
-    return [values.a, values.b, values.tix, values.sand];
+    return [n.a, n.b, c, n.thickener, n.filler];
   }
-  return [values.a / total, values.b / total, values.tix / total, values.sand / total];
+  return [
+    n.a / total,
+    n.b / total,
+    c / total,
+    n.thickener / total,
+    n.filler / total,
+  ];
 }
 
 /** Same entity mix proportions (multiplier ignored). */

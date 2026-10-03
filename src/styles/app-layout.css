@@ -101,7 +101,7 @@
 .recipe-context-gradient::before {
   content: "";
   position: absolute;
-  top: var(--header-h, var(--header-base-h));
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
@@ -112,8 +112,8 @@
     linear-gradient(
       180deg,
       rgba(255, 255, 255, 0.045) 0,
-      rgba(220, 220, 238, 0.025) calc(var(--recipe-zone-pt) + 2.75rem),
-      rgba(180, 180, 204, 0.016) calc(var(--recipe-zone-pt) + var(--recipe-card-h) + 1.5rem),
+      rgba(220, 220, 238, 0.025) calc(var(--header-h, var(--header-base-h)) + var(--recipe-zone-pt) + 2.75rem),
+      rgba(180, 180, 204, 0.016) calc(var(--header-h, var(--header-base-h)) + var(--recipe-zone-pt) + var(--recipe-card-h) + 1.5rem),
       rgba(255, 255, 255, 0.006) 78%,
       transparent 94%
     )
@@ -140,6 +140,14 @@
   background: var(--ui-header-bg, #ececf4);
   position: relative;
   z-index: 6;
+}
+
+/**
+ * Drag-focus dim must cover header + subheader. Drop chrome below the overlay
+ * for the duration of the swipe (overlay / focus live on .app-frame).
+ */
+.app-frame--mixer[data-drag-focus] .app-header-chrome {
+  z-index: 1;
 }
 
 .app-header-chrome--session .session-overview__subline,
@@ -2606,6 +2614,26 @@
   gap: 8px;
 }
 
+.create-recipe__field--disabled {
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.create-recipe__component-c {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.create-recipe__component-c-toggle {
+  align-self: flex-start;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+
 .create-recipe__field--kg-open {
   z-index: 6;
 }
@@ -2618,7 +2646,286 @@
   min-width: 0;
 }
 
+.create-recipe__field-label-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.create-recipe__material-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 22px;
+  flex: 0 1 auto;
+}
+
+.create-recipe__material-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  z-index: 2;
+}
+
+.create-recipe__material-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 2px 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-section, 13px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--semantic-text-secondary);
+  line-height: 1.35;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.14s ease;
+}
+
+.create-recipe__material-trigger[data-open] {
+  color: var(--semantic-text-primary);
+}
+
+.create-recipe__material-trigger-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.create-recipe__material-chevron {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 10px;
+  height: 8px;
+  color: inherit;
+  opacity: 0.72;
+  transition: transform 0.16s ease, opacity 0.14s ease;
+}
+
+.create-recipe__material-chevron[data-open] {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.create-recipe__material-trigger:focus {
+  outline: none;
+}
+
+.create-recipe__material-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--semantic-text-primary) 28%, transparent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.create-recipe__material-menu {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: min(16rem, 70vw);
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+  background: var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8));
+  box-shadow:
+    0 12px 32px color-mix(in srgb, #000 28%, transparent),
+    0 2px 6px color-mix(in srgb, #000 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--semantic-text-inverse, #fff) 8%, transparent);
+  animation: create-recipe-material-menu-in 0.16s ease both;
+}
+
+@keyframes create-recipe-material-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.create-recipe__material-option {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--semantic-text-primary);
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.create-recipe__material-option-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.create-recipe__material-option-check {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--semantic-text-primary);
+}
+
+.create-recipe__material-option:active {
+  background: color-mix(
+    in srgb,
+    var(--semantic-text-primary) 6%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .create-recipe__material-option:hover {
+    background: color-mix(
+      in srgb,
+      var(--semantic-text-primary) 6%,
+      transparent
+    );
+  }
+}
+
+.create-recipe__material-option[data-active] {
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--semantic-text-primary) 8%,
+    var(--semantic-surface-app, var(--ui-app-bg, #f4f4f8))
+  );
+  font-weight: 600;
+}
+.create-recipe__material-name-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 22px;
+}
+
+.create-recipe__material-draft {
+  min-width: 4.5rem;
+  max-width: 9rem;
+  width: 7rem;
+  height: 22px;
+  margin: 0;
+  padding: 0 6px;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--semantic-text-primary) 22%, transparent);
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-page-section, 13px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--semantic-text-secondary);
+  line-height: 1.35;
+}
+
+.create-recipe__material-draft::placeholder {
+  text-transform: none;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--semantic-text-muted);
+  opacity: 0.85;
+}
+
+.create-recipe__material-draft:focus {
+  outline: none;
+  border-bottom-color: color-mix(in srgb, var(--semantic-text-primary) 45%, transparent);
+}
+
+.create-recipe__material-confirm {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
+  color: var(--semantic-text-primary);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.create-recipe__material-cancel {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--semantic-text-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.create-recipe__material-cancel:active {
+  background: color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
+  color: var(--semantic-text-secondary);
+}
+
+.create-recipe__material-confirm:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.create-recipe__material-confirm:not(:disabled):active {
+  background: color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+}
+
 .create-recipe__field-label {
+  flex-shrink: 0;
   font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: var(--text-page-section, 13px);
   font-weight: 600;
@@ -2629,6 +2936,7 @@
 
 .create-recipe__field-kg {
   flex-shrink: 0;
+  margin-left: auto;
   font-family: var(--font-ui, "Outfit", sans-serif);
   font-size: 12px;
   font-weight: 700;

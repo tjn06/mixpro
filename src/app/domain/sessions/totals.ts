@@ -29,7 +29,7 @@ export function sessionGrandTotalGrams(batches: readonly SessionBatchItem[]): nu
   return batches.reduce((sum, batch) => sum + sessionBatchTotalGrams(batch), 0);
 }
 
-/** Ingredient totals rolled up by slot index (TOTAL · A · B · TIX · SAND). */
+/** Ingredient totals rolled up by slot index (TOTAL · A · B · C · THICKENER · FILLER). */
 export function sessionIngredientTotalsGrams(
   batches: readonly SessionBatchItem[],
 ): number[] {

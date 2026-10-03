@@ -16,7 +16,13 @@ export interface SavedMixSnapshot {
     total: number;
     a: number;
     b: number;
-    tix: number;
-    sand: number;
+    /** Optional third binder; omitted on older saves. */
+    c?: number;
+    thickener: number;
+    filler: number;
+    /** @deprecated Legacy thickener — accepted on load. */
+    tix?: number;
+    /** @deprecated Legacy filler — accepted on load. */
+    sand?: number;
   };
 }
