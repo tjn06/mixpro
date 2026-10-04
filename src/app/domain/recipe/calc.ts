@@ -9,9 +9,10 @@ import {
   normalizeRecipeAdditiveSlots,
 } from "../mix/slotMigration";
 import { MAX_MIX_INGREDIENT_ENTITIES } from "../mix/entities";
-import { isLegacyRoleLabel } from "./additiveMaterials";
+import { fillerMaterialDisplayLabel, thickenerMaterialDisplayLabel } from "./additiveMaterials";
 import {
   partsUnitLabel,
+  shortAdditiveCardLabel,
   standardIngredientLabel,
   totalMetaLabel,
 } from "./ingredientLabels";
@@ -87,13 +88,21 @@ export function recipeIngredientIndexes(recipe: BlendingRecipe): number[] {
   return indexes.slice(0, MAX_MIX_INGREDIENT_ENTITIES);
 }
 
-/** Liquid epoxy grams (A + B + C + optional thickener) for volume / bucket math. */
+/** Liquid epoxy + thickener grams for UI that still expects a combined liquid mass. Prefer binder-only for MaterialVolumeModel. */
 export function mixEpoxyGrams(recipe: BlendingRecipe, values: number[]): number {
   let sum = 0;
   if (recipeHasIngredient(recipe, "A")) sum += values[1] ?? 0;
   if (recipeHasIngredient(recipe, "B")) sum += values[2] ?? 0;
   if (recipeHasIngredient(recipe, "C")) sum += values[3] ?? 0;
   if (recipeHasIngredient(recipe, THICKENER_SLOT_ID)) sum += values[4] ?? 0;
+  return sum;
+}
+
+/** A + B binder grams for MaterialVolumeModel epoxyMass (excludes C unless treatCAsBinder). */
+export function mixBinderOnlyGrams(recipe: BlendingRecipe, values: number[]): number {
+  let sum = 0;
+  if (recipeHasIngredient(recipe, "A")) sum += values[1] ?? 0;
+  if (recipeHasIngredient(recipe, "B")) sum += values[2] ?? 0;
   return sum;
 }
 
@@ -365,7 +374,8 @@ export function getLockedRatioDisplay(
 
 /**
  * Display label for any mix ingredient.
- * FILLER/THICKENER use a stored material name when set; legacy role labels still localize.
+ * FILLER/THICKENER subnames come from materialKind (Sand / Water / Tix / custom),
+ * not the role word "Filler"/"Thickener".
  */
 export function getIngredientLabel(
   recipe: BlendingRecipe,
@@ -373,15 +383,19 @@ export function getIngredientLabel(
   language: AppLanguage = DEFAULT_UI_LANGUAGE,
 ): string | undefined {
   if (isFillerSlotId(id) || isThickenerSlotId(id)) {
-    const pctLabel = recipe.binderPercents.find(
+    const entry = recipe.binderPercents.find(
       (p) =>
         p.id === id ||
         (isFillerSlotId(id) && isFillerSlotId(p.id)) ||
         (isThickenerSlotId(id) && isThickenerSlotId(p.id)),
-    )?.label?.trim();
-    if (pctLabel && !isLegacyRoleLabel(pctLabel)) return pctLabel;
-    const canonical = isFillerSlotId(id) ? FILLER_SLOT_ID : THICKENER_SLOT_ID;
-    return standardIngredientLabel(canonical, language);
+    );
+    if (!entry) {
+      const canonical = isFillerSlotId(id) ? FILLER_SLOT_ID : THICKENER_SLOT_ID;
+      return standardIngredientLabel(canonical, language);
+    }
+    return isFillerSlotId(id)
+      ? fillerMaterialDisplayLabel(entry, language)
+      : thickenerMaterialDisplayLabel(entry, language);
   }
   const standard = standardIngredientLabel(id, language);
   if (standard) return standard;
@@ -408,6 +422,52 @@ export function getEntityMetaLabel(
     if (sub) return sub;
   }
   return undefined;
+}
+
+/**
+ * Title on mixer ingredient buttons — material name only (Sand / Tix),
+ * or a short generic role (Filler / Thick.) when no material subname exists.
+ * Does not show both FILLER + Sand.
+ */
+export function getMixEntityCardTitle(
+  recipe: BlendingRecipe,
+  id: string,
+  language: AppLanguage = DEFAULT_UI_LANGUAGE,
+): string {
+  if (isFillerSlotId(id) || isThickenerSlotId(id)) {
+    const entry = recipe.binderPercents.find(
+      (p) =>
+        p.id === id ||
+        (isFillerSlotId(id) && isFillerSlotId(p.id)) ||
+        (isThickenerSlotId(id) && isThickenerSlotId(p.id)),
+    );
+    if (entry) {
+      const material = isFillerSlotId(id)
+        ? fillerMaterialDisplayLabel(entry, language)
+        : thickenerMaterialDisplayLabel(entry, language);
+      const longRole = standardIngredientLabel(
+        isFillerSlotId(id) ? FILLER_SLOT_ID : THICKENER_SLOT_ID,
+        language,
+      );
+      // Prefer short card label when we only have the generic role word.
+      if (longRole && material.toLowerCase() === longRole.toLowerCase()) {
+        return (
+          shortAdditiveCardLabel(
+            isFillerSlotId(id) ? FILLER_SLOT_ID : THICKENER_SLOT_ID,
+            language,
+          ) ?? material
+        );
+      }
+      return material;
+    }
+    return (
+      shortAdditiveCardLabel(
+        isFillerSlotId(id) ? FILLER_SLOT_ID : THICKENER_SLOT_ID,
+        language,
+      ) ?? id
+    );
+  }
+  return id;
 }
 
 /** @deprecated Use getIngredientLabel */

@@ -19,6 +19,12 @@ export interface PercentOfBinder {
   percent: number;
   /** Material / display name (e.g. Sand, Tix, or a custom name). */
   label?: string;
+  /**
+   * Stable material identity for volume/profile mapping.
+   * Source of truth over `label` — do not infer physics from display text when set.
+   * Filler: sand | water | custom. Thickener: tix | custom.
+   */
+  materialKind?: "sand" | "water" | "custom" | "tix";
 }
 
 /** Locked blending recipe — passed from parent; not editable in the mixer view. */
@@ -56,7 +62,7 @@ export const DEFAULT_RECIPE: BlendingRecipe = {
     { id: "B", parts: 1, label: "Hardener" },
   ],
   binderPercents: [
-    { id: "FILLER", percent: 1600 / 3, label: "Filler" },
+    { id: "FILLER", percent: 1600 / 3, label: "Sand", materialKind: "sand" },
   ],
 };
 
@@ -74,7 +80,7 @@ export const STANDARD_BLOT_RECIPE: BlendingRecipe = {
     { id: "A", parts: 2, label: "Resin" },
     { id: "B", parts: 1, label: "Hardener" },
   ],
-  binderPercents: [{ id: "FILLER", percent: 4000 / 9, label: "Filler" }],
+  binderPercents: [{ id: "FILLER", percent: 4000 / 9, label: "Sand", materialKind: "sand" }],
 };
 
 /** A 1.5 kg · B 0.75 kg (2:1) · FILLER 10 kg · THICKENER 100 g at 2250 g binder (A + B). */
@@ -92,8 +98,8 @@ export const FAS_SOCKEL_RECIPE: BlendingRecipe = {
     { id: "B", parts: 1, label: "Hardener" },
   ],
   binderPercents: [
-    { id: "FILLER", percent: 4000 / 9, label: "Filler" },
-    { id: "THICKENER", percent: 40 / 9, label: "Thickener" },
+    { id: "FILLER", percent: 4000 / 9, label: "Sand", materialKind: "sand" },
+    { id: "THICKENER", percent: 40 / 9, label: "Tix", materialKind: "tix" },
   ],
 };
 

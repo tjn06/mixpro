@@ -18,6 +18,12 @@ export const STANDARD_INGREDIENT_LABELS: Record<string, LocalizedLabel> = {
   THICKENER: localizedLabel("Thickener", "Förtjockare"),
 };
 
+/** Compact titles for mixer entity cards (narrow buttons). */
+export const SHORT_ADDITIVE_CARD_LABELS: Record<string, LocalizedLabel> = {
+  FILLER: localizedLabel("Filler", "Fyllnad"),
+  THICKENER: localizedLabel("Thick.", "Förtj."),
+};
+
 export const PARTS_UNIT_LABEL = localizedLabel("PARTS", "DELAR");
 
 export const TOTAL_META_LABEL = localizedLabel(
@@ -30,6 +36,14 @@ export function standardIngredientLabel(
   language: AppLanguage,
 ): string | undefined {
   const label = STANDARD_INGREDIENT_LABELS[id];
+  return label ? displayLabel(label, language) : undefined;
+}
+
+export function shortAdditiveCardLabel(
+  id: string,
+  language: AppLanguage,
+): string | undefined {
+  const label = SHORT_ADDITIVE_CARD_LABELS[id];
   return label ? displayLabel(label, language) : undefined;
 }
 

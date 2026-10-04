@@ -85,7 +85,7 @@ export function resolveThickenerMaterialLabel(
   return thickenerMaterialOptionLabel(kind, language);
 }
 
-/** Infer kind from a stored recipe label (start-from / edit). */
+/** Infer kind from a stored recipe label (legacy recipes without materialKind). */
 export function inferFillerMaterialKind(
   label: string | undefined,
 ): FillerMaterialKind {
@@ -101,4 +101,69 @@ export function inferThickenerMaterialKind(
   const n = label?.trim().toLowerCase() ?? "";
   if (!n || isLegacyRoleLabel(n) || n === "tix") return "tix";
   return "custom";
+}
+
+const FILLER_KINDS = new Set<FillerMaterialKind>(["sand", "water", "custom"]);
+const THICKENER_KINDS = new Set<ThickenerMaterialKind>(["tix", "custom"]);
+
+/**
+ * Resolve filler kind from the stored material definition.
+ * Prefer `materialKind` ID; fall back to label only for legacy recipes.
+ */
+export function resolveFillerMaterialKind(entry: {
+  materialKind?: string;
+  label?: string;
+} | null | undefined): FillerMaterialKind {
+  const kind = entry?.materialKind;
+  if (kind && FILLER_KINDS.has(kind as FillerMaterialKind)) {
+    return kind as FillerMaterialKind;
+  }
+  return inferFillerMaterialKind(entry?.label);
+}
+
+/**
+ * Resolve thickener kind from the stored material definition.
+ * Prefer `materialKind` ID; fall back to label only for legacy recipes.
+ */
+export function resolveThickenerMaterialKind(entry: {
+  materialKind?: string;
+  label?: string;
+} | null | undefined): ThickenerMaterialKind {
+  const kind = entry?.materialKind;
+  if (kind && THICKENER_KINDS.has(kind as ThickenerMaterialKind)) {
+    return kind as ThickenerMaterialKind;
+  }
+  return inferThickenerMaterialKind(entry?.label);
+}
+
+/**
+ * Display subname for a filler percent entry (Sand / Water / custom name).
+ * Uses materialKind as source of truth; never returns the role word "Filler".
+ */
+export function fillerMaterialDisplayLabel(
+  entry: { materialKind?: string; label?: string } | null | undefined,
+  language: AppLanguage,
+): string {
+  const kind = resolveFillerMaterialKind(entry);
+  if (kind === "custom") {
+    const raw = entry?.label?.trim();
+    if (raw && !isLegacyRoleLabel(raw)) return raw;
+  }
+  return fillerMaterialOptionLabel(kind === "custom" ? "sand" : kind, language);
+}
+
+/**
+ * Display subname for a thickener percent entry (Tix / custom name).
+ * Uses materialKind as source of truth; never returns the role word "Thickener".
+ */
+export function thickenerMaterialDisplayLabel(
+  entry: { materialKind?: string; label?: string } | null | undefined,
+  language: AppLanguage,
+): string {
+  const kind = resolveThickenerMaterialKind(entry);
+  if (kind === "custom") {
+    const raw = entry?.label?.trim();
+    if (raw && !isLegacyRoleLabel(raw)) return raw;
+  }
+  return thickenerMaterialOptionLabel(kind === "custom" ? "tix" : kind, language);
 }

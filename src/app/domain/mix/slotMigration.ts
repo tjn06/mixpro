@@ -1,4 +1,8 @@
 import type { BlendingRecipe, PercentOfBinder } from "../recipe/types";
+import {
+  inferFillerMaterialKind,
+  inferThickenerMaterialKind,
+} from "../recipe/additiveMaterials";
 
 /** Canonical additive slot ids (roles). */
 export const FILLER_SLOT_ID = "FILLER" as const;
@@ -29,14 +33,21 @@ export function isThickenerSlotId(id: string): boolean {
   return id === THICKENER_SLOT_ID || id === LEGACY_THICKENER_SLOT_ID;
 }
 
-/** Normalize one percent-of-binder entry to role ids. */
+/** Normalize one percent-of-binder entry to role ids + materialKind when missing. */
 export function normalizePercentOfBinder(
   entry: PercentOfBinder,
 ): PercentOfBinder {
-  return {
-    ...entry,
-    id: canonicalAdditiveSlotId(entry.id),
-  };
+  const id = canonicalAdditiveSlotId(entry.id);
+  let materialKind = entry.materialKind;
+  if (!materialKind) {
+    if (isFillerSlotId(entry.id) || id === FILLER_SLOT_ID) {
+      materialKind = inferFillerMaterialKind(entry.label);
+    } else if (isThickenerSlotId(entry.id) || id === THICKENER_SLOT_ID) {
+      materialKind = inferThickenerMaterialKind(entry.label);
+    }
+  }
+  if (id === entry.id && materialKind === entry.materialKind) return entry;
+  return { ...entry, id, materialKind };
 }
 
 /** Normalize recipe additive ids SAND/TIX → FILLER/THICKENER. */

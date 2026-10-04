@@ -7,9 +7,17 @@ import {
   DEFAULT_BUCKET_SELECTION,
   type BucketSelection,
 } from "./components/mixer/MixBucket";
-import { reconcileBucketSelection, maxMixLitersForBucket, isBucketAtMaxFill, displayFillPercent, type BucketSize } from "./domain/bucket/types";
-import { enforceBucketLimitOnChange, clampMixValuesToBucketMax, mixLitersFromValues, canHalveMix, canDoubleMix, recommendedBatchForBucket } from "./domain/bucket/limits";
-import { estimateMixVolume, type SandType } from "./domain/mix/volume";
+import { reconcileBucketSelection, isBucketAtMaxFill, type BucketSize } from "./domain/bucket/types";
+import {
+  assessBucketFillForRecipe,
+  enforceBucketLimitOnChange,
+  clampMixValuesToBucketMax,
+  mixLitersFromValues,
+  canHalveMix,
+  canDoubleMix,
+  recommendedBatchForBucket,
+} from "./domain/bucket/limits";
+import type { SandType } from "./domain/mix/volume";
 import { LongPressProgressProvider } from "./components/shared/LongPressProgressContext";
 import {
   gramsFromSnapshot,
@@ -19,6 +27,7 @@ import {
 import {
   applyRecipeChange,
   driverIdFromIndex,
+  getMixEntityCardTitle,
   initialMixValues,
   mixEpoxyGrams,
   mixSandGrams,
@@ -231,6 +240,7 @@ function SwipeChevronStack({
 
 function CardReadout({
   name,
+  metaLabel,
   value,
   unit,
   nameColor,
@@ -239,6 +249,8 @@ function CardReadout({
   centered = false,
 }: {
   name: string;
+  /** Material / role subname under id (e.g. Sand, Tix, Resin). */
+  metaLabel?: string;
   value: string;
   unit: string;
   nameColor: string;
@@ -248,7 +260,23 @@ function CardReadout({
 }) {
   return (
     <div className={`flex flex-col min-w-0 ${centered ? "items-center" : "items-start"}`}>
-      <span style={cardReadoutNameStyle(nameColor)}>{name}</span>
+      <span className="truncate max-w-full" style={cardReadoutNameStyle(nameColor)}>{name}</span>
+      {metaLabel ? (
+        <span
+          className="truncate max-w-full capitalize"
+          style={{
+            fontSize: "calc(var(--text-recipe-unit) - 1px)",
+            letterSpacing: "0.03em",
+            fontWeight: 600,
+            color: unitColor,
+            lineHeight: 1.1,
+            marginTop: 1,
+            opacity: 0.9,
+          }}
+        >
+          {metaLabel}
+        </span>
+      ) : null}
       <span className="tabular-nums" style={cardReadoutValueStyle(valueColor)}>{value}</span>
       <span style={cardReadoutUnitStyle(unitColor)}>{unit}</span>
     </div>
@@ -588,15 +616,17 @@ export function BatchMixer({
     [activeRecipe],
   );
 
-  const mixVolume = useMemo(
+  const bucketFill = useMemo(
     () =>
-      estimateMixVolume({
-        epoxyGrams: mixEpoxyGrams(activeRecipe, values),
-        sandGrams: mixSandGrams(activeRecipe, values),
+      assessBucketFillForRecipe(
+        activeRecipe,
+        values,
+        bucketSelection,
         sandType,
-      }),
-    [activeRecipe, values, sandType],
+      ),
+    [activeRecipe, values, bucketSelection, sandType],
   );
+  const mixVolume = bucketFill.legacy;
 
   const recommendedTotalGrams = useMemo(
     () => initialMixValues(activeRecipe, recipeBinderSum(activeRecipe, initialBinderSum))[0],
@@ -616,8 +646,8 @@ export function BatchMixer({
 
   const mixFillPercent = useMemo(() => {
     if (bucketSelection === "none") return null;
-    return displayFillPercent(mixVolume.estimatedLiters, bucketSelection);
-  }, [mixVolume.estimatedLiters, bucketSelection]);
+    return bucketFill.displayFillPercent;
+  }, [bucketSelection, bucketFill.displayFillPercent]);
 
   const currentMixTotalGrams = values[0] ?? 0;
 
@@ -699,20 +729,30 @@ export function BatchMixer({
   }, [active, ingredientIndexes]);
 
   useEffect(() => {
+    const frac = bucketFill.safety.safeFillFraction;
     setBucketSelection((prev) =>
-      reconcileBucketSelection(prev, mixVolume.estimatedLiters),
+      reconcileBucketSelection(prev, mixVolume.estimatedLiters, frac),
     );
-  }, [mixVolume.estimatedLiters]);
+  }, [mixVolume.estimatedLiters, bucketFill.safety.safeFillFraction]);
 
   useEffect(() => {
     if (bucketSelection === "none") return;
-    if (isBucketAtMaxFill(mixVolume.estimatedLiters, bucketSelection)) return;
-    const maxLiters = maxMixLitersForBucket(bucketSelection);
+    const frac = bucketFill.safety.safeFillFraction;
+    if (isBucketAtMaxFill(mixVolume.estimatedLiters, bucketSelection, frac)) {
+      return;
+    }
+    const maxLiters = bucketFill.safety.safeFillLimitL;
     if (mixVolume.estimatedLiters <= maxLiters + 1e-6) return;
     setValues((current) =>
       clampMixValuesToBucketMax(current, recipeRef.current, bucketSelection, sandType),
     );
-  }, [mixVolume.estimatedLiters, bucketSelection, sandType]);
+  }, [
+    mixVolume.estimatedLiters,
+    bucketSelection,
+    sandType,
+    bucketFill.safety.safeFillFraction,
+    bucketFill.safety.safeFillLimitL,
+  ]);
 
   const commitValues = useCallback((next: number[]) => {
     pendingValues.current = next;
@@ -1447,6 +1487,8 @@ export function BatchMixer({
               readoutRef={bucketReadoutRef}
               epoxyGrams={mixEpoxyGrams(activeRecipe, values)}
               sandGrams={mixSandGrams(activeRecipe, values)}
+              volumeOverride={mixVolume}
+              fillAssessment={bucketFill}
               bucketSelection={bucketSelection}
               onBucketChange={setBucketSelection}
               onForceBucketChange={handleForceBucketChange}
@@ -1555,7 +1597,7 @@ export function BatchMixer({
                         : "none",
                   }} />
                   <CardReadout
-                    name={p.id}
+                    name={getMixEntityCardTitle(activeRecipe, p.id, uiLanguage)}
                     value={fmt(values[pi], p.isKg)}
                     unit={p.isKg ? "kg" : "g"}
                     centered

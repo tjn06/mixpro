@@ -35,8 +35,8 @@ import {
   FILLER_MATERIAL_ORDER,
   THICKENER_MATERIAL_ORDER,
   fillerMaterialOptionLabel,
-  inferFillerMaterialKind,
-  inferThickenerMaterialKind,
+  resolveFillerMaterialKind,
+  resolveThickenerMaterialKind,
   resolveFillerMaterialLabel,
   resolveThickenerMaterialLabel,
   thickenerMaterialOptionLabel,
@@ -1200,8 +1200,8 @@ export function CreateRecipeScreen({
       (p) => p.id === "THICKENER" || p.id === "TIX",
     );    const cParts = recipe.binderParts.find((p) => p.id === "C")?.parts ?? 0;
     const hasC = cParts > 0;
-    const nextFillerKind = inferFillerMaterialKind(sandEntry?.label);
-    const nextThickenerKind = inferThickenerMaterialKind(tixEntry?.label);
+    const nextFillerKind = resolveFillerMaterialKind(sandEntry);
+    const nextThickenerKind = resolveThickenerMaterialKind(tixEntry);
     const fillerLabel =
       nextFillerKind === "custom" ? (sandEntry?.label ?? "").trim() : "";
     const thickenerLabel =
@@ -1508,6 +1508,8 @@ export function CreateRecipeScreen({
         thickener: parseNum(thickener) || 0,
         fillerLabel: resolvedFillerLabel,
         thickenerLabel: resolvedThickenerLabel,
+        fillerMaterialKind: fillerMaterial,
+        thickenerMaterialKind: thickenerMaterial,
       };
       // Preview without requiring a real name.
       if (!(input.a > 0) || !(input.b > 0)) return null;
@@ -1527,6 +1529,8 @@ export function CreateRecipeScreen({
       initialBinderSum: scaledBinderSum,
       fillerLabel: resolvedFillerLabel,
       thickenerLabel: resolvedThickenerLabel,
+      fillerMaterialKind: fillerMaterial,
+      thickenerMaterialKind: thickenerMaterial,
     };
     if (!(input.aParts > 0) || !(input.bParts > 0)) return null;
     if (includeC && !(cNum > 0)) return null;
@@ -1546,6 +1550,8 @@ export function CreateRecipeScreen({
     scaledBinderSum,
     resolvedFillerLabel,
     resolvedThickenerLabel,
+    fillerMaterial,
+    thickenerMaterial,
     t,
   ]);
 
@@ -1613,6 +1619,8 @@ export function CreateRecipeScreen({
         thickener: parseNum(thickener) || 0,
         fillerLabel: resolvedFillerLabel,
         thickenerLabel: resolvedThickenerLabel,
+        fillerMaterialKind: fillerMaterial,
+        thickenerMaterialKind: thickenerMaterial,
       };
       const err = validateWeightsInput(input);
       if (err) {
@@ -1647,6 +1655,8 @@ export function CreateRecipeScreen({
       initialBinderSum: scaledBinderSum,
       fillerLabel: resolvedFillerLabel,
       thickenerLabel: resolvedThickenerLabel,
+      fillerMaterialKind: fillerMaterial,
+      thickenerMaterialKind: thickenerMaterial,
     };
     const err = validateFormulaInput(input);
     if (err) {
@@ -1715,6 +1725,10 @@ export function CreateRecipeScreen({
       c: cG > 0 ? cG : undefined,
       filler: fillerG,
       thickener: tixG,
+      fillerLabel: resolvedFillerLabel,
+      thickenerLabel: resolvedThickenerLabel,
+      fillerMaterialKind: fillerMaterial,
+      thickenerMaterialKind: thickenerMaterial,
     });
     const total = aNum + bNum + cG + fillerG + tixG;
     setError(null);

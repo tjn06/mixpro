@@ -391,7 +391,13 @@
       "liters": "{{size}} L hink",
       "noBucket": "Ingen hink",
       "fullAria": "Hink full vid {{percent}}% av {{size}} L",
-      "fillAria": "Uppskattad {{percent}}% fyllnad av {{size}} L hink"
+      "fillAria": "Uppskattad {{percent}}% fyllnad av {{size}} L hink",
+      "safety": {
+        "APPROACHING_LIMIT": "Närmar sig {{percent}}% SafeFill",
+        "GRADUAL_AGGREGATE_ADDITION_RECOMMENDED": "Tillsätt sand stegvis",
+        "AT_LIMIT": "Vid {{percent}}% SafeFill",
+        "OVER_LIMIT": "Över SafeFill — minska eller större hink"
+      }
     },
     "mixNameAria": "Blandningsnamn: {{name}}",
     "total": "SUMMA",

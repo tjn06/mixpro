@@ -33,6 +33,10 @@ export type RecipeWeightsInput = {
   fillerLabel?: string;
   /** Display name for the THICKENER slot (Tix / custom). */
   thickenerLabel?: string;
+  /** Stable filler material id — source of truth for volume profiles. */
+  fillerMaterialKind?: "sand" | "water" | "custom";
+  /** Stable thickener material id — source of truth for volume profiles. */
+  thickenerMaterialKind?: "tix" | "custom";
 };
 
 export type RecipeFormulaInput = {
@@ -50,6 +54,8 @@ export type RecipeFormulaInput = {
   initialBinderSum?: number;
   fillerLabel?: string;
   thickenerLabel?: string;
+  fillerMaterialKind?: "sand" | "water" | "custom";
+  thickenerMaterialKind?: "tix" | "custom";
 };
 
 function gcd(a: number, b: number): number {
@@ -91,6 +97,8 @@ function binderPercentsFromWeights(
   thickenerGrams: number,
   fillerLabel?: string,
   thickenerLabel?: string,
+  fillerMaterialKind?: "sand" | "water" | "custom",
+  thickenerMaterialKind?: "tix" | "custom",
 ): PercentOfBinder[] {
   if (!(binderSum > 0)) return [];
   const list: PercentOfBinder[] = [];
@@ -98,14 +106,16 @@ function binderPercentsFromWeights(
     list.push({
       id: FILLER_SLOT_ID,
       percent: (fillerGrams / binderSum) * 100,
-      label: fillerLabel?.trim() || "Filler",
+      label: fillerLabel?.trim() || "Sand",
+      materialKind: fillerMaterialKind ?? "sand",
     });
   }
   if (thickenerGrams > 0) {
     list.push({
       id: THICKENER_SLOT_ID,
       percent: (thickenerGrams / binderSum) * 100,
-      label: thickenerLabel?.trim() || "Thickener",
+      label: thickenerLabel?.trim() || "Tix",
+      materialKind: thickenerMaterialKind ?? "tix",
     });
   }
   return list;
@@ -194,6 +204,8 @@ export function blendingRecipeFromWeights(input: RecipeWeightsInput): BlendingRe
       input.thickener,
       input.fillerLabel,
       input.thickenerLabel,
+      input.fillerMaterialKind,
+      input.thickenerMaterialKind,
     ),
   };
 }
@@ -205,14 +217,16 @@ export function blendingRecipeFromFormula(input: RecipeFormulaInput): BlendingRe
     percents.push({
       id: FILLER_SLOT_ID,
       percent: input.fillerPercent,
-      label: input.fillerLabel?.trim() || "Filler",
+      label: input.fillerLabel?.trim() || "Sand",
+      materialKind: input.fillerMaterialKind ?? "sand",
     });
   }
   if (input.thickenerPercent > 0) {
     percents.push({
       id: THICKENER_SLOT_ID,
       percent: input.thickenerPercent,
-      label: input.thickenerLabel?.trim() || "Thickener",
+      label: input.thickenerLabel?.trim() || "Tix",
+      materialKind: input.thickenerMaterialKind ?? "tix",
     });
   }
   const binder =

@@ -391,7 +391,13 @@
       "liters": "{{size}} L bucket",
       "noBucket": "No bucket",
       "fullAria": "Bucket full at {{percent}}% of {{size}} L",
-      "fillAria": "Estimated {{percent}}% fill of {{size}} L bucket"
+      "fillAria": "Estimated {{percent}}% fill of {{size}} L bucket",
+      "safety": {
+        "APPROACHING_LIMIT": "Nearing {{percent}}% SafeFill",
+        "GRADUAL_AGGREGATE_ADDITION_RECOMMENDED": "Add sand gradually",
+        "AT_LIMIT": "At {{percent}}% SafeFill",
+        "OVER_LIMIT": "Over SafeFill — reduce or larger bucket"
+      }
     },
     "mixNameAria": "Mix name: {{name}}",
     "total": "TOTAL",

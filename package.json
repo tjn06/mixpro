@@ -8,7 +8,8 @@
     "build": "vite build",
     "dev": "vite",
     "preview": "vite preview --base /mixpro/",
-    "lint:tokens": "node scripts/check-theme-tokens.mjs"
+    "lint:tokens": "node scripts/check-theme-tokens.mjs",
+    "verify:volume": "npx --yes tsx src/app/domain/material-volume/verify.ts"
   },
   "dependencies": {
     "date-fns": "3.6.0",

@@ -1,10 +1,20 @@
+import { assessBucketFill } from "./assess";
+import { resolveSafeFillProfile, safeFillLimitLiters } from "./fillSafety";
 import {
   maxMixLitersForBucket,
   type BucketSelection,
   type BucketSize,
-} from "../bucket/types";
-import { estimateMixVolume, type SandType } from "../mix/volume";
-import { applyRecipeChange, initialMixValues, mixEpoxyGrams, mixSandGrams, recipeBinderSum } from "../recipe/calc";
+} from "./types";
+import {
+  estimateMaterialVolumeForRecipe,
+  estimateMixVolumeForRecipe,
+  type SandType,
+} from "../mix/volume";
+import {
+  applyRecipeChange,
+  initialMixValues,
+  recipeBinderSum,
+} from "../recipe/calc";
 import type { BlendingRecipe } from "../recipe/types";
 
 export function mixLitersFromValues(
@@ -12,14 +22,22 @@ export function mixLitersFromValues(
   sandType: SandType,
   recipe: BlendingRecipe,
 ): number {
-  return estimateMixVolume({
-    epoxyGrams: mixEpoxyGrams(recipe, values),
-    sandGrams: mixSandGrams(recipe, values),
-    sandType,
-  }).estimatedLiters;
+  return estimateMixVolumeForRecipe(recipe, values, sandType).estimatedLiters;
 }
 
-/** Scale mix down to the 86% bucket cap when over limit. */
+/** Composition-aware SafeFill liters for the current mix + bucket. */
+export function safeFillLitersForRecipeMix(
+  recipe: BlendingRecipe,
+  values: number[],
+  bucket: BucketSize,
+  sandType: SandType,
+): number {
+  const estimate = estimateMaterialVolumeForRecipe(recipe, values, sandType);
+  const { fraction } = resolveSafeFillProfile(estimate);
+  return safeFillLimitLiters(bucket, fraction);
+}
+
+/** Scale mix down to the SafeFill bucket cap when over limit. */
 export function clampMixValuesToBucketMax(
   values: number[],
   recipe: BlendingRecipe,
@@ -28,7 +46,12 @@ export function clampMixValuesToBucketMax(
 ): number[] {
   if (bucket === "none") return values;
 
-  const maxLiters = maxMixLitersForBucket(bucket as BucketSize);
+  const maxLiters = safeFillLitersForRecipeMix(
+    recipe,
+    values,
+    bucket as BucketSize,
+    sandType,
+  );
   const liters = mixLitersFromValues(values, sandType, recipe);
   if (liters <= maxLiters || liters <= 0 || values[0] <= 0) return values;
 
@@ -39,7 +62,13 @@ export function clampMixValuesToBucketMax(
   while (lo <= hi) {
     const mid = Math.floor((lo + hi) / 2);
     const candidate = applyRecipeChange(recipe, "TOTAL", mid);
-    if (mixLitersFromValues(candidate, sandType, recipe) <= maxLiters + 1e-9) {
+    const candMax = safeFillLitersForRecipeMix(
+      recipe,
+      candidate,
+      bucket as BucketSize,
+      sandType,
+    );
+    if (mixLitersFromValues(candidate, sandType, recipe) <= candMax + 1e-9) {
       best = candidate;
       lo = mid + 1;
     } else {
@@ -60,9 +89,14 @@ export function enforceBucketLimitOnChange(
 ): number[] {
   if (bucket === "none") return next;
 
-  const maxLiters = maxMixLitersForBucket(bucket as BucketSize);
+  const nextMax = safeFillLitersForRecipeMix(
+    recipe,
+    next,
+    bucket as BucketSize,
+    sandType,
+  );
   const nextLiters = mixLitersFromValues(next, sandType, recipe);
-  if (nextLiters <= maxLiters) return next;
+  if (nextLiters <= nextMax) return next;
 
   const curLiters = mixLitersFromValues(current, sandType, recipe);
   if (nextLiters > curLiters) {
@@ -100,17 +134,41 @@ export function canDoubleMix(
   return next[0] >= idealTotal;
 }
 
-/** Recommended mix for a recipe, scaled to fit the selected bucket cap (86%). */
+/** Recommended mix for a recipe, scaled to fit the selected bucket SafeFill cap. */
 export function recommendedBatchForBucket(
   recipe: BlendingRecipe,
   binderSum: number,
   bucket: BucketSelection,
   sandType: SandType,
 ): { totalGrams: number; fillLiters: number } {
-  const baseValues = initialMixValues(recipe, recipeBinderSum(recipe, binderSum));
-  const values = clampMixValuesToBucketMax(baseValues, recipe, bucket, sandType);
+  const baseValues = initialMixValues(
+    recipe,
+    recipeBinderSum(recipe, binderSum),
+  );
+  const values = clampMixValuesToBucketMax(
+    baseValues,
+    recipe,
+    bucket,
+    sandType,
+  );
   return {
     totalGrams: values[0] ?? 0,
     fillLiters: mixLitersFromValues(values, sandType, recipe),
   };
+}
+
+/** Full fill assessment for MixBucket / RecBatch UI. */
+export function assessBucketFillForRecipe(
+  recipe: BlendingRecipe,
+  values: number[],
+  bucketSelection: BucketSelection,
+  sandType: SandType,
+) {
+  const estimate = estimateMaterialVolumeForRecipe(recipe, values, sandType);
+  return assessBucketFill({ estimate, bucketSelection });
+}
+
+/** Fallback when only liters are known (legacy paths). */
+export function legacyMaxMixLiters(size: BucketSize): number {
+  return maxMixLitersForBucket(size);
 }

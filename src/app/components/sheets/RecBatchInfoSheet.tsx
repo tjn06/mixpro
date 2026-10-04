@@ -63,7 +63,7 @@ export interface RecBatchInfoSheetProps {
   bucketSelection: BucketSelection;
   /** Recipe nominal recommended total (Rec. batch readout). */
   recommendedNominalGrams: number;
-  /** Max recommended total for the selected bucket at 86% fill. */
+  /** Max recommended total for the selected bucket at SafeFill. */
   recommendedForBucketGrams: number;
   /** Current working mix total. */
   currentMixTotalGrams: number;
