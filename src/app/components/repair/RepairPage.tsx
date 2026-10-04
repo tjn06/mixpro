@@ -1551,9 +1551,6 @@ export function RepairPage({
         onBack={() => leaveWizard(hole.id, view.isNew)}
         footer={footerNext(t("common.next"), () => goStep("dimensions"))}
       >
-        <p className="destination-page__lede" style={{ color: cv.text.muted }}>
-          {t("repair.chooseShape")}
-        </p>
         <div className="repair-shape-grid" role="radiogroup" aria-label={t("repair.chooseShape")}>
           {shapes.map((s) => (
             <button
@@ -1621,7 +1618,7 @@ export function RepairPage({
             }}
           />
         ) : (
-          <>
+          <div className="repair-dim-row">
             <NumberField
               label={t("repair.fields.length")}
               unit="mm"
@@ -1650,7 +1647,7 @@ export function RepairPage({
                 });
               }}
             />
-          </>
+          </div>
         )}
 
         {hole.shapeType === "IRREGULAR" ? (

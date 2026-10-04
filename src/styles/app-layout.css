@@ -1,31 +1,31 @@
 /**
- * Mobile app frame: fluid 375â430px width, full shell height.
+ * Mobile app frame: fluid 375Ã¢ÂÂ430px width, full shell height.
  * Layout tokens scale from .app-frame-host (container), not the viewport.
- * Reference: 390px wide Ã 764px tall (compact breakpoint).
+ * Reference: 390px wide ÃÂ 764px tall (compact breakpoint).
  */
 :root {
   --app-max-w: 430px;
   --app-max-h: 960px;
   --app-ref-w: 390px;
   --app-ref-h: 764px;
-  /** Session Mode â chrome + session-tone long-press buttons (theme may override). */
+  /** Session Mode Ã¢ÂÂ chrome + session-tone long-press buttons (theme may override). */
   --session-accent: #2dd4bf;
   --session-btn-fg: #0a0a14;
   --session-btn-bg-hold: color-mix(in srgb, var(--session-accent) 72%, #000);
   /** Full 180px swipe above this; at 764px and below swipe scales via --swipe-cqh-ratio. */
   --swipe-compromise-max-h: 764px;
   --swipe-fixed-min-h: 765px;
-  /** 180 Ã· 764 Ã 100 â hits 180px at the compromise boundary; gentler than 18cqh. */
+  /** 180 ÃÂ· 764 ÃÂ 100 Ã¢ÂÂ hits 180px at the compromise boundary; gentler than 18cqh. */
   --swipe-cqh-ratio: 23.56;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
-  /** Extra header subline row (saved mixname). Keep gap tight â rows sit close. */
+  /** Extra header subline row (saved mixname). Keep gap tight Ã¢ÂÂ rows sit close. */
   --header-subline-stack-gap: 0px;
   --header-subline-extra: 0px;
-  /** Content inset above home indicator â overridden on .app-frame when --space-4 is known. */
+  /** Content inset above home indicator Ã¢ÂÂ overridden on .app-frame when --space-4 is known. */
   --app-bottom-inset: max(16px, env(safe-area-inset-bottom, 0px));
   --app-sheet-margin-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   --app-sheet-margin-x: max(16px, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
@@ -59,7 +59,7 @@
   min-width: 0;
   position: relative;
   touch-action: manipulation;
-  /** UI default â destination pages, sessions, settings. */
+  /** UI default Ã¢ÂÂ destination pages, sessions, settings. */
   font-family: var(--font-ui, "Outfit", sans-serif);
 }
 
@@ -87,7 +87,7 @@
   flex-shrink: 0;
 }
 
-/** Gradient: header â recipe â empty buffer; fades out before bottom deck. */
+/** Gradient: header Ã¢ÂÂ recipe Ã¢ÂÂ empty buffer; fades out before bottom deck. */
 .recipe-context-gradient {
   position: relative;
   flex: 1;
@@ -121,7 +121,7 @@
 }
 
 /**
- * Fully opened bottom deck covers the workspace â hide the context wash so it
+ * Fully opened bottom deck covers the workspace Ã¢ÂÂ hide the context wash so it
  * cannot sit on top of the sheet (same stacking tree as the header).
  */
 .recipe-context-gradient:has(.batch-totals-bottom-panel--source-expanded)::before,
@@ -238,7 +238,7 @@
   box-sizing: border-box;
 }
 
-/** Always reserve mixname row height â empty when no saved mix is loaded. */
+/** Always reserve mixname row height Ã¢ÂÂ empty when no saved mix is loaded. */
 .app-header__mixname-slot {
   flex-shrink: 0;
   min-height: var(--header-subline-h);
@@ -394,7 +394,7 @@
   min-height: var(--header-bar-h);
 }
 
-/** Reserved 40Ã40 slot â keeps layout when nav long-press lifts fixed above beams. */
+/** Reserved 40ÃÂ40 slot Ã¢ÂÂ keeps layout when nav long-press lifts fixed above beams. */
 .app-header__nav-slot {
   position: relative;
   width: 40px;
@@ -402,7 +402,7 @@
   flex-shrink: 0;
 }
 
-/** Overlaps forward control â no layout growth, ignores pointer. */
+/** Overlaps forward control Ã¢ÂÂ no layout growth, ignores pointer. */
 .app-header__nav-badge {
   position: absolute;
   top: -2px;
@@ -421,13 +421,13 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
-  /* Invert primary on app surface â readable in light and dark (state-accent is too pale in dark). */
+  /* Invert primary on app surface Ã¢ÂÂ readable in light and dark (state-accent is too pale in dark). */
   color: var(--semantic-surface-app);
   background: var(--semantic-text-primary);
   box-shadow: 0 0 0 1.5px var(--ui-header-bg);
 }
 
-/* ââ Container-query tokens (preferred) âââââââââââââââââââââââââââââââââââ */
+/* Ã¢ÂÂÃ¢ÂÂ Container-query tokens (preferred) Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
 /* On container children (not the host) so cqi/cqh resolve; include drawer (host sibling). */
 @supports (width: 1cqi) {
   .app-frame,
@@ -469,7 +469,7 @@
     --recipe-id-sublabel-gap: 8px;
     --recipe-meta-name-gap: 8px;
 
-    /* Airy picker rhythm: headâcards < between sections (both scale with recipe tokens). */
+    /* Airy picker rhythm: headÃ¢ÂÂcards < between sections (both scale with recipe tokens). */
     --recipe-picker-head-to-cards: calc(var(--recipe-id-sublabel-gap) + var(--recipe-meta-gap));
     --recipe-picker-section-gap: calc(
       var(--recipe-picker-head-to-cards) + var(--section-gap) + var(--recipe-meta-gap)
@@ -540,7 +540,7 @@
     --text-ui-sm: 11px;
     --text-ui-xs: 9px;
     /**
-     * Page content heading only (inside scroll body) â never the nav bar title.
+     * Page content heading only (inside scroll body) Ã¢ÂÂ never the nav bar title.
      * Nav bar uses --text-header-title (~17px / 600).
      */
     --text-page-title: clamp(24px, 6.5cqi, 26px);
@@ -574,7 +574,7 @@
     .app-nav-drawer {
       --swipe-h: 180px;
 
-      /* Recipe stays under the header â scale internal rhythm on tall phones. */
+      /* Recipe stays under the header Ã¢ÂÂ scale internal rhythm on tall phones. */
       --recipe-zone-pt: clamp(14px, 1.75cqh, 20px);
       --recipe-meta-gap: clamp(10px, 1.25cqh, 14px);
       --recipe-card-h: clamp(96px, 10.5cqh, 104px);
@@ -718,7 +718,7 @@
   }
 }
 
-/* ââ Viewport fallbacks when cqi/cqh are unavailable ââââââââââââââââââââââ */
+/* Ã¢ÂÂÃ¢ÂÂ Viewport fallbacks when cqi/cqh are unavailable Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
 @supports not (width: 1cqi) {
   .app-frame,
   .app-nav-drawer {
@@ -758,7 +758,7 @@
     --recipe-label-gap: 2px;
     --recipe-id-sublabel-gap: 8px;
     --recipe-meta-name-gap: 8px;
-    /* Airy picker rhythm: headâcards < between sections (both scale with recipe tokens). */
+    /* Airy picker rhythm: headÃ¢ÂÂcards < between sections (both scale with recipe tokens). */
     --recipe-picker-head-to-cards: calc(var(--recipe-id-sublabel-gap) + var(--recipe-meta-gap));
     --recipe-picker-section-gap: calc(
       var(--recipe-picker-head-to-cards) + var(--section-gap) + var(--recipe-meta-gap)
@@ -930,7 +930,7 @@
   }
 }
 
-/* Totals screen â readable table typography with scroll-friendly spacing */
+/* Totals screen Ã¢ÂÂ readable table typography with scroll-friendly spacing */
 .batch-totals-screen {
   --batch-totals-panel-reserve: 96px;
   --totals-cell-py: 8px;
@@ -966,7 +966,7 @@
   height: var(--totals-header-icon-size);
 }
 
-/** Shell height > 764px â applied via useAppShellCompact (container queries alone were unreliable). */
+/** Shell height > 764px Ã¢ÂÂ applied via useAppShellCompact (container queries alone were unreliable). */
 .batch-totals-screen--tall:not(.batch-totals-screen--compact-summary) {
   --totals-cell-py: 10px;
   --totals-cell-px: 12px;
@@ -987,7 +987,7 @@
   --text-totals-row-amount-total: var(--text-totals-sum);
 }
 
-/** â¤764px + >4 batch rows â compact card headers. */
+/** Ã¢ÂÂ¤764px + >4 batch rows Ã¢ÂÂ compact card headers. */
 .batch-totals-screen--compact-summary {
   --totals-cell-py: 6px;
   --totals-cell-px: 8px;
@@ -1009,14 +1009,14 @@
 }
 
 @container app (max-height: 764px) {
-  /** â¤4 rows â full-size row labels only; totals column keeps global clamp above. */
+  /** Ã¢ÂÂ¤4 rows Ã¢ÂÂ full-size row labels only; totals column keeps global clamp above. */
   .batch-totals-screen:not([data-dense-table]) {
     --text-card-name: 12px;
     --text-recipe-unit: 10px;
     --text-totals-caption: 10px;
   }
 
-  /** >4 rows â shrink row labels (id, meta, /batch line). */
+  /** >4 rows Ã¢ÂÂ shrink row labels (id, meta, /batch line). */
   .batch-totals-screen--compact-summary,
   .batch-totals-screen[data-dense-table] {
     --text-card-name: clamp(10px, min(3.08cqi, 1.57cqh), 12px);
@@ -1042,7 +1042,7 @@
   padding-top: 0;
 }
 
-/** Table region only â pinned above the bottom panel. */
+/** Table region only Ã¢ÂÂ pinned above the bottom panel. */
 .batch-totals-screen__main {
   flex: 1;
   min-height: 0;
@@ -1178,7 +1178,7 @@
   cursor: pointer;
 }
 
-/** Absolute bottom sheet â grows upward to header; footer stays pinned at bottom. */
+/** Absolute bottom sheet Ã¢ÂÂ grows upward to header; footer stays pinned at bottom. */
 .batch-totals-bottom-panel {
   --batch-totals-panel-radius: 16px;
   --batch-totals-footer-gap: 8px;
@@ -1204,7 +1204,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  /** Dock chrome (handle + TOTAL + actions) â sheetDock surface. */
+  /** Dock chrome (handle + TOTAL + actions) Ã¢ÂÂ sheetDock surface. */
   background: var(--semantic-surface-sheet-dock, var(--ui-header-bg));
   border-top: var(--semantic-border-default, 1px solid color-mix(in srgb, var(--semantic-text-primary) 8%, transparent));
   border-radius: var(--batch-totals-panel-radius) var(--batch-totals-panel-radius) 0 0;
@@ -1228,7 +1228,7 @@
   touch-action: pan-y;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  /** Expanded summary plane â same sheet surface as dock. */
+  /** Expanded summary plane Ã¢ÂÂ same sheet surface as dock. */
   background: var(--semantic-surface-sheet-body, var(--semantic-surface-sheet-dock, var(--ui-header-bg)));
   animation: batch-totals-body-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -1359,7 +1359,7 @@
   box-shadow: 0 -8px 20px color-mix(in srgb, var(--semantic-text-primary) 4%, transparent);
 }
 
-/** Bottom-panel summary â packed list under centered intro + batch chips. */
+/** Bottom-panel summary Ã¢ÂÂ packed list under centered intro + batch chips. */
 .batch-totals-entity-total-table {
   --entity-summary-cell-py: 14px;
   --entity-summary-intro-gap: 8px;
@@ -1535,7 +1535,7 @@
 }
 
 .batch-totals-bottom-panel--share-revealing .batch-totals-bottom-panel__actions {
-  /** Tight to TOTAL â the dock top rule carries the separation. */
+  /** Tight to TOTAL Ã¢ÂÂ the dock top rule carries the separation. */
   margin-top: var(--batch-totals-footer-gap);
 }
 
@@ -1685,7 +1685,7 @@
   white-space: nowrap;
 }
 
-/** Hidden when only batches â card height stays fixed; row slot unused. */
+/** Hidden when only batches Ã¢ÂÂ card height stays fixed; row slot unused. */
 .batch-totals-summary-bar__batch-row--extra:not(.batch-totals-summary-bar__batch-row--visible) {
   visibility: hidden;
   height: 0;
@@ -1727,7 +1727,7 @@
   z-index: 2;
 }
 
-/** Invisible touch target only â must not affect drag-zone / sheet layout. */
+/** Invisible touch target only Ã¢ÂÂ must not affect drag-zone / sheet layout. */
 .batch-totals-bottom-panel__drag-zone::before {
   content: "";
   position: absolute;
@@ -1794,7 +1794,7 @@
   }
 }
 
-/* ââ App navigation drawer (scoped to .app-frame-host, not the viewport) âââ */
+/* Ã¢ÂÂÃ¢ÂÂ App navigation drawer (scoped to .app-frame-host, not the viewport) Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
 .app-nav-drawer {
   position: absolute;
   inset: 0;
@@ -1853,7 +1853,7 @@
   min-width: 0;
 }
 
-/** Brand â same scale as in-app header title (native, not marketing). */
+/** Brand Ã¢ÂÂ same scale as in-app header title (native, not marketing). */
 .app-nav-drawer__brand {
   margin: 0;
   font-family: var(--font-ui, "Outfit", sans-serif);
@@ -1869,7 +1869,7 @@
   flex-shrink: 0;
 }
 
-/** Plain cross â no border / fill (hit target only). */
+/** Plain cross Ã¢ÂÂ no border / fill (hit target only). */
 .app-nav-drawer__close {
   flex-shrink: 0;
   display: inline-flex;
@@ -1893,7 +1893,7 @@
   opacity: 0.85;
 }
 
-/** Hairline â token is a full border value (`1px solid â¦`), not a color. */
+/** Hairline Ã¢ÂÂ token is a full border value (`1px solid Ã¢ÂÂ¦`), not a color. */
 .app-nav-drawer__divider {
   height: 0;
   width: 100%;
@@ -1941,7 +1941,7 @@
 }
 
 /**
- * Session Mode â same accent as header / drawer top bar (--session-accent).
+ * Session Mode Ã¢ÂÂ same accent as header / drawer top bar (--session-accent).
  * Rail + label share that color so the active item syncs with the chrome stripe.
  */
 .app-nav-drawer__item--session-active {
@@ -1963,10 +1963,10 @@
   padding-top: 4px;
 }
 
-/* ââ Top-level destination pages ââââââââââââââââââââââââââââââââââââââââââ */
+/* Ã¢ÂÂÃ¢ÂÂ Top-level destination pages Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
 /**
  * Fills the scroll column. Horizontal inset comes only from parent `.app-gutter-x`
- * (responsive `--space-4` / safe areas). No static max-width â the app-frame is the
+ * (responsive `--space-4` / safe areas). No static max-width Ã¢ÂÂ the app-frame is the
  * width constraint.
  */
 .destination-page__body {
@@ -1981,7 +1981,7 @@
 }
 
 /**
- * Inside `.batch-totals-scroll-panel__inner` â that class already applies
+ * Inside `.batch-totals-scroll-panel__inner` Ã¢ÂÂ that class already applies
  * `--batch-totals-panel-reserve` bottom padding for the stage sheet.
  */
 .destination-page__body--in-sheet {
@@ -2013,7 +2013,7 @@
   padding-block: 6px 8px;
 }
 
-/** Hub date bar â chip grid: avoid stacking subnav + body + select padding. */
+/** Hub date bar Ã¢ÂÂ chip grid: avoid stacking subnav + body + select padding. */
 .destination-page__subnav:has(.catalog-report-date-bar) {
   padding-bottom: 4px;
 }
@@ -2026,7 +2026,7 @@
   min-height: 44px;
 }
 
-/** In-content page heading â not the navigation bar title. */
+/** In-content page heading Ã¢ÂÂ not the navigation bar title. */
 .destination-page__heading {
   margin: 0;
   font-family: var(--font-ui, "Outfit", sans-serif);
@@ -2074,7 +2074,7 @@
 
 /**
  * Form-page primary save / submit (Create recipe, library hubs, catalog).
- * Ink fill â distinct from calculator gray chrome and from session teal.
+ * Ink fill Ã¢ÂÂ distinct from calculator gray chrome and from session teal.
  */
 .destination-page__primary-btn--form {
   background: var(--form-primary-bg, var(--semantic-text-primary));
@@ -2099,7 +2099,7 @@
 }
 
 /**
- * Session Mode primary CTA â teal fill (same accent as header / nav / long-press).
+ * Session Mode primary CTA Ã¢ÂÂ teal fill (same accent as header / nav / long-press).
  * Use only for session-scoped create/open/save actions.
  */
 .destination-page__primary-btn--session {
@@ -2195,7 +2195,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ââ Shared page / sheet search (icon + field) âââââââââââââââââââââââââââââ */
+/* Ã¢ÂÂÃ¢ÂÂ Shared page / sheet search (icon + field) Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
 .app-search,
 .sessions-page__search {
   display: flex;
@@ -2237,7 +2237,7 @@
   appearance: none;
 }
 
-/** Hub date filter â same control as Tools; flush inside page gutter. */
+/** Hub date filter Ã¢ÂÂ same control as Tools; flush inside page gutter. */
 .sessions-page__date-bar.catalog-report-date-bar.select-view {
   padding-top: 0;
   border-top: none;
@@ -2247,7 +2247,7 @@
   padding-inline: 0;
 }
 
-/** Stay in `.app-gutter-x` â same edge padding as New session / search. */
+/** Stay in `.app-gutter-x` Ã¢ÂÂ same edge padding as New session / search. */
 .sessions-page__list {
   --sessions-card-pad-x: 12px;
   --sessions-card-pad-y: 10px;
@@ -2269,7 +2269,7 @@
   min-width: 0;
 }
 
-/** Discrete cards â surface + gap only (no outline), same list-row plane as pickers. */
+/** Discrete cards Ã¢ÂÂ surface + gap only (no outline), same list-row plane as pickers. */
 .sessions-page__list .sessions-page__card.sheet-list-row {
   position: relative;
   display: block;
@@ -2421,7 +2421,7 @@
   --stage-arrow: 12px;
   --stage-overlap: 11px;
   --stage-radius: 10px;
-  /* Opaque shared fill â transparency + overlap was stacking into darker grays. */
+  /* Opaque shared fill Ã¢ÂÂ transparency + overlap was stacking into darker grays. */
   --stage-untouched-bg: color-mix(
     in srgb,
     var(--semantic-text-primary) 5.5%,
@@ -2531,7 +2531,7 @@
   );
 }
 
-/** Content is shown by the amount label â same fill as untouched (no green wash). */
+/** Content is shown by the amount label Ã¢ÂÂ same fill as untouched (no green wash). */
 .sessions-page__stage--done {
   background: var(--stage-untouched-bg);
   color: var(--semantic-text-secondary);
@@ -2574,7 +2574,7 @@
   letter-spacing: 0;
 }
 
-/* ââ Create Recipe ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* Ã¢ÂÂÃ¢ÂÂ Create Recipe Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
 /** Scrollable form column (method tabs + save dock stay pinned). */
 .create-recipe__scroll {
   flex: 1 1 auto;
@@ -3546,7 +3546,7 @@
   margin-top: 4px;
 }
 
-/** Both session + library saves â share one footer row. */
+/** Both session + library saves Ã¢ÂÂ share one footer row. */
 .create-recipe__actions--row {
   flex-direction: row;
   align-items: stretch;
@@ -3581,7 +3581,7 @@
   opacity: 1;
 }
 
-/** Outlined session action â teal border/label, no fill. */
+/** Outlined session action Ã¢ÂÂ teal border/label, no fill. */
 .create-recipe__secondary-btn--session {
   border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
   color: var(--session-accent);
@@ -3591,7 +3591,7 @@
   background: color-mix(in srgb, var(--session-accent) 12%, transparent);
 }
 
-/* ââ Session overview (Phase 3) ââ */
+/* Ã¢ÂÂÃ¢ÂÂ Session overview (Phase 3) Ã¢ÂÂÃ¢ÂÂ */
 .session-overview__subline {
   font-family: "Outfit", sans-serif;
   font-size: var(--text-page-section, 13px);
@@ -3607,10 +3607,10 @@
   border-bottom: 1px solid var(--semantic-border-subtle);
 }
 
-/** Horizontal day filter â do not inherit catalog `.select-view` padding/gap. */
+/** Horizontal day filter Ã¢ÂÂ do not inherit catalog `.select-view` padding/gap. */
 .session-day-filter.select-view {
   /*
-   * Selected dates use state accent (violet), not session teal â
+   * Selected dates use state accent (violet), not session teal Ã¢ÂÂ
    * tools/cons already own `--session-accent`; recipe-value is gray text.
    */
   --select-chip-accent: var(--semantic-state-accent, #9b8cff);
@@ -3626,7 +3626,7 @@
 }
 
 /**
- * Hub Tools / Consumables Report â one full-width optional date (same top inset /
+ * Hub Tools / Consumables Report Ã¢ÂÂ one full-width optional date (same top inset /
  * 28px height as session day chips; not the multi-day session filter).
  */
 .catalog-report-date-bar.select-view {
@@ -3785,11 +3785,11 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-  /* Match stages / app gutter â All dates sits on the same left inset. */
+  /* Match stages / app gutter Ã¢ÂÂ All dates sits on the same left inset. */
   padding-inline-start: max(var(--space-4, 16px), var(--safe-left));
 }
 
-/** Always visible â not part of the horizontal scroll. */
+/** Always visible Ã¢ÂÂ not part of the horizontal scroll. */
 .session-day-filter__pinned {
   flex: 0 0 auto;
   z-index: 2;
@@ -3859,9 +3859,9 @@
 
 .session-day-filter .select-chip.session-day-filter__chip {
   flex: 0 0 auto;
-  /* Keep metrics stable â weight/color flips were shifting the scroll row ~1px. */
+  /* Keep metrics stable Ã¢ÂÂ weight/color flips were shifting the scroll row ~1px. */
   font-weight: 600;
-  /* Beat `.select-chip { height: 40px }` â compact filter chips. */
+  /* Beat `.select-chip { height: 40px }` Ã¢ÂÂ compact filter chips. */
   height: 28px;
   min-height: 28px;
   max-height: 28px;
@@ -3903,7 +3903,7 @@
 }
 
 /**
- * Provisional Today â dashed outline until that day has session content.
+ * Provisional Today Ã¢ÂÂ dashed outline until that day has session content.
  */
 .session-day-filter .select-chip.session-day-filter__chip[data-provisional] {
   border-style: dashed;
@@ -4095,7 +4095,7 @@
   pointer-events: none;
 }
 
-/* Theme text â secondary create-recipe action. */
+/* Theme text Ã¢ÂÂ secondary create-recipe action. */
 .session-overview__workspace-btn--recipe {
   color: var(--component-text-btn-color, var(--semantic-text-primary));
 }
@@ -4105,7 +4105,7 @@
   opacity: 0.82;
 }
 
-/* Session accent â primary add-mix action. */
+/* Session accent Ã¢ÂÂ primary add-mix action. */
 .session-overview__workspace-btn--mix {
   color: var(--session-accent);
 }
@@ -4207,7 +4207,7 @@
   padding-inline-end: 10px;
 }
 
-/** Future stages â advance with header Next (or the immediate-next chip). */
+/** Future stages Ã¢ÂÂ advance with header Next (or the immediate-next chip). */
 .session-overview__stage-btn:disabled {
   opacity: 0.42;
   cursor: default;
@@ -4221,7 +4221,7 @@
   text-overflow: ellipsis;
 }
 
-/** Modified â outline check anchored after the label text. */
+/** Modified Ã¢ÂÂ outline check anchored after the label text. */
 .session-overview__stage-modified-mark {
   position: absolute;
   left: 100%;
@@ -4234,7 +4234,7 @@
   flex-shrink: 0;
 }
 
-/** Current step â same gray palette as before, modestly stronger fill. */
+/** Current step Ã¢ÂÂ same gray palette as before, modestly stronger fill. */
 .session-overview__stage-btn--active {
   color: var(--semantic-text-primary);
   background: color-mix(
@@ -4535,7 +4535,7 @@
 
 /*
  * Dock: 4 equal columns. Pen is column 1 (outside the stage).
- * Stage = cols 2â4: actions when closed; edit slides over actions when open.
+ * Stage = cols 2Ã¢ÂÂ4: actions when closed; edit slides over actions when open.
  * Pen never transforms / never shares a stacking context with the slide.
  */
 .session-share-dock.batch-totals-dock-module {
@@ -4647,7 +4647,7 @@
   outline: none;
   box-shadow: none;
   font-family: "Outfit", sans-serif;
-  /** â¥16px so iOS Safari does not focus-zoom. */
+  /** Ã¢ÂÂ¥16px so iOS Safari does not focus-zoom. */
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -4689,7 +4689,7 @@
   white-space: nowrap;
 }
 
-/* Equal slots â even rhythm; check reserved in every cell. */
+/* Equal slots Ã¢ÂÂ even rhythm; check reserved in every cell. */
 .session-share-scope__options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4787,7 +4787,7 @@
   transform: rotate(180deg);
 }
 
-/* Collapsed header: title | mult field â stamp/actions in expanded subheader. */
+/* Collapsed header: title | mult field Ã¢ÂÂ stamp/actions in expanded subheader. */
 .session-mix-card__header--collapsed {
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 8px;
@@ -5037,7 +5037,7 @@
   background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
   color: var(--semantic-text-primary);
   font-family: var(--font-ui, "Outfit", sans-serif);
-  /** â¥16px so iOS Safari does not focus-zoom. */
+  /** Ã¢ÂÂ¥16px so iOS Safari does not focus-zoom. */
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -5132,7 +5132,7 @@
   background: color-mix(in srgb, var(--session-accent) 12%, transparent);
 }
 
-/* Pick recipe for session mix â session accent chrome (matches header / nav). */
+/* Pick recipe for session mix Ã¢ÂÂ session accent chrome (matches header / nav). */
 .session-pick-recipe {
   position: relative;
 }
@@ -5189,7 +5189,7 @@
   color: var(--session-accent);
 }
 
-/* âââ Responsive Flex Select View (tools catalog, reusable) âââ */
+/* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Responsive Flex Select View (tools catalog, reusable) Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
 .select-view {
   /* Default = app selection (hubs). Session stages opt into --session via modifier. */
   --select-chip-accent: var(--ui-recipe-value, var(--semantic-text-primary));
@@ -5212,12 +5212,12 @@
 }
 
 /**
- * DENSE SELECT EXPERIMENT â Tools/Consumables chip packing.
+ * DENSE SELECT EXPERIMENT Ã¢ÂÂ Tools/Consumables chip packing.
  * Restore: set SELECT_CHIPS_DENSE=false in denseChips.ts, or delete this block
  * and the dense wiring in FlexSelectView.
  *
  * - Stays inside parent .app-gutter-x (same side inset as tabs / date bar)
- * - Tighter chip pad + denser gaps; adaptive font; row leftover â gaps (JS)
+ * - Tighter chip pad + denser gaps; adaptive font; row leftover Ã¢ÂÂ gaps (JS)
  */
 .select-view--dense {
   --select-chip-pad-x: 8px;
@@ -5226,7 +5226,7 @@
   max-width: none;
   box-sizing: border-box;
   padding-top: 10px;
-  /* Match base .select-view â room for qty/family badges to hang. */
+  /* Match base .select-view Ã¢ÂÂ room for qty/family badges to hang. */
   padding-left: 6px;
   padding-right: 0;
   /* Base gaps; JS may raise column gap via margins to fill each row. */
@@ -5277,12 +5277,12 @@
 }
 
 .select-view--dense .select-chip__width-sizer {
-  /* Match .select-chip-menu__option font so chip â¥ longest dropdown label. */
+  /* Match .select-chip-menu__option font so chip Ã¢ÂÂ¥ longest dropdown label. */
   font-size: 14px;
 }
 
 /**
- * Rented selection â yellow chrome in session + Tools/Consumables hubs.
+ * Rented selection Ã¢ÂÂ yellow chrome in session + Tools/Consumables hubs.
  * Light: primary label on gold tint. Dark: white label (theme overrides below).
  */
 .select-view .select-chip[data-rented][data-selected]:not([data-hold]) {
@@ -5346,7 +5346,7 @@
   );
 }
 
-/** Long-press qtyâ drain â stay in yellow family, not session teal. */
+/** Long-press qtyÃ¢ÂÂ drain Ã¢ÂÂ stay in yellow family, not session teal. */
 .select-chip-rental:has([data-hold]) {
   transition:
     border-color var(--select-chip-hold-ms, 420ms) linear,
@@ -5406,7 +5406,7 @@
 }
 
 /**
- * Custom item fuse (owned) â same layout as rental, accent chrome when selected.
+ * Custom item fuse (owned) Ã¢ÂÂ same layout as rental, accent chrome when selected.
  */
 .select-chip-deletable {
   position: relative;
@@ -5512,8 +5512,8 @@
 }
 
 /**
- * Corner badges â one shared recipe (count + comment).
- * Only differences: corner side, and attr value (digit vs â).
+ * Corner badges Ã¢ÂÂ one shared recipe (count + comment).
+ * Only differences: corner side, and attr value (digit vs Ã¢ÂÂ).
  */
 .select-chip[data-qty]::after,
 .select-chip-rental[data-qty]::after,
@@ -5635,7 +5635,7 @@
 }
 
 /**
- * Owned catalog copy beside a rented selection â muted chrome only.
+ * Owned catalog copy beside a rented selection Ã¢ÂÂ muted chrome only.
  * Light: primary label. Dark: white (theme overrides below).
  */
 .select-view .select-chip[data-arm-muted] {
@@ -5678,7 +5678,7 @@
 }
 
 /**
- * Rented arm â dashed yellow border always; only the switch changes on/off.
+ * Rented arm Ã¢ÂÂ dashed yellow border always; only the switch changes on/off.
  * Light: primary label on tinted surface. Dark: white label (below).
  */
 .select-chip--rented-arm {
@@ -5878,7 +5878,7 @@
   color: #ffffff;
 }
 
-/** Rented arm standout â white label. Custom add matches catalog chips. */
+/** Rented arm standout Ã¢ÂÂ white label. Custom add matches catalog chips. */
 [data-theme="dark"] .select-view .select-chip--rented-arm {
   color: #ffffff;
 }
@@ -5905,7 +5905,7 @@
   color: #ffffff;
 }
 
-/* Anchor sizes to the chip only â menu is portaled (no flex reflow). */
+/* Anchor sizes to the chip only Ã¢ÂÂ menu is portaled (no flex reflow). */
 .select-chip-anchor {
   position: relative;
   display: inline-flex;
@@ -5942,7 +5942,7 @@
   touch-action: manipulation;
   user-select: none;
   overflow: visible;
-  /* No default transition â first select snaps instantly. */
+  /* No default transition Ã¢ÂÂ first select snaps instantly. */
 }
 
 .select-chip__label {
@@ -5950,7 +5950,7 @@
 }
 
 /**
- * Family name badge when a variant is selected â tiny label above the chip
+ * Family name badge when a variant is selected Ã¢ÂÂ tiny label above the chip
  * (qty badge stays top-left via ::after).
  */
 .select-chip--select[data-family]::before {
@@ -5982,7 +5982,7 @@
   transform: translateX(-50%);
 }
 
-/** Rented dropdown family badge â rent chrome in every selected state. */
+/** Rented dropdown family badge Ã¢ÂÂ rent chrome in every selected state. */
 .select-chip--select[data-rented][data-family]::before,
 .select-chip-rental .select-chip--select[data-family]::before,
 .select-chip-cluster[data-rented] .select-chip--select[data-family]::before {
@@ -5998,7 +5998,7 @@
  * Qty / comment corner badges are defined once above (shared 16px box).
  */
 
-/** Press feedback only when already selected â first select stays a hard snap. */
+/** Press feedback only when already selected Ã¢ÂÂ first select stays a hard snap. */
 .select-chip[data-selected]:active:not([data-hold]) {
   background: color-mix(
     in srgb,
@@ -6017,7 +6017,7 @@
   );
 }
 
-/** Rented arm: never inherit selected-chip teal â yellow dashed border stays fixed. */
+/** Rented arm: never inherit selected-chip teal Ã¢ÂÂ yellow dashed border stays fixed. */
 .select-chip--rented-arm,
 .select-chip--rented-arm[data-selected] {
   border-style: dashed;
@@ -6144,7 +6144,7 @@
   opacity: 1;
 }
 
-/* Overlay menu â fixed via inline style; does not occupy flex space. */
+/* Overlay menu Ã¢ÂÂ fixed via inline style; does not occupy flex space. */
 .select-chip-menu {
   box-sizing: border-box;
   display: flex;
@@ -6185,7 +6185,7 @@
   );
 }
 
-/** Rented dropdown menu â rent tint for open/selected panel + active option. */
+/** Rented dropdown menu Ã¢ÂÂ rent tint for open/selected panel + active option. */
 .select-chip-menu[data-rented][data-selected] {
   border-color: var(--select-chip-rented, #d4a017);
   background: color-mix(
@@ -6336,7 +6336,7 @@
   max-width: none;
 }
 
-/** Only the dropdown chip â never the sibling plus (also has .select-chip). */
+/** Only the dropdown chip Ã¢ÂÂ never the sibling plus (also has .select-chip). */
 .select-chip-cluster > .select-chip-anchor > .select-chip {
   border: none;
   border-radius: 7px 0 0 7px;
@@ -6350,7 +6350,7 @@
   background: transparent;
 }
 
-/** Fused comment rental inside cluster â shell owns rent chrome. */
+/** Fused comment rental inside cluster Ã¢ÂÂ shell owns rent chrome. */
 .select-chip-cluster > .select-chip-anchor > .select-chip-rental {
   border: none;
   border-radius: 7px 0 0 7px;
@@ -6392,7 +6392,7 @@
   color: var(--semantic-text-primary);
 }
 
-/** Slitage segment â fixed column (L/M/H + chevron) reserved before variant pick. */
+/** Slitage segment Ã¢ÂÂ fixed column (L/M/H + chevron) reserved before variant pick. */
 .select-chip--wear {
   position: relative;
   flex: 0 0 2.75rem;
@@ -6589,7 +6589,7 @@
   }
 }
 
-/* Add custom item â dashed border affordance; otherwise catalog chip chrome. */
+/* Add custom item Ã¢ÂÂ dashed border affordance; otherwise catalog chip chrome. */
 .select-chip--add {
   gap: 5px;
   border-style: dashed;
@@ -6631,7 +6631,7 @@
   color: var(--semantic-text-primary);
   caret-color: var(--select-chip-accent);
   font-family: "Outfit", sans-serif;
-  /** â¥16px so iOS Safari does not focus-zoom. */
+  /** Ã¢ÂÂ¥16px so iOS Safari does not focus-zoom. */
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -6709,10 +6709,10 @@
 }
 
 /**
- * Top pad only â do not set padding-bottom here.
+ * Top pad only Ã¢ÂÂ do not set padding-bottom here.
  * `.batch-totals-scroll-panel__inner` already clears the measured stage sheet
  * via `--batch-totals-panel-reserve` (collapsed / half-open / expanded).
- * Parent `.app-gutter-x` owns side inset; drop select-viewâs extra left pad.
+ * Parent `.app-gutter-x` owns side inset; drop select-viewÃ¢ÂÂs extra left pad.
  */
 .session-overview__tools-pad {
   padding-top: 12px;
@@ -6732,12 +6732,12 @@
   margin-top: 0;
 }
 
-/** Hub report grid â only enough top pad for hanging qty/family badges. */
+/** Hub report grid Ã¢ÂÂ only enough top pad for hanging qty/family badges. */
 .catalog-hub__select .select-view--dense {
   padding-top: 6px;
 }
 
-/* Catalog hub (Tools / Consumables): compact Select Â· Edit under header */
+/* Catalog hub (Tools / Consumables): compact Select ÃÂ· Edit under header */
 .catalog-hub__chrome {
   display: flex;
   flex-direction: column;
@@ -6954,7 +6954,7 @@
   outline: none;
 }
 
-/* ââ Repair Hole ââ */
+/* Ã¢ÂÂÃ¢ÂÂ Repair Hole Ã¢ÂÂÃ¢ÂÂ */
 .repair-totals {
   display: flex;
   flex-direction: column;
@@ -7565,7 +7565,7 @@
   z-index: 8;
   margin-top: 12px;
   padding: 10px 0 calc(12px + env(safe-area-inset-bottom, 0px));
-  /* Dock chrome only — controls keep their own solid surfaces. */
+  /* Dock chrome only â controls keep their own solid surfaces. */
   background: transparent;
 }
 
@@ -8049,6 +8049,18 @@
   gap: 6px;
 }
 
+.repair-dim-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.repair-dim-row > .repair-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .repair-field--compact {
   gap: 0;
 }
@@ -8208,7 +8220,7 @@
   border: var(--semantic-border-default);
   background: var(--semantic-surface-input, transparent);
   overflow: hidden;
-  /* Keep border width stable — highlight via color + inset ring only. */
+  /* Keep border width stable â highlight via color + inset ring only. */
   box-shadow: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
