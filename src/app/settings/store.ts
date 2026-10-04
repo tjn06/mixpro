@@ -14,14 +14,23 @@ import {
   SETTINGS_STORAGE_KEY,
   SETTINGS_STORAGE_VERSION,
 } from "../../theme/appearance";
+import {
+  DEFAULT_HELPER_ANIMATIONS,
+  normalizeHelperAnimations,
+  type HelperAnimationFlags,
+  type HelperAnimationId,
+} from "./helperAnimations";
 
 interface SettingsState extends ThemeAppearance {
   /** App chrome language — independent of share/report language. */
   uiLanguage: AppLanguage;
+  /** Persistent helper / coach animation toggles. */
+  helperAnimations: HelperAnimationFlags;
   setColorScheme: (scheme: ColorScheme) => void;
   setContrast: (contrast: ContrastLevel) => void;
   setAppearance: (appearance: ThemeAppearance) => void;
   setUiLanguage: (language: AppLanguage) => void;
+  setHelperAnimation: (id: HelperAnimationId, enabled: boolean) => void;
   toggleHighContrast: () => void;
 }
 
@@ -34,6 +43,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => ({
       ...DEFAULT_APPEARANCE,
       uiLanguage: DEFAULT_UI_LANGUAGE,
+      helperAnimations: { ...DEFAULT_HELPER_ANIMATIONS },
       setColorScheme: (colorScheme) => {
         set({ colorScheme });
         if (typeof document !== "undefined") {
@@ -63,6 +73,14 @@ export const useSettingsStore = create<SettingsState>()(
         set({ uiLanguage: next });
         applyUiLanguage(next);
       },
+      setHelperAnimation: (id, enabled) => {
+        set((state) => ({
+          helperAnimations: {
+            ...state.helperAnimations,
+            [id]: enabled,
+          },
+        }));
+      },
       toggleHighContrast: () =>
         set((state) => {
           const contrast = state.contrast === "high" ? "default" : "high";
@@ -82,6 +100,7 @@ export const useSettingsStore = create<SettingsState>()(
         colorScheme: state.colorScheme,
         contrast: state.contrast,
         uiLanguage: state.uiLanguage,
+        helperAnimations: state.helperAnimations,
       }),
       merge: (persisted, current) => {
         const raw = (persisted ?? {}) as Partial<SettingsState>;
@@ -92,17 +111,22 @@ export const useSettingsStore = create<SettingsState>()(
             raw.uiLanguage,
             current.uiLanguage ?? DEFAULT_UI_LANGUAGE,
           ),
+          helperAnimations: normalizeHelperAnimations(raw.helperAnimations),
         };
       },
       migrate: (persistedState, version) => {
         const appearance = migratePersistedSettings(persistedState, version);
-        const raw = (persistedState ?? {}) as { uiLanguage?: unknown };
+        const raw = (persistedState ?? {}) as {
+          uiLanguage?: unknown;
+          helperAnimations?: unknown;
+        };
         return {
           ...appearance,
           uiLanguage: normalizeAppLanguage(
             raw.uiLanguage,
             DEFAULT_UI_LANGUAGE,
           ),
+          helperAnimations: normalizeHelperAnimations(raw.helperAnimations),
         };
       },
       onRehydrateStorage: () => (state) => {

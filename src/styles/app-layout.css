@@ -1,31 +1,31 @@
 /**
- * Mobile app frame: fluid 375–430px width, full shell height.
+ * Mobile app frame: fluid 375â430px width, full shell height.
  * Layout tokens scale from .app-frame-host (container), not the viewport.
- * Reference: 390px wide × 764px tall (compact breakpoint).
+ * Reference: 390px wide Ã 764px tall (compact breakpoint).
  */
 :root {
   --app-max-w: 430px;
   --app-max-h: 960px;
   --app-ref-w: 390px;
   --app-ref-h: 764px;
-  /** Session Mode — chrome + session-tone long-press buttons (theme may override). */
+  /** Session Mode â chrome + session-tone long-press buttons (theme may override). */
   --session-accent: #2dd4bf;
   --session-btn-fg: #0a0a14;
   --session-btn-bg-hold: color-mix(in srgb, var(--session-accent) 72%, #000);
   /** Full 180px swipe above this; at 764px and below swipe scales via --swipe-cqh-ratio. */
   --swipe-compromise-max-h: 764px;
   --swipe-fixed-min-h: 765px;
-  /** 180 ÷ 764 × 100 — hits 180px at the compromise boundary; gentler than 18cqh. */
+  /** 180 Ã· 764 Ã 100 â hits 180px at the compromise boundary; gentler than 18cqh. */
   --swipe-cqh-ratio: 23.56;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
-  /** Extra header subline row (saved mixname). Keep gap tight — rows sit close. */
+  /** Extra header subline row (saved mixname). Keep gap tight â rows sit close. */
   --header-subline-stack-gap: 0px;
   --header-subline-extra: 0px;
-  /** Content inset above home indicator — overridden on .app-frame when --space-4 is known. */
+  /** Content inset above home indicator â overridden on .app-frame when --space-4 is known. */
   --app-bottom-inset: max(16px, env(safe-area-inset-bottom, 0px));
   --app-sheet-margin-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   --app-sheet-margin-x: max(16px, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
@@ -59,7 +59,7 @@
   min-width: 0;
   position: relative;
   touch-action: manipulation;
-  /** UI default — destination pages, sessions, settings. */
+  /** UI default â destination pages, sessions, settings. */
   font-family: var(--font-ui, "Outfit", sans-serif);
 }
 
@@ -87,7 +87,7 @@
   flex-shrink: 0;
 }
 
-/** Gradient: header → recipe → empty buffer; fades out before bottom deck. */
+/** Gradient: header â recipe â empty buffer; fades out before bottom deck. */
 .recipe-context-gradient {
   position: relative;
   flex: 1;
@@ -121,7 +121,7 @@
 }
 
 /**
- * Fully opened bottom deck covers the workspace — hide the context wash so it
+ * Fully opened bottom deck covers the workspace â hide the context wash so it
  * cannot sit on top of the sheet (same stacking tree as the header).
  */
 .recipe-context-gradient:has(.batch-totals-bottom-panel--source-expanded)::before,
@@ -238,7 +238,7 @@
   box-sizing: border-box;
 }
 
-/** Always reserve mixname row height — empty when no saved mix is loaded. */
+/** Always reserve mixname row height â empty when no saved mix is loaded. */
 .app-header__mixname-slot {
   flex-shrink: 0;
   min-height: var(--header-subline-h);
@@ -394,7 +394,7 @@
   min-height: var(--header-bar-h);
 }
 
-/** Reserved 40×40 slot — keeps layout when nav long-press lifts fixed above beams. */
+/** Reserved 40Ã40 slot â keeps layout when nav long-press lifts fixed above beams. */
 .app-header__nav-slot {
   position: relative;
   width: 40px;
@@ -402,7 +402,7 @@
   flex-shrink: 0;
 }
 
-/** Overlaps forward control — no layout growth, ignores pointer. */
+/** Overlaps forward control â no layout growth, ignores pointer. */
 .app-header__nav-badge {
   position: absolute;
   top: -2px;
@@ -421,13 +421,13 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
-  /* Invert primary on app surface — readable in light and dark (state-accent is too pale in dark). */
+  /* Invert primary on app surface â readable in light and dark (state-accent is too pale in dark). */
   color: var(--semantic-surface-app);
   background: var(--semantic-text-primary);
   box-shadow: 0 0 0 1.5px var(--ui-header-bg);
 }
 
-/* ── Container-query tokens (preferred) ─────────────────────────────────── */
+/* ââ Container-query tokens (preferred) âââââââââââââââââââââââââââââââââââ */
 /* On container children (not the host) so cqi/cqh resolve; include drawer (host sibling). */
 @supports (width: 1cqi) {
   .app-frame,
@@ -469,7 +469,7 @@
     --recipe-id-sublabel-gap: 8px;
     --recipe-meta-name-gap: 8px;
 
-    /* Airy picker rhythm: head→cards < between sections (both scale with recipe tokens). */
+    /* Airy picker rhythm: headâcards < between sections (both scale with recipe tokens). */
     --recipe-picker-head-to-cards: calc(var(--recipe-id-sublabel-gap) + var(--recipe-meta-gap));
     --recipe-picker-section-gap: calc(
       var(--recipe-picker-head-to-cards) + var(--section-gap) + var(--recipe-meta-gap)
@@ -540,7 +540,7 @@
     --text-ui-sm: 11px;
     --text-ui-xs: 9px;
     /**
-     * Page content heading only (inside scroll body) — never the nav bar title.
+     * Page content heading only (inside scroll body) â never the nav bar title.
      * Nav bar uses --text-header-title (~17px / 600).
      */
     --text-page-title: clamp(24px, 6.5cqi, 26px);
@@ -574,7 +574,7 @@
     .app-nav-drawer {
       --swipe-h: 180px;
 
-      /* Recipe stays under the header — scale internal rhythm on tall phones. */
+      /* Recipe stays under the header â scale internal rhythm on tall phones. */
       --recipe-zone-pt: clamp(14px, 1.75cqh, 20px);
       --recipe-meta-gap: clamp(10px, 1.25cqh, 14px);
       --recipe-card-h: clamp(96px, 10.5cqh, 104px);
@@ -718,7 +718,7 @@
   }
 }
 
-/* ── Viewport fallbacks when cqi/cqh are unavailable ────────────────────── */
+/* ââ Viewport fallbacks when cqi/cqh are unavailable ââââââââââââââââââââââ */
 @supports not (width: 1cqi) {
   .app-frame,
   .app-nav-drawer {
@@ -758,7 +758,7 @@
     --recipe-label-gap: 2px;
     --recipe-id-sublabel-gap: 8px;
     --recipe-meta-name-gap: 8px;
-    /* Airy picker rhythm: head→cards < between sections (both scale with recipe tokens). */
+    /* Airy picker rhythm: headâcards < between sections (both scale with recipe tokens). */
     --recipe-picker-head-to-cards: calc(var(--recipe-id-sublabel-gap) + var(--recipe-meta-gap));
     --recipe-picker-section-gap: calc(
       var(--recipe-picker-head-to-cards) + var(--section-gap) + var(--recipe-meta-gap)
@@ -930,7 +930,7 @@
   }
 }
 
-/* Totals screen — readable table typography with scroll-friendly spacing */
+/* Totals screen â readable table typography with scroll-friendly spacing */
 .batch-totals-screen {
   --batch-totals-panel-reserve: 96px;
   --totals-cell-py: 8px;
@@ -966,7 +966,7 @@
   height: var(--totals-header-icon-size);
 }
 
-/** Shell height > 764px — applied via useAppShellCompact (container queries alone were unreliable). */
+/** Shell height > 764px â applied via useAppShellCompact (container queries alone were unreliable). */
 .batch-totals-screen--tall:not(.batch-totals-screen--compact-summary) {
   --totals-cell-py: 10px;
   --totals-cell-px: 12px;
@@ -987,7 +987,7 @@
   --text-totals-row-amount-total: var(--text-totals-sum);
 }
 
-/** ≤764px + >4 batch rows — compact card headers. */
+/** â¤764px + >4 batch rows â compact card headers. */
 .batch-totals-screen--compact-summary {
   --totals-cell-py: 6px;
   --totals-cell-px: 8px;
@@ -1009,14 +1009,14 @@
 }
 
 @container app (max-height: 764px) {
-  /** ≤4 rows — full-size row labels only; totals column keeps global clamp above. */
+  /** â¤4 rows â full-size row labels only; totals column keeps global clamp above. */
   .batch-totals-screen:not([data-dense-table]) {
     --text-card-name: 12px;
     --text-recipe-unit: 10px;
     --text-totals-caption: 10px;
   }
 
-  /** >4 rows — shrink row labels (id, meta, /batch line). */
+  /** >4 rows â shrink row labels (id, meta, /batch line). */
   .batch-totals-screen--compact-summary,
   .batch-totals-screen[data-dense-table] {
     --text-card-name: clamp(10px, min(3.08cqi, 1.57cqh), 12px);
@@ -1042,7 +1042,7 @@
   padding-top: 0;
 }
 
-/** Table region only — pinned above the bottom panel. */
+/** Table region only â pinned above the bottom panel. */
 .batch-totals-screen__main {
   flex: 1;
   min-height: 0;
@@ -1178,7 +1178,7 @@
   cursor: pointer;
 }
 
-/** Absolute bottom sheet — grows upward to header; footer stays pinned at bottom. */
+/** Absolute bottom sheet â grows upward to header; footer stays pinned at bottom. */
 .batch-totals-bottom-panel {
   --batch-totals-panel-radius: 16px;
   --batch-totals-footer-gap: 8px;
@@ -1204,7 +1204,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  /** Dock chrome (handle + TOTAL + actions) — sheetDock surface. */
+  /** Dock chrome (handle + TOTAL + actions) â sheetDock surface. */
   background: var(--semantic-surface-sheet-dock, var(--ui-header-bg));
   border-top: var(--semantic-border-default, 1px solid color-mix(in srgb, var(--semantic-text-primary) 8%, transparent));
   border-radius: var(--batch-totals-panel-radius) var(--batch-totals-panel-radius) 0 0;
@@ -1228,7 +1228,7 @@
   touch-action: pan-y;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  /** Expanded summary plane — same sheet surface as dock. */
+  /** Expanded summary plane â same sheet surface as dock. */
   background: var(--semantic-surface-sheet-body, var(--semantic-surface-sheet-dock, var(--ui-header-bg)));
   animation: batch-totals-body-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -1359,7 +1359,7 @@
   box-shadow: 0 -8px 20px color-mix(in srgb, var(--semantic-text-primary) 4%, transparent);
 }
 
-/** Bottom-panel summary — packed list under centered intro + batch chips. */
+/** Bottom-panel summary â packed list under centered intro + batch chips. */
 .batch-totals-entity-total-table {
   --entity-summary-cell-py: 14px;
   --entity-summary-intro-gap: 8px;
@@ -1535,7 +1535,7 @@
 }
 
 .batch-totals-bottom-panel--share-revealing .batch-totals-bottom-panel__actions {
-  /** Tight to TOTAL — the dock top rule carries the separation. */
+  /** Tight to TOTAL â the dock top rule carries the separation. */
   margin-top: var(--batch-totals-footer-gap);
 }
 
@@ -1685,7 +1685,7 @@
   white-space: nowrap;
 }
 
-/** Hidden when only batches — card height stays fixed; row slot unused. */
+/** Hidden when only batches â card height stays fixed; row slot unused. */
 .batch-totals-summary-bar__batch-row--extra:not(.batch-totals-summary-bar__batch-row--visible) {
   visibility: hidden;
   height: 0;
@@ -1727,7 +1727,7 @@
   z-index: 2;
 }
 
-/** Invisible touch target only — must not affect drag-zone / sheet layout. */
+/** Invisible touch target only â must not affect drag-zone / sheet layout. */
 .batch-totals-bottom-panel__drag-zone::before {
   content: "";
   position: absolute;
@@ -1794,7 +1794,7 @@
   }
 }
 
-/* ── App navigation drawer (scoped to .app-frame-host, not the viewport) ─── */
+/* ââ App navigation drawer (scoped to .app-frame-host, not the viewport) âââ */
 .app-nav-drawer {
   position: absolute;
   inset: 0;
@@ -1853,7 +1853,7 @@
   min-width: 0;
 }
 
-/** Brand — same scale as in-app header title (native, not marketing). */
+/** Brand â same scale as in-app header title (native, not marketing). */
 .app-nav-drawer__brand {
   margin: 0;
   font-family: var(--font-ui, "Outfit", sans-serif);
@@ -1869,7 +1869,7 @@
   flex-shrink: 0;
 }
 
-/** Plain cross — no border / fill (hit target only). */
+/** Plain cross â no border / fill (hit target only). */
 .app-nav-drawer__close {
   flex-shrink: 0;
   display: inline-flex;
@@ -1893,7 +1893,7 @@
   opacity: 0.85;
 }
 
-/** Hairline — token is a full border value (`1px solid …`), not a color. */
+/** Hairline â token is a full border value (`1px solid â¦`), not a color. */
 .app-nav-drawer__divider {
   height: 0;
   width: 100%;
@@ -1941,7 +1941,7 @@
 }
 
 /**
- * Session Mode — same accent as header / drawer top bar (--session-accent).
+ * Session Mode â same accent as header / drawer top bar (--session-accent).
  * Rail + label share that color so the active item syncs with the chrome stripe.
  */
 .app-nav-drawer__item--session-active {
@@ -1963,10 +1963,10 @@
   padding-top: 4px;
 }
 
-/* ── Top-level destination pages ────────────────────────────────────────── */
+/* ââ Top-level destination pages ââââââââââââââââââââââââââââââââââââââââââ */
 /**
  * Fills the scroll column. Horizontal inset comes only from parent `.app-gutter-x`
- * (responsive `--space-4` / safe areas). No static max-width — the app-frame is the
+ * (responsive `--space-4` / safe areas). No static max-width â the app-frame is the
  * width constraint.
  */
 .destination-page__body {
@@ -1981,7 +1981,7 @@
 }
 
 /**
- * Inside `.batch-totals-scroll-panel__inner` — that class already applies
+ * Inside `.batch-totals-scroll-panel__inner` â that class already applies
  * `--batch-totals-panel-reserve` bottom padding for the stage sheet.
  */
 .destination-page__body--in-sheet {
@@ -2013,7 +2013,7 @@
   padding-block: 6px 8px;
 }
 
-/** Hub date bar → chip grid: avoid stacking subnav + body + select padding. */
+/** Hub date bar â chip grid: avoid stacking subnav + body + select padding. */
 .destination-page__subnav:has(.catalog-report-date-bar) {
   padding-bottom: 4px;
 }
@@ -2026,7 +2026,7 @@
   min-height: 44px;
 }
 
-/** In-content page heading — not the navigation bar title. */
+/** In-content page heading â not the navigation bar title. */
 .destination-page__heading {
   margin: 0;
   font-family: var(--font-ui, "Outfit", sans-serif);
@@ -2074,7 +2074,7 @@
 
 /**
  * Form-page primary save / submit (Create recipe, library hubs, catalog).
- * Ink fill — distinct from calculator gray chrome and from session teal.
+ * Ink fill â distinct from calculator gray chrome and from session teal.
  */
 .destination-page__primary-btn--form {
   background: var(--form-primary-bg, var(--semantic-text-primary));
@@ -2099,7 +2099,7 @@
 }
 
 /**
- * Session Mode primary CTA — teal fill (same accent as header / nav / long-press).
+ * Session Mode primary CTA â teal fill (same accent as header / nav / long-press).
  * Use only for session-scoped create/open/save actions.
  */
 .destination-page__primary-btn--session {
@@ -2195,7 +2195,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ── Shared page / sheet search (icon + field) ───────────────────────────── */
+/* ââ Shared page / sheet search (icon + field) âââââââââââââââââââââââââââââ */
 .app-search,
 .sessions-page__search {
   display: flex;
@@ -2237,7 +2237,7 @@
   appearance: none;
 }
 
-/** Hub date filter — same control as Tools; flush inside page gutter. */
+/** Hub date filter â same control as Tools; flush inside page gutter. */
 .sessions-page__date-bar.catalog-report-date-bar.select-view {
   padding-top: 0;
   border-top: none;
@@ -2247,7 +2247,7 @@
   padding-inline: 0;
 }
 
-/** Stay in `.app-gutter-x` — same edge padding as New session / search. */
+/** Stay in `.app-gutter-x` â same edge padding as New session / search. */
 .sessions-page__list {
   --sessions-card-pad-x: 12px;
   --sessions-card-pad-y: 10px;
@@ -2269,7 +2269,7 @@
   min-width: 0;
 }
 
-/** Discrete cards — surface + gap only (no outline), same list-row plane as pickers. */
+/** Discrete cards â surface + gap only (no outline), same list-row plane as pickers. */
 .sessions-page__list .sessions-page__card.sheet-list-row {
   position: relative;
   display: block;
@@ -2421,7 +2421,7 @@
   --stage-arrow: 12px;
   --stage-overlap: 11px;
   --stage-radius: 10px;
-  /* Opaque shared fill — transparency + overlap was stacking into darker grays. */
+  /* Opaque shared fill â transparency + overlap was stacking into darker grays. */
   --stage-untouched-bg: color-mix(
     in srgb,
     var(--semantic-text-primary) 5.5%,
@@ -2531,7 +2531,7 @@
   );
 }
 
-/** Content is shown by the amount label — same fill as untouched (no green wash). */
+/** Content is shown by the amount label â same fill as untouched (no green wash). */
 .sessions-page__stage--done {
   background: var(--stage-untouched-bg);
   color: var(--semantic-text-secondary);
@@ -2574,7 +2574,7 @@
   letter-spacing: 0;
 }
 
-/* ── Create Recipe ──────────────────────────────────────────────────────── */
+/* ââ Create Recipe ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
 /** Scrollable form column (method tabs + save dock stay pinned). */
 .create-recipe__scroll {
   flex: 1 1 auto;
@@ -3546,7 +3546,7 @@
   margin-top: 4px;
 }
 
-/** Both session + library saves — share one footer row. */
+/** Both session + library saves â share one footer row. */
 .create-recipe__actions--row {
   flex-direction: row;
   align-items: stretch;
@@ -3581,7 +3581,7 @@
   opacity: 1;
 }
 
-/** Outlined session action — teal border/label, no fill. */
+/** Outlined session action â teal border/label, no fill. */
 .create-recipe__secondary-btn--session {
   border-color: color-mix(in srgb, var(--session-accent) 55%, transparent);
   color: var(--session-accent);
@@ -3591,7 +3591,7 @@
   background: color-mix(in srgb, var(--session-accent) 12%, transparent);
 }
 
-/* —— Session overview (Phase 3) —— */
+/* ââ Session overview (Phase 3) ââ */
 .session-overview__subline {
   font-family: "Outfit", sans-serif;
   font-size: var(--text-page-section, 13px);
@@ -3607,10 +3607,10 @@
   border-bottom: 1px solid var(--semantic-border-subtle);
 }
 
-/** Horizontal day filter — do not inherit catalog `.select-view` padding/gap. */
+/** Horizontal day filter â do not inherit catalog `.select-view` padding/gap. */
 .session-day-filter.select-view {
   /*
-   * Selected dates use state accent (violet), not session teal —
+   * Selected dates use state accent (violet), not session teal â
    * tools/cons already own `--session-accent`; recipe-value is gray text.
    */
   --select-chip-accent: var(--semantic-state-accent, #9b8cff);
@@ -3626,7 +3626,7 @@
 }
 
 /**
- * Hub Tools / Consumables Report — one full-width optional date (same top inset /
+ * Hub Tools / Consumables Report â one full-width optional date (same top inset /
  * 28px height as session day chips; not the multi-day session filter).
  */
 .catalog-report-date-bar.select-view {
@@ -3785,11 +3785,11 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-  /* Match stages / app gutter — All dates sits on the same left inset. */
+  /* Match stages / app gutter â All dates sits on the same left inset. */
   padding-inline-start: max(var(--space-4, 16px), var(--safe-left));
 }
 
-/** Always visible — not part of the horizontal scroll. */
+/** Always visible â not part of the horizontal scroll. */
 .session-day-filter__pinned {
   flex: 0 0 auto;
   z-index: 2;
@@ -3859,9 +3859,9 @@
 
 .session-day-filter .select-chip.session-day-filter__chip {
   flex: 0 0 auto;
-  /* Keep metrics stable — weight/color flips were shifting the scroll row ~1px. */
+  /* Keep metrics stable â weight/color flips were shifting the scroll row ~1px. */
   font-weight: 600;
-  /* Beat `.select-chip { height: 40px }` — compact filter chips. */
+  /* Beat `.select-chip { height: 40px }` â compact filter chips. */
   height: 28px;
   min-height: 28px;
   max-height: 28px;
@@ -3903,7 +3903,7 @@
 }
 
 /**
- * Provisional Today — dashed outline until that day has session content.
+ * Provisional Today â dashed outline until that day has session content.
  */
 .session-day-filter .select-chip.session-day-filter__chip[data-provisional] {
   border-style: dashed;
@@ -4095,7 +4095,7 @@
   pointer-events: none;
 }
 
-/* Theme text — secondary create-recipe action. */
+/* Theme text â secondary create-recipe action. */
 .session-overview__workspace-btn--recipe {
   color: var(--component-text-btn-color, var(--semantic-text-primary));
 }
@@ -4105,7 +4105,7 @@
   opacity: 0.82;
 }
 
-/* Session accent — primary add-mix action. */
+/* Session accent â primary add-mix action. */
 .session-overview__workspace-btn--mix {
   color: var(--session-accent);
 }
@@ -4207,7 +4207,7 @@
   padding-inline-end: 10px;
 }
 
-/** Future stages — advance with header Next (or the immediate-next chip). */
+/** Future stages â advance with header Next (or the immediate-next chip). */
 .session-overview__stage-btn:disabled {
   opacity: 0.42;
   cursor: default;
@@ -4221,7 +4221,7 @@
   text-overflow: ellipsis;
 }
 
-/** Modified — outline check anchored after the label text. */
+/** Modified â outline check anchored after the label text. */
 .session-overview__stage-modified-mark {
   position: absolute;
   left: 100%;
@@ -4234,7 +4234,7 @@
   flex-shrink: 0;
 }
 
-/** Current step — same gray palette as before, modestly stronger fill. */
+/** Current step â same gray palette as before, modestly stronger fill. */
 .session-overview__stage-btn--active {
   color: var(--semantic-text-primary);
   background: color-mix(
@@ -4535,7 +4535,7 @@
 
 /*
  * Dock: 4 equal columns. Pen is column 1 (outside the stage).
- * Stage = cols 2–4: actions when closed; edit slides over actions when open.
+ * Stage = cols 2â4: actions when closed; edit slides over actions when open.
  * Pen never transforms / never shares a stacking context with the slide.
  */
 .session-share-dock.batch-totals-dock-module {
@@ -4647,7 +4647,7 @@
   outline: none;
   box-shadow: none;
   font-family: "Outfit", sans-serif;
-  /** ≥16px so iOS Safari does not focus-zoom. */
+  /** â¥16px so iOS Safari does not focus-zoom. */
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -4689,7 +4689,7 @@
   white-space: nowrap;
 }
 
-/* Equal slots → even rhythm; check reserved in every cell. */
+/* Equal slots â even rhythm; check reserved in every cell. */
 .session-share-scope__options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4787,7 +4787,7 @@
   transform: rotate(180deg);
 }
 
-/* Collapsed header: title | mult field — stamp/actions in expanded subheader. */
+/* Collapsed header: title | mult field â stamp/actions in expanded subheader. */
 .session-mix-card__header--collapsed {
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 8px;
@@ -5037,7 +5037,7 @@
   background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
   color: var(--semantic-text-primary);
   font-family: var(--font-ui, "Outfit", sans-serif);
-  /** ≥16px so iOS Safari does not focus-zoom. */
+  /** â¥16px so iOS Safari does not focus-zoom. */
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -5132,7 +5132,7 @@
   background: color-mix(in srgb, var(--session-accent) 12%, transparent);
 }
 
-/* Pick recipe for session mix — session accent chrome (matches header / nav). */
+/* Pick recipe for session mix â session accent chrome (matches header / nav). */
 .session-pick-recipe {
   position: relative;
 }
@@ -5189,7 +5189,7 @@
   color: var(--session-accent);
 }
 
-/* ——— Responsive Flex Select View (tools catalog, reusable) ——— */
+/* âââ Responsive Flex Select View (tools catalog, reusable) âââ */
 .select-view {
   /* Default = app selection (hubs). Session stages opt into --session via modifier. */
   --select-chip-accent: var(--ui-recipe-value, var(--semantic-text-primary));
@@ -5212,12 +5212,12 @@
 }
 
 /**
- * DENSE SELECT EXPERIMENT — Tools/Consumables chip packing.
+ * DENSE SELECT EXPERIMENT â Tools/Consumables chip packing.
  * Restore: set SELECT_CHIPS_DENSE=false in denseChips.ts, or delete this block
  * and the dense wiring in FlexSelectView.
  *
  * - Stays inside parent .app-gutter-x (same side inset as tabs / date bar)
- * - Tighter chip pad + denser gaps; adaptive font; row leftover → gaps (JS)
+ * - Tighter chip pad + denser gaps; adaptive font; row leftover â gaps (JS)
  */
 .select-view--dense {
   --select-chip-pad-x: 8px;
@@ -5226,7 +5226,7 @@
   max-width: none;
   box-sizing: border-box;
   padding-top: 10px;
-  /* Match base .select-view — room for qty/family badges to hang. */
+  /* Match base .select-view â room for qty/family badges to hang. */
   padding-left: 6px;
   padding-right: 0;
   /* Base gaps; JS may raise column gap via margins to fill each row. */
@@ -5277,12 +5277,12 @@
 }
 
 .select-view--dense .select-chip__width-sizer {
-  /* Match .select-chip-menu__option font so chip ≥ longest dropdown label. */
+  /* Match .select-chip-menu__option font so chip â¥ longest dropdown label. */
   font-size: 14px;
 }
 
 /**
- * Rented selection — yellow chrome in session + Tools/Consumables hubs.
+ * Rented selection â yellow chrome in session + Tools/Consumables hubs.
  * Light: primary label on gold tint. Dark: white label (theme overrides below).
  */
 .select-view .select-chip[data-rented][data-selected]:not([data-hold]) {
@@ -5346,7 +5346,7 @@
   );
 }
 
-/** Long-press qty− drain — stay in yellow family, not session teal. */
+/** Long-press qtyâ drain â stay in yellow family, not session teal. */
 .select-chip-rental:has([data-hold]) {
   transition:
     border-color var(--select-chip-hold-ms, 420ms) linear,
@@ -5406,7 +5406,7 @@
 }
 
 /**
- * Custom item fuse (owned) — same layout as rental, accent chrome when selected.
+ * Custom item fuse (owned) â same layout as rental, accent chrome when selected.
  */
 .select-chip-deletable {
   position: relative;
@@ -5512,8 +5512,8 @@
 }
 
 /**
- * Corner badges — one shared recipe (count + comment).
- * Only differences: corner side, and attr value (digit vs ✓).
+ * Corner badges â one shared recipe (count + comment).
+ * Only differences: corner side, and attr value (digit vs â).
  */
 .select-chip[data-qty]::after,
 .select-chip-rental[data-qty]::after,
@@ -5635,7 +5635,7 @@
 }
 
 /**
- * Owned catalog copy beside a rented selection — muted chrome only.
+ * Owned catalog copy beside a rented selection â muted chrome only.
  * Light: primary label. Dark: white (theme overrides below).
  */
 .select-view .select-chip[data-arm-muted] {
@@ -5678,7 +5678,7 @@
 }
 
 /**
- * Rented arm — dashed yellow border always; only the switch changes on/off.
+ * Rented arm â dashed yellow border always; only the switch changes on/off.
  * Light: primary label on tinted surface. Dark: white label (below).
  */
 .select-chip--rented-arm {
@@ -5878,7 +5878,7 @@
   color: #ffffff;
 }
 
-/** Rented arm standout — white label. Custom add matches catalog chips. */
+/** Rented arm standout â white label. Custom add matches catalog chips. */
 [data-theme="dark"] .select-view .select-chip--rented-arm {
   color: #ffffff;
 }
@@ -5905,7 +5905,7 @@
   color: #ffffff;
 }
 
-/* Anchor sizes to the chip only — menu is portaled (no flex reflow). */
+/* Anchor sizes to the chip only â menu is portaled (no flex reflow). */
 .select-chip-anchor {
   position: relative;
   display: inline-flex;
@@ -5942,7 +5942,7 @@
   touch-action: manipulation;
   user-select: none;
   overflow: visible;
-  /* No default transition — first select snaps instantly. */
+  /* No default transition â first select snaps instantly. */
 }
 
 .select-chip__label {
@@ -5950,7 +5950,7 @@
 }
 
 /**
- * Family name badge when a variant is selected — tiny label above the chip
+ * Family name badge when a variant is selected â tiny label above the chip
  * (qty badge stays top-left via ::after).
  */
 .select-chip--select[data-family]::before {
@@ -5982,7 +5982,7 @@
   transform: translateX(-50%);
 }
 
-/** Rented dropdown family badge — rent chrome in every selected state. */
+/** Rented dropdown family badge â rent chrome in every selected state. */
 .select-chip--select[data-rented][data-family]::before,
 .select-chip-rental .select-chip--select[data-family]::before,
 .select-chip-cluster[data-rented] .select-chip--select[data-family]::before {
@@ -5998,7 +5998,7 @@
  * Qty / comment corner badges are defined once above (shared 16px box).
  */
 
-/** Press feedback only when already selected — first select stays a hard snap. */
+/** Press feedback only when already selected â first select stays a hard snap. */
 .select-chip[data-selected]:active:not([data-hold]) {
   background: color-mix(
     in srgb,
@@ -6017,7 +6017,7 @@
   );
 }
 
-/** Rented arm: never inherit selected-chip teal — yellow dashed border stays fixed. */
+/** Rented arm: never inherit selected-chip teal â yellow dashed border stays fixed. */
 .select-chip--rented-arm,
 .select-chip--rented-arm[data-selected] {
   border-style: dashed;
@@ -6144,7 +6144,7 @@
   opacity: 1;
 }
 
-/* Overlay menu — fixed via inline style; does not occupy flex space. */
+/* Overlay menu â fixed via inline style; does not occupy flex space. */
 .select-chip-menu {
   box-sizing: border-box;
   display: flex;
@@ -6185,7 +6185,7 @@
   );
 }
 
-/** Rented dropdown menu — rent tint for open/selected panel + active option. */
+/** Rented dropdown menu â rent tint for open/selected panel + active option. */
 .select-chip-menu[data-rented][data-selected] {
   border-color: var(--select-chip-rented, #d4a017);
   background: color-mix(
@@ -6336,7 +6336,7 @@
   max-width: none;
 }
 
-/** Only the dropdown chip — never the sibling plus (also has .select-chip). */
+/** Only the dropdown chip â never the sibling plus (also has .select-chip). */
 .select-chip-cluster > .select-chip-anchor > .select-chip {
   border: none;
   border-radius: 7px 0 0 7px;
@@ -6350,7 +6350,7 @@
   background: transparent;
 }
 
-/** Fused comment rental inside cluster — shell owns rent chrome. */
+/** Fused comment rental inside cluster â shell owns rent chrome. */
 .select-chip-cluster > .select-chip-anchor > .select-chip-rental {
   border: none;
   border-radius: 7px 0 0 7px;
@@ -6392,7 +6392,7 @@
   color: var(--semantic-text-primary);
 }
 
-/** Slitage segment — fixed column (L/M/H + chevron) reserved before variant pick. */
+/** Slitage segment â fixed column (L/M/H + chevron) reserved before variant pick. */
 .select-chip--wear {
   position: relative;
   flex: 0 0 2.75rem;
@@ -6589,7 +6589,7 @@
   }
 }
 
-/* Add custom item — dashed border affordance; otherwise catalog chip chrome. */
+/* Add custom item â dashed border affordance; otherwise catalog chip chrome. */
 .select-chip--add {
   gap: 5px;
   border-style: dashed;
@@ -6631,7 +6631,7 @@
   color: var(--semantic-text-primary);
   caret-color: var(--select-chip-accent);
   font-family: "Outfit", sans-serif;
-  /** ≥16px so iOS Safari does not focus-zoom. */
+  /** â¥16px so iOS Safari does not focus-zoom. */
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -6709,10 +6709,10 @@
 }
 
 /**
- * Top pad only — do not set padding-bottom here.
+ * Top pad only â do not set padding-bottom here.
  * `.batch-totals-scroll-panel__inner` already clears the measured stage sheet
  * via `--batch-totals-panel-reserve` (collapsed / half-open / expanded).
- * Parent `.app-gutter-x` owns side inset; drop select-view’s extra left pad.
+ * Parent `.app-gutter-x` owns side inset; drop select-viewâs extra left pad.
  */
 .session-overview__tools-pad {
   padding-top: 12px;
@@ -6732,12 +6732,12 @@
   margin-top: 0;
 }
 
-/** Hub report grid — only enough top pad for hanging qty/family badges. */
+/** Hub report grid â only enough top pad for hanging qty/family badges. */
 .catalog-hub__select .select-view--dense {
   padding-top: 6px;
 }
 
-/* Catalog hub (Tools / Consumables): compact Select · Edit under header */
+/* Catalog hub (Tools / Consumables): compact Select Â· Edit under header */
 .catalog-hub__chrome {
   display: flex;
   flex-direction: column;
@@ -6954,3 +6954,1903 @@
   outline: none;
 }
 
+/* ââ Repair Hole ââ */
+.repair-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: var(--semantic-border-default);
+  background: var(--semantic-surface-muted, transparent);
+}
+
+.repair-totals__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-body, 16px);
+  font-weight: 500;
+  color: var(--semantic-text-primary);
+}
+
+.repair-totals__row--strong strong {
+  font-size: 1.15em;
+  font-weight: 700;
+}
+
+.repair-totals__row--pick {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.repair-totals__basis {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repair-totals__pick {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 28px;
+}
+
+.repair-totals__pick-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  color: inherit;
+  font: inherit;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-body, 16px);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.repair-totals__pick-main--static {
+  cursor: default;
+}
+
+.repair-totals__pick-main .repair-totals__value {
+  flex-shrink: 0;
+  font-size: 1em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
+.repair-totals__pick-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.repair-totals__check {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: var(--semantic-border-default);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: transparent;
+  background: transparent;
+}
+
+.repair-totals__check.is-on {
+  color: var(--semantic-text-primary);
+  border-color: var(--semantic-text-primary);
+  background: color-mix(in srgb, var(--semantic-text-primary) 10%, transparent);
+}
+
+.repair-hole-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.repair-add-hole-btn {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 4px 0 0;
+  min-height: var(--totals-add-extra-h, var(--action-row-h, 44px));
+  padding: var(--totals-add-extra-py, 12px) 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 0;
+  font-family: var(--font-ui, "Outfit", sans-serif);
+  font-size: var(--text-totals-section, 13px);
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.repair-included-hole-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 14px;
+  border: var(--semantic-border-default);
+  overflow: hidden;
+  background: var(--semantic-surface-card, transparent);
+}
+
+.repair-included-hole-list__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: var(--semantic-border-default);
+  font-family: "Outfit", sans-serif;
+}
+
+.repair-included-hole-list__row:last-child {
+  border-bottom: 0;
+}
+
+.repair-included-hole-list__name {
+  font-size: var(--text-page-body, 16px);
+  font-weight: 600;
+  color: var(--semantic-text-primary);
+  min-width: 0;
+}
+
+.repair-included-hole-list__meta {
+  display: flex;
+  flex-shrink: 0;
+  align-items: baseline;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.repair-included-hole-list__area {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--semantic-text-muted);
+}
+
+.repair-included-hole-list__volume {
+  font-size: 0.95em;
+  font-weight: 700;
+  color: var(--semantic-text-primary);
+}
+
+.repair-selected-holes-sheet__list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.repair-selected-holes-sheet__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: var(--semantic-border-default);
+  background: var(--semantic-surface-card, transparent);
+}
+
+.repair-selected-holes-sheet__thumb {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+}
+
+.repair-selected-holes-sheet__thumb .repair-plan-view {
+  width: 100%;
+  height: 100%;
+}
+
+.repair-selected-holes-sheet__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.repair-selected-holes-sheet__title {
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-body, 16px);
+  font-weight: 600;
+}
+
+.repair-selected-holes-sheet__volume {
+  font-family: "Outfit", sans-serif;
+  font-size: 1.05em;
+  font-weight: 700;
+}
+
+.repair-selected-holes-sheet__area {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+.repair-hole-card {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px 10px 10px;
+  border-radius: 18px;
+  border: none;
+  background: var(
+    --component-sheet-panel-list-row-bg,
+    var(--semantic-surface-muted, transparent)
+  );
+  transition: opacity 0.18s ease;
+  opacity: 0.72;
+}
+
+.repair-hole-card.is-selected {
+  opacity: 1;
+}
+
+.repair-hole-card__select {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--semantic-text-primary);
+  cursor: pointer;
+  touch-action: manipulation;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.repair-hole-card__check {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: var(--semantic-border-default);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--semantic-text-primary);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.repair-hole-card__select.is-checked .repair-hole-card__check {
+  background: var(--semantic-surface-button-solid, transparent);
+  border-color: var(--semantic-text-primary);
+  color: var(--semantic-text-primary);
+}
+
+.repair-hole-card__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  color: inherit;
+}
+
+.repair-hole-card__main:active {
+  opacity: 0.92;
+}
+
+.repair-hole-card__thumb {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.repair-hole-card__thumb .repair-plan-view {
+  width: 100%;
+  height: 100%;
+}
+
+.repair-hole-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.repair-hole-card__title {
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+  line-height: 1.2;
+}
+
+.repair-hole-card__volume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-body, 16px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--semantic-text-primary);
+}
+
+.repair-hole-card__confidence {
+  font-size: 0.72em;
+  font-weight: 560;
+  letter-spacing: 0.02em;
+  color: var(--semantic-text-muted);
+}
+
+.repair-hole-card__needs-depth {
+  font-size: 0.92em;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--semantic-text-muted);
+}
+
+.repair-hole-card__area {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.82em;
+  font-weight: 560;
+  font-variant-numeric: tabular-nums;
+  color: var(--semantic-text-dimmed, var(--semantic-text-muted));
+  line-height: 1.2;
+}
+
+.repair-hole-card__delete {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--semantic-state-error);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+}
+
+.repair-hole-card__delete:active {
+  background: color-mix(
+    in srgb,
+    var(--semantic-state-error) 12%,
+    transparent
+  );
+}
+
+.repair-plan-view {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 380px;
+  touch-action: none;
+  user-select: none;
+}
+
+.repair-plan-view--compact {
+  max-height: none;
+}
+
+.repair-plan-frame {
+  border-radius: 14px;
+  border: var(--semantic-border-default);
+  padding: 8px;
+  background: var(--semantic-surface-muted, transparent);
+}
+
+.repair-plan-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.repair-figure-labels__side {
+  fill: var(--semantic-text-muted, rgba(0, 0, 0, 0.45));
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.repair-figure-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 4px 2px;
+}
+
+.repair-figure-stats__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.92em;
+  line-height: 1.35;
+}
+
+.repair-figure-stats__key {
+  color: var(--semantic-text-muted, rgba(0, 0, 0, 0.5));
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.85em;
+}
+
+.repair-figure-stats__value {
+  color: var(--semantic-text-primary);
+  font-weight: 600;
+  text-align: right;
+}
+
+.repair-figure-stats__confidence {
+  color: var(--semantic-text-muted, rgba(0, 0, 0, 0.45));
+  font-family: "Outfit", sans-serif;
+  font-size: 0.82em;
+  font-weight: 500;
+}
+
+.repair-slope-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px 2px;
+}
+
+.repair-slope-section__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.repair-slope-section__meta {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+.repair-slope-section__svg {
+  width: 100%;
+  height: auto;
+  min-height: 120px;
+  display: block;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 4%, transparent);
+}
+
+.repair-slope-section__surface {
+  stroke: color-mix(in srgb, var(--semantic-text-primary) 35%, transparent);
+  stroke-width: 1.25;
+  stroke-dasharray: 3 3;
+}
+
+.repair-slope-section__cavity {
+  fill: color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
+  stroke: none;
+}
+
+.repair-slope-section__floor {
+  stroke: var(--semantic-text-primary);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.repair-slope-section__depth {
+  fill: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.repair-slope-section__empty {
+  fill: var(--semantic-text-muted);
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.repair-slope-section__inset line {
+  stroke: var(--semantic-text-muted);
+  stroke-width: 1;
+}
+
+.repair-slope-section__inset text {
+  fill: var(--semantic-text-muted);
+  font-family: "Outfit", sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.repair-edge-cover__band {
+  fill: color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+  stroke: none;
+}
+
+.repair-edge-cover__inner {
+  stroke: var(--semantic-text-primary);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  opacity: 0.9;
+}
+
+.repair-edge-cover__label {
+  fill: var(--semantic-text-muted);
+  font-family: "Outfit", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.repair-slope-iso__bevel {
+  fill: color-mix(in srgb, var(--semantic-text-primary) 16%, transparent);
+  stroke: color-mix(in srgb, var(--semantic-text-primary) 55%, transparent);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.repair-wizard-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 8;
+  margin-top: 12px;
+  padding: 10px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  /* Dock chrome only — controls keep their own solid surfaces. */
+  background: transparent;
+}
+
+.repair-depth-dock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.repair-depth-dock__row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+
+.repair-depth-dock__row > .repair-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.repair-depth-dock__empty {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: var(--semantic-border-default);
+  background: var(
+    --ui-input-surface,
+    var(--semantic-surface-raised, var(--semantic-surface-app, #161632))
+  );
+}
+
+.repair-depth-dock .repair-field__control {
+  background: var(
+    --ui-input-surface,
+    var(--semantic-surface-raised, var(--semantic-surface-app, #161632))
+  );
+}
+
+.repair-depth-dock .repair-field__action {
+  background: color-mix(
+    in srgb,
+    var(--semantic-text-primary) 12%,
+    var(--ui-input-surface, var(--semantic-surface-raised, #161632))
+  );
+}
+
+.repair-depth-dock .repair-field__action:active:not(:disabled) {
+  background: color-mix(
+    in srgb,
+    var(--semantic-text-primary) 18%,
+    var(--ui-input-surface, var(--semantic-surface-raised, #161632))
+  );
+}
+
+.repair-depth-dock .repair-chip-btn {
+  background: var(
+    --ui-input-surface,
+    var(--semantic-surface-raised, var(--semantic-surface-app, #161632))
+  );
+}
+
+.repair-depth-dock__next {
+  flex: 0 0 44px;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.repair-field__action--next-point {
+  gap: 5px;
+  min-width: 0;
+  padding: 0 10px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.repair-field__action-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--semantic-text-primary);
+  background: transparent;
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.repair-slope-iso__callout-bg {
+  fill: var(--semantic-surface-muted, var(--semantic-surface-app, #1a1a22));
+  stroke: color-mix(in srgb, var(--semantic-text-primary) 28%, transparent);
+  stroke-width: 1;
+}
+
+.repair-slope-iso__marker.is-selected .repair-slope-iso__depth {
+  fill: var(--semantic-text-primary);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.repair-viz-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/**
+ * Expanded figure: claim the scrollport above the sticky depth dock,
+ * hide setup fields / hints so plan + point input stay on screen.
+ */
+.destination-page__body:has(.repair-viz-accordion.is-fill) {
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  gap: 8px;
+}
+
+.destination-page__body:has(.repair-viz-accordion.is-fill)
+  > :not(.repair-viz-accordion):not(.repair-wizard-dock) {
+  display: none;
+}
+
+.destination-page__body:has(.repair-viz-accordion.is-fill)
+  > .repair-viz-accordion.is-fill {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.destination-page__body:has(.repair-viz-accordion.is-fill)
+  > .repair-wizard-dock {
+  flex-shrink: 0;
+  position: static;
+  margin-top: 0;
+}
+
+.repair-viz-accordion.is-fill {
+  min-height: 0;
+}
+
+.repair-viz-accordion__panel {
+  border-radius: 12px;
+  border: var(--semantic-border-default);
+  background: transparent;
+  overflow: hidden;
+}
+
+.repair-viz-accordion__panel.is-fill {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.repair-viz-accordion__bar {
+  display: flex;
+  align-items: stretch;
+  min-height: 44px;
+  flex-shrink: 0;
+}
+
+.repair-viz-accordion__header {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 10px;
+  padding: 10px 4px 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.85em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.repair-viz-accordion__header:active,
+.repair-viz-accordion__fill-btn:active,
+.repair-viz-accordion__chevron-btn:active {
+  background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
+}
+
+.repair-viz-accordion__trailing {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+.repair-viz-accordion__fill-btn,
+.repair-viz-accordion__chevron-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--semantic-text-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.repair-viz-accordion__fill-btn[aria-pressed="true"] {
+  color: var(--semantic-text-primary);
+}
+
+.repair-viz-accordion__chevron {
+  flex-shrink: 0;
+  color: inherit;
+  font-size: 0.9em;
+}
+
+.repair-viz-accordion__body {
+  padding: 0 8px 8px;
+}
+
+.repair-viz-accordion__panel.is-fill > .repair-viz-accordion__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.repair-viz-accordion__panel.is-fill .repair-plan-frame,
+.repair-viz-accordion__panel.is-fill .repair-plan-block,
+.repair-viz-accordion__panel.is-fill .repair-slope-iso,
+.repair-viz-accordion__panel.is-fill .repair-slope-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.repair-viz-accordion__panel.is-fill .repair-plan-view,
+.repair-viz-accordion__panel.is-fill .repair-slope-iso__svg,
+.repair-viz-accordion__panel.is-fill .repair-slope-section__svg {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  height: 100%;
+  width: 100%;
+}
+
+.repair-viz-accordion__panel.is-fill .repair-figure-stats,
+.repair-viz-accordion__panel.is-fill .repair-slope-iso__toolbar,
+.repair-viz-accordion__panel.is-fill .repair-slope-section__head,
+.repair-viz-accordion__panel.is-fill .repair-field__hint {
+  flex-shrink: 0;
+}
+
+.repair-plan-frame--flush {
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+.repair-viz-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.repair-plan-frame--section {
+  padding-bottom: 4px;
+}
+
+.repair-slope-iso {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px 2px;
+}
+
+.repair-slope-iso__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repair-segmented--compact .repair-segmented__btn {
+  padding: 6px 8px;
+  font-size: 0.78em;
+}
+
+.repair-slope-iso__svg {
+  width: 100%;
+  height: auto;
+  min-height: 140px;
+  display: block;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 4%, transparent);
+}
+
+.repair-slope-iso__floor {
+  fill: color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
+  stroke: var(--semantic-text-primary);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.repair-slope-iso__rim {
+  fill: none;
+  stroke: var(--semantic-text-primary);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+  stroke-dasharray: 4 3;
+  opacity: 0.9;
+}
+
+.repair-slope-iso__wall {
+  stroke: color-mix(in srgb, var(--semantic-text-primary) 55%, transparent);
+  stroke-width: 1.25;
+}
+
+.repair-slope-iso__fall line {
+  stroke: var(--semantic-text-primary);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+
+.repair-slope-iso__arrow-head {
+  fill: var(--semantic-text-primary);
+}
+
+.repair-slope-iso__depth {
+  fill: var(--semantic-text-muted, rgba(0, 0, 0, 0.55));
+  font-family: "Outfit", sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.repair-slope-iso__drop {
+  stroke: color-mix(in srgb, var(--semantic-text-primary) 35%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  pointer-events: none;
+}
+
+.repair-slope-iso__disc {
+  fill: var(--semantic-surface-muted, var(--semantic-surface-app, #1a1a22));
+  stroke: var(--semantic-text-primary);
+  stroke-width: 1.75;
+}
+
+.repair-slope-iso__marker.is-selected .repair-slope-iso__disc {
+  fill: var(--semantic-text-primary);
+}
+
+.repair-slope-iso__index {
+  fill: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.repair-slope-iso__marker.is-selected .repair-slope-iso__index {
+  fill: var(--semantic-surface-muted, var(--semantic-surface-app, #1a1a22));
+}
+
+.repair-slope-iso__marker .repair-slope-iso__depth {
+  fill: var(--semantic-text-primary);
+  font-size: 8.5px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.repair-depth-marker__index {
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.repair-depth-marker.is-selected .repair-depth-marker__index {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.repair-depth-marker__callout-bg {
+  fill: var(--semantic-surface-muted, var(--semantic-surface-app, #1a1a22));
+  stroke: color-mix(in srgb, var(--semantic-text-primary) 22%, transparent);
+  stroke-width: 1;
+}
+
+.repair-depth-marker.is-selected .repair-depth-marker__callout-bg {
+  fill: color-mix(
+    in srgb,
+    var(--semantic-text-primary) 12%,
+    var(--semantic-surface-muted, var(--semantic-surface-app, #1a1a22))
+  );
+  stroke: color-mix(in srgb, var(--semantic-text-primary) 35%, transparent);
+}
+
+.repair-depth-marker__value {
+  fill: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.repair-depth-marker__value-num {
+  font-weight: 700;
+}
+
+.repair-depth-marker__unit {
+  fill: var(--semantic-text-muted, rgba(0, 0, 0, 0.45));
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.repair-depth-marker.is-selected .repair-depth-marker__unit {
+  fill: color-mix(in srgb, var(--semantic-text-primary) 65%, transparent);
+}
+
+.repair-shape-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.repair-shape-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  aspect-ratio: 1.35 / 1;
+  padding: 0;
+  border-radius: 12px;
+  border: var(--semantic-border-default);
+  background: transparent;
+  color: var(--semantic-text-primary);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.repair-shape-card__icon {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+
+.repair-shape-card.is-active {
+  border-color: var(--semantic-text-primary);
+  background: var(--semantic-surface-button-solid);
+}
+
+.repair-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repair-field--compact {
+  gap: 0;
+}
+
+.repair-field__badge {
+  flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 8px;
+  border-radius: 999px;
+  border: 1.5px solid var(--semantic-text-primary);
+  background: var(--semantic-text-primary);
+  color: var(--semantic-surface-app, #0a0a14);
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.repair-field__control--badged .repair-field__input {
+  padding-left: 8px;
+}
+
+.repair-field__input::placeholder {
+  color: var(--semantic-text-muted, rgba(0, 0, 0, 0.45));
+  font-weight: 500;
+  opacity: 1;
+}
+
+.repair-field__label-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+}
+
+.repair-field__label-meta {
+  margin-left: auto;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.85em;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  text-align: right;
+}
+
+.repair-field--underline {
+  gap: 4px;
+}
+
+.repair-field__underline-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+}
+
+.repair-field__underline-control {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 4.5em;
+}
+
+.repair-field--underline .repair-field__input {
+  width: 4.25em;
+  height: auto;
+  min-height: 28px;
+  padding: 0;
+  text-align: right;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font-weight: 600;
+}
+
+.repair-field--underline .repair-field__input::placeholder {
+  color: var(--semantic-text-muted, rgba(0, 0, 0, 0.4));
+  font-weight: 500;
+  opacity: 1;
+}
+
+.repair-field--underline .repair-field__unit {
+  padding: 0;
+  align-self: baseline;
+}
+
+.repair-field--underline .repair-field__control:focus-within,
+.repair-field--underline:focus-within .repair-field__control {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.repair-field__label {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted, var(--semantic-text-primary));
+}
+
+.repair-field__info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--semantic-text-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.repair-field__info:active,
+.repair-field__info[aria-expanded="true"] {
+  color: var(--semantic-text-primary);
+  background: color-mix(in srgb, var(--semantic-text-primary) 6%, transparent);
+}
+
+.repair-field__info-text {
+  margin: 0;
+  white-space: pre-line;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.85em;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.repair-field__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.repair-field__control {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  height: 44px;
+  border-radius: 12px;
+  border: var(--semantic-border-default);
+  background: var(--semantic-surface-input, transparent);
+  overflow: hidden;
+  /* Keep border width stable — highlight via color + inset ring only. */
+  box-shadow: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.repair-field__input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 4px 0 12px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-body, 16px);
+  font-weight: 600;
+  outline: none;
+}
+
+.repair-field__input:focus {
+  outline: none;
+}
+
+/**
+ * Focus highlight without layout shift:
+ * - never change border-width
+ * - inset box-shadow works with overflow:hidden (outer outline/shadow get clipped)
+ */
+.repair-field__control:focus-within {
+  outline: none;
+  border-color: color-mix(in srgb, var(--semantic-text-primary) 42%, transparent);
+  box-shadow: inset 0 0 0 1.5px
+    color-mix(in srgb, var(--semantic-text-primary) 28%, transparent);
+}
+
+.repair-field__unit {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 0 12px 0 4px;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--semantic-text-muted, var(--semantic-text-primary));
+  pointer-events: none;
+  user-select: none;
+}
+
+.repair-field__action {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5em;
+  padding: 0 14px;
+  border: none;
+  border-left: var(--semantic-border-default);
+  background: color-mix(in srgb, var(--semantic-text-primary) 8%, transparent);
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.85em;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.repair-field__action:active:not(:disabled) {
+  background: color-mix(in srgb, var(--semantic-text-primary) 14%, transparent);
+}
+
+.repair-field__action:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Legacy row inputs (packaging custom, etc.) keep standalone field look. */
+.repair-field__row > .repair-field__input {
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: var(--semantic-border-default);
+  background: var(--semantic-surface-input, transparent);
+}
+
+.repair-field__row > .repair-field__unit {
+  padding: 0;
+  min-width: 2.2em;
+  pointer-events: auto;
+}
+
+.repair-field__hint {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+.repair-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+}
+
+.repair-switch-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.repair-switch-row__text--inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.repair-switch-row__value {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.85em;
+  font-weight: 500;
+  line-height: 1.3;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.repair-switch {
+  flex-shrink: 0;
+  position: relative;
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: var(--semantic-border-default);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.repair-switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--semantic-text-muted, rgba(0, 0, 0, 0.45));
+  transition: transform 140ms ease, background-color 140ms ease;
+}
+
+.repair-switch.is-on {
+  border-color: var(--semantic-text-primary);
+  background: color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
+}
+
+.repair-switch.is-on .repair-switch__thumb {
+  transform: translateX(16px);
+  background: var(--semantic-text-primary);
+}
+
+.repair-segmented {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.repair-segmented--points {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.repair-segmented__btn {
+  flex: 1 1 auto;
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: var(--semantic-border-default);
+  background: transparent;
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.92em;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.repair-segmented--points .repair-segmented__btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.repair-segmented__points-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.repair-segmented__btn.is-active {
+  background: var(--semantic-surface-button-solid);
+  border-color: var(--semantic-text-primary);
+}
+
+.repair-outline-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.repair-outline-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.repair-outline-editor__helper-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  min-height: 40px;
+  padding-left: 4px;
+}
+
+.repair-outline-editor__helper-label {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.82em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--semantic-text-muted);
+}
+
+.repair-plan-block--helper {
+  position: relative;
+}
+
+.repair-plan-block__canvas {
+  position: relative;
+}
+
+.repair-outline-helper {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.repair-outline-helper.is-exiting {
+  opacity: 0;
+}
+
+.repair-outline-helper__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.repair-outline-helper__point {
+  fill: var(--semantic-text-primary);
+  stroke: var(--semantic-surface-app, #fff);
+  stroke-width: 2;
+  opacity: 0.95;
+}
+
+.repair-outline-helper__point--drag {
+  animation: repair-outline-helper-drag 0.8s ease-in-out 1 forwards;
+}
+
+.repair-outline-helper__point--add {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.repair-outline-helper__point--add.is-visible {
+  animation: repair-outline-helper-pop 0.8s ease-out 1 forwards;
+}
+
+.repair-outline-helper__point--gone {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: repair-outline-helper-fade-out 0.8s ease-in 1 forwards;
+}
+
+.repair-outline-helper__tap {
+  fill: none;
+  stroke: var(--semantic-text-primary);
+  stroke-width: 2;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.repair-outline-helper__tap.is-active {
+  animation: repair-outline-helper-tap 0.8s ease-out 1 forwards;
+}
+
+.repair-outline-helper__cursor {
+  opacity: 0.9;
+}
+
+.repair-outline-helper__cursor-dot {
+  fill: color-mix(in srgb, var(--semantic-text-primary) 88%, transparent);
+  stroke: var(--semantic-surface-app, #fff);
+  stroke-width: 2;
+}
+
+.repair-outline-helper__cursor.is-move {
+  animation: repair-outline-helper-cursor-move 0.8s ease-in-out 1 forwards;
+}
+
+.repair-outline-helper__cursor.is-add {
+  animation: repair-outline-helper-cursor-add 0.8s ease-in-out 1 forwards;
+}
+
+.repair-outline-helper__cursor.is-delete {
+  animation: repair-outline-helper-cursor-delete 0.8s ease-in-out 1 forwards;
+}
+
+.repair-outline-helper__caption {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  align-self: center;
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--semantic-surface-app, #111) 82%,
+    transparent
+  );
+  border: var(--semantic-border-default);
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+@keyframes repair-outline-helper-drag {
+  0%,
+  15% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(var(--helper-dx, 12px), var(--helper-dy, -10px));
+  }
+}
+
+@keyframes repair-outline-helper-cursor-move {
+  0%,
+  10% {
+    transform: translate(var(--helper-from-x), var(--helper-from-y));
+    opacity: 0.25;
+  }
+  25% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(var(--helper-to-x), var(--helper-to-y));
+    opacity: 0.85;
+  }
+}
+
+@keyframes repair-outline-helper-cursor-add {
+  0% {
+    transform: translate(
+      calc(var(--helper-add-x) - 14px),
+      calc(var(--helper-add-y) - 14px)
+    );
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(var(--helper-add-x), var(--helper-add-y));
+    opacity: 0.55;
+  }
+}
+
+@keyframes repair-outline-helper-cursor-delete {
+  0% {
+    transform: translate(
+      calc(var(--helper-del-x) + 12px),
+      calc(var(--helper-del-y) - 12px)
+    );
+    opacity: 0;
+  }
+  40% {
+    transform: translate(var(--helper-del-x), var(--helper-del-y));
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(var(--helper-del-x), var(--helper-del-y));
+    opacity: 0.35;
+  }
+}
+
+@keyframes repair-outline-helper-tap {
+  0% {
+    opacity: 0;
+    transform: scale(0.45);
+  }
+  40% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes repair-outline-helper-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes repair-outline-helper-fade-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+.repair-chip-btn {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: var(--semantic-border-default);
+  background: transparent;
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.repair-chip-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.repair-component-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: var(--semantic-border-default);
+}
+
+.repair-component-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repair-packaging {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.repair-size-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 6px 0 12px;
+  border-radius: 10px;
+  border: var(--semantic-border-default);
+  background: var(--semantic-surface-button-solid);
+}
+
+.repair-size-edit__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--semantic-text-primary);
+  font-family: "Outfit", sans-serif;
+  font-size: 1.05em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  outline: none;
+}
+
+.repair-size-edit__unit {
+  flex-shrink: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--semantic-text-muted);
+}
+
+.repair-size-edit__btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--semantic-text-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.repair-size-edit__btn--accept {
+  color: var(--semantic-text-primary);
+}
+
+.repair-size-edit__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.repair-size-edit__btn:not(:disabled):active {
+  transform: scale(0.94);
+}
+
+.repair-batch-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.repair-batch-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: var(--semantic-border-default);
+  background: var(--semantic-surface-muted, transparent);
+}
+
+.repair-batch-card__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: "Outfit", sans-serif;
+  font-size: var(--text-page-body, 16px);
+  font-weight: 600;
+  color: var(--semantic-text-primary);
+}
+
+.repair-batch-card__fill {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--semantic-text-primary) 12%, transparent);
+  overflow: hidden;
+}
+
+.repair-batch-card__fill-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--semantic-text-primary);
+}
+
+.repair-batch-card__safe-mark {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--semantic-state-error, #c44);
+  opacity: 0.7;
+}
+
+.repair-batch-card__masses {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.95em;
+}
+
+.repair-batch-card__safety,
+.repair-batch-card__cue {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.88em;
+  font-weight: 500;
+}
+
+.repair-batch-card__cue {
+  color: var(--semantic-text-primary);
+  font-weight: 600;
+}

@@ -27,6 +27,11 @@ import {
   Smartphone,
   CalendarDays,
   ListFilter,
+  Maximize2,
+  Minimize2,
+  ArrowRight,
+  ChevronRight,
+  Crosshair,
   type LucideIcon,
 } from "lucide-react";
 
@@ -117,3 +122,18 @@ export const CalendarIcon = createActionIcon(CalendarDays);
 
 /** Apply or set a list filter (e.g. session date filter). */
 export const FilterIcon = createActionIcon(ListFilter);
+
+/** Expand a figure / panel to fill available space. */
+export const ExpandPanelIcon = createActionIcon(Maximize2);
+
+/** Exit figure / panel fill mode. */
+export const CollapsePanelIcon = createActionIcon(Minimize2);
+
+/** Advance to the next wizard step. */
+export const NextStepIcon = createActionIcon(ArrowRight);
+
+/** Cycle to the next measurement point (distinct from step advance). */
+export const NextPointIcon = createActionIcon(ChevronRight);
+
+/** Exact flat / precise depth measurement mode. */
+export const ExactDepthIcon = createActionIcon(Crosshair);

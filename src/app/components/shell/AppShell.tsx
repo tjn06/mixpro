@@ -23,6 +23,7 @@ import { SessionsPage } from "../pages/SessionsPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { ConsumablesPage } from "../pages/ConsumablesPage";
 import { ToolsPage } from "../pages/ToolsPage";
+import { RepairPage } from "../repair/RepairPage";
 import { SessionOverviewScreen } from "../sessions/SessionOverviewScreen";
 
 type ShellView =
@@ -307,6 +308,10 @@ export function AppShell() {
               openCreateRecipe({ source: "library" }, "recipes")
             }
           />
+        ) : null}
+
+        {view.kind === "destination" && view.id === "repair" ? (
+          <RepairPage embedded onMenuClick={openNav} />
         ) : null}
 
         {view.kind === "destination" && view.id === "tools" ? (

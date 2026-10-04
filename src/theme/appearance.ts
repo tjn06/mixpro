@@ -16,8 +16,8 @@ export const CONTRAST_MODE_ATTR = "data-contrast";
 export const CONTRAST_MODE_HIGH = "high";
 
 export const SETTINGS_STORAGE_KEY = "mixpro-settings";
-/** v3 — adds persisted `uiLanguage` (default Swedish). */
-export const SETTINGS_STORAGE_VERSION = 3;
+/** v4 — adds persisted `helperAnimations` (outline edit coach, etc.). */
+export const SETTINGS_STORAGE_VERSION = 4;
 
 export const DEFAULT_APPEARANCE: ThemeAppearance = {
   colorScheme: "light",

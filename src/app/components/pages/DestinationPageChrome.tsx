@@ -13,6 +13,7 @@ export function DestinationPageChrome({
   embedded = false,
   subnav,
   bottomSheet,
+  footer,
   children,
 }: {
   title: string;
@@ -31,6 +32,11 @@ export function DestinationPageChrome({
    * `batch-totals-route` / screen layout as session steps (panel reserves scroll space).
    */
   bottomSheet?: ReactNode;
+  /**
+   * Sticky action dock rendered at the end of the scroll body
+   * (wizard Next, Calculate material, …).
+   */
+  footer?: ReactNode;
   children: ReactNode;
 }) {
   const header = (
@@ -67,6 +73,13 @@ export function DestinationPageChrome({
     <div className="destination-page__subnav">{subnav}</div>
   ) : null;
 
+  const body = (
+    <>
+      {children}
+      {footer ?? null}
+    </>
+  );
+
   /** Hub layout: header + optional subnav + screen (sheet and/or fill content). */
   const useHubLayout = Boolean(bottomSheet || subnav);
 
@@ -87,7 +100,7 @@ export function DestinationPageChrome({
                     <div className="batch-totals-scroll-panel flex flex-col">
                       <div className="batch-totals-scroll-panel__inner app-gutter-x">
                         <div className="destination-page__body destination-page__body--in-sheet">
-                          {children}
+                          {body}
                         </div>
                       </div>
                     </div>
@@ -95,7 +108,7 @@ export function DestinationPageChrome({
                 ) : (
                   <div className="destination-page__fill app-gutter-x">
                     <div className="destination-page__body destination-page__body--fill">
-                      {children}
+                      {body}
                     </div>
                   </div>
                 )}
@@ -109,7 +122,7 @@ export function DestinationPageChrome({
           <div className="recipe-context-gradient flex-1 min-h-0 flex flex-col overflow-hidden">
             {header}
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-none app-gutter-x">
-              <div className="destination-page__body">{children}</div>
+              <div className="destination-page__body">{body}</div>
             </div>
           </div>
         </div>

@@ -83,6 +83,25 @@ export const STANDARD_BLOT_RECIPE: BlendingRecipe = {
   binderPercents: [{ id: "FILLER", percent: 4000 / 9, label: "Sand", materialKind: "sand" }],
 };
 
+/** Same as Standard but FILLER 6 kg (not 12 kg) at 2250 g binder — extra wet. */
+export const STANDARD_EXTRA_WET_RECIPE: BlendingRecipe = {
+  id: "standard-extra-wet",
+  name: localizedLabel("Standard Extra Wet", "Standard Extra Blöt"),
+  nameSubline: EPOXY_SUBLINE,
+  description: localizedLabel(
+    "Standard epoxy with sand lowered to 6 kg for an extra-wet mix.",
+    "Standard-epoxi med sand sänkt till 6 kg för en extra blöt blandning.",
+  ),
+  initialBinderSum: 2250,
+  binderParts: [
+    { id: "A", parts: 2, label: "Resin" },
+    { id: "B", parts: 1, label: "Hardener" },
+  ],
+  binderPercents: [
+    { id: "FILLER", percent: 800 / 3, label: "Sand", materialKind: "sand" },
+  ],
+};
+
 /** A 1.5 kg · B 0.75 kg (2:1) · FILLER 10 kg · THICKENER 100 g at 2250 g binder (A + B). */
 export const FAS_SOCKEL_RECIPE: BlendingRecipe = {
   id: "fas-sockel",
@@ -157,6 +176,7 @@ export const TIXBLANDNING_RECIPE: BlendingRecipe = {
 export const PRESET_RECIPES: BlendingRecipe[] = [
   DEFAULT_RECIPE,
   STANDARD_BLOT_RECIPE,
+  STANDARD_EXTRA_WET_RECIPE,
   FAS_SOCKEL_RECIPE,
   PRIMER_RECIPE,
   LACK_RECIPE,

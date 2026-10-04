@@ -7,6 +7,7 @@ export type AppDestination =
   | "calculator"
   | "sessions"
   | "recipes"
+  | "repair"
   | "tools"
   | "consumables"
   | "settings";
@@ -17,6 +18,7 @@ export const APP_DESTINATIONS: {
   { id: "calculator" },
   { id: "sessions" },
   { id: "recipes" },
+  { id: "repair" },
   { id: "tools" },
   { id: "consumables" },
   { id: "settings" },

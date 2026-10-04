@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "../../settings/store";
+import type { HelperAnimationId } from "../../settings/helperAnimations";
 import { cv } from "../../ui/tokens";
 import { SHEET_LIST_ROW_CLASS } from "../sheets/sheetChrome";
 import { ColorSchemeSegment } from "./ColorSchemeSegment";
@@ -107,6 +108,57 @@ function LanguageRow() {
   );
 }
 
+const HELPER_ROWS: {
+  id: HelperAnimationId;
+  labelKey: string;
+  hintKey: string;
+  ariaKey: string;
+}[] = [
+  {
+    id: "outlineEdit",
+    labelKey: "settings.helperOutlineEdit",
+    hintKey: "settings.helperOutlineEditHint",
+    ariaKey: "settings.helperOutlineEditAria",
+  },
+];
+
+function HelperAnimationRow({
+  id,
+  labelKey,
+  hintKey,
+  ariaKey,
+}: {
+  id: HelperAnimationId;
+  labelKey: string;
+  hintKey: string;
+  ariaKey: string;
+}) {
+  const { t } = useTranslation("common");
+  const enabled = useSettingsStore((s) => s.helperAnimations[id]);
+  const setHelperAnimation = useSettingsStore((s) => s.setHelperAnimation);
+
+  return (
+    <div
+      className="flex items-center justify-between gap-4 w-full"
+      style={{ minHeight: ROW_H }}
+    >
+      <span className="flex flex-col min-w-0" style={{ gap: 4 }}>
+        <span style={labelStyle}>{t(labelKey)}</span>
+        <span style={hintStyle}>{t(hintKey)}</span>
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        aria-label={t(ariaKey)}
+        onClick={() => setHelperAnimation(id, !enabled)}
+        className="settings-toggle shrink-0"
+        data-active={enabled ? "" : undefined}
+      />
+    </div>
+  );
+}
+
 /** Shared settings controls — used by Settings page. */
 export function SettingsForm() {
   const { t } = useTranslation("common");
@@ -128,6 +180,19 @@ export function SettingsForm() {
       >
         <p style={sectionStyle}>{t("settings.sectionLanguage")}</p>
         <LanguageRow />
+      </div>
+
+      <div
+        className={`${SHEET_LIST_ROW_CLASS} rounded-2xl w-full flex flex-col`}
+        style={{ padding: "12px 16px", gap: 8 }}
+      >
+        <p style={sectionStyle}>{t("settings.sectionHelperAnimations")}</p>
+        {HELPER_ROWS.map((row, i) => (
+          <div key={row.id}>
+            {i > 0 ? <Divider /> : null}
+            <HelperAnimationRow {...row} />
+          </div>
+        ))}
       </div>
     </div>
   );
